@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------
 # tools
 WGET=wget
+TAR=tar
 # -----------------------------------------------------------------------------
 
 
@@ -48,7 +49,7 @@ function dl_tlibs()
 		exit -1;
 	fi
 
-	if ! tar xjvf ${TLIBS_LOCAL}
+	if ! ${TAR} xjvf ${TLIBS_LOCAL}
 	then
 		echo -e "Error extracting tlibs.";
 		exit -1;
@@ -67,7 +68,7 @@ function dl_qcp()
 	fi
 
 
-	if ! tar xzvf ${QCP_LOCAL}
+	if ! ${TAR} xzvf ${QCP_LOCAL}
 	then
 		echo -e "Error extracting qcp.";
 		exit -1;
