@@ -11,8 +11,8 @@
 
 MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
-		m_pMenu(new QMenuBar(this)), m_pStatus(new QStatusBar(this)), 
-		m_pMDI(new QMdiArea(this)), m_pBrowser(new FileBrowser(this))
+	m_pBrowser(new FileBrowser(this, pSettings)
+)
 {
 	this->setObjectName("in20");
 	this->setWindowTitle("IN20 Tool");

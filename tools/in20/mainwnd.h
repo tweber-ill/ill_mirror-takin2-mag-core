@@ -21,9 +21,9 @@ class MainWnd : public QMainWindow
 {
 private:
 	QSettings *m_pSettings = nullptr;
-	QMenuBar *m_pMenu = nullptr;
-	QStatusBar *m_pStatus = nullptr;
-	QMdiArea *m_pMDI = nullptr;
+	QMenuBar *m_pMenu = new QMenuBar(this);
+	QStatusBar *m_pStatus = new QStatusBar(this);
+	QMdiArea *m_pMDI = new QMdiArea(this);
 	FileBrowser *m_pBrowser = nullptr;
 
 private:

@@ -8,8 +8,11 @@
 #ifndef __FILEBROWSER_H__
 #define __FILEBROWSER_H__
 
+#include <QtCore/QSettings>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QListWidget>
 
 #include <memory>
 
@@ -20,10 +23,18 @@
 class FileBrowserWidget : public QWidget
 {
 private:
+	QSettings *m_pSettings = nullptr;
+
+	QLineEdit *m_pEditFolder = new QLineEdit(this);
+	QListWidget *m_pListFiles = new QListWidget(this);
 
 public:
-	FileBrowserWidget(QWidget *pParent = nullptr);
+	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~FileBrowserWidget();
+
+public:
+	void SelectFolder();
+	void SetFolder(const QString& str);
 };
 
 
@@ -36,7 +47,7 @@ private:
 	std::unique_ptr<FileBrowserWidget> m_pBrowser;
 
 public:
-	FileBrowser(QWidget* pParent = nullptr);
+	FileBrowser(QWidget* pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~FileBrowser();
 };
 
