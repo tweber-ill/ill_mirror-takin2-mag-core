@@ -1,23 +1,46 @@
 /**
  * in20 data analysis tool
- * @author Tobias Weber
+ * @author Tobias Weber <tweber@ill.fr>
  * @date 6-Apr-2018
  * @license see 'LICENSE' file
  */
 
 #include "mainwnd.h"
+//#include <iostream>
 
 
 MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
-		m_pMenu(new QMenuBar(this)), m_pStatus(new QStatusBar(this))
+		m_pMenu(new QMenuBar(this)), m_pStatus(new QStatusBar(this)), 
+		m_pMDI(new QMdiArea(this)), m_pBrowser(new FileBrowser(this))
 {
+	this->setObjectName("in20");
 	this->setWindowTitle("IN20 Tool");
 	this->resize(800, 600);
 
-	this->setMenuBar(m_pMenu);
-	this->setStatusBar(m_pStatus);
 
+	// ------------------------------------------------------------------------
+	// Menu Bar
+	QMenu *pMenuView = new QMenu("View", m_pMenu);
+
+	QAction *pShowFileBrowser = new QAction("Show File Browser", pMenuView);
+	pShowFileBrowser->setCheckable(true);
+	pShowFileBrowser->setChecked(m_pBrowser->isVisible());
+	connect(pShowFileBrowser, &QAction::toggled, m_pBrowser, &FileBrowser::setVisible);
+	pMenuView->addAction(pShowFileBrowser);
+
+	m_pMenu->addMenu(pMenuView);
+	this->setMenuBar(m_pMenu);
+	// ------------------------------------------------------------------------
+
+
+	this->setStatusBar(m_pStatus);
+	this->setCentralWidget(m_pMDI);
+	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
+
+
+	// ------------------------------------------------------------------------
+	// restore settings
 	if(m_pSettings)
 	{
 		// restore window state
@@ -26,11 +49,17 @@ MainWnd::MainWnd(QSettings* pSettings)
 		if(m_pSettings->contains("mainwnd/state"))
 			this->restoreState(m_pSettings->value("mainwnd/state").toByteArray());
 	}
+	// ------------------------------------------------------------------------
 }
 
 
 MainWnd::~MainWnd()
+{}
+
+
+void MainWnd::showEvent(QShowEvent *pEvt)
 {
+	QMainWindow::showEvent(pEvt);
 }
 
 

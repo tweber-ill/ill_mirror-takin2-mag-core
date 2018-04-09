@@ -1,13 +1,13 @@
 /**
  * in20 data analysis tool
- * @author Tobias Weber
+ * @author Tobias Weber <tweber@ill.fr>
  * @date 6-Apr-2018
  * @license see 'LICENSE' file
  */
 
 #include <locale>
 #include <iostream>
-#include <QApplication>
+#include <QtWidgets/QApplication>
 
 #include "mainwnd.h"
 

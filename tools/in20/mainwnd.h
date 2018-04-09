@@ -1,6 +1,6 @@
 /**
  * in20 data analysis tool
- * @author Tobias Weber
+ * @author Tobias Weber <tweber@ill.fr>
  * @date 6-Apr-2018
  * @license see 'LICENSE' file
  */
@@ -8,10 +8,13 @@
 #ifndef __IN20MAINWND_H__
 #define __IN20MAINWND_H__
 
-#include <QMainWindow>
-#include <QSettings>
-#include <QMenuBar>
-#include <QStatusBar>
+#include <QtCore/QSettings>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMdiArea>
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QStatusBar>
+
+#include "filebrowser.h"
 
 
 class MainWnd : public QMainWindow
@@ -20,8 +23,11 @@ private:
 	QSettings *m_pSettings = nullptr;
 	QMenuBar *m_pMenu = nullptr;
 	QStatusBar *m_pStatus = nullptr;
+	QMdiArea *m_pMDI = nullptr;
+	FileBrowser *m_pBrowser = nullptr;
 
 private:
+	virtual void showEvent(QShowEvent *pEvt) override;
 	virtual void closeEvent(QCloseEvent *pEvt) override;
 
 public:

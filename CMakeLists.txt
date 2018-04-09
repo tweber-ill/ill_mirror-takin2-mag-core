@@ -39,6 +39,7 @@ set(CMAKE_AUTOUIC ON)
 
 add_executable(in20
 	tools/in20/main.cpp tools/in20/mainwnd.cpp tools/in20/mainwnd.h
+	tools/in20/filebrowser.cpp tools/in20/filebrowser.h
 	ext/qcp/qcustomplot.cpp ext/qcp/qcustomplot.h
 )
 
