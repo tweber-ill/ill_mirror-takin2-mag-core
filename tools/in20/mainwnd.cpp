@@ -24,9 +24,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 	QMenu *pMenuView = new QMenu("View", m_pMenu);
 
 	QAction *pShowFileBrowser = new QAction("Show File Browser", pMenuView);
-	pShowFileBrowser->setCheckable(true);
 	pShowFileBrowser->setChecked(m_pBrowser->isVisible());
-	connect(pShowFileBrowser, &QAction::toggled, m_pBrowser, &FileBrowser::setVisible);
+	connect(pShowFileBrowser, &QAction::triggered, m_pBrowser, &FileBrowser::show);
 	pMenuView->addAction(pShowFileBrowser);
 
 	m_pMenu->addMenu(pMenuView);

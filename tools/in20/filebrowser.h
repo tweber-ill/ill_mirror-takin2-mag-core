@@ -38,6 +38,7 @@ public:
 };
 
 
+
 /**
  * the dock which contains the file browser widget
  */
