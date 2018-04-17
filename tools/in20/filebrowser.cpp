@@ -34,6 +34,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	pGrid->addWidget(pBtnFolders, 0, 0, 1, 1);
 	pGrid->addWidget(m_pEditFolder, 0, 1, 1, 1);
 	pGrid->addWidget(m_pListFiles, 1, 0, 2, 2);
+	pGrid->addWidget(m_pPlotter, 3, 0, 1, 2);
 	// ------------------------------------------------------------------------
 
 
@@ -41,6 +42,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	// connections
 	connect(pBtnFolders, &QPushButton::clicked, this, &FileBrowserWidget::SelectFolder);
 	connect(m_pEditFolder, &QLineEdit::textChanged, this, &FileBrowserWidget::SetFolder);
+	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &FileBrowserWidget::SetFile);
 	// ------------------------------------------------------------------------
 
 
@@ -134,6 +136,61 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 
 	if(m_pSettings)
 		m_pSettings->setValue("filebrowser/dir", dir);
+}
+
+
+/**
+ * a file in the list was selected
+ */
+void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
+{
+	m_pPlotter->clearGraphs();
+	if(!pCur) return;
+
+	// load scan file for preview
+	QString file = pCur->data(Qt::UserRole).toString();
+	std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(file.toStdString().c_str()));
+	const auto &colnames = pInstr->GetColNames();
+	const auto &data = pInstr->GetData();
+
+	if(pInstr && colnames.size())	// only valid files with a non-zero column count
+	{
+		std::size_t x_idx = 0, y_idx = 1;
+
+		// get x column index
+		if(auto vecScanVars = pInstr->GetScannedVars(); vecScanVars.size() >= 1)
+		{
+			// try to find scan var, if not found, use first column
+			pInstr->GetCol(vecScanVars[0], &x_idx);
+			if(x_idx >= colnames.size())
+				x_idx = 0;
+		}
+
+		// get y column index
+		{
+			// try to find count var, if not found, use second column
+			pInstr->GetCol(pInstr->GetCountVar(), &y_idx);
+			if(y_idx >= colnames.size())
+				y_idx = 1;
+		}
+
+		// labels
+		m_pPlotter->xAxis->setLabel(x_idx<colnames.size() ? colnames[x_idx].c_str() : "x");
+		m_pPlotter->yAxis->setLabel(y_idx<colnames.size() ? colnames[y_idx].c_str() : "y");
+
+		// plot the data
+		if(x_idx < data.size() && y_idx < data.size())
+		{
+			QVector<t_real> x_data, y_data;
+			std::copy(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data));
+			std::copy(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data));
+
+			auto *graph = m_pPlotter->addGraph();
+			graph->setData(x_data, y_data);
+		}
+
+		m_pPlotter->replot();
+	}
 }
 // ----------------------------------------------------------------------------
 

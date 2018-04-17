@@ -16,6 +16,8 @@
 
 #include <memory>
 
+#include "qcp/qcustomplot.h"
+
 
 /**
  * file browser widget
@@ -27,6 +29,7 @@ private:
 
 	QLineEdit *m_pEditFolder = new QLineEdit(this);
 	QListWidget *m_pListFiles = new QListWidget(this);
+	QCustomPlot *m_pPlotter = new QCustomPlot(this);
 
 public:
 	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
@@ -35,6 +38,9 @@ public:
 public:
 	void SelectFolder();
 	void SetFolder(const QString& str);
+
+protected:
+	void SetFile(QListWidgetItem* pCur);
 };
 
 
