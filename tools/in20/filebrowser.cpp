@@ -181,12 +181,41 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 		// plot the data
 		if(x_idx < data.size() && y_idx < data.size())
 		{
-			QVector<t_real> x_data, y_data;
+			// get x, y, yerr data
+			QVector<t_real> x_data, y_data, y_err;
 			std::copy(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data));
 			std::copy(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data));
+			std::transform(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_err),
+			[](t_real y) -> t_real
+			{
+				if(tl::float_equal<t_real>(y, 0))
+					return 1;
+				return std::sqrt(y);
+			});
 
+
+			// graph
 			auto *graph = m_pPlotter->addGraph();
+			auto *graph_err = new QCPErrorBars(m_pPlotter->xAxis, m_pPlotter->yAxis);
+			graph_err->setDataPlottable(graph);
+
+			QPen pen = graph->pen();
+			QBrush brush(pen.color());
+			t_real ptsize = 8;
+			graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, pen, brush, ptsize));
+			graph_err->setSymbolGap(ptsize);
+
 			graph->setData(x_data, y_data);
+			graph_err->setData(y_err);
+
+
+			// ranges
+			auto xminmax = std::minmax_element(x_data.begin(), x_data.end());
+			auto yminmax = std::minmax_element(y_data.begin(), y_data.end());
+			auto yerrminmax = std::minmax_element(y_err.begin(), y_err.end());
+
+			m_pPlotter->xAxis->setRange(*xminmax.first, *xminmax.second);
+			m_pPlotter->yAxis->setRange(*yminmax.first - *yerrminmax.first, *yminmax.second + *yerrminmax.second);
 		}
 
 		m_pPlotter->replot();
