@@ -140,10 +140,32 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 
 
 /**
+ * copy algorithm with interleave
+ */
+template<class T1, class T2>
+void copy_interleave(T1 inIter, T1 inEnd, T2 outIter, std::size_t interleave, std::size_t startskip)
+{
+	std::advance(inIter, startskip);
+
+	while(std::distance(inIter, inEnd) > 0)
+	{
+		*outIter = *inIter;
+
+		++outIter;
+		std::advance(inIter, interleave);
+	}
+}
+
+
+/**
  * a file in the list was selected
  */
 void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 {
+	static const std::vector<unsigned> colors = {
+		0xffff0000, 0xff0000ff, 0xff009900, 0xff000000,
+	};
+
 	m_pPlotter->clearGraphs();
 	if(!pCur) return;
 
@@ -155,6 +177,11 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 
 	if(pInstr && colnames.size())	// only valid files with a non-zero column count
 	{
+		// process polarisation data
+		pInstr->SetPolNames("p1", "p2", "i11", "i10");
+		pInstr->ParsePolData();
+
+
 		std::size_t x_idx = 0, y_idx = 1;
 
 		// get x column index
@@ -178,44 +205,63 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 		m_pPlotter->xAxis->setLabel(x_idx<colnames.size() ? colnames[x_idx].c_str() : "x");
 		m_pPlotter->yAxis->setLabel(y_idx<colnames.size() ? colnames[y_idx].c_str() : "y");
 
+		t_real xmin = std::numeric_limits<t_real>::max();
+		t_real xmax = -xmin;
+		t_real ymin = std::numeric_limits<t_real>::max();
+		t_real ymax = -xmin;
+
 		// plot the data
 		if(x_idx < data.size() && y_idx < data.size())
 		{
-			// get x, y, yerr data
-			QVector<t_real> x_data, y_data, y_err;
-			std::copy(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data));
-			std::copy(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data));
-			std::transform(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_err),
-			[](t_real y) -> t_real
+			std::size_t numpolstates = pInstr->NumPolChannels();
+			if(numpolstates == 0) numpolstates = 1;
+
+			// iterate all (polarisation) subplots
+			for(std::size_t graphidx=0; graphidx<numpolstates; ++graphidx)
 			{
-				if(tl::float_equal<t_real>(y, 0))
-					return 1;
-				return std::sqrt(y);
-			});
+				// get x, y, yerr data
+				QVector<t_real> x_data, y_data, y_err;
+				copy_interleave(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data), numpolstates, graphidx);
+				copy_interleave(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data), numpolstates, graphidx);
+				std::transform(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_err),
+				[](t_real y) -> t_real
+				{
+					if(tl::float_equal<t_real>(y, 0))
+						return 1;
+					return std::sqrt(y);
+				});
 
 
-			// graph
-			auto *graph = m_pPlotter->addGraph();
-			auto *graph_err = new QCPErrorBars(m_pPlotter->xAxis, m_pPlotter->yAxis);
-			graph_err->setDataPlottable(graph);
+				// graph
+				auto *graph = m_pPlotter->addGraph();
+				auto *graph_err = new QCPErrorBars(m_pPlotter->xAxis, m_pPlotter->yAxis);
+				graph_err->setDataPlottable(graph);
 
-			QPen pen = graph->pen();
-			QBrush brush(pen.color());
-			t_real ptsize = 8;
-			graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, pen, brush, ptsize));
-			graph_err->setSymbolGap(ptsize);
+				QPen pen = QPen(QColor(colors[graphidx % colors.size()]));
+				QBrush brush(pen.color());
+				t_real ptsize = 8;
+				graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, pen, brush, ptsize));
+				graph->setPen(pen);
+				graph_err->setSymbolGap(ptsize);
 
-			graph->setData(x_data, y_data);
-			graph_err->setData(y_err);
+				graph->setData(x_data, y_data);
+				graph_err->setData(y_err);
 
 
-			// ranges
-			auto xminmax = std::minmax_element(x_data.begin(), x_data.end());
-			auto yminmax = std::minmax_element(y_data.begin(), y_data.end());
-			auto yerrminmax = std::minmax_element(y_err.begin(), y_err.end());
+				// ranges
+				auto xminmax = std::minmax_element(x_data.begin(), x_data.end());
+				auto yminmax = std::minmax_element(y_data.begin(), y_data.end());
+				auto yerrminmax = std::minmax_element(y_err.begin(), y_err.end());
 
-			m_pPlotter->xAxis->setRange(*xminmax.first, *xminmax.second);
-			m_pPlotter->yAxis->setRange(*yminmax.first - *yerrminmax.first, *yminmax.second + *yerrminmax.second);
+				xmin = std::min(*xminmax.first, xmin);
+				xmax = std::max(*xminmax.second, xmax);
+				ymin = std::min(*yminmax.first - *yerrminmax.first, ymin);
+				ymax = std::max(*yminmax.second + *yerrminmax.second, ymax);
+			}
+
+
+			m_pPlotter->xAxis->setRange(xmin, xmax);
+			m_pPlotter->yAxis->setRange(ymin, ymax);
 		}
 
 		m_pPlotter->replot();
