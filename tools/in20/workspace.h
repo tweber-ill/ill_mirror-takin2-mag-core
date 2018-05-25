@@ -1,7 +1,7 @@
 /**
- * data file browser
+ * workspace
  * @author Tobias Weber <tweber@ill.fr>
- * @date 9-Apr-2018
+ * @date 25-May-2018
  * @license see 'LICENSE' file
  */
 
