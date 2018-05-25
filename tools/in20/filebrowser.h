@@ -40,7 +40,12 @@ public:
 	void SetFolder(const QString& str);
 
 protected:
-	void SetFile(QListWidgetItem* pCur);
+	void SetFile(QListWidgetItem *pCur);
+	void SetMultiSelect(int checked);
+
+	void FileDoubleClicked(QListWidgetItem *pItem);
+	void TransferSelectedToWorkspace();
+	void TransferToWorkspace(const QList<QListWidgetItem*>&);
 };
 
 

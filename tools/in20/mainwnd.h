@@ -15,6 +15,7 @@
 #include <QtWidgets/QStatusBar>
 
 #include "filebrowser.h"
+#include "workspace.h"
 
 
 class MainWnd : public QMainWindow
@@ -25,6 +26,7 @@ private:
 	QStatusBar *m_pStatus = new QStatusBar(this);
 	QMdiArea *m_pMDI = new QMdiArea(this);
 	FileBrowser *m_pBrowser = nullptr;
+	WorkSpace *m_pWS = nullptr;
 
 private:
 	virtual void showEvent(QShowEvent *pEvt) override;

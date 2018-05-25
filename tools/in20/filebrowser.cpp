@@ -10,6 +10,7 @@
 #include <QtCore/QDirIterator>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 #include <algorithm>
 
@@ -29,20 +30,27 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	// ------------------------------------------------------------------------
 	// layout
 	auto *pBtnFolders = new QPushButton("Folder...", this);
+	auto *pBtnTransfer = new QPushButton("To Workspace", this);
+	auto *pCheckMultiSelect = new QCheckBox("Multi-Select", this);
 
 	auto *pGrid = new QGridLayout(this);
 	pGrid->addWidget(pBtnFolders, 0, 0, 1, 1);
 	pGrid->addWidget(m_pEditFolder, 0, 1, 1, 1);
 	pGrid->addWidget(m_pListFiles, 1, 0, 2, 2);
-	pGrid->addWidget(m_pPlotter, 3, 0, 1, 2);
+	pGrid->addWidget(pCheckMultiSelect, 3, 0, 1, 1);
+	pGrid->addWidget(pBtnTransfer, 3, 1, 1, 1);
+	pGrid->addWidget(m_pPlotter, 4, 0, 1, 2);
 	// ------------------------------------------------------------------------
 
 
 	// ------------------------------------------------------------------------
 	// connections
 	connect(pBtnFolders, &QPushButton::clicked, this, &FileBrowserWidget::SelectFolder);
+	connect(pCheckMultiSelect, &QCheckBox::stateChanged, this, &FileBrowserWidget::SetMultiSelect);
+	connect(pBtnTransfer, &QPushButton::clicked, this, &FileBrowserWidget::TransferSelectedToWorkspace);
 	connect(m_pEditFolder, &QLineEdit::textChanged, this, &FileBrowserWidget::SetFolder);
 	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &FileBrowserWidget::SetFile);
+	connect(m_pListFiles, &QListWidget::itemDoubleClicked, this, &FileBrowserWidget::FileDoubleClicked);
 	// ------------------------------------------------------------------------
 
 
@@ -266,6 +274,38 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 
 		m_pPlotter->replot();
 	}
+}
+
+
+void FileBrowserWidget::SetMultiSelect(int checked)
+{
+	bool bMultiSel = checked != 0;
+	m_pListFiles->setSelectionMode(bMultiSel ? QAbstractItemView::MultiSelection : QAbstractItemView::SingleSelection);
+}
+
+
+/**
+ * a file in the list was double-clicked
+ */
+void FileBrowserWidget::FileDoubleClicked(QListWidgetItem *pItem)
+{
+	QList lst({ pItem });
+	TransferToWorkspace(lst);
+}
+
+
+void FileBrowserWidget::TransferSelectedToWorkspace()
+{
+	TransferToWorkspace(m_pListFiles->selectedItems());
+}
+
+
+/**
+ * load selected file(s) into workspace
+ */
+void FileBrowserWidget::TransferToWorkspace(const QList<QListWidgetItem*>& lst)
+{
+
 }
 // ----------------------------------------------------------------------------
 

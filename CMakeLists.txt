@@ -44,6 +44,7 @@ include_directories(
 add_executable(in20
 	tools/in20/main.cpp tools/in20/mainwnd.cpp tools/in20/mainwnd.h
 	tools/in20/filebrowser.cpp tools/in20/filebrowser.h
+	tools/in20/workspace.cpp tools/in20/workspace.h
 
 	ext/tlibs/log/log.cpp ext/tlibs/file/loadinstr.cpp
 
