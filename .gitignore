@@ -40,3 +40,8 @@ ext/**
 tmp/**
 !tmp/.dir
 build/**
+
+# Temporary lexer/parser files
+cliparser_impl.*
+clilexer_impl.*
+stack.hh
