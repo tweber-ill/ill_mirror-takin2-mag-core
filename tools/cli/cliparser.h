@@ -8,7 +8,7 @@
 #ifndef __CLI_PARSER_H__
 #define __CLI_PARSER_H__
 
-#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <memory>
@@ -24,10 +24,18 @@
 // Lexer
 // ----------------------------------------------------------------------------
 
+class CliParserContext;
+
 class CliLexer : public yyFlexLexer
 {
+private:
+	CliParserContext *m_pContext = nullptr;
+
+protected:
+	virtual void LexerError(const char *err) override;
+
 public:
-	CliLexer(std::istream &istr=std::cin, std::ostream &ostr=std::cerr);
+	CliLexer(CliParserContext *ctx = nullptr);
 	virtual yy::CliParser::symbol_type yylex(CliParserContext &context);
 };
 
@@ -46,9 +54,16 @@ class CliParserContext
 private:
 	CliLexer m_lex;
 
+	std::vector<std::string> m_errors;
+
 public:
 	CliLexer& GetLexer() { return m_lex; }
+
 	void PrintError(const std::string &err);
+	const std::vector<std::string>& GetErrors() const { return m_errors; }
+	void ClearErrors() { m_errors.clear(); }
+
+	void SetLexerInput(std::istream &istr);
 };
 
 // ----------------------------------------------------------------------------
@@ -190,8 +205,7 @@ public:
 #define YY_DECL yy::CliParser::symbol_type CliLexer::yylex(CliParserContext &context)
 extern yy::CliParser::symbol_type yylex(CliParserContext &context);
 
-
-#define yyterminate()
+#define yyterminate() return yy::CliParser::token::yytokentype(YY_NULL);
 
 
 #endif

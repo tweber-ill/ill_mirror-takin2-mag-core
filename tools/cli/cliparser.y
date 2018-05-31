@@ -8,6 +8,7 @@
 %define parser_class_name { CliParser }
 %define api.value.type variant
 %define api.token.constructor
+%error-verbose
 
 %code requires { #include "cliparser_types.h" }
 %code { #include "cliparser.h" }
@@ -20,6 +21,7 @@
 %token TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD TOK_POW
 %token TOK_ASSIGN
 %token TOK_NEWLINE
+//%token TOK_EOF
 
 %type<std::shared_ptr<CliAST>> expression ident
 %type<std::shared_ptr<CliAST>> command commands
@@ -27,14 +29,14 @@
 %right TOK_ASSIGN
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV TOK_MOD
-%right UNARY_PLUSMINUS
+%right PREC_UNARY_PLUSMINUS
 %nonassoc TOK_POW
 
 %%
 
 commands
 	: commands command
-	    { }
+	    { $$ = $2; }
 	| /* eps */
 	    { $$ = nullptr; }
 	;
@@ -59,9 +61,9 @@ expression
 
 	| TOK_BRACKET_OPEN expression TOK_BRACKET_CLOSE
 		{ $$ = $2; }
-	| TOK_PLUS expression %prec UNARY_PLUSMINUS
+	| TOK_PLUS expression %prec PREC_UNARY_PLUSMINUS
 		{ $$ = $2; }
-	| TOK_MINUS expression %prec UNARY_PLUSMINUS
+	| TOK_MINUS expression %prec PREC_UNARY_PLUSMINUS
 		{ $$ = std::make_shared<CliASTMinus>(nullptr, $2); }
 
 	| expression TOK_PLUS expression

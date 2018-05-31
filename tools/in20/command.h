@@ -17,6 +17,8 @@
 
 #include <memory>
 
+#include "tools/cli/cliparser.h"
+
 
 /**
  * command line widget
@@ -28,6 +30,9 @@ private:
 
 	QTextEdit *m_pEditHistory = new QTextEdit(this);
 	QLineEdit *m_pEditCLI = new QLineEdit(this);
+
+	CliParserContext m_parsectx;
+
 
 protected:
 	void CommandEntered();

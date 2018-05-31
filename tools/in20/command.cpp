@@ -54,6 +54,21 @@ void CommandLineWidget::CommandEntered()
 	if(!cmd.length()) return;
 
 	m_pEditHistory->insertHtml(cmd + "<br>");
+
+	// Parse command
+	std::istringstream istr(cmd.toStdString() + "\n");
+	m_parsectx.SetLexerInput(istr);
+	yy::CliParser parser(m_parsectx);
+	int parse_state = parser.parse();
+
+	// write error log
+	for(const auto& err : m_parsectx.GetErrors())
+		m_pEditHistory->insertHtml(((err + "<br>").c_str()));
+	m_parsectx.ClearErrors();
+	if(parse_state != 0)
+		m_pEditHistory->insertHtml("Error: Could not parse command.<br>");
+
+	// scroll command list to last command
 	auto caret = m_pEditHistory->textCursor();
 	caret.movePosition(QTextCursor::End, QTextCursor::MoveAnchor, 1);
 	m_pEditHistory->setTextCursor(caret);

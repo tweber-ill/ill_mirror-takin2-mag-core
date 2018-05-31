@@ -13,12 +13,17 @@
 // Lexer
 // ----------------------------------------------------------------------------
 
-CliLexer::CliLexer(std::istream &istr, std::ostream &ostr)
-	: yyFlexLexer(istr, ostr)
+CliLexer::CliLexer(CliParserContext *ctx)
+	: m_pContext(ctx), yyFlexLexer()
 {}
 
 template<> double str_to_real(const std::string& str) { return std::stod(str); }
 template<> float str_to_real(const std::string& str) { return std::stof(str); }
+
+void CliLexer::LexerError(const char *err)
+{
+	if(m_pContext) m_pContext->PrintError(std::string("Lexer error: ") + err + std::string("."));
+}
 // ----------------------------------------------------------------------------
 
 
@@ -30,12 +35,18 @@ template<> float str_to_real(const std::string& str) { return std::stof(str); }
 
 void CliParserContext::PrintError(const std::string &err)
 {
-	std::cerr << err << "." << std::endl;
+	m_errors.push_back(err);
+	//std::cerr << err << "." << std::endl;
 }
 
 void yy::CliParser::error(const std::string &err)
 {
-	context.PrintError(std::string("Parser error: ") + err);
+	context.PrintError(std::string("Parser error: ") + err + std::string("."));
+}
+
+void CliParserContext::SetLexerInput(std::istream &istr)
+{
+	m_lex.switch_streams(&istr/*, &std::cout*/);
 }
 
 extern yy::CliParser::symbol_type yylex(CliParserContext &context)
