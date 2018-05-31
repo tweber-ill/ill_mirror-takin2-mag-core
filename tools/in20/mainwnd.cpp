@@ -12,7 +12,8 @@
 MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
 	m_pBrowser(new FileBrowser(this, pSettings)),
-	m_pWS(new WorkSpace(this, pSettings))
+	m_pWS(new WorkSpace(this, pSettings)),
+	m_pCLI(new CommandLine(this, pSettings))
 {
 	this->setObjectName("in20");
 	this->setWindowTitle("IN20 Tool");
@@ -33,6 +34,11 @@ MainWnd::MainWnd(QSettings* pSettings)
 	connect(pShowWorkSpace, &QAction::triggered, m_pWS, &FileBrowser::show);
 	pMenuView->addAction(pShowWorkSpace);
 
+	QAction *pShowCommandLine = new QAction("Show Command Line", pMenuView);
+	pShowCommandLine->setChecked(m_pCLI->isVisible());
+	connect(pShowCommandLine, &QAction::triggered, m_pCLI, &CommandLine::show);
+	pMenuView->addAction(pShowCommandLine);
+
 	m_pMenu->addMenu(pMenuView);
 	this->setMenuBar(m_pMenu);
 	// ------------------------------------------------------------------------
@@ -42,6 +48,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	this->setCentralWidget(m_pMDI);
 	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
 	this->addDockWidget(Qt::RightDockWidgetArea, m_pWS);
+	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCLI);
 
 
 	// ------------------------------------------------------------------------

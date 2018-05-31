@@ -35,11 +35,10 @@ public:
 	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~FileBrowserWidget();
 
-public:
+protected:
 	void SelectFolder();
 	void SetFolder(const QString& str);
 
-protected:
 	void SetFile(QListWidgetItem *pCur);
 	void SetMultiSelect(int checked);
 

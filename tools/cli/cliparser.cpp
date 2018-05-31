@@ -132,9 +132,11 @@ void CliASTCall::Print(int indent) const
 
 
 
+/*
 int main()
 {
 	CliParserContext ctx;
 	yy::CliParser parser(ctx);
 	return parser.parse();
 }
+*/
