@@ -73,6 +73,7 @@ add_executable(in20
 	tools/in20/main.cpp tools/in20/mainwnd.cpp tools/in20/mainwnd.h
 	tools/in20/filebrowser.cpp tools/in20/filebrowser.h
 	tools/in20/workspace.cpp tools/in20/workspace.h
+	tools/in20/data.cpp tools/in20/data.h
 	tools/in20/command.cpp tools/in20/command.h
 
 	${BISON_cliparser_OUTPUT_SOURCE} ${BISON_cliparser_OUTPUT_HEADER}

@@ -53,9 +53,9 @@ void CommandLineWidget::CommandEntered()
 	m_pEditCLI->clear();
 	if(!cmd.length()) return;
 
-	m_pEditHistory->insertHtml(cmd + "<br>");
+	m_pEditHistory->insertHtml("<font color=\"#0000ff\"><b>> </b>" + cmd + "</font><br>");
 
-	// Parse command
+	// parse command
 	std::istringstream istr(cmd.toStdString() + "\n");
 	m_parsectx.SetLexerInput(istr);
 	yy::CliParser parser(m_parsectx);
@@ -63,10 +63,10 @@ void CommandLineWidget::CommandEntered()
 
 	// write error log
 	for(const auto& err : m_parsectx.GetErrors())
-		m_pEditHistory->insertHtml(((err + "<br>").c_str()));
+		m_pEditHistory->insertHtml((("<b><font color=\"#ff0000\">" + err + "</font></b><br>").c_str()));
 	m_parsectx.ClearErrors();
 	if(parse_state != 0)
-		m_pEditHistory->insertHtml("Error: Could not parse command.<br>");
+		m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">Error: Could not parse command.</font></b><br>");
 
 	// scroll command list to last command
 	auto caret = m_pEditHistory->textCursor();

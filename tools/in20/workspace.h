@@ -13,10 +13,11 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
+#include "qcp/qcustomplot.h"
 
 #include <memory>
 
-#include "qcp/qcustomplot.h"
+#include "data.h"
 
 
 /**
@@ -37,6 +38,9 @@ public:
 protected:
 	void ItemSelected(QListWidgetItem* pCur);
 	void ItemDoubleClicked(QListWidgetItem* pCur);
+
+public:
+	void ReceiveFiles(const std::vector<std::string>&);
 };
 
 
@@ -52,6 +56,8 @@ private:
 public:
 	WorkSpace(QWidget* pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~WorkSpace();
+
+	const WorkSpaceWidget *GetWidget() const { return m_pWS.get(); }
 };
 
 #endif

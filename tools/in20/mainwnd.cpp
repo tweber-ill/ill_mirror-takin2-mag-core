@@ -52,6 +52,13 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 
 	// ------------------------------------------------------------------------
+	// connections
+	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles,
+		m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
+	// ------------------------------------------------------------------------
+
+
+	// ------------------------------------------------------------------------
 	// restore settings
 	if(m_pSettings)
 	{

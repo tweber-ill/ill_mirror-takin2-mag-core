@@ -15,6 +15,8 @@
 #include <QtWidgets/QListWidget>
 
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "qcp/qcustomplot.h"
 
@@ -23,7 +25,7 @@
  * file browser widget
  */
 class FileBrowserWidget : public QWidget
-{
+{ Q_OBJECT
 private:
 	QSettings *m_pSettings = nullptr;
 
@@ -45,6 +47,9 @@ protected:
 	void FileDoubleClicked(QListWidgetItem *pItem);
 	void TransferSelectedToWorkspace();
 	void TransferToWorkspace(const QList<QListWidgetItem*>&);
+
+signals:
+	void TransferFiles(const std::vector<std::string>&);
 };
 
 
@@ -60,6 +65,8 @@ private:
 public:
 	FileBrowser(QWidget* pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~FileBrowser();
+
+	const FileBrowserWidget *GetWidget() const { return m_pBrowser.get(); }
 };
 
 #endif

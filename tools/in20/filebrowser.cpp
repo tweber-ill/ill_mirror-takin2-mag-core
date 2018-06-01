@@ -12,8 +12,8 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
-#include <algorithm>
 
+#include "libs/algos.h"
 #include "tlibs/file/loadinstr.h"
 
 
@@ -148,24 +148,6 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 
 
 /**
- * copy algorithm with interleave
- */
-template<class T1, class T2>
-void copy_interleave(T1 inIter, T1 inEnd, T2 outIter, std::size_t interleave, std::size_t startskip)
-{
-	std::advance(inIter, startskip);
-
-	while(std::distance(inIter, inEnd) > 0)
-	{
-		*outIter = *inIter;
-
-		++outIter;
-		std::advance(inIter, interleave);
-	}
-}
-
-
-/**
  * a file in the list was selected
  */
 void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
@@ -293,20 +275,30 @@ void FileBrowserWidget::FileDoubleClicked(QListWidgetItem *pItem)
 	TransferToWorkspace(lst);
 }
 
-
 void FileBrowserWidget::TransferSelectedToWorkspace()
 {
 	TransferToWorkspace(m_pListFiles->selectedItems());
 }
 
-
 /**
- * load selected file(s) into workspace
+ * emit the file transfer
  */
-void FileBrowserWidget::TransferToWorkspace(const QList<QListWidgetItem*>& lst)
+void FileBrowserWidget::TransferToWorkspace(const QList<QListWidgetItem*> &lst)
 {
+	std::vector<std::string> files;
 
+	// extract file names
+	for(const auto* item : lst)
+	{
+		if(!item) continue;
+		std::string file = item->data(Qt::UserRole).toString().toStdString();
+
+		files.emplace_back(std::move(file));
+	}
+
+	emit TransferFiles(files);
 }
+
 // ----------------------------------------------------------------------------
 
 
