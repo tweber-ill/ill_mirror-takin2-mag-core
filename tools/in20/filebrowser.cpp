@@ -214,12 +214,12 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 				copy_interleave(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data), numpolstates, graphidx);
 				copy_interleave(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data), numpolstates, graphidx);
 				std::transform(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_err),
-				[](t_real y) -> t_real
-				{
-					if(tl::float_equal<t_real>(y, 0))
-						return 1;
-					return std::sqrt(y);
-				});
+					[](t_real y) -> t_real
+					{
+						if(tl::float_equal<t_real>(y, 0))
+							return 1;
+						return std::sqrt(y);
+					});
 
 
 				// graph

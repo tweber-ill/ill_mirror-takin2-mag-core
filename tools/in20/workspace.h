@@ -16,6 +16,7 @@
 #include "qcp/qcustomplot.h"
 
 #include <memory>
+#include <map>
 
 #include "data.h"
 
@@ -31,6 +32,9 @@ private:
 	QListWidget *m_pListFiles = new QListWidget(this);
 	QCustomPlot *m_pPlotter = new QCustomPlot(this);
 
+	// maps an identifier to a dataset
+	std::map<std::string, Dataset> m_workspace;
+
 public:
 	WorkSpaceWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~WorkSpaceWidget();
@@ -38,6 +42,8 @@ public:
 protected:
 	void ItemSelected(QListWidgetItem* pCur);
 	void ItemDoubleClicked(QListWidgetItem* pCur);
+
+	void UpdateList();
 
 public:
 	void ReceiveFiles(const std::vector<std::string>&);
@@ -57,7 +63,7 @@ public:
 	WorkSpace(QWidget* pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~WorkSpace();
 
-	const WorkSpaceWidget *GetWidget() const { return m_pWS.get(); }
+	const WorkSpaceWidget* GetWidget() const { return m_pWS.get(); }
 };
 
 #endif
