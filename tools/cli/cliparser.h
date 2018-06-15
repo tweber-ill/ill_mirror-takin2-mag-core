@@ -18,13 +18,19 @@
 #include "cliparser_types.h"
 #include "cliparser_impl.h"
 
+#include "tools/in20/data.h"
+
+
+using t_real = t_real_cli;
+
+class CliAST;
+class CliParserContext;
+
 
 
 // ----------------------------------------------------------------------------
 // Lexer
 // ----------------------------------------------------------------------------
-
-class CliParserContext;
 
 class CliLexer : public yyFlexLexer
 {
@@ -45,6 +51,7 @@ template<class t_real> t_real str_to_real(const std::string& str);
 
 
 
+
 // ----------------------------------------------------------------------------
 // Parser
 // ----------------------------------------------------------------------------
@@ -53,7 +60,7 @@ class CliParserContext
 {
 private:
 	CliLexer m_lex;
-
+	std::vector<std::shared_ptr<CliAST>> m_asts;
 	std::vector<std::string> m_errors;
 
 public:
@@ -64,9 +71,73 @@ public:
 	void ClearErrors() { m_errors.clear(); }
 
 	void SetLexerInput(std::istream &istr);
+
+	void AddAST(std::shared_ptr<CliAST> ast) { m_asts.push_back(ast); }
+	void ClearASTs() { m_asts.clear(); }
+	const std::vector<std::shared_ptr<CliAST>>& GetASTs() const { return m_asts; }
 };
 
 // ----------------------------------------------------------------------------
+
+
+
+
+// ----------------------------------------------------------------------------
+// Symbol interface
+// ----------------------------------------------------------------------------
+
+class Symbol
+{
+public:
+	virtual ~Symbol() {}
+
+	virtual std::shared_ptr<Symbol> copy() const = 0;
+};
+
+
+class SymbolReal : public Symbol
+{
+private:
+	t_real m_val = 0;
+
+public:
+	SymbolReal() = default;
+	SymbolReal(t_real val) : m_val(val) {}
+	virtual ~SymbolReal() {}
+
+	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
+};
+
+
+class SymbolString : public Symbol
+{
+private:
+	std::string m_val;
+
+public:
+	SymbolString() = default;
+	SymbolString(const std::string& val) : m_val(val) {}
+	virtual ~SymbolString() {}
+
+	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolString>(m_val); }
+};
+
+
+class SymbolDataset : public Symbol
+{
+private:
+	Dataset m_val;
+
+public:
+	SymbolDataset() = default;
+	SymbolDataset(const Dataset& val) : m_val(val) {}
+	virtual ~SymbolDataset() {}
+
+	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolDataset>(m_val); }
+};
+
+// ----------------------------------------------------------------------------
+
 
 
 
@@ -87,6 +158,7 @@ public:
 	void SetRight(std::shared_ptr<CliAST> right) { m_right = right; }
 
 	virtual void Print(int indent = 0) const;
+	virtual std::shared_ptr<Symbol> Eval() const = 0;
 };
 
 
@@ -99,6 +171,7 @@ public:
 	CliASTReal(t_real_cli val) : m_val(val) { }
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -111,6 +184,7 @@ public:
 	CliASTString(const std::string& val) : m_val(val) { }
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -123,6 +197,7 @@ public:
 	CliASTIdent(const std::string& val) : m_val(val) { }
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -132,6 +207,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -141,6 +217,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -150,6 +227,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -159,6 +237,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -168,6 +247,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -177,6 +257,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -186,6 +267,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 
@@ -195,6 +277,7 @@ public:
 	using CliAST::CliAST;
 
 	virtual void Print(int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval() const override;
 };
 
 // ----------------------------------------------------------------------------

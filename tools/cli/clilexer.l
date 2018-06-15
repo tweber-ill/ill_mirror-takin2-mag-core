@@ -45,7 +45,7 @@ real 	(([0-9]+\.?[0-9]*)|(\.[0-9]+))
 "^" { return yy::CliParser::make_TOK_POW(); }
 "=" { return yy::CliParser::make_TOK_ASSIGN(); }
 
-"\n" { return yy::CliParser::make_TOK_NEWLINE(); }
+[;\n] { return yy::CliParser::make_TOK_NEWLINE(); }
 [ \t]		/* eps */
 
 . {

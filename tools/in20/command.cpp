@@ -58,8 +58,17 @@ void CommandLineWidget::CommandEntered()
 	// parse command
 	std::istringstream istr(cmd.toStdString() + "\n");
 	m_parsectx.SetLexerInput(istr);
+
+	// remove the asts for old commands
+	m_parsectx.ClearASTs();
 	yy::CliParser parser(m_parsectx);
 	int parse_state = parser.parse();
+
+	// evaluate commands
+	for(const auto &ast : m_parsectx.GetASTs())
+	{
+		ast->Print(); std::cout.flush();
+	}
 
 	// write error log
 	for(const auto& err : m_parsectx.GetErrors())

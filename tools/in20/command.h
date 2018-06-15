@@ -16,7 +16,6 @@
 #include <QtWidgets/QTextEdit>
 
 #include <memory>
-
 #include "tools/cli/cliparser.h"
 
 

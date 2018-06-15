@@ -36,14 +36,14 @@
 
 commands
 	: commands command
-	    { $$ = $2; }
+	    { context.AddAST($2); }
 	| /* eps */
 	    { $$ = nullptr; }
 	;
 
 command
 	: expression TOK_NEWLINE
-	    { $$ = $1; $$->Print(); }
+	    { $$ = $1; }
 	| TOK_NEWLINE
 	    { $$ = nullptr; }
 	;

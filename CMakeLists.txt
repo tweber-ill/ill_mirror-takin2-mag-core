@@ -80,6 +80,7 @@ add_executable(in20
 	${BISON_cliparser_OUTPUT_SOURCE} ${BISON_cliparser_OUTPUT_HEADER}
 	${FLEX_clilexer_OUTPUTS} ${FLEX_clilexer_OUTPUT_HEADER}
 	tools/cli/cliparser.cpp tools/cli/cliparser.h tools/cli/cliparser_types.h
+	tools/cli/ast.cpp
 
 	ext/tlibs/log/log.cpp ext/tlibs/file/loadinstr.cpp
 
