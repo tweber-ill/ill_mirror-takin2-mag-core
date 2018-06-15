@@ -26,7 +26,7 @@ real 	(([0-9]+\.?[0-9]*)|(\.[0-9]+))
 	return yy::CliParser::make_TOK_REAL(str_to_real<t_real_cli>(yytext));
 }
 
-"\"".*"\"" {
+["'][^"'\n]*["'] {
 	auto str = std::string(yytext+1, yytext+yyleng-1);
 	return yy::CliParser::make_TOK_STRING(str);
 }

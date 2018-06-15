@@ -83,15 +83,32 @@ public:
 
 
 // ----------------------------------------------------------------------------
-// Symbol interface
+// Symbols
 // ----------------------------------------------------------------------------
+
+enum class SymbolType
+{
+	REAL,
+	STRING,
+	DATASET
+};
+
 
 class Symbol
 {
 public:
 	virtual ~Symbol() {}
 
+	virtual SymbolType GetType() const = 0;
 	virtual std::shared_ptr<Symbol> copy() const = 0;
+
+	static std::shared_ptr<Symbol> uminus(const Symbol &sym2);
+	static std::shared_ptr<Symbol> add(const Symbol &sym1, const Symbol &sym2);
+	static std::shared_ptr<Symbol> sub(const Symbol &sym1, const Symbol &sym2);
+	static std::shared_ptr<Symbol> mul(const Symbol &sym1, const Symbol &sym2);
+	static std::shared_ptr<Symbol> div(const Symbol &sym1, const Symbol &sym2);
+	static std::shared_ptr<Symbol> mod(const Symbol &sym1, const Symbol &sym2);
+	static std::shared_ptr<Symbol> pow(const Symbol &sym1, const Symbol &sym2);
 };
 
 
@@ -104,6 +121,9 @@ public:
 	SymbolReal() = default;
 	SymbolReal(t_real val) : m_val(val) {}
 	virtual ~SymbolReal() {}
+
+	virtual SymbolType GetType() const override { return SymbolType::REAL; }
+	t_real GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
 };
@@ -119,6 +139,9 @@ public:
 	SymbolString(const std::string& val) : m_val(val) {}
 	virtual ~SymbolString() {}
 
+	virtual SymbolType GetType() const override { return SymbolType::STRING; }
+	const std::string& GetValue() const { return m_val; }
+
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolString>(m_val); }
 };
 
@@ -132,6 +155,9 @@ public:
 	SymbolDataset() = default;
 	SymbolDataset(const Dataset& val) : m_val(val) {}
 	virtual ~SymbolDataset() {}
+
+	virtual SymbolType GetType() const override { return SymbolType::DATASET; }
+	const Dataset& GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolDataset>(m_val); }
 };

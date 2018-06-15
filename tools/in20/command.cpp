@@ -55,6 +55,7 @@ void CommandLineWidget::CommandEntered()
 
 	m_pEditHistory->insertHtml("<font color=\"#0000ff\"><b>> </b>" + cmd + "</font><br>");
 
+
 	// parse command
 	std::istringstream istr(cmd.toStdString() + "\n");
 	m_parsectx.SetLexerInput(istr);
@@ -64,18 +65,48 @@ void CommandLineWidget::CommandEntered()
 	yy::CliParser parser(m_parsectx);
 	int parse_state = parser.parse();
 
-	// evaluate commands
-	for(const auto &ast : m_parsectx.GetASTs())
-	{
-		ast->Print(); std::cout.flush();
-	}
 
 	// write error log
 	for(const auto& err : m_parsectx.GetErrors())
 		m_pEditHistory->insertHtml((("<b><font color=\"#ff0000\">" + err + "</font></b><br>").c_str()));
 	m_parsectx.ClearErrors();
+
+
 	if(parse_state != 0)
+	{
 		m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">Error: Could not parse command.</font></b><br>");
+	}
+	else
+	{
+		// evaluate commands
+		for(const auto &ast : m_parsectx.GetASTs())
+		{
+			if(!ast) continue;
+
+			//ast->Print(); std::cout.flush();
+			auto sym = ast->Eval();
+			if(sym)
+			{
+				std::ostringstream ostrRes;
+
+				if(sym->GetType() == SymbolType::REAL)
+					ostrRes << dynamic_cast<SymbolReal&>(*sym).GetValue();
+				else if(sym->GetType() == SymbolType::STRING)
+					ostrRes << dynamic_cast<SymbolString&>(*sym).GetValue();
+				else if(sym->GetType() == SymbolType::DATASET)
+					ostrRes << "<Dataset>";
+
+				m_pEditHistory->insertHtml((("<font color=\"#000000\">" + ostrRes.str() + "</font><br>").c_str()));
+			}
+			else
+			{
+				m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">"
+					"Unable to evaluate expression."
+					"</font></b><br>");
+			}
+		}
+	}
+
 
 	// scroll command list to last command
 	auto caret = m_pEditHistory->textCursor();
