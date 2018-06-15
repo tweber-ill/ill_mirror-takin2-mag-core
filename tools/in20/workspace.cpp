@@ -12,10 +12,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 
-#include <boost/filesystem.hpp>
-
-#include "libs/algos.h"
-#include "tlibs/file/loadinstr.h"
+#include <iostream>
 
 
 using t_real = t_real_dat;
@@ -61,6 +58,18 @@ WorkSpaceWidget::~WorkSpaceWidget()
  */
 void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
 {
+	if(!pCur) return;
+
+	std::string ident = pCur->text().toStdString();
+	auto iter = m_workspace.find(ident);
+	if(iter == m_workspace.end())
+	{
+		std::cerr << "Identifier \"" << ident << "\" is not in workspace." << std::endl;
+		return;
+	}
+
+	const Dataset& dataset = iter->second;
+	m_pPlotter->Plot(dataset);
 }
 
 
@@ -72,6 +81,7 @@ void WorkSpaceWidget::ItemDoubleClicked(QListWidgetItem* pCur)
 }
 
 
+
 /**
  * transfer a file from the file browser and convert it into the internal format
  */
@@ -79,118 +89,22 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
 {
 	for(const auto& file : files)
 	{
-		boost::filesystem::path filepath(file);
-		if(!boost::filesystem::exists(filepath))
+		QFileInfo filepath(file.c_str());
+		if(!filepath.exists())
+		{
+			std::cerr << "File \"" << file << "\" does not exist." << std::endl;
+			//continue;
+		}
+
+		auto [ok, dataset] = Dataset::convert_instr_file(file.c_str());
+		if(!ok)
+		{
+			std::cerr << "File \"" << file << "\" cannot be converted." << std::endl;
 			continue;
-
-		// load instrument data file
-		std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(filepath.string().c_str()));
-		const auto &colnames = pInstr->GetColNames();
-		const auto &filedata = pInstr->GetData();
-
-		if(!pInstr || !colnames.size())	// only valid files with a non-zero column count
-			continue;
-
-
-		// process polarisation data
-		pInstr->SetPolNames("p1", "p2", "i11", "i10");
-		pInstr->ParsePolData();
-
-
-		// get scan axis indices
-		std::vector<std::size_t> scan_idx;
-		for(const auto& scanvar : pInstr->GetScannedVars())
-		{
-			std::size_t idx = 0;
-			pInstr->GetCol(scanvar, &idx);
-			if(idx < colnames.size())
-				scan_idx.push_back(idx);
 		}
-		// try first axis if none found
-		if(scan_idx.size() == 0) scan_idx.push_back(0);
-
-
-		// get counter column index
-		std::vector<std::size_t> ctr_idx;
-		{
-			std::size_t idx = 0;
-			pInstr->GetCol(pInstr->GetCountVar(), &idx);
-			if(idx < colnames.size())
-				ctr_idx.push_back(idx);
-		}
-		// try second axis if none found
-		if(ctr_idx.size() == 0) ctr_idx.push_back(1);
-
-
-		// get monitor column index
-		std::vector<std::size_t> mon_idx;
-		{
-			std::size_t idx = 0;
-			pInstr->GetCol(pInstr->GetMonVar(), &idx);
-			if(idx < colnames.size())
-				mon_idx.push_back(idx);
-		}
-
-
-		std::size_t numpolstates = pInstr->NumPolChannels();
-		if(numpolstates == 0) numpolstates = 1;
-
-
-		Dataset dataset;
-
-		// iterate through all (polarisation) subplots
-		for(std::size_t polstate=0; polstate<numpolstates; ++polstate)
-		{
-			Data data;
-
-			// get scan axes
-			for(std::size_t idx : scan_idx)
-			{
-				std::vector<t_real> thedat;
-				copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
-				data.AddAxis(thedat, colnames[idx]);
-			}
-
-
-			// get counters
-			for(std::size_t idx : ctr_idx)
-			{
-				std::vector<t_real> thedat, theerr;
-				copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
-				std::transform(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(theerr),
-					[](t_real y) -> t_real
-					{
-						if(tl::float_equal<t_real>(y, 0))
-							return 1;
-						return std::sqrt(y);
-					});
-
-				data.AddCounter(thedat, theerr);
-			}
-
-
-			// get monitors
-			for(std::size_t idx : mon_idx)
-			{
-				std::vector<t_real> thedat, theerr;
-				copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
-				std::transform(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(theerr),
-					[](t_real y) -> t_real
-					{
-						if(tl::float_equal<t_real>(y, 0))
-							return 1;
-						return std::sqrt(y);
-					});
-
-				data.AddMonitor(thedat, theerr);
-			}
-
-			dataset.AddChannel(std::move(data));
-		}
-
 
 		// insert the dataset into the workspace
-		std::string fileident = "data" + filepath.stem().string();
+		std::string fileident = "data" + filepath.baseName().toStdString();
 		const auto [iter, insert_ok] = m_workspace.emplace(std::make_pair(fileident, std::move(dataset)));
 	}
 
@@ -212,7 +126,7 @@ void WorkSpaceWidget::UpdateList()
 
 		auto *pItem = new QListWidgetItem(m_pListFiles);
 		pItem->setText(qident);
-		pItem->setData(Qt::UserRole, qident);
+		//pItem->setData(Qt::UserRole, qident);
 	}
 }
 // ----------------------------------------------------------------------------

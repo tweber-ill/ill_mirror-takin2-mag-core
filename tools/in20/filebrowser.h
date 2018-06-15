@@ -18,7 +18,7 @@
 #include <vector>
 #include <string>
 
-#include "qcp/qcustomplot.h"
+#include "plot.h"
 
 
 /**
@@ -31,7 +31,7 @@ private:
 
 	QLineEdit *m_pEditFolder = new QLineEdit(this);
 	QListWidget *m_pListFiles = new QListWidget(this);
-	QCustomPlot *m_pPlotter = new QCustomPlot(this);
+	Plotter *m_pPlotter = new Plotter(this);
 
 public:
 	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);

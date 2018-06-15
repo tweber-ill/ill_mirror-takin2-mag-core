@@ -13,11 +13,9 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 
-#include "libs/algos.h"
 #include "tlibs/file/loadinstr.h"
-
-
-using t_real = double;
+#include "data.h"
+using t_real = t_real_dat;
 
 
 // ----------------------------------------------------------------------------
@@ -116,7 +114,7 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 	// add files to list widget
 	for(const auto& strFile : vecFiles)
 	{
-		QString fileFull = dir + "/" + strFile;
+		QString fileFull = dir + QDir::separator() + strFile;
 
 		// load file to get a description
 		std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(fileFull.toStdString().c_str()));
@@ -152,109 +150,13 @@ void FileBrowserWidget::SetFolder(const QString& dir)
  */
 void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 {
-	static const std::vector<unsigned> colors = {
-		0xffff0000, 0xff0000ff, 0xff009900, 0xff000000,
-	};
-
-	m_pPlotter->clearGraphs();
 	if(!pCur) return;
 
 	// load scan file for preview
 	QString file = pCur->data(Qt::UserRole).toString();
-	std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(file.toStdString().c_str()));
-	const auto &colnames = pInstr->GetColNames();
-	const auto &data = pInstr->GetData();
-
-	if(pInstr && colnames.size())	// only valid files with a non-zero column count
+	if(auto [ok, dataset] = Dataset::convert_instr_file(file.toStdString().c_str()); ok)
 	{
-		// process polarisation data
-		pInstr->SetPolNames("p1", "p2", "i11", "i10");
-		pInstr->ParsePolData();
-
-
-		std::size_t x_idx = 0, y_idx = 1;
-
-		// get x column index
-		if(auto vecScanVars = pInstr->GetScannedVars(); vecScanVars.size() >= 1)
-		{
-			// try to find scan var, if not found, use first column
-			pInstr->GetCol(vecScanVars[0], &x_idx);
-			if(x_idx >= colnames.size())
-				x_idx = 0;
-		}
-
-		// get y column index
-		{
-			// try to find count var, if not found, use second column
-			pInstr->GetCol(pInstr->GetCountVar(), &y_idx);
-			if(y_idx >= colnames.size())
-				y_idx = 1;
-		}
-
-		// labels
-		m_pPlotter->xAxis->setLabel(x_idx<colnames.size() ? colnames[x_idx].c_str() : "x");
-		m_pPlotter->yAxis->setLabel(y_idx<colnames.size() ? colnames[y_idx].c_str() : "y");
-
-		t_real xmin = std::numeric_limits<t_real>::max();
-		t_real xmax = -xmin;
-		t_real ymin = std::numeric_limits<t_real>::max();
-		t_real ymax = -xmin;
-
-		// plot the data
-		if(x_idx < data.size() && y_idx < data.size())
-		{
-			std::size_t numpolstates = pInstr->NumPolChannels();
-			if(numpolstates == 0) numpolstates = 1;
-
-			// iterate all (polarisation) subplots
-			for(std::size_t graphidx=0; graphidx<numpolstates; ++graphidx)
-			{
-				// get x, y, yerr data
-				QVector<t_real> x_data, y_data, y_err;
-				copy_interleave(data[x_idx].begin(), data[x_idx].end(), std::back_inserter(x_data), numpolstates, graphidx);
-				copy_interleave(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_data), numpolstates, graphidx);
-				std::transform(data[y_idx].begin(), data[y_idx].end(), std::back_inserter(y_err),
-					[](t_real y) -> t_real
-					{
-						if(tl::float_equal<t_real>(y, 0))
-							return 1;
-						return std::sqrt(y);
-					});
-
-
-				// graph
-				auto *graph = m_pPlotter->addGraph();
-				auto *graph_err = new QCPErrorBars(m_pPlotter->xAxis, m_pPlotter->yAxis);
-				graph_err->setDataPlottable(graph);
-
-				QPen pen = QPen(QColor(colors[graphidx % colors.size()]));
-				QBrush brush(pen.color());
-				t_real ptsize = 8;
-				graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, pen, brush, ptsize));
-				graph->setPen(pen);
-				graph_err->setSymbolGap(ptsize);
-
-				graph->setData(x_data, y_data);
-				graph_err->setData(y_err);
-
-
-				// ranges
-				auto xminmax = std::minmax_element(x_data.begin(), x_data.end());
-				auto yminmax = std::minmax_element(y_data.begin(), y_data.end());
-				auto yerrminmax = std::minmax_element(y_err.begin(), y_err.end());
-
-				xmin = std::min(*xminmax.first, xmin);
-				xmax = std::max(*xminmax.second, xmax);
-				ymin = std::min(*yminmax.first - *yerrminmax.first, ymin);
-				ymax = std::max(*yminmax.second + *yerrminmax.second, ymax);
-			}
-
-
-			m_pPlotter->xAxis->setRange(xmin, xmax);
-			m_pPlotter->yAxis->setRange(ymin, ymax);
-		}
-
-		m_pPlotter->replot();
+		m_pPlotter->Plot(dataset);
 	}
 }
 

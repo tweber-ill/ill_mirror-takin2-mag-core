@@ -13,12 +13,13 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
-#include "qcp/qcustomplot.h"
 
 #include <memory>
 #include <map>
 
 #include "data.h"
+#include "plot.h"
+
 
 
 /**
@@ -30,7 +31,7 @@ private:
 	QSettings *m_pSettings = nullptr;
 
 	QListWidget *m_pListFiles = new QListWidget(this);
-	QCustomPlot *m_pPlotter = new QCustomPlot(this);
+	Plotter *m_pPlotter = new Plotter(this);
 
 	// maps an identifier to a dataset
 	std::map<std::string, Dataset> m_workspace;

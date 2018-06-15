@@ -8,6 +8,8 @@
 #ifndef __CLI_PARSER_TYPES_H__
 #define __CLI_PARSER_TYPES_H__
 
+#include <memory>
+
 class CliParserContext;
 class CliAST;
 

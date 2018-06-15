@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 
 using t_real_dat = double;
 
@@ -35,8 +36,8 @@ private:
 	std::vector<std::string> m_x_names;
 
 public:
-	std::size_t GetNumDets() const { return m_counts.size(); }
-	std::size_t GetNumMons() const { return m_monitors.size(); }
+	std::size_t GetNumCounters() const { return m_counts.size(); }
+	std::size_t GetNumMonitors() const { return m_monitors.size(); }
 	std::size_t GetNumAxes() const { return m_x.size(); }
 
 
@@ -108,6 +109,9 @@ public:
 	const Data& GetChannel(std::size_t channel) const { return m_data[channel]; }
 	void AddChannel(const Data &data) { m_data.push_back(data); }
 	void AddChannel(Data &&data) { m_data.emplace_back(std::move(data)); }
+
+
+	static std::tuple<bool, Dataset> convert_instr_file(const char* pcFile);
 };
 
 
