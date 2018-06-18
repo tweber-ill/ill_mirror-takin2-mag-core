@@ -13,6 +13,7 @@
 using t_real = t_real_dat;
 
 
+
 /**
  * convert an instrument data file to the internal data format
  */
@@ -130,3 +131,142 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 
 	return std::make_tuple(true, dataset);
 }
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// operators
+// ----------------------------------------------------------------------------
+
+const Data& operator +(const Data& dat)
+{
+	return dat;
+}
+
+
+Data operator -(const Data& dat)
+{
+	Data datret = dat;
+
+	// detectors
+	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+	{
+		auto& det = datret.m_counts[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt = -cnt;
+		}
+	}
+
+	// monitors
+	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+	{
+		auto& det = datret.m_monitors[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt = -cnt;
+		}
+	}
+
+	return datret;
+}
+
+
+Data operator +(const Data& dat1, const Data& dat2)
+{
+	// TODO: check if x axes and dimensions are equal!
+
+	Data datret = dat1;
+
+	// detectors
+	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+	{
+		auto& det = datret.m_counts[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += dat2.m_counts[detidx][cntidx];
+
+			datret.m_counts_err[detidx][cntidx] =
+				std::sqrt(dat1.m_counts_err[detidx][cntidx]*dat1.m_counts_err[detidx][cntidx]
+					+ dat2.m_counts_err[detidx][cntidx]*dat2.m_counts_err[detidx][cntidx]);
+		}
+	}
+
+	// monitors
+	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+	{
+		auto& det = datret.m_monitors[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += dat2.m_monitors[detidx][cntidx];
+
+			datret.m_monitors_err[detidx][cntidx] =
+				std::sqrt(dat1.m_monitors_err[detidx][cntidx]*dat1.m_monitors_err[detidx][cntidx]
+					+ dat2.m_monitors_err[detidx][cntidx]*dat2.m_monitors_err[detidx][cntidx]);
+		}
+	}
+
+	return datret;
+}
+
+
+Data operator -(const Data& dat1, const Data& dat2)
+{
+	return dat1 + (-dat2);
+}
+
+
+Data operator *(const Data& dat1, t_real_dat d)
+{
+	Data datret = dat1;
+
+	// detectors
+	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+	{
+		auto& det = datret.m_counts[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			det[cntidx] *= d;
+			datret.m_counts_err[detidx][cntidx] = d*dat1.m_counts_err[detidx][cntidx];
+		}
+	}
+
+	// monitors
+	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+	{
+		auto& det = datret.m_monitors[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			det[cntidx] *= d;
+			datret.m_monitors_err[detidx][cntidx] = d*dat1.m_monitors_err[detidx][cntidx];
+		}
+	}
+
+	return datret;
+}
+
+
+Data operator *(t_real_dat d, const Data& dat1)
+{
+	return dat1 * d;
+}
+
+
+Data operator /(const Data& dat1, t_real d)
+{
+	return dat1 * t_real(1)/d;
+}
+
+// ----------------------------------------------------------------------------

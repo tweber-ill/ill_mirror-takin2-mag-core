@@ -15,6 +15,9 @@
 using t_real_dat = double;
 
 
+class Data;
+class Dataset;
+
 
 /**
  * data set (e.g. of one polarisation channel)
@@ -92,6 +95,18 @@ public:
 		else
 			m_x_names.push_back("ax" + std::to_string(GetNumAxes()));
 	}
+
+
+	// binary operators
+	friend Data operator +(const Data& dat1, const Data& dat2);
+	friend Data operator -(const Data& dat1, const Data& dat2);
+	friend Data operator *(const Data& dat1, t_real_dat d);
+	friend Data operator *(t_real_dat d, const Data& dat1);
+	friend Data operator /(const Data& dat1, t_real_dat d);
+
+	// unary operators
+	friend const Data& operator +(const Data& dat);
+	friend Data operator -(const Data& dat);
 };
 
 
