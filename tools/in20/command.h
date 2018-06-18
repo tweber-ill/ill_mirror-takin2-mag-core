@@ -12,7 +12,7 @@
 #include <QtCore/QSettings>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
-#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QTextEdit>
 
 #include <memory>
@@ -28,7 +28,7 @@ private:
 	QSettings *m_pSettings = nullptr;
 
 	QTextEdit *m_pEditHistory = new QTextEdit(this);
-	QLineEdit *m_pEditCLI = new QLineEdit(this);
+	QComboBox *m_pEditCLI = new QComboBox(this);
 
 	CliParserContext m_parsectx;
 

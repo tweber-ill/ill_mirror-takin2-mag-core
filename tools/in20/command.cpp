@@ -8,6 +8,7 @@
 #include "command.h"
 
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QLineEdit>
 
 
 // ----------------------------------------------------------------------------
@@ -17,6 +18,10 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 {
 	m_pEditHistory->setReadOnly(true);
 	m_pEditHistory->setUndoRedoEnabled(false);
+
+	m_pEditCLI->setInsertPolicy(QComboBox::NoInsert);
+	m_pEditCLI->setEditable(true);
+	m_pEditCLI->lineEdit()->setPlaceholderText("Enter Command");
 
 
 	// ------------------------------------------------------------------------
@@ -29,7 +34,7 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 
 	// ------------------------------------------------------------------------
 	// connections
-	connect(m_pEditCLI, &QLineEdit::returnPressed, this, &CommandLineWidget::CommandEntered);
+	connect(m_pEditCLI->lineEdit(), &QLineEdit::returnPressed, this, &CommandLineWidget::CommandEntered);
 	// ------------------------------------------------------------------------
 
 
@@ -49,8 +54,10 @@ CommandLineWidget::~CommandLineWidget()
 
 void CommandLineWidget::CommandEntered()
 {
-	QString cmd = m_pEditCLI->text().trimmed();
-	m_pEditCLI->clear();
+	QString cmd = m_pEditCLI->currentText().trimmed();
+	if(m_pEditCLI->findText(cmd) == -1)
+		m_pEditCLI->addItem(cmd);
+	m_pEditCLI->clearEditText();
 	if(!cmd.length()) return;
 
 	m_pEditHistory->insertHtml("<font color=\"#0000ff\"><b>> </b>" + cmd + "</font><br>");
