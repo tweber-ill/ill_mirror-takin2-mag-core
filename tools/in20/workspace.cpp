@@ -64,11 +64,18 @@ void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
 	auto iter = m_workspace.find(ident);
 	if(iter == m_workspace.end())
 	{
-		std::cerr << "Identifier \"" << ident << "\" is not in workspace." << std::endl;
+		std::cerr << "Variable \"" << ident << "\" is not in workspace." << std::endl;
 		return;
 	}
 
-	const Dataset& dataset = iter->second;
+	auto symdataset = iter->second;
+	if(symdataset->GetType() != SymbolType::DATASET)
+	{
+		std::cerr << "Variable \"" << ident << "\" is not of dataset type." << std::endl;
+		return;
+	}
+
+	const Dataset& dataset = dynamic_cast<const SymbolDataset&>(*symdataset).GetValue();
 	m_pPlotter->Plot(dataset);
 }
 
@@ -104,8 +111,8 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
 		}
 
 		// insert the dataset into the workspace
-		std::string fileident = "data" + filepath.baseName().toStdString();
-		const auto [iter, insert_ok] = m_workspace.emplace(std::make_pair(fileident, std::move(dataset)));
+		std::string fileident = "sc" + filepath.baseName().toStdString();
+		const auto [iter, insert_ok] = m_workspace.emplace(std::make_pair(fileident, std::make_shared<SymbolDataset>(std::move(dataset))));
 	}
 
 	UpdateList();
@@ -117,8 +124,13 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
  */
 void WorkSpaceWidget::UpdateList()
 {
-	for(const auto& [ident, dataset] : m_workspace)
+	for(const auto& [ident, symdataset] : m_workspace)
 	{
+		// skip real or string variables
+		if(symdataset->GetType() != SymbolType::DATASET)
+			continue;
+		const Dataset& dataset = dynamic_cast<const SymbolDataset&>(*symdataset).GetValue();
+
 		QString qident(ident.c_str());
 		// dataset with this identifier already in list?
 		if(m_pListFiles->findItems(qident, Qt::MatchCaseSensitive|Qt::MatchExactly).size())

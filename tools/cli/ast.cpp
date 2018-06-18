@@ -214,128 +214,183 @@ std::shared_ptr<Symbol> Symbol::pow(const Symbol &sym1, const Symbol &sym2)
 /**
  * real constant
  */
-std::shared_ptr<Symbol> CliASTReal::Eval() const
+std::shared_ptr<Symbol> CliASTReal::Eval(CliParserContext& ctx) const
 {
 	return std::make_shared<SymbolReal>(m_val);
 }
 
+
 /**
  * string constant
  */
-std::shared_ptr<Symbol> CliASTString::Eval() const
+std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext& ctx) const
 {
 	return std::make_shared<SymbolString>(m_val);
 }
 
+
 /**
- * variable identifier
+ * variable identifier in symbol map
  */
-std::shared_ptr<Symbol> CliASTIdent::Eval() const
+std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 {
-	return nullptr;
+	auto *workspace = ctx.GetWorkspace();
+	if(!workspace)
+	{
+		std::cerr << "No workspace linked to parser." << std::endl;
+		return nullptr;
+	}
+
+	auto iter = workspace->find(m_val);
+	if(iter == workspace->end())
+	{
+		std::cerr << "Variable \"" << m_val << "\" is not in workspace." << std::endl;
+		return nullptr;
+	}
+
+	return iter->second;
 }
+
 
 /**
  * assignment operation
  */
-std::shared_ptr<Symbol> CliASTAssign::Eval() const
+std::shared_ptr<Symbol> CliASTAssign::Eval(CliParserContext& ctx) const
 {
+	auto *workspace = ctx.GetWorkspace();
+	if(!workspace)
+	{
+		std::cerr << "No workspace linked to parser." << std::endl;
+		return nullptr;
+	}
+
+	if(!m_left || !m_right)
+		return nullptr;
+	if(m_left->GetType() != CliASTType::IDENT && m_left->GetType() != CliASTType::STRING)
+	{
+		std::cerr << "Left-hand side of assignment has to be an identifier." << std::endl;
+		return nullptr;
+	}
+
+	if(auto righteval=m_right->Eval(ctx); righteval)
+	{
+		std::string ident;
+		if(m_left->GetType() == CliASTType::IDENT)
+			ident = dynamic_cast<CliASTIdent&>(*m_left).GetValue();
+		else if(m_left->GetType() == CliASTType::STRING)
+			ident = dynamic_cast<CliASTString&>(*m_left).GetValue();
+			// TODO: Check if string is also a valid identifier!
+
+		const auto [iter, insert_ok] =
+			workspace->emplace(std::make_pair(ident, righteval));
+
+		ctx.EmitWorkspaceUpdated(ident);
+		return iter->second;
+	}
+
 	return nullptr;
 }
+
 
 /**
  * addition
  */
-std::shared_ptr<Symbol> CliASTPlus::Eval() const
+std::shared_ptr<Symbol> CliASTPlus::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
 	
-	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::add(*lefteval, *righteval);
 
 	return nullptr;
 }
 
+
 /**
  * subtraction
  */
-std::shared_ptr<Symbol> CliASTMinus::Eval() const
+std::shared_ptr<Symbol> CliASTMinus::Eval(CliParserContext& ctx) const
 {
 	if(m_left && m_right)
 	{
-		if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 			return Symbol::sub(*lefteval, *righteval);
 	}
 	else if(m_right && !m_left)
 	{
-		if(auto righteval=m_right->Eval(); righteval)
+		if(auto righteval=m_right->Eval(ctx); righteval)
 			return Symbol::uminus(*righteval);
-		return Symbol::uminus(*m_right->Eval());
+		return Symbol::uminus(*m_right->Eval(ctx));
 	}
 	return nullptr;
 }
 
+
 /**
  * multiplication
  */
-std::shared_ptr<Symbol> CliASTMult::Eval() const
+std::shared_ptr<Symbol> CliASTMult::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
 	
-	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::mul(*lefteval, *righteval);
 
 	return nullptr;
 }
 
+
 /**
  * division
  */
-std::shared_ptr<Symbol> CliASTDiv::Eval() const
+std::shared_ptr<Symbol> CliASTDiv::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
 	
-	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::div(*lefteval, *righteval);
 
 	return nullptr;
 }
 
+
 /**
  * modulo
  */
-std::shared_ptr<Symbol> CliASTMod::Eval() const
+std::shared_ptr<Symbol> CliASTMod::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
 	
-	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::mod(*lefteval, *righteval);
 
 	return nullptr;
 }
 
+
 /**
  * power
  */
-std::shared_ptr<Symbol> CliASTPow::Eval() const
+std::shared_ptr<Symbol> CliASTPow::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
 	
-	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::pow(*lefteval, *righteval);
 
 	return nullptr;
 }
 
+
 /**
  * function call operation
  */
-std::shared_ptr<Symbol> CliASTCall::Eval() const
+std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 {
 	return nullptr;
 }

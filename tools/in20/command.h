@@ -39,6 +39,8 @@ protected:
 public:
 	CommandLineWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~CommandLineWidget();
+
+	CliParserContext& GetParserContext() { return m_parsectx; }
 };
 
 
@@ -54,6 +56,9 @@ private:
 public:
 	CommandLine(QWidget* pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~CommandLine();
+
+	const CommandLineWidget* GetWidget() const { return m_pCLI.get(); }
+	CommandLineWidget* GetWidget() { return m_pCLI.get(); }
 };
 
 

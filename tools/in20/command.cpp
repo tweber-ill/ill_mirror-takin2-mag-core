@@ -84,17 +84,17 @@ void CommandLineWidget::CommandEntered()
 			if(!ast) continue;
 
 			//ast->Print(); std::cout.flush();
-			auto sym = ast->Eval();
+			auto sym = ast->Eval(m_parsectx);
 			if(sym)
 			{
 				std::ostringstream ostrRes;
 
 				if(sym->GetType() == SymbolType::REAL)
-					ostrRes << dynamic_cast<SymbolReal&>(*sym).GetValue();
+					ostrRes /*<< "real: "*/ << dynamic_cast<SymbolReal&>(*sym).GetValue();
 				else if(sym->GetType() == SymbolType::STRING)
-					ostrRes << dynamic_cast<SymbolString&>(*sym).GetValue();
+					ostrRes /*<< "string: "*/ << dynamic_cast<SymbolString&>(*sym).GetValue();
 				else if(sym->GetType() == SymbolType::DATASET)
-					ostrRes << "<Dataset>";
+					ostrRes << "&lt;Dataset&gt;";
 
 				m_pEditHistory->insertHtml((("<font color=\"#000000\">" + ostrRes.str() + "</font><br>").c_str()));
 			}

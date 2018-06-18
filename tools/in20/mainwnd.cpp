@@ -55,6 +55,15 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// connections
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles,
 		m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
+
+	// link symbol maps of workspace widget and command line parser
+	m_pCLI->GetWidget()->GetParserContext().SetWorkspace(m_pWS->GetWidget()->GetWorkspace());
+
+	// connect the "workspace updated" signal from the command line parser
+	m_pCLI->GetWidget()->GetParserContext().GetWorkspaceUpdatedSignal().connect([this](const std::string& ident)
+	{
+		m_pWS->GetWidget()->UpdateList();
+	});
 	// ------------------------------------------------------------------------
 
 
