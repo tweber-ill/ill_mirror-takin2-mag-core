@@ -126,6 +126,18 @@ public:
 	void AddChannel(Data &&data) { m_data.emplace_back(std::move(data)); }
 
 
+	// binary operators
+	friend Dataset operator +(const Dataset& dat1, const Dataset& dat2);
+	friend Dataset operator -(const Dataset& dat1, const Dataset& dat2);
+	friend Dataset operator *(const Dataset& dat1, t_real_dat d);
+	friend Dataset operator *(t_real_dat d, const Dataset& dat1);
+	friend Dataset operator /(const Dataset& dat1, t_real_dat d);
+
+	// unary operators
+	friend const Dataset& operator +(const Dataset& dat);
+	friend Dataset operator -(const Dataset& dat);
+
+
 	static std::tuple<bool, Dataset> convert_instr_file(const char* pcFile);
 };
 

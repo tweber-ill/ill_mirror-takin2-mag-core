@@ -137,7 +137,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 
 
 // ----------------------------------------------------------------------------
-// operators
+// data operators
 // ----------------------------------------------------------------------------
 
 const Data& operator +(const Data& dat)
@@ -267,6 +267,96 @@ Data operator *(t_real_dat d, const Data& dat1)
 Data operator /(const Data& dat1, t_real d)
 {
 	return dat1 * t_real(1)/d;
+}
+
+// ----------------------------------------------------------------------------
+
+
+
+
+// ----------------------------------------------------------------------------
+// dataset operators
+// ----------------------------------------------------------------------------
+
+Dataset operator +(const Dataset& dat1, const Dataset& dat2)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
+	{
+		Data dat = dat1.GetChannel(ch) + dat2.GetChannel(ch);
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+Dataset operator -(const Dataset& dat1, const Dataset& dat2)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
+	{
+		Data dat = dat1.GetChannel(ch) - dat2.GetChannel(ch);
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+Dataset operator *(const Dataset& dat1, t_real_dat d)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<dat1.GetNumChannels(); ++ch)
+	{
+		Data dat = dat1.GetChannel(ch) * d;
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+Dataset operator *(t_real_dat d, const Dataset& dat1)
+{
+	return operator *(dat1, d);
+}
+
+
+Dataset operator /(const Dataset& dat1, t_real_dat d)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<dat1.GetNumChannels(); ++ch)
+	{
+		Data dat = dat1.GetChannel(ch) / d;
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+const Dataset& operator +(const Dataset& dat)
+{
+	return dat;
+}
+
+
+Dataset operator -(const Dataset& dat1)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<dat1.GetNumChannels(); ++ch)
+	{
+		Data dat = -dat1.GetChannel(ch);
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
 }
 
 // ----------------------------------------------------------------------------

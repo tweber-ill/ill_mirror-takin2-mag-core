@@ -23,6 +23,10 @@ std::shared_ptr<Symbol> Symbol::uminus(const Symbol &sym)
 	{
 		return std::make_shared<SymbolReal>(-dynamic_cast<const SymbolReal&>(sym).GetValue()); 
 	}
+	else if(sym.GetType()==SymbolType::DATASET)
+	{
+		return std::make_shared<SymbolDataset>(-dynamic_cast<const SymbolDataset&>(sym).GetValue()); 
+	}
 
 	return nullptr;
 }
@@ -44,6 +48,12 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 		return std::make_shared<SymbolString>(
 			dynamic_cast<const SymbolString&>(sym1).GetValue() + 
 			dynamic_cast<const SymbolString&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::DATASET)
+	{
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() + 
+			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
 	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::REAL)
 	{
@@ -76,6 +86,12 @@ std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() - 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::DATASET)
+	{
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() - 
+			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
 	}
 
 	return nullptr;
@@ -115,6 +131,18 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 
 		return std::make_shared<SymbolString>(strOut);
 	}
+	else if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::DATASET)
+	{
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolReal&>(sym1).GetValue() * 
+			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
+	{
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() * 
+			dynamic_cast<const SymbolReal&>(sym2).GetValue());
+	}
 
 	return nullptr;
 }
@@ -129,6 +157,12 @@ std::shared_ptr<Symbol> Symbol::div(const Symbol &sym1, const Symbol &sym2)
 	{
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() / 
+			dynamic_cast<const SymbolReal&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
+	{
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() / 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
 
@@ -177,70 +211,130 @@ std::shared_ptr<Symbol> Symbol::pow(const Symbol &sym1, const Symbol &sym2)
 // evaluation of the AST
 // ----------------------------------------------------------------------------
 
+/**
+ * real constant
+ */
 std::shared_ptr<Symbol> CliASTReal::Eval() const
 {
 	return std::make_shared<SymbolReal>(m_val);
 }
 
+/**
+ * string constant
+ */
 std::shared_ptr<Symbol> CliASTString::Eval() const
 {
 	return std::make_shared<SymbolString>(m_val);
 }
 
+/**
+ * variable identifier
+ */
 std::shared_ptr<Symbol> CliASTIdent::Eval() const
 {
 	return nullptr;
 }
 
+/**
+ * assignment operation
+ */
 std::shared_ptr<Symbol> CliASTAssign::Eval() const
 {
 	return nullptr;
 }
 
+/**
+ * addition
+ */
 std::shared_ptr<Symbol> CliASTPlus::Eval() const
 {
-	if(m_left && m_right)
-		return Symbol::add(*m_left->Eval(), *m_right->Eval());
+	if(!m_left || !m_right)
+		return nullptr;
+	
+	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		return Symbol::add(*lefteval, *righteval);
+
 	return nullptr;
 }
 
+/**
+ * subtraction
+ */
 std::shared_ptr<Symbol> CliASTMinus::Eval() const
 {
 	if(m_left && m_right)
-		return Symbol::sub(*m_left->Eval(), *m_right->Eval());
+	{
+		if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+			return Symbol::sub(*lefteval, *righteval);
+	}
 	else if(m_right && !m_left)
+	{
+		if(auto righteval=m_right->Eval(); righteval)
+			return Symbol::uminus(*righteval);
 		return Symbol::uminus(*m_right->Eval());
+	}
 	return nullptr;
 }
 
+/**
+ * multiplication
+ */
 std::shared_ptr<Symbol> CliASTMult::Eval() const
 {
-	if(m_left && m_right)
-		return Symbol::mul(*m_left->Eval(), *m_right->Eval());
+	if(!m_left || !m_right)
+		return nullptr;
+	
+	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		return Symbol::mul(*lefteval, *righteval);
+
 	return nullptr;
 }
 
+/**
+ * division
+ */
 std::shared_ptr<Symbol> CliASTDiv::Eval() const
 {
-	if(m_left && m_right)
-		return Symbol::div(*m_left->Eval(), *m_right->Eval());
+	if(!m_left || !m_right)
+		return nullptr;
+	
+	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		return Symbol::div(*lefteval, *righteval);
+
 	return nullptr;
 }
 
+/**
+ * modulo
+ */
 std::shared_ptr<Symbol> CliASTMod::Eval() const
 {
-	if(m_left && m_right)
-		return Symbol::mod(*m_left->Eval(), *m_right->Eval());
+	if(!m_left || !m_right)
+		return nullptr;
+	
+	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		return Symbol::mod(*lefteval, *righteval);
+
 	return nullptr;
 }
 
+/**
+ * power
+ */
 std::shared_ptr<Symbol> CliASTPow::Eval() const
 {
-	if(m_left && m_right)
-		return Symbol::pow(*m_left->Eval(), *m_right->Eval());
+	if(!m_left || !m_right)
+		return nullptr;
+	
+	if(auto lefteval=m_left->Eval(), righteval=m_right->Eval(); lefteval && righteval)
+		return Symbol::pow(*lefteval, *righteval);
+
 	return nullptr;
 }
 
+/**
+ * function call operation
+ */
 std::shared_ptr<Symbol> CliASTCall::Eval() const
 {
 	return nullptr;
