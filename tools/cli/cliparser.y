@@ -20,11 +20,13 @@
 %token TOK_BRACKET_OPEN TOK_BRACKET_CLOSE
 %token TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD TOK_POW
 %token TOK_ASSIGN
+%token TOK_COMMA
 %token TOK_NEWLINE
 //%token TOK_EOF
 
-%type<std::shared_ptr<CliAST>> expression ident
 %type<std::shared_ptr<CliAST>> command commands
+%type<std::shared_ptr<CliAST>> expression expressions
+%type<std::shared_ptr<CliAST>> ident
 
 %right TOK_ASSIGN
 %left TOK_PLUS TOK_MINUS
@@ -53,11 +55,20 @@ ident
 	    { $$ = std::make_shared<CliASTIdent>($1); }
 	;
 
+expressions
+	: expressions TOK_COMMA expression
+		{ $$ = std::make_shared<CliASTExprList>($1, $3); }
+	| expression
+		{ $$ = $1; }
+	| /* eps */
+	    { $$ = nullptr; }
+	;
+
 expression
 	: ident TOK_ASSIGN expression
 		{ $$ = std::make_shared<CliASTAssign>($1, $3); }
-	| ident TOK_BRACKET_OPEN TOK_BRACKET_CLOSE
-		{ $$ = std::make_shared<CliASTCall>(); }
+	| ident TOK_BRACKET_OPEN expressions TOK_BRACKET_CLOSE
+		{ $$ = std::make_shared<CliASTCall>($1, $3); }
 
 	| TOK_BRACKET_OPEN expression TOK_BRACKET_CLOSE
 		{ $$ = $2; }

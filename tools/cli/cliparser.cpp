@@ -54,16 +54,3 @@ extern yy::CliParser::symbol_type yylex(CliParserContext &context)
 	return context.GetLexer().yylex(context);
 }
 // ----------------------------------------------------------------------------
-
-
-
-
-
-/*
-int main()
-{
-	CliParserContext ctx;
-	yy::CliParser parser(ctx);
-	return parser.parse();
-}
-*/

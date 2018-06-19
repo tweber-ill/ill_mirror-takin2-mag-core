@@ -12,7 +12,7 @@
 
 
 // the GUI's command line widget
-static CommandLine *g_pCLI = nullptr;
+extern CommandLine *g_pCLI;
 
 
 /**
@@ -20,7 +20,8 @@ static CommandLine *g_pCLI = nullptr;
  */
 template<typename ...T> void print_out(T&&... msgs)
 {
-	g_pCLI->GetWidget()->PrintOutput(false, msgs...);
+	if(g_pCLI)
+		g_pCLI->GetWidget()->PrintOutput(false, msgs...);
 }
 
 
@@ -29,7 +30,8 @@ template<typename ...T> void print_out(T&&... msgs)
  */
 template<typename ...T> void print_err(T&&... msgs)
 {
-	g_pCLI->GetWidget()->PrintOutput(true, msgs...);
+	if(g_pCLI)
+		g_pCLI->GetWidget()->PrintOutput(true, msgs...);
 }
 
 

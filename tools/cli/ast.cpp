@@ -6,6 +6,7 @@
  */
 
 #include "cliparser.h"
+#include "tools/in20/globals.h"
 #include <cmath>
 
 
@@ -392,7 +393,72 @@ std::shared_ptr<Symbol> CliASTPow::Eval(CliParserContext& ctx) const
  */
 std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 {
+	// arguments
+	std::vector<std::shared_ptr<Symbol>> args;
+
+	// at least one function argument was given
+	if(m_right)
+	{
+		if(auto righteval=m_right->Eval(ctx); righteval)
+		{
+			if(righteval->GetType()==SymbolType::LIST)
+			{
+				// two or more arguments are collected in a list
+				auto &rightvec = dynamic_cast<SymbolList&>(*righteval).GetValue();
+				for(auto &sym : rightvec)
+					args.emplace_back(sym);
+			}
+			else
+			{
+				// one argument
+				args.emplace_back(righteval);
+			}
+		}
+	}
+
 	return nullptr;
+}
+
+
+/**
+ * list of expressions
+ */
+std::shared_ptr<Symbol> CliASTExprList::Eval(CliParserContext& ctx) const
+{
+	if(!m_left || !m_right)
+		return nullptr;
+
+	// transform the tree into a flat vector
+	std::vector<std::shared_ptr<Symbol>> vec;
+
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
+	{
+		// lhs of AST
+		if(lefteval->GetType() == SymbolType::LIST)
+		{
+			auto &leftvec = dynamic_cast<SymbolList&>(*lefteval).GetValue();
+			for(auto& val : leftvec)
+				vec.emplace_back(val);
+		}
+		else
+		{
+			vec.emplace_back(lefteval);
+		}
+
+		// rhs of AST
+		if(righteval->GetType() == SymbolType::LIST)
+		{
+			auto &rightvec = dynamic_cast<SymbolList&>(*righteval).GetValue();
+			for(auto& val : rightvec)
+				vec.emplace_back(val);
+		}
+		else
+		{
+			vec.emplace_back(righteval);
+		}
+	}
+
+	return std::make_shared<SymbolList>(vec);
 }
 
 // ----------------------------------------------------------------------------
@@ -404,83 +470,90 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 // printing of the AST
 // ----------------------------------------------------------------------------
 
-void CliAST::Print(int indent) const
+void CliAST::Print(std::ostringstream &ostr, int indent) const
 {
-	if(m_left) m_left->Print(indent+1);
-	if(m_right) m_right->Print(indent+1);
+	if(m_left) m_left->Print(ostr, indent+1);
+	if(m_right) m_right->Print(ostr, indent+1);
 }
 
-void CliASTReal::Print(int indent) const
+void CliASTReal::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "real: " << m_val << "\n";
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "real: " << m_val << "\n";
 }
 
-void CliASTString::Print(int indent) const
+void CliASTString::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "string: " << m_val << "\n";
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "string: " << m_val << "\n";
 }
 
-void CliASTIdent::Print(int indent) const
+void CliASTIdent::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "ident: " << m_val << "\n";
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "ident: " << m_val << "\n";
 }
 
-void CliASTAssign::Print(int indent) const
+void CliASTAssign::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: assign\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: assign\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTPlus::Print(int indent) const
+void CliASTPlus::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: +\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: +\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTMinus::Print(int indent) const
+void CliASTMinus::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: -\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: -\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTMult::Print(int indent) const
+void CliASTMult::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: *\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: *\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTDiv::Print(int indent) const
+void CliASTDiv::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: /\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: /\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTMod::Print(int indent) const
+void CliASTMod::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: %\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: %\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTPow::Print(int indent) const
+void CliASTPow::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: ^\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: ^\n";
+	CliAST::Print(ostr, indent);
 }
 
-void CliASTCall::Print(int indent) const
+void CliASTCall::Print(std::ostringstream &ostr, int indent) const
 {
-	for(int i=0; i<indent; ++i) std::cout << "\t";
-	std::cout << "op: call\n";
-	CliAST::Print(indent);
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: call\n";
+	CliAST::Print(ostr, indent);
+}
+
+void CliASTExprList::Print(std::ostringstream &ostr, int indent) const
+{
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: expr_list\n";
+	CliAST::Print(ostr, indent);
 }
 // ----------------------------------------------------------------------------

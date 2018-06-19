@@ -91,7 +91,11 @@ void CommandLineWidget::CommandEntered()
 		{
 			if(!ast) continue;
 
-			//ast->Print(); std::cout.flush();
+			// debug output of AST
+			/*std::ostringstream ostrAST;
+			ast->Print(ostrAST);
+			PrintOutput(0, "<pre>", ostrAST.str(), "</pre>");*/
+
 			auto sym = ast->Eval(m_parsectx);
 
 			// write error log

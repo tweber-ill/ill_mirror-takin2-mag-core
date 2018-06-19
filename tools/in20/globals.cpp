@@ -7,3 +7,4 @@
 
 #include "globals.h"
 
+CommandLine *g_pCLI = nullptr;

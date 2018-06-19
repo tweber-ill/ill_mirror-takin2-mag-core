@@ -112,6 +112,7 @@ enum class SymbolType
 {
 	REAL,
 	STRING,
+	LIST,
 	DATASET
 };
 
@@ -159,12 +160,31 @@ private:
 public:
 	SymbolString() = default;
 	SymbolString(const std::string& val) : m_val(val) {}
+	SymbolString(std::string&& val) : m_val(val) {}
 	virtual ~SymbolString() {}
 
 	virtual SymbolType GetType() const override { return SymbolType::STRING; }
 	const std::string& GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolString>(m_val); }
+};
+
+
+class SymbolList : public Symbol
+{
+private:
+	std::vector<std::shared_ptr<Symbol>> m_val;
+
+public:
+	SymbolList() = default;
+	SymbolList(const std::vector<std::shared_ptr<Symbol>>& val) : m_val(val) {}
+	SymbolList(std::vector<std::shared_ptr<Symbol>>&& val) : m_val(val) {}
+	virtual ~SymbolList() {}
+
+	virtual SymbolType GetType() const override { return SymbolType::LIST; }
+	const std::vector<std::shared_ptr<Symbol>>& GetValue() const { return m_val; }
+
+	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolList>(m_val); }
 };
 
 
@@ -184,6 +204,7 @@ public:
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolDataset>(m_val); }
 };
+
 
 // ----------------------------------------------------------------------------
 
@@ -206,7 +227,8 @@ enum class CliASTType
 	DIV,
 	MOD,
 	POW,
-	CALL
+	CALL,
+	EXPRLIST
 };
 
 
@@ -222,7 +244,7 @@ public:
 	void SetLeft(std::shared_ptr<CliAST> left) { m_left = left; }
 	void SetRight(std::shared_ptr<CliAST> right) { m_right = right; }
 
-	virtual void Print(int indent = 0) const;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const = 0;
 	virtual CliASTType GetType() const = 0;
 };
@@ -236,7 +258,7 @@ protected:
 public:
 	CliASTReal(t_real_cli val) : m_val(val) { }
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::REAL; }
@@ -252,7 +274,7 @@ protected:
 public:
 	CliASTString(const std::string& val) : m_val(val) { }
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::STRING; }
@@ -268,7 +290,7 @@ protected:
 public:
 	CliASTIdent(const std::string& val) : m_val(val) { }
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::IDENT; }
@@ -281,7 +303,7 @@ class CliASTAssign : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::ASSIGN; }
@@ -293,7 +315,7 @@ class CliASTPlus : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::PLUS; }
@@ -305,7 +327,7 @@ class CliASTMinus : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::MINUS; }
@@ -317,7 +339,7 @@ class CliASTMult : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::MULT; }
@@ -329,7 +351,7 @@ class CliASTDiv : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::DIV; }
@@ -341,7 +363,7 @@ class CliASTMod : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::MOD; }
@@ -353,7 +375,7 @@ class CliASTPow : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::POW; }
@@ -365,10 +387,22 @@ class CliASTCall : public CliAST
 public:
 	using CliAST::CliAST;
 
-	virtual void Print(int indent = 0) const override;
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::CALL; }
+};
+
+
+class CliASTExprList : public CliAST
+{
+public:
+	using CliAST::CliAST;
+
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
+
+	virtual CliASTType GetType() const override { return CliASTType::EXPRLIST; }
 };
 
 // ----------------------------------------------------------------------------
