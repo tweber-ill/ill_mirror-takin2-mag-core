@@ -25,7 +25,7 @@ private:
 	QSettings *m_pSettings = nullptr;
 
 	QMenuBar *m_pMenu = new QMenuBar(this);
-	QStatusBar *m_pStatus = new QStatusBar(this);
+	//QStatusBar *m_pStatus = new QStatusBar(this);
 	QMdiArea *m_pMDI = new QMdiArea(this);
 
 	FileBrowser *m_pBrowser = nullptr;

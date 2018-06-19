@@ -74,7 +74,15 @@ private:
 public:
 	CliLexer& GetLexer() { return m_lex; }
 
-	void PrintError(const std::string &err);
+	void PrintErrorString(const std::string &err);
+
+	template<typename ...T> void PrintError(T&&... msgs)
+	{
+		std::ostringstream ostr;
+		(ostr << ... << std::forward<T>(msgs));
+		PrintErrorString(ostr.str());
+	}
+
 	const std::vector<std::string>& GetErrors() const { return m_errors; }
 	void ClearErrors() { m_errors.clear(); }
 

@@ -6,7 +6,7 @@
  */
 
 #include "mainwnd.h"
-//#include <iostream>
+#include "globals.h"
 
 
 MainWnd::MainWnd(QSettings* pSettings)
@@ -15,6 +15,9 @@ MainWnd::MainWnd(QSettings* pSettings)
 	m_pWS(new WorkSpace(this, pSettings)),
 	m_pCLI(new CommandLine(this, pSettings))
 {
+	// the command line widget has to be accessible globally for error output
+	g_pCLI = m_pCLI;
+
 	this->setObjectName("in20");
 	this->setWindowTitle("IN20 Tool");
 	this->resize(800, 600);
@@ -44,7 +47,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// ------------------------------------------------------------------------
 
 
-	this->setStatusBar(m_pStatus);
+	//this->setStatusBar(m_pStatus);
 	this->setCentralWidget(m_pMDI);
 	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
 	this->addDockWidget(Qt::RightDockWidgetArea, m_pWS);

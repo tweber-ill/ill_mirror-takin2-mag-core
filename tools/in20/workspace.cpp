@@ -12,7 +12,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 
-#include <iostream>
+#include "globals.h"
 
 
 using t_real = t_real_dat;
@@ -64,14 +64,14 @@ void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
 	auto iter = m_workspace.find(ident);
 	if(iter == m_workspace.end())
 	{
-		std::cerr << "Variable \"" << ident << "\" is not in workspace." << std::endl;
+		print_err("Variable \"", ident, "\" is not in workspace.");
 		return;
 	}
 
 	auto symdataset = iter->second;
 	if(symdataset->GetType() != SymbolType::DATASET)
 	{
-		std::cerr << "Variable \"" << ident << "\" is not of dataset type." << std::endl;
+		print_err("Variable \"", ident, "\" is not of dataset type.");
 		return;
 	}
 
@@ -99,14 +99,14 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
 		QFileInfo filepath(file.c_str());
 		if(!filepath.exists())
 		{
-			std::cerr << "File \"" << file << "\" does not exist." << std::endl;
+			print_err("File \"", file, "\" does not exist.");
 			//continue;
 		}
 
 		auto [ok, dataset] = Dataset::convert_instr_file(file.c_str());
 		if(!ok)
 		{
-			std::cerr << "File \"" << file << "\" cannot be converted." << std::endl;
+			print_err("File \"", file, "\" cannot be converted.");
 			continue;
 		}
 

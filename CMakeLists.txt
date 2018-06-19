@@ -76,6 +76,7 @@ add_executable(in20
 	tools/in20/data.cpp tools/in20/data.h
 	tools/in20/plot.cpp tools/in20/plot.h
 	tools/in20/command.cpp tools/in20/command.h
+	tools/in20/globals.cpp tools/in20/globals.h
 
 	${BISON_cliparser_OUTPUT_SOURCE} ${BISON_cliparser_OUTPUT_HEADER}
 	${FLEX_clilexer_OUTPUTS} ${FLEX_clilexer_OUTPUT_HEADER}

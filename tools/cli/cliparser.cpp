@@ -33,7 +33,7 @@ void CliLexer::LexerError(const char *err)
 // Parser
 // ----------------------------------------------------------------------------
 
-void CliParserContext::PrintError(const std::string &err)
+void CliParserContext::PrintErrorString(const std::string &err)
 {
 	m_errors.push_back(err);
 	//std::cerr << err << "." << std::endl;

@@ -237,14 +237,14 @@ std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 	auto *workspace = ctx.GetWorkspace();
 	if(!workspace)
 	{
-		std::cerr << "No workspace linked to parser." << std::endl;
+		ctx.PrintError("No workspace linked to parser.");
 		return nullptr;
 	}
 
 	auto iter = workspace->find(m_val);
 	if(iter == workspace->end())
 	{
-		std::cerr << "Variable \"" << m_val << "\" is not in workspace." << std::endl;
+		ctx.PrintError("Variable \"", m_val, "\" is not in workspace.");
 		return nullptr;
 	}
 
@@ -260,7 +260,7 @@ std::shared_ptr<Symbol> CliASTAssign::Eval(CliParserContext& ctx) const
 	auto *workspace = ctx.GetWorkspace();
 	if(!workspace)
 	{
-		std::cerr << "No workspace linked to parser." << std::endl;
+		ctx.PrintError("No workspace linked to parser.");
 		return nullptr;
 	}
 
@@ -268,7 +268,7 @@ std::shared_ptr<Symbol> CliASTAssign::Eval(CliParserContext& ctx) const
 		return nullptr;
 	if(m_left->GetType() != CliASTType::IDENT && m_left->GetType() != CliASTType::STRING)
 	{
-		std::cerr << "Left-hand side of assignment has to be an identifier." << std::endl;
+		ctx.PrintError("Left-hand side of assignment has to be an identifier.");
 		return nullptr;
 	}
 

@@ -35,12 +35,22 @@ private:
 
 protected:
 	void CommandEntered();
+	void ScrollToEnd();
 
 public:
 	CommandLineWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
 	virtual ~CommandLineWidget();
 
 	CliParserContext& GetParserContext() { return m_parsectx; }
+
+	void PrintOutputString(bool is_err, const QString &str);
+
+	template<typename ...T> void PrintOutput(bool is_err, T&&... msgs)
+	{
+		std::ostringstream ostr;
+		(ostr << ... << std::forward<T>(msgs));
+		PrintOutputString(is_err, ostr.str().c_str());
+	}
 };
 
 

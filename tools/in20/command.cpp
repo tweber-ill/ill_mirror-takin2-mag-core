@@ -22,6 +22,7 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 	m_pEditCLI->setInsertPolicy(QComboBox::NoInsert);
 	m_pEditCLI->setEditable(true);
 	m_pEditCLI->lineEdit()->setPlaceholderText("Enter Command");
+	m_pEditCLI->lineEdit()->setFocus();
 
 
 	// ------------------------------------------------------------------------
@@ -75,13 +76,13 @@ void CommandLineWidget::CommandEntered()
 
 	// write error log
 	for(const auto& err : m_parsectx.GetErrors())
-		m_pEditHistory->insertHtml((("<b><font color=\"#ff0000\">" + err + "</font></b><br>").c_str()));
+		PrintOutput(1, err.c_str());
 	m_parsectx.ClearErrors();
 
 
 	if(parse_state != 0)
 	{
-		m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">Error: Could not parse command.</font></b><br>");
+		PrintOutput(1, "Error: Could not parse command.");
 	}
 	else
 	{
@@ -92,6 +93,12 @@ void CommandLineWidget::CommandEntered()
 
 			//ast->Print(); std::cout.flush();
 			auto sym = ast->Eval(m_parsectx);
+
+			// write error log
+			for(const auto& err : m_parsectx.GetErrors())
+				PrintOutput(1, err.c_str());
+			m_parsectx.ClearErrors();
+
 			if(sym)
 			{
 				std::ostringstream ostrRes;
@@ -103,22 +110,34 @@ void CommandLineWidget::CommandEntered()
 				else if(sym->GetType() == SymbolType::DATASET)
 					ostrRes << "&lt;Dataset&gt;";
 
-				m_pEditHistory->insertHtml((("<font color=\"#000000\">" + ostrRes.str() + "</font><br>").c_str()));
+				PrintOutput(0, ostrRes.str().c_str());
 			}
 			else
 			{
-				m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">"
-					"Unable to evaluate expression."
-					"</font></b><br>");
+				PrintOutput(1, "Unable to evaluate expression.");
 			}
 		}
 	}
+}
 
 
+void CommandLineWidget::ScrollToEnd()
+{
 	// scroll command list to last command
 	auto caret = m_pEditHistory->textCursor();
 	caret.movePosition(QTextCursor::End, QTextCursor::MoveAnchor, 1);
 	m_pEditHistory->setTextCursor(caret);
+}
+
+
+void CommandLineWidget::PrintOutputString(bool is_err, const QString &str)
+{
+	if(is_err)
+		m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">" + str + "</font></b><br>");
+	else
+		m_pEditHistory->insertHtml("<font color=\"#000000\">" + str + "</font><br>");
+
+	ScrollToEnd();
 }
 
 // ----------------------------------------------------------------------------
