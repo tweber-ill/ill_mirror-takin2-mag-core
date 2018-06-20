@@ -106,14 +106,7 @@ void CommandLineWidget::CommandEntered()
 			if(sym)
 			{
 				std::ostringstream ostrRes;
-
-				if(sym->GetType() == SymbolType::REAL)
-					ostrRes /*<< "real: "*/ << dynamic_cast<SymbolReal&>(*sym).GetValue();
-				else if(sym->GetType() == SymbolType::STRING)
-					ostrRes /*<< "string: "*/ << dynamic_cast<SymbolString&>(*sym).GetValue();
-				else if(sym->GetType() == SymbolType::DATASET)
-					ostrRes << "&lt;Dataset&gt;";
-
+				sym->print(ostrRes);
 				PrintOutput(0, ostrRes.str().c_str());
 			}
 			else

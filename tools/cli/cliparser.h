@@ -107,9 +107,10 @@ public:
 
 enum class SymbolType
 {
-	REAL,
-	STRING,
-	LIST,
+	REAL,	// e.g. 12.3
+	STRING,	// e.g. "abc"
+	LIST,	// e.g. 1, 2, 3
+	ARRAY,	// e.g. [1, 2, 3]
 	DATASET
 };
 
@@ -121,6 +122,7 @@ public:
 
 	virtual SymbolType GetType() const = 0;
 	virtual std::shared_ptr<Symbol> copy() const = 0;
+	virtual void print(std::ostream& ostr) const = 0;
 
 	static std::shared_ptr<Symbol> uminus(const Symbol &sym2);
 	static std::shared_ptr<Symbol> add(const Symbol &sym1, const Symbol &sym2);
@@ -148,6 +150,7 @@ public:
 	t_real_cli GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
+	virtual void print(std::ostream& ostr) const override { ostr << GetValue(); }
 };
 
 
@@ -166,6 +169,7 @@ public:
 	const std::string& GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolString>(m_val); }
+	virtual void print(std::ostream& ostr) const override { ostr << GetValue(); }
 };
 
 
@@ -173,17 +177,30 @@ class SymbolList : public Symbol
 {
 private:
 	std::vector<std::shared_ptr<Symbol>> m_val;
+	bool m_islist = true;	// list or array
 
 public:
 	SymbolList() = default;
-	SymbolList(const std::vector<std::shared_ptr<Symbol>>& val) : m_val(val) {}
-	SymbolList(std::vector<std::shared_ptr<Symbol>>&& val) : m_val(val) {}
+	SymbolList(const std::vector<std::shared_ptr<Symbol>>& val, bool islist=1) : m_val(val), m_islist(islist) {}
+	SymbolList(std::vector<std::shared_ptr<Symbol>>&& val, bool islist=1) : m_val(val), m_islist(islist) {}
 	virtual ~SymbolList() {}
 
-	virtual SymbolType GetType() const override { return SymbolType::LIST; }
+	virtual SymbolType GetType() const override { return m_islist ? SymbolType::LIST : SymbolType::ARRAY; }
 	const std::vector<std::shared_ptr<Symbol>>& GetValue() const { return m_val; }
 
-	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolList>(m_val); }
+	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolList>(m_val, m_islist); }
+
+	virtual void print(std::ostream& ostr) const override
+	{
+		if(!m_islist) ostr << "[ ";
+		for(std::size_t i=0; i<GetValue().size(); ++i)
+		{
+			GetValue()[i]->print(ostr);
+			if(i < GetValue().size()-1)
+				ostr << ", ";
+		}
+		if(!m_islist) ostr << " ]";
+	}
 };
 
 
@@ -202,6 +219,7 @@ public:
 	const Dataset& GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolDataset>(m_val); }
+	virtual void print(std::ostream& ostr) const override { ostr << "&lt;Dataset&gt;"; }
 };
 
 

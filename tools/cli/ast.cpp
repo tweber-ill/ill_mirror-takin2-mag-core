@@ -29,6 +29,7 @@ const std::string& Symbol::get_type_name(const Symbol &sym)
 		std::make_pair(SymbolType::REAL, "real"),
 		std::make_pair(SymbolType::STRING, "string"),
 		std::make_pair(SymbolType::LIST, "list"),
+		std::make_pair(SymbolType::ARRAY, "array"),
 		std::make_pair(SymbolType::DATASET, "dataset"),
 	};
 
@@ -252,6 +253,69 @@ std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext& ctx) const
 
 
 /**
+ * recursively evaluate a list and collect symbols into a vector
+ */
+static std::vector<std::shared_ptr<Symbol>> 
+list_eval(CliParserContext& ctx, std::shared_ptr<CliAST> left, std::shared_ptr<CliAST> right)
+{
+	std::vector<std::shared_ptr<Symbol>> vec;
+
+	if(left)
+	{
+		if(auto lefteval = left->Eval(ctx); lefteval)
+		{
+			// lhs of AST
+			if(lefteval->GetType() == SymbolType::LIST)
+			{
+				auto &leftvec = dynamic_cast<SymbolList&>(*lefteval).GetValue();
+				for(auto& val : leftvec)
+					vec.emplace_back(val);
+			}
+			else
+			{
+				vec.emplace_back(lefteval);
+			}
+		}
+	}
+
+	if(right)
+	{
+		if(auto righteval = right->Eval(ctx); righteval)
+		{
+			// rhs of AST
+			if(righteval->GetType() == SymbolType::LIST)
+			{
+				auto &rightvec = dynamic_cast<SymbolList&>(*righteval).GetValue();
+				for(auto& val : rightvec)
+					vec.emplace_back(val);
+			}
+			else
+			{
+				vec.emplace_back(righteval);
+			}
+		}
+	}
+
+	return vec;
+}
+
+
+/**
+ * array, e.g. [1, 2, 3, 4]
+ * an array is composed of a list: [ list ]
+ */
+std::shared_ptr<Symbol> CliASTArray::Eval(CliParserContext& ctx) const
+{
+	if(!m_left && !m_right)
+		return nullptr;
+
+	// transform the tree into a flat vector
+	auto vec = list_eval(ctx, m_left, m_right);
+	return std::make_shared<SymbolList>(vec, false);
+}
+
+
+/**
  * variable identifier in symbol or constants map
  */
 std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
@@ -271,12 +335,12 @@ std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 	auto iter = workspace->find(m_val);
 	if(iter == workspace->end() && iterConst == g_consts_real.end())
 	{
-		ctx.PrintError("Variable \"", m_val, "\" is neither a constant nor a workspace variable.");
+		ctx.PrintError("Identifier \"", m_val, "\" names neither a constant nor a workspace variable.");
 		return nullptr;
 	}
 	else if(iter != workspace->end() && iterConst != g_consts_real.end())
 	{
-		ctx.PrintError("Variable \"", m_val, "\" is both a constant and a workspace variable, using constant.");
+		ctx.PrintError("Identifier \"", m_val, "\" names both a constant and a workspace variable, using constant.");
 		return std::make_shared<SymbolReal>(iterConst->second);
 	}
 	else if(iter != workspace->end())
@@ -330,8 +394,10 @@ std::shared_ptr<Symbol> CliASTAssign::Eval(CliParserContext& ctx) const
 	// assign variable
 	if(auto righteval=m_right->Eval(ctx); righteval)
 	{
-		const auto [iter, insert_ok] =
-			workspace->emplace(std::make_pair(ident, righteval));
+		const auto [iter, inserted] =
+			workspace->insert_or_assign(ident, righteval);
+		if(!inserted)
+			print_out("Variable \"", ident, "\" was overwritten.");
 
 		ctx.EmitWorkspaceUpdated(ident);
 		return iter->second;
@@ -521,7 +587,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 
 
 /**
- * list of expressions
+ * list of expressions: e.g. 1,2,3,4
  */
 std::shared_ptr<Symbol> CliASTExprList::Eval(CliParserContext& ctx) const
 {
@@ -529,49 +595,10 @@ std::shared_ptr<Symbol> CliASTExprList::Eval(CliParserContext& ctx) const
 		return nullptr;
 
 	// transform the tree into a flat vector
-	std::vector<std::shared_ptr<Symbol>> vec;
-
-	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
-	{
-		// lhs of AST
-		if(lefteval->GetType() == SymbolType::LIST)
-		{
-			auto &leftvec = dynamic_cast<SymbolList&>(*lefteval).GetValue();
-			for(auto& val : leftvec)
-				vec.emplace_back(val);
-		}
-		else
-		{
-			vec.emplace_back(lefteval);
-		}
-
-		// rhs of AST
-		if(righteval->GetType() == SymbolType::LIST)
-		{
-			auto &rightvec = dynamic_cast<SymbolList&>(*righteval).GetValue();
-			for(auto& val : rightvec)
-				vec.emplace_back(val);
-		}
-		else
-		{
-			vec.emplace_back(righteval);
-		}
-	}
-
+	auto vec = list_eval(ctx, m_left, m_right);
 	return std::make_shared<SymbolList>(vec);
 }
 
-
-/**
- * array
- */
-std::shared_ptr<Symbol> CliASTArray::Eval(CliParserContext& ctx) const
-{
-	if(!m_left)
-		return nullptr;
-
-	return nullptr;
-}
 
 // ----------------------------------------------------------------------------
 
