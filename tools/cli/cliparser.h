@@ -23,9 +23,6 @@
 #include "tools/in20/data.h"
 
 
-using t_real = t_real_cli;
-
-
 class CliAST;
 class CliParserContext;
 class Symbol;
@@ -49,7 +46,7 @@ public:
 	virtual yy::CliParser::symbol_type yylex(CliParserContext &context);
 };
 
-template<class t_real> t_real str_to_real(const std::string& str);
+template<class t_real_cli> t_real_cli str_to_real(const std::string& str);
 
 // ----------------------------------------------------------------------------
 
@@ -138,15 +135,15 @@ public:
 class SymbolReal : public Symbol
 {
 private:
-	t_real m_val = 0;
+	t_real_cli m_val = 0;
 
 public:
 	SymbolReal() = default;
-	SymbolReal(t_real val) : m_val(val) {}
+	SymbolReal(t_real_cli val) : m_val(val) {}
 	virtual ~SymbolReal() {}
 
 	virtual SymbolType GetType() const override { return SymbolType::REAL; }
-	t_real GetValue() const { return m_val; }
+	t_real_cli GetValue() const { return m_val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
 };

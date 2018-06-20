@@ -7,8 +7,12 @@
 
 #include "cliparser.h"
 #include "tools/in20/globals.h"
+#include "funcs.h"
+
 #include <cmath>
 
+
+using t_real = t_real_cli;
 
 
 // ----------------------------------------------------------------------------
@@ -231,10 +235,14 @@ std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext& ctx) const
 
 
 /**
- * variable identifier in symbol map
+ * variable identifier in symbol or constants map
  */
 std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 {
+	// look in constants map
+	auto iterConst = g_consts_real.find(m_val);
+
+	// is workspace available?
 	auto *workspace = ctx.GetWorkspace();
 	if(!workspace)
 	{
@@ -242,14 +250,24 @@ std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 		return nullptr;
 	}
 
+	// look in workspace variables map
 	auto iter = workspace->find(m_val);
-	if(iter == workspace->end())
+	if(iter == workspace->end() && iterConst == g_consts_real.end())
 	{
-		ctx.PrintError("Variable \"", m_val, "\" is not in workspace.");
+		ctx.PrintError("Variable \"", m_val, "\" is neither a constant nor a workspace variable.");
 		return nullptr;
 	}
+	else if(iter != workspace->end() && iterConst != g_consts_real.end())
+	{
+		ctx.PrintError("Variable \"", m_val, "\" is both a constant and a workspace variable, using constant.");
+		return std::make_shared<SymbolReal>(iterConst->second);
+	}
+	else if(iter != workspace->end())
+		return iter->second;
+	else if(iterConst != g_consts_real.end())
+		return std::make_shared<SymbolReal>(iterConst->second);
 
-	return iter->second;
+	return nullptr;
 }
 
 
@@ -393,6 +411,19 @@ std::shared_ptr<Symbol> CliASTPow::Eval(CliParserContext& ctx) const
  */
 std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 {
+	// function name
+	std::string ident;
+	if(m_left->GetType() == CliASTType::IDENT)
+	{
+		ident = dynamic_cast<CliASTIdent&>(*m_left).GetValue();
+	}
+	else
+	{
+		ctx.PrintError("Left-hand side of function call has to be an identifier.");
+		return nullptr;
+	}
+
+
 	// arguments
 	std::vector<std::shared_ptr<Symbol>> args;
 
@@ -413,6 +444,42 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 				// one argument
 				args.emplace_back(righteval);
 			}
+		}
+	}
+
+
+	if(args.size() == 1)	// function call with one argument requested
+	{
+		// real argument
+		if(args[0]->GetType() == SymbolType::REAL)
+		{
+			auto iter = g_funcs_real_1arg.find(ident);
+			if(iter == g_funcs_real_1arg.end())
+			{
+				ctx.PrintError("No real one-argument function \"", ident, "\" was found.");
+				return nullptr;
+			}
+
+			t_real funcval = (*iter->second)(dynamic_cast<SymbolReal&>(*args[0]).GetValue());
+			return std::make_shared<SymbolReal>(funcval);
+		}
+	}
+	else if(args.size() == 2)	// function call with two arguments requested
+	{
+		// real arguments
+		if(args[0]->GetType() == SymbolType::REAL && args[1]->GetType() == SymbolType::REAL)
+		{
+			auto iter = g_funcs_real_2args.find(ident);
+			if(iter == g_funcs_real_2args.end())
+			{
+				ctx.PrintError("No real two-argument function \"", ident, "\" was found.");
+				return nullptr;
+			}
+
+			t_real arg1 = dynamic_cast<SymbolReal&>(*args[0]).GetValue();
+			t_real arg2 = dynamic_cast<SymbolReal&>(*args[1]).GetValue();
+			t_real funcval = (*iter->second)(arg1, arg2);
+			return std::make_shared<SymbolReal>(funcval);
 		}
 	}
 
