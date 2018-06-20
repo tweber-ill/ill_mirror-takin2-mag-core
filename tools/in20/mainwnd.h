@@ -17,6 +17,7 @@
 #include "filebrowser.h"
 #include "workspace.h"
 #include "command.h"
+#include "plot.h"
 
 
 class MainWnd : public QMainWindow
@@ -31,6 +32,7 @@ private:
 	FileBrowser *m_pBrowser = nullptr;
 	WorkSpace *m_pWS = nullptr;
 	CommandLine *m_pCLI = nullptr;
+	PlotterDock *m_pCurPlot = nullptr;
 
 private:
 	virtual void showEvent(QShowEvent *pEvt) override;

@@ -30,4 +30,21 @@ public:
 };
 
 
+
+/**
+ * the dock which contains the plotter
+ */
+class PlotterDock : public QDockWidget
+{
+private:
+	std::unique_ptr<Plotter> m_pPlot;
+
+public:
+	PlotterDock(QWidget* pParent = nullptr);
+	virtual ~PlotterDock();
+
+	const Plotter* GetWidget() const { return m_pPlot.get(); }
+	Plotter* GetWidget() { return m_pPlot.get(); }
+};
+
 #endif

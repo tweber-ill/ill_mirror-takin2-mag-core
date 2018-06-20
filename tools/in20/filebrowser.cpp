@@ -14,7 +14,6 @@
 #include <QtWidgets/QFileDialog>
 
 #include "tlibs/file/loadinstr.h"
-#include "data.h"
 using t_real = t_real_dat;
 
 
@@ -24,6 +23,8 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	: QWidget(pParent), m_pSettings(pSettings)
 {
 	m_pListFiles->setAlternatingRowColors(true);
+	m_pListFiles->installEventFilter(this);
+
 
 	// ------------------------------------------------------------------------
 	// layout
@@ -37,7 +38,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	pGrid->addWidget(m_pListFiles, 1, 0, 2, 2);
 	pGrid->addWidget(pCheckMultiSelect, 3, 0, 1, 1);
 	pGrid->addWidget(pBtnTransfer, 3, 1, 1, 1);
-	pGrid->addWidget(m_pPlotter, 4, 0, 1, 2);
+	//pGrid->addWidget(m_pPlotter, 4, 0, 1, 2);
 	// ------------------------------------------------------------------------
 
 
@@ -156,7 +157,8 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 	QString file = pCur->data(Qt::UserRole).toString();
 	if(auto [ok, dataset] = Dataset::convert_instr_file(file.toStdString().c_str()); ok)
 	{
-		m_pPlotter->Plot(dataset);
+		//m_pPlotter->Plot(dataset);
+		emit PlotDataset(dataset);
 	}
 }
 
@@ -201,6 +203,23 @@ void FileBrowserWidget::TransferToWorkspace(const QList<QListWidgetItem*> &lst)
 	emit TransferFiles(files);
 }
 
+
+/**
+ * re-directed child events
+ */
+bool FileBrowserWidget::eventFilter(QObject *pObj, QEvent *pEvt)
+{
+	if(pObj == m_pListFiles)
+	{
+		//std::cout << int(pEvt->type()) << std::endl;
+
+		// as the file browser and the work space widget share the same plotter, re-send plot on activation
+		if(pEvt->type() == QEvent::FocusIn)
+			SetFile(m_pListFiles->currentItem());
+	}
+
+	return QObject::eventFilter(pObj, pEvt);
+}
 // ----------------------------------------------------------------------------
 
 

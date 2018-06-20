@@ -24,11 +24,11 @@ WorkSpaceWidget::WorkSpaceWidget(QWidget *pParent, QSettings *pSettings)
 	: QWidget(pParent), m_pSettings(pSettings)
 {
 	m_pListFiles->setAlternatingRowColors(true);
+	m_pListFiles->installEventFilter(this);
 
 	// ------------------------------------------------------------------------
 	auto *pGrid = new QGridLayout(this);
 	pGrid->addWidget(m_pListFiles, 1, 0, 2, 2);
-	pGrid->addWidget(m_pPlotter, 3, 0, 1, 2);
 	// ------------------------------------------------------------------------
 
 
@@ -76,7 +76,7 @@ void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
 	}
 
 	const Dataset& dataset = dynamic_cast<const SymbolDataset&>(*symdataset).GetValue();
-	m_pPlotter->Plot(dataset);
+	emit PlotDataset(dataset);
 }
 
 
@@ -141,6 +141,23 @@ void WorkSpaceWidget::UpdateList()
 		//pItem->setData(Qt::UserRole, qident);
 	}
 }
+
+
+/**
+ * re-directed child events
+ */
+bool WorkSpaceWidget::eventFilter(QObject *pObj, QEvent *pEvt)
+{
+	if(pObj == m_pListFiles)
+	{
+		// as the file browser and the work space widget share the same plotter, re-send plot on activation
+		if(pEvt->type() == QEvent::FocusIn)
+			ItemSelected(m_pListFiles->currentItem());
+	}
+
+	return QObject::eventFilter(pObj, pEvt);
+}
+
 // ----------------------------------------------------------------------------
 
 

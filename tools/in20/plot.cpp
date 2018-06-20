@@ -87,10 +87,16 @@ void Plotter::Plot(const Dataset &dataset)
 		auto yminmax = std::minmax_element(daty.begin(), daty.end());
 		auto yerrminmax = std::minmax_element(datyerr.begin(), datyerr.end());
 
-		xmin = std::min(*xminmax.first, xmin);
-		xmax = std::max(*xminmax.second, xmax);
-		ymin = std::min(*yminmax.first - *yerrminmax.first, ymin);
-		ymax = std::max(*yminmax.second + *yerrminmax.second, ymax);
+		if(xminmax.first != datx.end() && xminmax.second != datx.end())
+		{
+			xmin = std::min(*xminmax.first, xmin);
+			xmax = std::max(*xminmax.second, xmax);
+		}
+		if(yminmax.first != daty.end() && yminmax.second != daty.end())
+		{
+			ymin = std::min(*yminmax.first - *yerrminmax.first, ymin);
+			ymax = std::max(*yminmax.second + *yerrminmax.second, ymax);
+		}
 
 
 		// labels
@@ -108,3 +114,22 @@ void Plotter::Plot(const Dataset &dataset)
 
 	m_pPlotter->replot();
 }
+
+
+
+// ----------------------------------------------------------------------------
+// dock
+
+PlotterDock::PlotterDock(QWidget* pParent)
+	: QDockWidget(pParent), m_pPlot(std::make_unique<Plotter>(this))
+{
+	this->setObjectName("plotter");
+	this->setWindowTitle("Current Plot");
+	this->setWidget(m_pPlot.get());
+}
+
+PlotterDock::~PlotterDock()
+{
+}
+
+// ----------------------------------------------------------------------------

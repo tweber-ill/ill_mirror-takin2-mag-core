@@ -9,6 +9,7 @@
 #define __FILEBROWSER_H__
 
 #include <QtCore/QSettings>
+#include <QtCore/QEvent>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
@@ -18,7 +19,9 @@
 #include <vector>
 #include <string>
 
-#include "plot.h"
+#include "data.h"
+//#include "plot.h"
+
 
 
 /**
@@ -31,7 +34,7 @@ private:
 
 	QLineEdit *m_pEditFolder = new QLineEdit(this);
 	QListWidget *m_pListFiles = new QListWidget(this);
-	Plotter *m_pPlotter = new Plotter(this);
+	//Plotter *m_pPlotter = new Plotter(this);
 
 public:
 	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
@@ -48,8 +51,11 @@ protected:
 	void TransferSelectedToWorkspace();
 	void TransferToWorkspace(const QList<QListWidgetItem*>&);
 
+	bool eventFilter(QObject *pObj, QEvent *pEvt);
+
 signals:
 	void TransferFiles(const std::vector<std::string>&);
+	void PlotDataset(const Dataset &dataset);
 };
 
 

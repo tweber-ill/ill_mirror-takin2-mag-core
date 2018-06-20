@@ -9,6 +9,7 @@
 #define __WORKSPACE_H__
 
 #include <QtCore/QSettings>
+#include <QtCore/QEvent>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
@@ -18,7 +19,6 @@
 #include <map>
 
 #include "data.h"
-#include "plot.h"
 #include "tools/cli/cliparser.h"
 
 
@@ -27,12 +27,10 @@
  * work space widget
  */
 class WorkSpaceWidget : public QWidget
-{
+{ Q_OBJECT
 private:
 	QSettings *m_pSettings = nullptr;
-
 	QListWidget *m_pListFiles = new QListWidget(this);
-	Plotter *m_pPlotter = new Plotter(this);
 
 	// maps an identifier to a dataset
 	std::map<std::string, std::shared_ptr<Symbol>> m_workspace;
@@ -46,10 +44,14 @@ public:
 protected:
 	void ItemSelected(QListWidgetItem* pCur);
 	void ItemDoubleClicked(QListWidgetItem* pCur);
+	bool eventFilter(QObject *pObj, QEvent *pEvt);
 
 public:
 	void ReceiveFiles(const std::vector<std::string>&);
 	void UpdateList();
+
+signals:
+	void PlotDataset(const Dataset &dataset);
 };
 
 

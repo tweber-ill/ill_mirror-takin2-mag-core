@@ -13,7 +13,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
 	m_pBrowser(new FileBrowser(this, pSettings)),
 	m_pWS(new WorkSpace(this, pSettings)),
-	m_pCLI(new CommandLine(this, pSettings))
+	m_pCLI(new CommandLine(this, pSettings)),
+	m_pCurPlot(new PlotterDock(this))
 {
 	// the command line widget has to be accessible globally for error output
 	g_pCLI = m_pCLI;
@@ -27,20 +28,10 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// Menu Bar
 	QMenu *pMenuView = new QMenu("View", m_pMenu);
 
-	QAction *pShowFileBrowser = new QAction("Show File Browser", pMenuView);
-	pShowFileBrowser->setChecked(m_pBrowser->isVisible());
-	connect(pShowFileBrowser, &QAction::triggered, m_pBrowser, &FileBrowser::show);
-	pMenuView->addAction(pShowFileBrowser);
-
-	QAction *pShowWorkSpace = new QAction("Show Workspace", pMenuView);
-	pShowWorkSpace->setChecked(m_pWS->isVisible());
-	connect(pShowWorkSpace, &QAction::triggered, m_pWS, &FileBrowser::show);
-	pMenuView->addAction(pShowWorkSpace);
-
-	QAction *pShowCommandLine = new QAction("Show Command Line", pMenuView);
-	pShowCommandLine->setChecked(m_pCLI->isVisible());
-	connect(pShowCommandLine, &QAction::triggered, m_pCLI, &CommandLine::show);
-	pMenuView->addAction(pShowCommandLine);
+	pMenuView->addAction(m_pBrowser->toggleViewAction());
+	pMenuView->addAction(m_pWS->toggleViewAction());
+	pMenuView->addAction(m_pCLI->toggleViewAction());
+	pMenuView->addAction(m_pCurPlot->toggleViewAction());
 
 	m_pMenu->addMenu(pMenuView);
 	this->setMenuBar(m_pMenu);
@@ -52,12 +43,15 @@ MainWnd::MainWnd(QSettings* pSettings)
 	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
 	this->addDockWidget(Qt::RightDockWidgetArea, m_pWS);
 	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCLI);
+	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCurPlot);
 
 
 	// ------------------------------------------------------------------------
 	// connections
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles,
 		m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
+	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
+	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
 
 	// link symbol maps of workspace widget and command line parser
 	m_pCLI->GetWidget()->GetParserContext().SetWorkspace(m_pWS->GetWidget()->GetWorkspace());
