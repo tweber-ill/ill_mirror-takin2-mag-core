@@ -129,6 +129,8 @@ public:
 	static std::shared_ptr<Symbol> div(const Symbol &sym1, const Symbol &sym2);
 	static std::shared_ptr<Symbol> mod(const Symbol &sym1, const Symbol &sym2);
 	static std::shared_ptr<Symbol> pow(const Symbol &sym1, const Symbol &sym2);
+
+	static const std::string& get_type_name(const Symbol &sym);
 };
 
 
@@ -225,7 +227,8 @@ enum class CliASTType
 	MOD,
 	POW,
 	CALL,
-	EXPRLIST
+	EXPRLIST,
+	ARRAY,
 };
 
 
@@ -400,6 +403,18 @@ public:
 	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
 
 	virtual CliASTType GetType() const override { return CliASTType::EXPRLIST; }
+};
+
+
+class CliASTArray : public CliAST
+{
+public:
+	using CliAST::CliAST;
+
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
+
+	virtual CliASTType GetType() const override { return CliASTType::ARRAY; }
 };
 
 // ----------------------------------------------------------------------------

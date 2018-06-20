@@ -20,6 +20,23 @@ using t_real = t_real_cli;
 // ----------------------------------------------------------------------------
 
 /**
+ * symbol type name
+ */
+const std::string& Symbol::get_type_name(const Symbol &sym)
+{
+	static const std::unordered_map<SymbolType, std::string> map =
+	{
+		std::make_pair(SymbolType::REAL, "real"),
+		std::make_pair(SymbolType::STRING, "string"),
+		std::make_pair(SymbolType::LIST, "list"),
+		std::make_pair(SymbolType::DATASET, "dataset"),
+	};
+
+	return map.find(sym.GetType())->second;
+}
+
+
+/**
  * unary minus of a symbol
  */
 std::shared_ptr<Symbol> Symbol::uminus(const Symbol &sym)
@@ -285,21 +302,34 @@ std::shared_ptr<Symbol> CliASTAssign::Eval(CliParserContext& ctx) const
 
 	if(!m_left || !m_right)
 		return nullptr;
-	if(m_left->GetType() != CliASTType::IDENT && m_left->GetType() != CliASTType::STRING)
+	if(m_left->GetType() != CliASTType::IDENT /*&& m_left->GetType() != CliASTType::STRING*/)
 	{
 		ctx.PrintError("Left-hand side of assignment has to be an identifier.");
 		return nullptr;
 	}
 
+
+	// get identifier to be assigned
+	std::string ident;
+	if(m_left->GetType() == CliASTType::IDENT)
+		ident = dynamic_cast<CliASTIdent&>(*m_left).GetValue();
+	//else if(m_left->GetType() == CliASTType::STRING)
+	//	ident = dynamic_cast<CliASTString&>(*m_left).GetValue();
+	//	// TODO: Check if string is also a valid identifier!
+
+
+	// is this variable already in the constants map?
+	auto iterConst = g_consts_real.find(ident);
+	if(iterConst != g_consts_real.end())
+	{
+		ctx.PrintError("Identifier \"", ident, "\" cannot be re-assigned, it names an internal constant.");
+		return nullptr;
+	}
+
+
+	// assign variable
 	if(auto righteval=m_right->Eval(ctx); righteval)
 	{
-		std::string ident;
-		if(m_left->GetType() == CliASTType::IDENT)
-			ident = dynamic_cast<CliASTIdent&>(*m_left).GetValue();
-		else if(m_left->GetType() == CliASTType::STRING)
-			ident = dynamic_cast<CliASTString&>(*m_left).GetValue();
-			// TODO: Check if string is also a valid identifier!
-
 		const auto [iter, insert_ok] =
 			workspace->emplace(std::make_pair(ident, righteval));
 
@@ -450,39 +480,42 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 
 	if(args.size() == 1)	// function call with one argument requested
 	{
-		// real argument
-		if(args[0]->GetType() == SymbolType::REAL)
-		{
-			auto iter = g_funcs_real_1arg.find(ident);
-			if(iter == g_funcs_real_1arg.end())
-			{
-				ctx.PrintError("No real one-argument function \"", ident, "\" was found.");
-				return nullptr;
-			}
-
+		if(auto iter = g_funcs_gen_1arg.find(ident); iter != g_funcs_gen_1arg.end())
+		{	// general function
+			return (*iter->second)(args[0]);
+		}
+		else if(auto iter = g_funcs_real_1arg.find(ident);
+			iter != g_funcs_real_1arg.end() && args[0]->GetType() == SymbolType::REAL)
+		{	// real function
 			t_real funcval = (*iter->second)(dynamic_cast<SymbolReal&>(*args[0]).GetValue());
 			return std::make_shared<SymbolReal>(funcval);
+		}
+		else
+		{
+			ctx.PrintError("No suitable one-argument function \"", ident, "\" was found.");
+			return nullptr;
 		}
 	}
 	else if(args.size() == 2)	// function call with two arguments requested
 	{
-		// real arguments
-		if(args[0]->GetType() == SymbolType::REAL && args[1]->GetType() == SymbolType::REAL)
+		// real function
+		if(auto iter = g_funcs_real_2args.find(ident); 
+			iter != g_funcs_real_2args.end() &&
+			args[0]->GetType() == SymbolType::REAL && args[1]->GetType() == SymbolType::REAL)
 		{
-			auto iter = g_funcs_real_2args.find(ident);
-			if(iter == g_funcs_real_2args.end())
-			{
-				ctx.PrintError("No real two-argument function \"", ident, "\" was found.");
-				return nullptr;
-			}
-
 			t_real arg1 = dynamic_cast<SymbolReal&>(*args[0]).GetValue();
 			t_real arg2 = dynamic_cast<SymbolReal&>(*args[1]).GetValue();
 			t_real funcval = (*iter->second)(arg1, arg2);
 			return std::make_shared<SymbolReal>(funcval);
 		}
+		else
+		{
+			ctx.PrintError("No suitable two-argument function \"", ident, "\" was found.");
+			return nullptr;
+		}
 	}
 
+	ctx.PrintError("No suitable ", args.size(), "-argument function \"", ident, "\" was found.");
 	return nullptr;
 }
 
@@ -526,6 +559,18 @@ std::shared_ptr<Symbol> CliASTExprList::Eval(CliParserContext& ctx) const
 	}
 
 	return std::make_shared<SymbolList>(vec);
+}
+
+
+/**
+ * array
+ */
+std::shared_ptr<Symbol> CliASTArray::Eval(CliParserContext& ctx) const
+{
+	if(!m_left)
+		return nullptr;
+
+	return nullptr;
 }
 
 // ----------------------------------------------------------------------------
@@ -621,6 +666,13 @@ void CliASTExprList::Print(std::ostringstream &ostr, int indent) const
 {
 	for(int i=0; i<indent; ++i) ostr << "\t";
 	ostr << "op: expr_list\n";
+	CliAST::Print(ostr, indent);
+}
+
+void CliASTArray::Print(std::ostringstream &ostr, int indent) const
+{
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: array\n";
 	CliAST::Print(ostr, indent);
 }
 // ----------------------------------------------------------------------------

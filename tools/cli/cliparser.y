@@ -18,6 +18,7 @@
 %token<t_real_cli> TOK_REAL
 %token<std::string> TOK_STRING TOK_IDENT
 %token TOK_BRACKET_OPEN TOK_BRACKET_CLOSE
+%token TOK_SQBRACKET_OPEN TOK_SQBRACKET_CLOSE
 %token TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD TOK_POW
 %token TOK_ASSIGN
 %token TOK_COMMA
@@ -69,6 +70,9 @@ expression
 		{ $$ = std::make_shared<CliASTAssign>($1, $3); }
 	| ident TOK_BRACKET_OPEN expressions TOK_BRACKET_CLOSE
 		{ $$ = std::make_shared<CliASTCall>($1, $3); }
+	
+	| TOK_SQBRACKET_OPEN expressions TOK_SQBRACKET_CLOSE
+		{ $$ = std::make_shared<CliASTArray>($2); }
 
 	| TOK_BRACKET_OPEN expression TOK_BRACKET_CLOSE
 		{ $$ = $2; }

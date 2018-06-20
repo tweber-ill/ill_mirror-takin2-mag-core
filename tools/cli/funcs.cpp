@@ -12,8 +12,9 @@
 using t_real = t_real_cli;
 
 
+// ----------------------------------------------------------------------------
 /**
- * real functions with one argument
+ * map of real functions with one argument
  */
 std::unordered_map<std::string, t_real_cli(*)(t_real)> g_funcs_real_1arg =
 {
@@ -56,7 +57,7 @@ std::unordered_map<std::string, t_real_cli(*)(t_real)> g_funcs_real_1arg =
 
 
 /**
- * real functions with two arguments
+ * map of real functions with two arguments
  */
 std::unordered_map<std::string, t_real_cli(*)(t_real, t_real)> g_funcs_real_2args =
 {
@@ -74,13 +75,40 @@ std::unordered_map<std::string, t_real_cli(*)(t_real, t_real)> g_funcs_real_2arg
 
 	std::make_pair("copysign", static_cast<t_real(*)(t_real, t_real)>(&std::copysign)),
 };
+// ----------------------------------------------------------------------------
 
 
+
+
+
+// ----------------------------------------------------------------------------
+/**
+ * typeof function
+ */
+static std::shared_ptr<Symbol> func_typeof(std::shared_ptr<Symbol> sym)
+{
+	const std::string& ty = Symbol::get_type_name(*sym);
+	return std::make_shared<SymbolString>(ty);
+}
 
 /**
- * real constants
+ * map of general functions with one argument
+ */
+std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>)> g_funcs_gen_1arg =
+{
+	std::make_pair("typeof", &func_typeof),
+};
+// ----------------------------------------------------------------------------
+
+
+
+
+// ----------------------------------------------------------------------------
+/**
+ * map of real constants
  */
 std::unordered_map<std::string, t_real_cli> g_consts_real
 {
 	std::make_pair("pi", t_real(M_PI)),
 };
+// ----------------------------------------------------------------------------
