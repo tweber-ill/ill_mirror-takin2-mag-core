@@ -27,6 +27,7 @@ public:
 	const QCustomPlot* GetPlotter() const { return m_pPlotter; }
 
 	void Plot(const Dataset &dataset);
+	void Clear();
 };
 
 

@@ -24,6 +24,13 @@ Plotter::Plotter(QWidget *parent) : QWidget(parent)
 
 Plotter::~Plotter()
 {
+	Clear();
+}
+
+
+void Plotter::Clear()
+{
+	m_pPlotter->clearGraphs();
 }
 
 
@@ -36,7 +43,7 @@ void Plotter::Plot(const Dataset &dataset)
 		0xffff0000, 0xff0000ff, 0xff009900, 0xff000000,
 	};
 
-	m_pPlotter->clearGraphs();
+	Clear();
 
 	t_real xmin = std::numeric_limits<t_real>::max();
 	t_real xmax = -xmin;
