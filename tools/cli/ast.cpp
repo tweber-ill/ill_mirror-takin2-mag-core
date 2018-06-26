@@ -43,11 +43,19 @@ const std::string& Symbol::get_type_name(const Symbol &sym)
 std::shared_ptr<Symbol> Symbol::uminus(const Symbol &sym)
 {
 	if(sym.GetType()==SymbolType::REAL)
-	{
+	{ // -1.23
 		return std::make_shared<SymbolReal>(-dynamic_cast<const SymbolReal&>(sym).GetValue()); 
 	}
+	if(sym.GetType()==SymbolType::ARRAY)
+	{ // -[1,2,3]
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::uminus(*arr[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym.GetType()==SymbolType::DATASET)
-	{
+	{ // -data
 		return std::make_shared<SymbolDataset>(-dynamic_cast<const SymbolDataset&>(sym).GetValue()); 
 	}
 
@@ -61,25 +69,34 @@ std::shared_ptr<Symbol> Symbol::uminus(const Symbol &sym)
 std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 {
 	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 1.23 + 1.23
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() + 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::ARRAY)
+	{ // [1,2,3] + [1,2,3]
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr1 = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		const auto& arr2 = dynamic_cast<const SymbolList&>(sym2).GetValue();
+		for(std::size_t idx=0; idx<std::min(arr1.size(), arr2.size()); ++idx)
+			arrNew.emplace_back(Symbol::add(*arr1[idx], *arr2[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::STRING)
-	{
+	{ // "abc" + "123"
 		return std::make_shared<SymbolString>(
 			dynamic_cast<const SymbolString&>(sym1).GetValue() + 
 			dynamic_cast<const SymbolString&>(sym2).GetValue());
 	}
 	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::DATASET)
-	{
+	{ // data1 + data2
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() + 
 			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
 	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // "abc" + 3
 		const std::string &str = dynamic_cast<const SymbolString&>(sym1).GetValue();
 		t_real val = dynamic_cast<const SymbolReal&>(sym2).GetValue();
 		std::ostringstream ostr;
@@ -87,7 +104,7 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 		return std::make_shared<SymbolString>(ostr.str());
 	}
 	else if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::STRING)
-	{
+	{ // 3 + "abc"
 		t_real val = dynamic_cast<const SymbolReal&>(sym1).GetValue();
 		const std::string &str = dynamic_cast<const SymbolString&>(sym2).GetValue();
 		std::ostringstream ostr;
@@ -105,13 +122,22 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 {
 	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 1.23 - 2.34
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() - 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::ARRAY)
+	{ // [1,2,3] - [1,2,3]
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr1 = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		const auto& arr2 = dynamic_cast<const SymbolList&>(sym2).GetValue();
+		for(std::size_t idx=0; idx<std::min(arr1.size(), arr2.size()); ++idx)
+			arrNew.emplace_back(Symbol::sub(*arr1[idx], *arr2[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::DATASET)
-	{
+	{ // data1 - data2
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() - 
 			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
@@ -127,13 +153,13 @@ std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 {
 	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 1.23 * 2.34
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() * 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
 	else if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::STRING)
-	{
+	{ // 5 * "123"
 		const std::string &str = dynamic_cast<const SymbolString&>(sym2).GetValue();
 		std::string strOut;
 
@@ -144,7 +170,7 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 		return std::make_shared<SymbolString>(strOut);
 	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 5 * "123"
 		const std::string &str = dynamic_cast<const SymbolString&>(sym1).GetValue();
 		std::string strOut;
 
@@ -154,14 +180,30 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 
 		return std::make_shared<SymbolString>(strOut);
 	}
+	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::ARRAY)
+	{ // 5 * [1,2,3]
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym2).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::mul(sym1, *arr[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::REAL)
+	{ // [1,2,3] * 5
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::mul(*arr[idx], sym2));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::DATASET)
-	{
+	{ // 3 * data
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() * 
 			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
 	}
 	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // data * 3
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() * 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
@@ -177,13 +219,21 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 std::shared_ptr<Symbol> Symbol::div(const Symbol &sym1, const Symbol &sym2)
 {
 	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 1.23 / 5.67
 		return std::make_shared<SymbolReal>(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue() / 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::REAL)
+	{ // [1,2,3] / 5
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::div(*arr[idx], sym2));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // data / 5.
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() / 
 			dynamic_cast<const SymbolReal&>(sym2).GetValue());
@@ -199,10 +249,18 @@ std::shared_ptr<Symbol> Symbol::div(const Symbol &sym1, const Symbol &sym2)
 std::shared_ptr<Symbol> Symbol::mod(const Symbol &sym1, const Symbol &sym2)
 {
 	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::REAL)
-	{
+	{ // 12. % 5.
 		return std::make_shared<SymbolReal>(std::fmod(
 			dynamic_cast<const SymbolReal&>(sym1).GetValue(),
 			dynamic_cast<const SymbolReal&>(sym2).GetValue()));
+	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::REAL)
+	{ // [1,2,3] % 5
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::mod(*arr[idx], sym2));
+		return std::make_shared<SymbolList>(arrNew, false);
 	}
 
 	return nullptr;
@@ -526,9 +584,9 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	// at least one function argument was given
 	if(m_right)
 	{
-		if(auto righteval=m_right->Eval(ctx); righteval)
+		if(auto righteval = m_right->Eval(ctx); righteval)
 		{
-			if(righteval->GetType()==SymbolType::LIST)
+			if(righteval->GetType() == SymbolType::LIST)
 			{
 				// two or more arguments are collected in a list
 				auto &rightvec = dynamic_cast<SymbolList&>(*righteval).GetValue();
@@ -591,7 +649,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
  */
 std::shared_ptr<Symbol> CliASTExprList::Eval(CliParserContext& ctx) const
 {
-	if(!m_left || !m_right)
+	if(!m_left && !m_right)
 		return nullptr;
 
 	// transform the tree into a flat vector

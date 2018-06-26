@@ -15,25 +15,33 @@
 %param { CliParserContext &context }
 
 
+// terminals
 %token<t_real_cli> TOK_REAL
 %token<std::string> TOK_STRING TOK_IDENT
 %token TOK_BRACKET_OPEN TOK_BRACKET_CLOSE
 %token TOK_SQBRACKET_OPEN TOK_SQBRACKET_CLOSE
 %token TOK_PLUS TOK_MINUS TOK_MULT TOK_DIV TOK_MOD TOK_POW
 %token TOK_ASSIGN
+%token TOK_MEMBER_ACCESS
 %token TOK_COMMA
 %token TOK_NEWLINE
 //%token TOK_EOF
 
+
+// non-terminals
 %type<std::shared_ptr<CliAST>> command commands
 %type<std::shared_ptr<CliAST>> expression expressions
 %type<std::shared_ptr<CliAST>> ident
 
+
+// operator precedence
 %right TOK_ASSIGN
 %left TOK_PLUS TOK_MINUS
 %left TOK_MULT TOK_DIV TOK_MOD
 %right PREC_UNARY_PLUSMINUS
 %nonassoc TOK_POW
+%nonassoc TOK_MEMBER_ACCESS
+
 
 %%
 
@@ -70,7 +78,9 @@ expression
 		{ $$ = std::make_shared<CliASTAssign>($1, $3); }
 	| ident TOK_BRACKET_OPEN expressions TOK_BRACKET_CLOSE
 		{ $$ = std::make_shared<CliASTCall>($1, $3); }
-	
+	| expression TOK_MEMBER_ACCESS ident TOK_BRACKET_OPEN expressions TOK_BRACKET_CLOSE
+		{ $$ = std::make_shared<CliASTCall>($3, std::make_shared<CliASTExprList>($1, $5)); }
+
 	| TOK_SQBRACKET_OPEN expressions TOK_SQBRACKET_CLOSE
 		{ $$ = std::make_shared<CliASTArray>($2); }
 
