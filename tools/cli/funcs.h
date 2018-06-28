@@ -20,11 +20,21 @@
 extern std::unordered_map<std::string, t_real_cli(*)(t_real_cli)> g_funcs_real_1arg;
 extern std::unordered_map<std::string, t_real_cli(*)(t_real_cli, t_real_cli)> g_funcs_real_2args;
 
+// array functions
+extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>)> g_funcs_arr_1arg;
+extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>, std::shared_ptr<SymbolList>)> g_funcs_arr_2args;
+
 // general functions
 extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>)> g_funcs_gen_1arg;
+extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>)> g_funcs_gen_2args;
 
 // constants
 extern std::unordered_map<std::string, t_real_cli> g_consts_real;
+
+
+
+// functions which are also needed in other modules
+extern std::shared_ptr<Symbol> func_dot(std::shared_ptr<SymbolList> sym1, std::shared_ptr<SymbolList> sym2);
 
 
 #endif

@@ -132,6 +132,11 @@ public:
 	static std::shared_ptr<Symbol> mod(const Symbol &sym1, const Symbol &sym2);
 	static std::shared_ptr<Symbol> pow(const Symbol &sym1, const Symbol &sym2);
 
+	static std::shared_ptr<Symbol> add(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2);
+	static std::shared_ptr<Symbol> sub(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2);
+	static std::shared_ptr<Symbol> mul(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2);
+	static std::shared_ptr<Symbol> div(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2);
+
 	static const std::string& get_type_name(const Symbol &sym);
 };
 
@@ -148,6 +153,7 @@ public:
 
 	virtual SymbolType GetType() const override { return SymbolType::REAL; }
 	t_real_cli GetValue() const { return m_val; }
+	void SetValue(t_real_cli val) { m_val = val; }
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
 	virtual void print(std::ostream& ostr) const override { ostr << GetValue(); }
@@ -183,6 +189,11 @@ public:
 	SymbolList() = default;
 	SymbolList(const std::vector<std::shared_ptr<Symbol>>& val, bool islist=1) : m_val(val), m_islist(islist) {}
 	SymbolList(std::vector<std::shared_ptr<Symbol>>&& val, bool islist=1) : m_val(val), m_islist(islist) {}
+	SymbolList(const std::initializer_list<std::shared_ptr<Symbol>>& lst, bool islist=1) : m_islist(islist)
+	{
+		for(auto iter = lst.begin(); iter !=lst.end(); ++iter)
+			m_val.push_back(*iter);
+	}
 	virtual ~SymbolList() {}
 
 	virtual SymbolType GetType() const override { return m_islist ? SymbolType::LIST : SymbolType::ARRAY; }

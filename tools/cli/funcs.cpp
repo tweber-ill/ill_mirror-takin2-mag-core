@@ -91,12 +91,91 @@ static std::shared_ptr<Symbol> func_typeof(std::shared_ptr<Symbol> sym)
 	return std::make_shared<SymbolString>(ty);
 }
 
+
 /**
  * map of general functions with one argument
  */
 std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>)> g_funcs_gen_1arg =
 {
 	std::make_pair("typeof", &func_typeof),
+};
+
+/**
+ * map of general functions with two arguments
+ */
+std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>)> g_funcs_gen_2args =
+{
+};
+
+// ----------------------------------------------------------------------------
+
+
+
+
+// ----------------------------------------------------------------------------
+/**
+ * dot product
+ */
+std::shared_ptr<Symbol> func_dot(std::shared_ptr<SymbolList> sym1, std::shared_ptr<SymbolList> sym2)
+{
+	std::shared_ptr<Symbol> symDot = std::make_shared<SymbolReal>(0);
+	const auto& arr1 = sym1->GetValue();
+	const auto& arr2 = sym2->GetValue();
+	for(std::size_t idx=0; idx<(arr1.size(), arr2.size()); ++idx)
+		symDot = Symbol::add(symDot, Symbol::mul(arr1[idx], arr2[idx]));
+	return symDot;
+}
+
+
+/**
+ * cross product
+ */
+std::shared_ptr<Symbol> func_cross(std::shared_ptr<SymbolList> sym1, std::shared_ptr<SymbolList> sym2)
+{
+	SymbolReal symCross(0);
+	const auto& arr1 = sym1->GetValue();
+	const auto& arr2 = sym2->GetValue();
+
+	if(arr1.size() != 3 && arr2.size() != 3)
+		return nullptr;
+
+	// components
+	std::vector<std::shared_ptr<Symbol>> vec;
+	vec.emplace_back(Symbol::sub(Symbol::mul(arr1[1], arr2[2]), Symbol::mul(arr1[2], arr2[1])));
+	vec.emplace_back(Symbol::sub(Symbol::mul(arr1[2], arr2[0]), Symbol::mul(arr1[0], arr2[2])));
+	vec.emplace_back(Symbol::sub(Symbol::mul(arr1[0], arr2[1]), Symbol::mul(arr1[1], arr2[0])));
+
+	return std::make_shared<SymbolList>(vec, false);
+}
+
+
+/**
+ * norm
+ */
+std::shared_ptr<Symbol> func_norm(std::shared_ptr<SymbolList> sym)
+{
+	// dot
+	auto symDot = func_dot(sym, sym);
+	// sqrt
+	return Symbol::pow(*symDot, SymbolReal(0.5));
+}
+
+
+/**
+ * map of general functions with one argument
+ */
+std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>)> g_funcs_arr_1arg =
+{
+	std::make_pair("norm", &func_norm),
+};
+
+/**
+ * map of general functions with two arguments
+ */
+std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>, std::shared_ptr<SymbolList>)> g_funcs_arr_2args =
+{
+	std::make_pair("dot", &func_dot),
+	std::make_pair("cross", &func_cross),
 };
 // ----------------------------------------------------------------------------
 

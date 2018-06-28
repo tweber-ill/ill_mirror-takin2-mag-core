@@ -115,6 +115,11 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 	return nullptr;
 }
 
+std::shared_ptr<Symbol> Symbol::add(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2)
+{
+	return Symbol::add(*sym1, *sym2);
+}
+
 
 /**
  * subtraction of symbols
@@ -144,6 +149,11 @@ std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 	}
 
 	return nullptr;
+}
+
+std::shared_ptr<Symbol> Symbol::sub(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2)
+{
+	return Symbol::sub(*sym1, *sym2);
 }
 
 
@@ -196,6 +206,11 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 			arrNew.emplace_back(Symbol::mul(*arr[idx], sym2));
 		return std::make_shared<SymbolList>(arrNew, false);
 	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::ARRAY)
+	{ // [1,2,3] * [1,2,3]
+		return func_dot(std::make_shared<SymbolList>(dynamic_cast<const SymbolList&>(sym1)),
+			std::make_shared<SymbolList>(dynamic_cast<const SymbolList&>(sym2)));
+	}
 	else if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::DATASET)
 	{ // 3 * data
 		return std::make_shared<SymbolDataset>(
@@ -210,6 +225,11 @@ std::shared_ptr<Symbol> Symbol::mul(const Symbol &sym1, const Symbol &sym2)
 	}
 
 	return nullptr;
+}
+
+std::shared_ptr<Symbol> Symbol::mul(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2)
+{
+	return Symbol::mul(*sym1, *sym2);
 }
 
 
@@ -240,6 +260,11 @@ std::shared_ptr<Symbol> Symbol::div(const Symbol &sym1, const Symbol &sym2)
 	}
 
 	return nullptr;
+}
+
+std::shared_ptr<Symbol> Symbol::div(std::shared_ptr<Symbol> sym1, std::shared_ptr<Symbol> sym2)
+{
+	return Symbol::div(*sym1, *sym2);
 }
 
 
@@ -614,6 +639,11 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 			t_real funcval = (*iter->second)(dynamic_cast<SymbolReal&>(*args[0]).GetValue());
 			return std::make_shared<SymbolReal>(funcval);
 		}
+		else if(auto iter = g_funcs_arr_1arg.find(ident);
+			iter != g_funcs_arr_1arg.end() && args[0]->GetType() == SymbolType::ARRAY)
+		{	// array function
+			return (*iter->second)(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]));
+		}
 		else
 		{
 			ctx.PrintError("No suitable one-argument function \"", ident, "\" was found.");
@@ -622,15 +652,25 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	}
 	else if(args.size() == 2)	// function call with two arguments requested
 	{
-		// real function
-		if(auto iter = g_funcs_real_2args.find(ident); 
+		if(auto iter = g_funcs_gen_2args.find(ident); iter != g_funcs_gen_2args.end())
+		{	// general function
+			return (*iter->second)(args[0], args[1]);
+		}
+		else if(auto iter = g_funcs_real_2args.find(ident); 
 			iter != g_funcs_real_2args.end() &&
 			args[0]->GetType() == SymbolType::REAL && args[1]->GetType() == SymbolType::REAL)
-		{
+		{ // real function
 			t_real arg1 = dynamic_cast<SymbolReal&>(*args[0]).GetValue();
 			t_real arg2 = dynamic_cast<SymbolReal&>(*args[1]).GetValue();
 			t_real funcval = (*iter->second)(arg1, arg2);
 			return std::make_shared<SymbolReal>(funcval);
+		}
+		else if(auto iter = g_funcs_arr_2args.find(ident);
+			iter != g_funcs_arr_2args.end()
+			&& args[0]->GetType() == SymbolType::ARRAY && args[1]->GetType() == SymbolType::ARRAY)
+		{	// array function
+			return (*iter->second)(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]),
+				*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[1]));
 		}
 		else
 		{
