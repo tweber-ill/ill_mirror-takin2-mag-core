@@ -93,11 +93,38 @@ static std::shared_ptr<Symbol> func_typeof(std::shared_ptr<Symbol> sym)
 
 
 /**
+ * sizeof function
+ */
+static std::shared_ptr<Symbol> func_sizeof(std::shared_ptr<Symbol> sym)
+{
+	if(sym->GetType() == SymbolType::ARRAY)
+	{	// array length
+		std::size_t len = dynamic_cast<SymbolList&>(*sym).GetValue().size();
+		return std::make_shared<SymbolReal>(len);
+	}
+	else if(sym->GetType() == SymbolType::STRING)
+	{	// string length
+		std::size_t len = dynamic_cast<SymbolString&>(*sym).GetValue().length();
+		return std::make_shared<SymbolReal>(len);
+	}
+	else if(sym->GetType() == SymbolType::DATASET)
+	{	// number of channels in dataset
+		std::size_t len = dynamic_cast<SymbolDataset&>(*sym).GetValue().GetNumChannels();
+		return std::make_shared<SymbolReal>(len);
+	}
+
+	// 1 for other types
+	return std::make_shared<SymbolReal>(1);
+}
+
+
+/**
  * map of general functions with one argument
  */
 std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>)> g_funcs_gen_1arg =
 {
 	std::make_pair("typeof", &func_typeof),
+	std::make_pair("sizeof", &func_sizeof),
 };
 
 /**

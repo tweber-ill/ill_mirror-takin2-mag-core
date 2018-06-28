@@ -83,6 +83,8 @@ expression
 
 	| TOK_SQBRACKET_OPEN expressions TOK_SQBRACKET_CLOSE
 		{ $$ = std::make_shared<CliASTArray>($2); }
+	| expression TOK_SQBRACKET_OPEN expression TOK_SQBRACKET_CLOSE
+		{ $$ = std::make_shared<CliASTArrayAccess>($1, $3); }
 
 	| TOK_BRACKET_OPEN expression TOK_BRACKET_CLOSE
 		{ $$ = $2; }

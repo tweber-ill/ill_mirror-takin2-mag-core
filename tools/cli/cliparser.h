@@ -258,6 +258,7 @@ enum class CliASTType
 	CALL,
 	EXPRLIST,
 	ARRAY,
+	ARRAYACCESS,
 };
 
 
@@ -445,6 +446,19 @@ public:
 
 	virtual CliASTType GetType() const override { return CliASTType::ARRAY; }
 };
+
+
+class CliASTArrayAccess : public CliAST
+{
+public:
+	using CliAST::CliAST;
+
+	virtual void Print(std::ostringstream &ostr, int indent = 0) const override;
+	virtual std::shared_ptr<Symbol> Eval(CliParserContext& ctx) const override;
+
+	virtual CliASTType GetType() const override { return CliASTType::ARRAYACCESS; }
+};
+
 
 // ----------------------------------------------------------------------------
 

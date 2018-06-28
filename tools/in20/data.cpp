@@ -220,6 +220,61 @@ Data operator +(const Data& dat1, const Data& dat2)
 }
 
 
+Data operator +(const Data& dat, t_real_dat d)
+{
+	Data datret = dat;
+	t_real_dat d_err = std::sqrt(d);
+	t_real_dat d_mon = 0.;	// TODO
+	t_real_dat d_mon_err = std::sqrt(d_mon);
+
+	// detectors
+	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+	{
+		auto& det = datret.m_counts[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += d;
+
+			datret.m_counts_err[detidx][cntidx] =
+				std::sqrt(dat.m_counts_err[detidx][cntidx]*dat.m_counts_err[detidx][cntidx]
+					+ d*d_err);
+		}
+	}
+
+	// monitors
+	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+	{
+		auto& det = datret.m_monitors[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += d_mon;
+
+			datret.m_monitors_err[detidx][cntidx] =
+				std::sqrt(dat.m_monitors_err[detidx][cntidx]*dat.m_monitors_err[detidx][cntidx]
+					+ d_mon*d_mon_err);
+		}
+	}
+
+	return datret;
+}
+
+
+Data operator +(t_real_dat d, const Data& dat)
+{
+	return dat + d;
+}
+
+
+Data operator -(const Data& dat, t_real_dat d)
+{
+	return dat + (-d);
+}
+
+
 Data operator -(const Data& dat1, const Data& dat2)
 {
 	return dat1 + (-dat2);
@@ -303,6 +358,32 @@ Dataset operator -(const Dataset& dat1, const Dataset& dat2)
 	}
 
 	return dataset;
+}
+
+
+Dataset operator +(const Dataset& dat, t_real_dat d)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<dat.GetNumChannels(); ++ch)
+	{
+		Data data = dat.GetChannel(ch) + d;
+		dataset.AddChannel(std::move(data));
+	}
+
+	return dataset;
+}
+
+
+Dataset operator +(t_real_dat d, const Dataset& dat)
+{
+	return dat + d;
+}
+
+
+Dataset operator -(const Dataset& dat, t_real_dat d)
+{
+	return dat + (-d);
 }
 
 

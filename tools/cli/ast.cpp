@@ -95,6 +95,18 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() + 
 			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
 	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
+	{ // data + 1.23
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() + 
+			dynamic_cast<const SymbolReal&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
+	{ // 1.23 + data
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolReal&>(sym1).GetValue() + 
+			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
+	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::REAL)
 	{ // "abc" + 3
 		const std::string &str = dynamic_cast<const SymbolString&>(sym1).GetValue();
@@ -146,6 +158,12 @@ std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 		return std::make_shared<SymbolDataset>(
 			dynamic_cast<const SymbolDataset&>(sym1).GetValue() - 
 			dynamic_cast<const SymbolDataset&>(sym2).GetValue());
+	}
+	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::REAL)
+	{ // data - 1.23
+		return std::make_shared<SymbolDataset>(
+			dynamic_cast<const SymbolDataset&>(sym1).GetValue() - 
+			dynamic_cast<const SymbolReal&>(sym2).GetValue());
 	}
 
 	return nullptr;
@@ -395,6 +413,65 @@ std::shared_ptr<Symbol> CliASTArray::Eval(CliParserContext& ctx) const
 	// transform the tree into a flat vector
 	auto vec = list_eval(ctx, m_left, m_right);
 	return std::make_shared<SymbolList>(vec, false);
+}
+
+
+/**
+ * array element access, e.g. a[5]
+ */
+std::shared_ptr<Symbol> CliASTArrayAccess::Eval(CliParserContext& ctx) const
+{
+	if(!m_left && !m_right)
+		return nullptr;
+
+	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
+	{
+		if(righteval->GetType() != SymbolType::REAL)
+		{
+			ctx.PrintError("Array index has to be of scalar type.");
+			return nullptr;
+		}
+
+		// index
+		std::size_t idx = std::size_t(dynamic_cast<SymbolReal&>(*righteval).GetValue());
+
+
+		if(lefteval->GetType() == SymbolType::ARRAY)
+		{ // get array elements
+			const auto& arr = dynamic_cast<SymbolList&>(*lefteval).GetValue();
+			if(idx >= arr.size())
+			{
+				ctx.PrintError("Array index is out of bounds.");
+				return nullptr;
+			}
+
+			return arr[idx]->copy();
+		}
+		else if(lefteval->GetType() == SymbolType::DATASET)
+		{ // get channels of a dataset
+			const auto& dataset = dynamic_cast<SymbolDataset&>(*lefteval).GetValue();
+			if(idx >= dataset.GetNumChannels())
+			{
+				ctx.PrintError("Dataset channel index is out of bounds.");
+				return nullptr;
+			}
+
+			Dataset newdataset;
+			Data dat = dataset.GetChannel(idx);
+			newdataset.AddChannel(std::move(dat));
+
+			return std::make_shared<SymbolDataset>(newdataset);
+		}
+		else
+		{
+			ctx.PrintError("Variables of type ", Symbol::get_type_name(*lefteval), 
+				" do not support element access.");
+			return nullptr;
+		}
+	}
+
+	ctx.PrintError("Invalid element access request.");
+	return nullptr;
 }
 
 
@@ -798,6 +875,13 @@ void CliASTArray::Print(std::ostringstream &ostr, int indent) const
 {
 	for(int i=0; i<indent; ++i) ostr << "\t";
 	ostr << "op: array\n";
+	CliAST::Print(ostr, indent);
+}
+
+void CliASTArrayAccess::Print(std::ostringstream &ostr, int indent) const
+{
+	for(int i=0; i<indent; ++i) ostr << "\t";
+	ostr << "op: array_access\n";
 	CliAST::Print(ostr, indent);
 }
 // ----------------------------------------------------------------------------

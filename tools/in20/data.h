@@ -99,7 +99,10 @@ public:
 
 	// binary operators
 	friend Data operator +(const Data& dat1, const Data& dat2);
+	friend Data operator +(const Data& dat, t_real_dat d);
+	friend Data operator +(t_real_dat d, const Data& dat);
 	friend Data operator -(const Data& dat1, const Data& dat2);
+	friend Data operator -(const Data& dat, t_real_dat d);
 	friend Data operator *(const Data& dat1, t_real_dat d);
 	friend Data operator *(t_real_dat d, const Data& dat1);
 	friend Data operator /(const Data& dat1, t_real_dat d);
@@ -128,7 +131,10 @@ public:
 
 	// binary operators
 	friend Dataset operator +(const Dataset& dat1, const Dataset& dat2);
+	friend Dataset operator +(const Dataset& dat, t_real_dat d);
+	friend Dataset operator +(t_real_dat d, const Dataset& dat);
 	friend Dataset operator -(const Dataset& dat1, const Dataset& dat2);
+	friend Dataset operator -(const Dataset& dat, t_real_dat d);
 	friend Dataset operator *(const Dataset& dat1, t_real_dat d);
 	friend Dataset operator *(t_real_dat d, const Dataset& dat1);
 	friend Dataset operator /(const Dataset& dat1, t_real_dat d);
