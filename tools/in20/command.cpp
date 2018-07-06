@@ -61,7 +61,7 @@ void CommandLineWidget::CommandEntered()
 	m_pEditCLI->clearEditText();
 	if(!cmd.length()) return;
 
-	m_pEditHistory->insertHtml("<font color=\"#0000ff\"><b>> </b>" + cmd + "</font><br>");
+	m_pEditHistory->insertHtml("<font color=\"#0000ff\">" + cmd + "</font><br>");
 
 
 	// parse command

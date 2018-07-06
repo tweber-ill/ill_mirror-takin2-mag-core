@@ -83,6 +83,24 @@ std::shared_ptr<Symbol> Symbol::add(const Symbol &sym1, const Symbol &sym2)
 			arrNew.emplace_back(Symbol::add(*arr1[idx], *arr2[idx]));
 		return std::make_shared<SymbolList>(arrNew, false);
 	}
+	if(sym1.GetType()==SymbolType::REAL && sym2.GetType()==SymbolType::ARRAY)
+	{ // 1.23 + [1,2,3], point-wise addition
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& val = dynamic_cast<const SymbolReal&>(sym1);
+		const auto& arr = dynamic_cast<const SymbolList&>(sym2).GetValue();
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::add(val, *arr[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::REAL)
+	{ // [1,2,3] + 1.23, point-wise addition
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		const auto& val = dynamic_cast<const SymbolReal&>(sym2);
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::add(*arr[idx], val));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
 	else if(sym1.GetType()==SymbolType::STRING && sym2.GetType()==SymbolType::STRING)
 	{ // "abc" + "123"
 		return std::make_shared<SymbolString>(
@@ -151,6 +169,15 @@ std::shared_ptr<Symbol> Symbol::sub(const Symbol &sym1, const Symbol &sym2)
 		const auto& arr2 = dynamic_cast<const SymbolList&>(sym2).GetValue();
 		for(std::size_t idx=0; idx<std::min(arr1.size(), arr2.size()); ++idx)
 			arrNew.emplace_back(Symbol::sub(*arr1[idx], *arr2[idx]));
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
+	if(sym1.GetType()==SymbolType::ARRAY && sym2.GetType()==SymbolType::REAL)
+	{ // [1,2,3] - 1.23, point-wise subtraction
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		const auto& arr = dynamic_cast<const SymbolList&>(sym1).GetValue();
+		const auto& val = dynamic_cast<const SymbolReal&>(sym2);
+		for(std::size_t idx=0; idx<arr.size(); ++idx)
+			arrNew.emplace_back(Symbol::sub(*arr[idx], val));
 		return std::make_shared<SymbolList>(arrNew, false);
 	}
 	else if(sym1.GetType()==SymbolType::DATASET && sym2.GetType()==SymbolType::DATASET)
@@ -501,12 +528,12 @@ std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 	else if(iter != workspace->end() && iterConst != g_consts_real.end())
 	{
 		ctx.PrintError("Identifier \"", m_val, "\" names both a constant and a workspace variable, using constant.");
-		return std::make_shared<SymbolReal>(iterConst->second);
+		return std::make_shared<SymbolReal>(std::get<0>(iterConst->second));
 	}
 	else if(iter != workspace->end())
 		return iter->second;
 	else if(iterConst != g_consts_real.end())
-		return std::make_shared<SymbolReal>(iterConst->second);
+		return std::make_shared<SymbolReal>(std::get<0>(iterConst->second));
 
 	return nullptr;
 }
@@ -703,23 +730,34 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 		}
 	}
 
-
-	if(args.size() == 1)	// function call with one argument requested
+	if(args.size() == 0)	// function call with no arguments requested
+	{
+		if(auto iter = g_funcs_gen_0args.find(ident); iter != g_funcs_gen_0args.end())
+		{
+			return (*std::get<0>(iter->second))();
+		}
+		else
+		{
+			ctx.PrintError("No suitable zero-argument function \"", ident, "\" was found.");
+			return nullptr;
+		}
+	}
+	else if(args.size() == 1)	// function call with one argument requested
 	{
 		if(auto iter = g_funcs_gen_1arg.find(ident); iter != g_funcs_gen_1arg.end())
 		{	// general function
-			return (*iter->second)(args[0]);
+			return (*std::get<0>(iter->second))(args[0]);
 		}
 		else if(auto iter = g_funcs_real_1arg.find(ident);
 			iter != g_funcs_real_1arg.end() && args[0]->GetType() == SymbolType::REAL)
 		{	// real function
-			t_real funcval = (*iter->second)(dynamic_cast<SymbolReal&>(*args[0]).GetValue());
+			t_real funcval = (*std::get<0>(iter->second))(dynamic_cast<SymbolReal&>(*args[0]).GetValue());
 			return std::make_shared<SymbolReal>(funcval);
 		}
 		else if(auto iter = g_funcs_arr_1arg.find(ident);
 			iter != g_funcs_arr_1arg.end() && args[0]->GetType() == SymbolType::ARRAY)
 		{	// array function
-			return (*iter->second)(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]));
+			return (*std::get<0>(iter->second))(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]));
 		}
 		else
 		{
@@ -731,7 +769,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	{
 		if(auto iter = g_funcs_gen_2args.find(ident); iter != g_funcs_gen_2args.end())
 		{	// general function
-			return (*iter->second)(args[0], args[1]);
+			return (*std::get<0>(iter->second))(args[0], args[1]);
 		}
 		else if(auto iter = g_funcs_real_2args.find(ident); 
 			iter != g_funcs_real_2args.end() &&
@@ -739,14 +777,14 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 		{ // real function
 			t_real arg1 = dynamic_cast<SymbolReal&>(*args[0]).GetValue();
 			t_real arg2 = dynamic_cast<SymbolReal&>(*args[1]).GetValue();
-			t_real funcval = (*iter->second)(arg1, arg2);
+			t_real funcval = (*std::get<0>(iter->second))(arg1, arg2);
 			return std::make_shared<SymbolReal>(funcval);
 		}
 		else if(auto iter = g_funcs_arr_2args.find(ident);
 			iter != g_funcs_arr_2args.end()
 			&& args[0]->GetType() == SymbolType::ARRAY && args[1]->GetType() == SymbolType::ARRAY)
 		{	// array function
-			return (*iter->second)(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]),
+			return (*std::get<0>(iter->second))(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]),
 				*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[1]));
 		}
 		else

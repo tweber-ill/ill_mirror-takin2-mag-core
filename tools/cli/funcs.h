@@ -9,6 +9,7 @@
 #define __FUNCS_H__
 
 #include <unordered_map>
+#include <tuple>
 #include <string>
 #include <memory>
 
@@ -17,19 +18,20 @@
 
 
 // real functions
-extern std::unordered_map<std::string, t_real_cli(*)(t_real_cli)> g_funcs_real_1arg;
-extern std::unordered_map<std::string, t_real_cli(*)(t_real_cli, t_real_cli)> g_funcs_real_2args;
+extern std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real_cli), std::string>> g_funcs_real_1arg;
+extern std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real_cli, t_real_cli), std::string>> g_funcs_real_2args;
 
 // array functions
-extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>)> g_funcs_arr_1arg;
-extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>, std::shared_ptr<SymbolList>)> g_funcs_arr_2args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>), std::string>> g_funcs_arr_1arg;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>, std::shared_ptr<SymbolList>), std::string>> g_funcs_arr_2args;
 
 // general functions
-extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>)> g_funcs_gen_1arg;
-extern std::unordered_map<std::string, std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>)> g_funcs_gen_2args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(), std::string>> g_funcs_gen_0args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args;
 
 // constants
-extern std::unordered_map<std::string, t_real_cli> g_consts_real;
+extern std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real;
 
 
 

@@ -10,6 +10,8 @@
 
 #include "command.h"
 
+#define PROGRAM_VERSION "0.0.1"
+
 
 // the GUI's command line widget
 extern CommandLine *g_pCLI;
