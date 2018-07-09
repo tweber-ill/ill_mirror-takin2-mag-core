@@ -234,6 +234,16 @@ public:
 };
 
 
+
+/**
+ * write symbol to ostream
+ */
+static inline std::ostream& operator<< (std::ostream& ostr, const Symbol& sym)
+{
+	sym.print(ostr);
+	return ostr;
+}
+
 // ----------------------------------------------------------------------------
 
 

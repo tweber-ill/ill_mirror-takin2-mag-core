@@ -518,6 +518,7 @@ std::shared_ptr<Symbol> CliASTIdent::Eval(CliParserContext& ctx) const
 		return nullptr;
 	}
 
+
 	// look in workspace variables map
 	auto iter = workspace->find(m_val);
 	if(iter == workspace->end() && iterConst == g_consts_real.end())
@@ -734,7 +735,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	{
 		if(auto iter = g_funcs_gen_0args.find(ident); iter != g_funcs_gen_0args.end())
 		{
-			return (*std::get<0>(iter->second))();
+			return (*std::get<0>(iter->second))(ctx);
 		}
 		else
 		{
@@ -746,7 +747,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	{
 		if(auto iter = g_funcs_gen_1arg.find(ident); iter != g_funcs_gen_1arg.end())
 		{	// general function
-			return (*std::get<0>(iter->second))(args[0]);
+			return (*std::get<0>(iter->second))(ctx, args[0]);
 		}
 		else if(auto iter = g_funcs_real_1arg.find(ident);
 			iter != g_funcs_real_1arg.end() && args[0]->GetType() == SymbolType::REAL)
@@ -759,6 +760,11 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 		{	// array function
 			return (*std::get<0>(iter->second))(*reinterpret_cast<std::shared_ptr<SymbolList>*>(&args[0]));
 		}
+		else if(auto iter = g_funcs_real_1arg.find(ident);
+			iter != g_funcs_real_1arg.end() && args[0]->GetType() == SymbolType::ARRAY)
+		{	// real function, but with array argument (evaluate point-wise)
+			return call_realfunc_1arg_pointwise(ident, args[0]);
+		}
 		else
 		{
 			ctx.PrintError("No suitable one-argument function \"", ident, "\" was found.");
@@ -769,7 +775,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 	{
 		if(auto iter = g_funcs_gen_2args.find(ident); iter != g_funcs_gen_2args.end())
 		{	// general function
-			return (*std::get<0>(iter->second))(args[0], args[1]);
+			return (*std::get<0>(iter->second))(ctx, args[0], args[1]);
 		}
 		else if(auto iter = g_funcs_real_2args.find(ident); 
 			iter != g_funcs_real_2args.end() &&

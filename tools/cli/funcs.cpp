@@ -77,6 +77,41 @@ std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real, t_real), std::s
 
 	std::make_pair("copysign", std::make_tuple(static_cast<t_real(*)(t_real, t_real)>(&std::copysign), "")),
 };
+
+
+
+
+/**
+ * point-wise evaluation of a real function for an array type
+ */
+std::shared_ptr<Symbol> call_realfunc_1arg_pointwise(const std::string& ident, std::shared_ptr<Symbol> sym)
+{
+	auto iter = g_funcs_real_1arg.find(ident);
+	if(iter == g_funcs_real_1arg.end())
+		return nullptr;
+
+	if(sym->GetType() == SymbolType::ARRAY)
+	{
+		const auto& arr = dynamic_cast<const SymbolList&>(*sym).GetValue();
+		std::vector<std::shared_ptr<Symbol>> arrNew;
+		arrNew.reserve(arr.size());
+
+		for(const auto& val : arr)
+		{
+			auto funcval = call_realfunc_1arg_pointwise(ident, val);
+			arrNew.emplace_back(funcval);
+		}
+
+		return std::make_shared<SymbolList>(arrNew, false);
+	}
+	else if(sym->GetType() == SymbolType::REAL)
+	{
+		auto funcval = (*std::get<0>(iter->second))(dynamic_cast<SymbolReal&>(*sym).GetValue());
+		return std::make_shared<SymbolReal>(funcval);
+	}
+
+	return nullptr;
+}
 // ----------------------------------------------------------------------------
 
 
@@ -87,7 +122,7 @@ std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real, t_real), std::s
 /**
  * typeof function
  */
-static std::shared_ptr<Symbol> func_typeof(std::shared_ptr<Symbol> sym)
+static std::shared_ptr<Symbol> func_typeof(CliParserContext & ctx, std::shared_ptr<Symbol> sym)
 {
 	const std::string& ty = Symbol::get_type_name(*sym);
 	return std::make_shared<SymbolString>(ty);
@@ -97,7 +132,7 @@ static std::shared_ptr<Symbol> func_typeof(std::shared_ptr<Symbol> sym)
 /**
  * sizeof function
  */
-static std::shared_ptr<Symbol> func_sizeof(std::shared_ptr<Symbol> sym)
+static std::shared_ptr<Symbol> func_sizeof(CliParserContext & ctx, std::shared_ptr<Symbol> sym)
 {
 	if(sym->GetType() == SymbolType::ARRAY)
 	{	// array length
@@ -123,12 +158,26 @@ static std::shared_ptr<Symbol> func_sizeof(std::shared_ptr<Symbol> sym)
 /**
  * help
  */
-std::shared_ptr<Symbol> func_help()
+std::shared_ptr<Symbol> func_help(CliParserContext & ctx)
 {
 	std::ostringstream ostr;
 
 	ostr << "<hr>IN20 data treatment tool version " << PROGRAM_VERSION << ".<br>\n";
 	ostr << "Written by Tobias Weber, tweber@ill.fr, 2018.<hr><br>\n";
+
+	ostr << "Type funcs() or vars() to list available functions or variables.<br>\n";
+
+	return std::make_shared<SymbolString>(ostr.str());
+}
+
+
+
+/**
+ * list of functions
+ */
+std::shared_ptr<Symbol> func_funcs(CliParserContext & ctx)
+{
+	std::ostringstream ostr;
 
 	ostr << "<table border=\"1\" width=\"75%\">\n";
 	ostr << "<caption><b>Real functions with one argument</b></caption>\n";
@@ -228,18 +277,60 @@ std::shared_ptr<Symbol> func_help()
 	ostr << "<br>\n";
 
 
+	return std::make_shared<SymbolString>(ostr.str());
+}
+
+
+/**
+ * list of variables
+ */
+std::shared_ptr<Symbol> func_vars(CliParserContext & ctx)
+{
+	std::ostringstream ostr;
+
+	// constants
 	ostr << "<table border=\"1\" width=\"75%\" >\n";
-	ostr << "<caption><b>Real constants</b></caption>\n";
-	ostr << "<tr>" << "<th>" << "Constant" << "</th>" << "<th>" << "Value" << "</th>" << "<th>" << "Description" << "</th>" << "</tr>\n";
+	ostr << "<caption><b>Constants</b></caption>\n";
+	ostr << "<tr>" << "<th>" << "Constant" << "</th>" 
+		<< "<th>" << "Type" << "</th>" 
+		<< "<th>" << "Value" << "</th>" 
+		<< "<th>" << "Description" << "</th>" << "</tr>\n";
 
 	for(const auto& pair : g_consts_real)
 	{
 		ostr << "<tr>";
-		ostr << "<td>" << pair.first << "</td>" << "<td>" << std::get<0>(pair.second) << "</td>" << "<td>" << std::get<1>(pair.second) << "</td>\n";
+		ostr << "<td>" << pair.first << "</td>" 
+			<< "<td>" << "real" << "</td>"
+			<< "<td>" << std::get<0>(pair.second) << "</td>" 
+			<< "<td>" << std::get<1>(pair.second) << "</td>\n";
 		ostr << "</tr>\n";
 	}
 	ostr << "</table>\n";
 	ostr << "<br>\n";
+
+
+
+
+	// variables
+	if(auto *workspace = ctx.GetWorkspace(); workspace)
+	{
+		ostr << "<table border=\"1\" width=\"75%\" >\n";
+		ostr << "<caption><b>Variables</b></caption>\n";
+		ostr << "<tr>" << "<th>" << "Variable" << "</th>" 
+			<< "<th>" << "Type" << "</th>" 
+			<< "<th>" << "Value" << "</th>" << "</tr>\n";
+
+		for(const auto& pair : *workspace)
+		{
+			ostr << "<tr>";
+			ostr << "<td>" << pair.first << "</td>" 
+				<< "<td>" << Symbol::get_type_name(*pair.second) << "</td>"
+				<< "<td>" << (*pair.second) << "</td>\n";
+			ostr << "</tr>\n";
+		}
+		ostr << "</table>\n";
+		ostr << "<br>\n";
+	}
 
 
 	return std::make_shared<SymbolString>(ostr.str());
@@ -247,27 +338,56 @@ std::shared_ptr<Symbol> func_help()
 
 
 /**
+ * clear all variables
+ */
+std::shared_ptr<Symbol> func_clear(CliParserContext & ctx)
+{
+	if(auto *workspace = ctx.GetWorkspace(); workspace)
+	{
+		std::ostringstream ostr;
+		ostr << workspace->size() << " variables removed.";
+
+		workspace->clear();
+		ctx.EmitWorkspaceUpdated();
+
+		return std::make_shared<SymbolString>(ostr.str());
+	}
+
+	return std::make_shared<SymbolString>("No workspace available.");
+}
+
+
+
+
+/**
  * map of general functions with zero arguments
  */
-std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(), std::string>> g_funcs_gen_0args =
+std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
+	(CliParserContext&), std::string>> g_funcs_gen_0args =
 {
 	std::make_pair("help", std::make_tuple(&func_help, "display help")),
+	std::make_pair("vars", std::make_tuple(&func_vars, "list variables")),
+	std::make_pair("funcs", std::make_tuple(&func_funcs, "list functions")),
+	std::make_pair("clear", std::make_tuple(&func_clear, "remove all variables")),
 };
 
 
 /**
  * map of general functions with one argument
  */
-std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg =
+std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
+	(CliParserContext&, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg =
 {
 	std::make_pair("typeof", std::make_tuple(&func_typeof, "return symbol type")),
 	std::make_pair("sizeof", std::make_tuple(&func_sizeof, "return symbol size")),
+	//std::make_pair("clear", std::make_tuple(&func_clear, "removes a variable")),
 };
 
 /**
  * map of general functions with two arguments
  */
-std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args =
+std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
+	(CliParserContext&, std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args =
 {
 };
 

@@ -124,6 +124,7 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
  */
 void WorkSpaceWidget::UpdateList()
 {
+	// add missing symbols to workspace list
 	for(const auto& [ident, symdataset] : m_workspace)
 	{
 		// skip real or string variables
@@ -139,6 +140,15 @@ void WorkSpaceWidget::UpdateList()
 		auto *pItem = new QListWidgetItem(m_pListFiles);
 		pItem->setText(qident);
 		//pItem->setData(Qt::UserRole, qident);
+	}
+
+
+	// remove superfluous symbols from workspace list
+	for(int idx=m_pListFiles->count()-1; idx>=0; --idx)
+	{
+		std::string ident = m_pListFiles->item(idx)->text().toStdString();
+		if(m_workspace.find(ident) == m_workspace.end())
+			delete m_pListFiles->item(idx);
 	}
 }
 

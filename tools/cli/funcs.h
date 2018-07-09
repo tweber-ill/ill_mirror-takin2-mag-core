@@ -26,9 +26,9 @@ extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>, std::shared_ptr<SymbolList>), std::string>> g_funcs_arr_2args;
 
 // general functions
-extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(), std::string>> g_funcs_gen_0args;
-extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg;
-extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&), std::string>> g_funcs_gen_0args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args;
 
 // constants
 extern std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real;
@@ -37,6 +37,7 @@ extern std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_co
 
 // functions which are also needed in other modules
 extern std::shared_ptr<Symbol> func_dot(std::shared_ptr<SymbolList> sym1, std::shared_ptr<SymbolList> sym2);
+extern std::shared_ptr<Symbol> call_realfunc_1arg_pointwise(const std::string& ident, std::shared_ptr<Symbol> sym);
 
 
 #endif
