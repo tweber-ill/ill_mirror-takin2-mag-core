@@ -36,6 +36,7 @@ WorkSpaceWidget::WorkSpaceWidget(QWidget *pParent, QSettings *pSettings)
 	// connections
 	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &WorkSpaceWidget::ItemSelected);
 	connect(m_pListFiles, &QListWidget::itemDoubleClicked, this, &WorkSpaceWidget::ItemDoubleClicked);
+	connect(m_pListFiles->itemDelegate(), &QAbstractItemDelegate::commitData, this, &WorkSpaceWidget::ItemEdited);
 	// ------------------------------------------------------------------------
 
 
@@ -88,6 +89,61 @@ void WorkSpaceWidget::ItemDoubleClicked(QListWidgetItem* pCur)
 }
 
 
+/**
+ * an item in the list was edited
+ */
+void WorkSpaceWidget::ItemEdited()
+{
+	// the edited item is the one where the text does not match to the user data
+	for(int item=0; item<m_pListFiles->count(); ++item)
+	{
+		auto* pItem = m_pListFiles->item(item);
+		auto newName = pItem->text();
+		auto oldName = pItem->data(Qt::UserRole).toString();
+
+		// TODO: check if newName is a valid identifier
+		if(newName == "")
+		{
+			print_err("\"", newName.toStdString(), "\" is an invalid identifier.");
+			pItem->setText(oldName);	// rename back
+			continue;
+		}
+
+		// try to change name
+		if(newName != oldName)
+		{
+			// update the workspace map
+			auto node = m_workspace.extract(oldName.toStdString());
+			if(!node)
+			{
+				print_err("Variable \"", oldName.toStdString(), "\" cannot be found.");
+				continue;
+			}
+
+			node.key() = newName.toStdString();
+			auto inserted = m_workspace.insert(std::move(node));
+
+			if(inserted.inserted)
+			{
+				// sync data with new name
+				pItem->setData(Qt::UserRole, newName);
+			}
+			else 
+			{
+				// renaming failed, undo changes
+				inserted.node.key() = oldName.toStdString();
+				m_workspace.insert(std::move(inserted.node));
+				pItem->setText(oldName);
+
+				print_err("Variable \"", oldName.toStdString(), "\" cannot be renamed due to a conflict.");
+			}
+
+			print_out("Variable renamed: \"", oldName.toStdString(), "\" -> \"", newName.toStdString(), "\".");
+		}
+	}
+}
+
+
 
 /**
  * transfer a file from the file browser and convert it into the internal format
@@ -124,7 +180,7 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
  */
 void WorkSpaceWidget::UpdateList()
 {
-	// add missing symbols to workspace list
+	// add missing symbols to list widget
 	for(const auto& [ident, symdataset] : m_workspace)
 	{
 		// skip real or string variables
@@ -139,11 +195,12 @@ void WorkSpaceWidget::UpdateList()
 
 		auto *pItem = new QListWidgetItem(m_pListFiles);
 		pItem->setText(qident);
-		//pItem->setData(Qt::UserRole, qident);
+		pItem->setData(Qt::UserRole, qident);	// also set identifier as data (used in renaming)
+		pItem->setFlags(Qt::ItemIsEditable | pItem->flags());
 	}
 
 
-	// remove superfluous symbols from workspace list
+	// remove superfluous symbols from list widget
 	for(int idx=m_pListFiles->count()-1; idx>=0; --idx)
 	{
 		std::string ident = m_pListFiles->item(idx)->text().toStdString();

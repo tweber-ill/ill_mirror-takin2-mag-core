@@ -44,6 +44,7 @@ public:
 protected:
 	void ItemSelected(QListWidgetItem* pCur);
 	void ItemDoubleClicked(QListWidgetItem* pCur);
+	void ItemEdited();
 	bool eventFilter(QObject *pObj, QEvent *pEvt);
 
 public:

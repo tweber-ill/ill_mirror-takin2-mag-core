@@ -118,6 +118,9 @@ std::shared_ptr<Symbol> call_realfunc_1arg_pointwise(const std::string& ident, s
 
 
 
+
+
+
 // ----------------------------------------------------------------------------
 /**
  * typeof function
@@ -153,6 +156,57 @@ static std::shared_ptr<Symbol> func_sizeof(CliParserContext & ctx, std::shared_p
 	// 1 for other types
 	return std::make_shared<SymbolReal>(1);
 }
+
+
+/**
+ * convert a dataset to an array
+ */
+std::shared_ptr<Symbol> func_array(CliParserContext & ctx, std::shared_ptr<Symbol> _sym)
+{
+	if(_sym->GetType() == SymbolType::DATASET)
+	{
+		std::vector<std::shared_ptr<Symbol>> arr;
+		const auto& dataset = dynamic_cast<SymbolDataset&>(*_sym).GetValue();
+
+		// iterate channels
+		for(std::size_t ch=0; ch<dataset.GetNumChannels(); ++ch)
+		{
+			const auto& dat = dataset.GetChannel(ch);
+			if(dat.GetNumAxes()==0 || dat.GetNumCounters()==0)
+			{
+				ctx.PrintError("Invalid x axis or counter data in channel ", ch, ".");
+				return nullptr;
+			}
+
+			const auto& xvals = dat.GetAxis(0);
+			const auto& yvals = dat.GetCounter(0);
+			const auto& yerrs = dat.GetCounterErrors(0);
+
+			std::vector<std::shared_ptr<Symbol>> x, y, yerr;
+
+			for(std::size_t i=0; i<xvals.size(); ++i)
+			{
+				x.emplace_back(std::make_shared<SymbolReal>(xvals[i]));
+				y.emplace_back(std::make_shared<SymbolReal>(yvals[i]));
+				yerr.emplace_back(std::make_shared<SymbolReal>(yerrs[i]));
+			}
+
+			// add x, y, yerr to channel
+			std::vector<std::shared_ptr<Symbol>> arrCh;
+			arrCh.emplace_back(std::make_shared<SymbolList>(x, false));
+			arrCh.emplace_back(std::make_shared<SymbolList>(y, false));
+			arrCh.emplace_back(std::make_shared<SymbolList>(yerr, false));
+
+			// add channel to array
+			arr.emplace_back(std::make_shared<SymbolList>(arrCh, false));
+		}
+
+		return std::make_shared<SymbolList>(arr, false);
+	}
+
+	return nullptr;
+}
+
 
 
 /**
@@ -380,8 +434,9 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 {
 	std::make_pair("typeof", std::make_tuple(&func_typeof, "return symbol type")),
 	std::make_pair("sizeof", std::make_tuple(&func_sizeof, "return symbol size")),
-	//std::make_pair("clear", std::make_tuple(&func_clear, "removes a variable")),
+	std::make_pair("toarray", std::make_tuple(&func_array, "convert a dataset to an array")),
 };
+
 
 /**
  * map of general functions with two arguments
@@ -392,6 +447,10 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 };
 
 // ----------------------------------------------------------------------------
+
+
+
+
 
 
 
