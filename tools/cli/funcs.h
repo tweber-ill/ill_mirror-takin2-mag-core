@@ -9,6 +9,7 @@
 #define __FUNCS_H__
 
 #include <unordered_map>
+#include <vector>
 #include <tuple>
 #include <string>
 #include <memory>
@@ -29,6 +30,7 @@ extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&), std::string>> g_funcs_gen_0args;
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_1arg;
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, std::shared_ptr<Symbol>, std::shared_ptr<Symbol>), std::string>> g_funcs_gen_2args;
+extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, const std::vector<std::shared_ptr<Symbol>>&), std::string>> g_funcs_gen_vararg;
 
 // constants
 extern std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real;

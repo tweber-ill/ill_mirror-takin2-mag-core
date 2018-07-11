@@ -147,6 +147,9 @@ public:
 	friend const Dataset& operator +(const Dataset& dat);
 	friend Dataset operator -(const Dataset& dat);
 
+	// different ways of uniting data sets
+	static Dataset add_pointwise(const Dataset& dat1, const Dataset& dat2);
+	static Dataset append(const Dataset& dat1, const Dataset& dat2);
 
 	static std::tuple<bool, Dataset> convert_instr_file(const char* pcFile);
 };

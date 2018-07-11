@@ -416,13 +416,13 @@ Data operator /(const Data& dat1, t_real d)
 // dataset operators
 // ----------------------------------------------------------------------------
 
-Dataset operator +(const Dataset& dat1, const Dataset& dat2)
+Dataset Dataset::add_pointwise(const Dataset& dat1, const Dataset& dat2)
 {
 	Dataset dataset;
 
 	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
 	{
-		Data dat = dat1.GetChannel(ch) + dat2.GetChannel(ch);
+		Data dat = Data::add_pointwise(dat1.GetChannel(ch), dat2.GetChannel(ch));
 		dataset.AddChannel(std::move(dat));
 	}
 
@@ -430,17 +430,29 @@ Dataset operator +(const Dataset& dat1, const Dataset& dat2)
 }
 
 
-Dataset operator -(const Dataset& dat1, const Dataset& dat2)
+Dataset Dataset::append(const Dataset& dat1, const Dataset& dat2)
 {
 	Dataset dataset;
 
 	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
 	{
-		Data dat = dat1.GetChannel(ch) - dat2.GetChannel(ch);
+		Data dat = Data::append(dat1.GetChannel(ch), dat2.GetChannel(ch));
 		dataset.AddChannel(std::move(dat));
 	}
 
 	return dataset;
+}
+
+
+Dataset operator +(const Dataset& dat1, const Dataset& dat2)
+{
+	return Dataset::add_pointwise(dat1, dat2);
+}
+
+
+Dataset operator -(const Dataset& dat1, const Dataset& dat2)
+{
+	return dat1 + (-dat2);
 }
 
 
