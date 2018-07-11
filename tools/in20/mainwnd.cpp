@@ -7,6 +7,7 @@
 
 #include "mainwnd.h"
 #include "globals.h"
+#include "funcs.h"
 
 
 MainWnd::MainWnd(QSettings* pSettings)
@@ -46,10 +47,11 @@ MainWnd::MainWnd(QSettings* pSettings)
 	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCurPlot);
 
 
+
+
 	// ------------------------------------------------------------------------
 	// connections
-	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles,
-		m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
+	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles, m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
 	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
 
@@ -74,6 +76,23 @@ MainWnd::MainWnd(QSettings* pSettings)
 		if(m_pSettings->contains("mainwnd/state"))
 			this->restoreState(m_pSettings->value("mainwnd/state").toByteArray());
 	}
+	// ------------------------------------------------------------------------
+
+
+
+	// ------------------------------------------------------------------------
+	// add the built-in function list to the completer
+	QStringList lstFuncs;
+	for(const auto &pair : g_funcs_real_1arg) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_real_2args) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_arr_1arg) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_arr_2args) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_gen_0args) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_gen_1arg) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_gen_2args) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_gen_vararg) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_consts_real) lstFuncs.push_back(pair.first.c_str());
+	m_pCLI->GetWidget()->SetCompleterItems(lstFuncs);
 	// ------------------------------------------------------------------------
 }
 

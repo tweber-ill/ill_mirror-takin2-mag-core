@@ -6,10 +6,13 @@
  */
 
 #include "command.h"
+#include "tlibs/time/chrono.h"
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
-#include "tlibs/time/chrono.h"
+#include <QtWidgets/QCompleter>
+#include <QtWidgets/QAbstractItemView>
+#include <QtGui/QStandardItemModel>
 
 
 // ----------------------------------------------------------------------------
@@ -24,6 +27,13 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 	m_pEditCLI->setEditable(true);
 	m_pEditCLI->lineEdit()->setPlaceholderText("Enter Command");
 	m_pEditCLI->lineEdit()->setFocus();
+
+	m_pEditCLI->setCompleter(new QCompleter(this));
+	m_pEditCLI->completer()->setModel(new QStandardItemModel(m_pEditCLI->completer()));
+	//m_pEditCLI->completer()->popup()->setModel(m_pEditCLI->completer()->model());
+	m_pEditCLI->completer()->setCaseSensitivity(Qt::CaseSensitive);
+	m_pEditCLI->completer()->setModelSorting(QCompleter::CaseSensitivelySortedModel);
+	m_pEditCLI->completer()->setCompletionMode(QCompleter::PopupCompletion);
 
 
 	// ------------------------------------------------------------------------
@@ -51,6 +61,27 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 
 CommandLineWidget::~CommandLineWidget()
 {
+}
+
+
+void CommandLineWidget::UpdateCompleter()
+{
+	auto *mod = static_cast<QStandardItemModel*>(m_pEditCLI->completer()->model());
+	mod->clear();
+
+	// add user-defined items to list
+	for(const auto& str : m_completerItems)
+	{
+		auto item = new QStandardItem(str);
+		mod->appendRow(item);
+	}
+
+	// recent commands stored in combo box
+	for(int idx=0; idx<m_pEditCLI->count(); ++idx)
+	{
+		auto item = new QStandardItem(m_pEditCLI->itemIcon(idx), m_pEditCLI->itemText(idx));
+		mod->appendRow(item);
+	}
 }
 
 
@@ -111,6 +142,9 @@ void CommandLineWidget::CommandEntered()
 				std::ostringstream ostrRes;
 				sym->print(ostrRes);
 				PrintOutput(0, ostrRes.str().c_str());
+
+				// add successful commands to completer
+				UpdateCompleter();
 			}
 			else
 			{

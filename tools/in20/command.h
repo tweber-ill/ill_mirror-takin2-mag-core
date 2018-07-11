@@ -29,6 +29,7 @@ private:
 
 	QTextEdit *m_pEditHistory = new QTextEdit(this);
 	QComboBox *m_pEditCLI = new QComboBox(this);
+	QStringList m_completerItems;
 
 	CliParserContext m_parsectx;
 
@@ -36,6 +37,7 @@ private:
 protected:
 	void CommandEntered();
 	void ScrollToEnd();
+	void UpdateCompleter();
 
 public:
 	CommandLineWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
@@ -51,6 +53,8 @@ public:
 		(ostr << ... << std::forward<T>(msgs));
 		PrintOutputString(is_err, ostr.str().c_str());
 	}
+
+	void SetCompleterItems(const QStringList& lst) { m_completerItems = lst; UpdateCompleter(); }
 };
 
 
