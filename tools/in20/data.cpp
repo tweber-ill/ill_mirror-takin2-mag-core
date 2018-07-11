@@ -6,7 +6,9 @@
  */
 
 #include "data.h"
+#include "globals.h"
 #include "tlibs/file/loadinstr.h"
+#include "tlibs/math/linalg.h"
 #include "libs/algos.h"
 
 
@@ -140,6 +142,123 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 // data operators
 // ----------------------------------------------------------------------------
 
+Data Data::add_pointwise(const Data& dat1, const Data& dat2)
+{
+	// check if x axes and dimensions are equal
+	constexpr const t_real_dat eps = 0.01;
+
+	bool compatible = true;
+	compatible = compatible && (dat1.m_x_names == dat2.m_x_names);
+	compatible = compatible && (dat1.m_x.size() == dat2.m_x.size());
+	if(compatible)
+	{
+		for(std::size_t i=0; i<dat2.m_x.size(); ++i)
+		{
+			if(!tl::vec_equal(dat1.m_x[i], dat2.m_x[i], eps))
+			{
+				compatible = false;
+				break;
+			}
+		}
+	}
+
+	if(!compatible)
+	{
+		print_err("Cannot add incompatible data sets: x axes do not match.");
+		return Data();
+	}
+
+
+	Data datret = dat1;
+
+	// detectors
+	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+	{
+		auto& det = datret.m_counts[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += dat2.m_counts[detidx][cntidx];
+
+			datret.m_counts_err[detidx][cntidx] =
+				std::sqrt(dat1.m_counts_err[detidx][cntidx]*dat1.m_counts_err[detidx][cntidx]
+					+ dat2.m_counts_err[detidx][cntidx]*dat2.m_counts_err[detidx][cntidx]);
+		}
+	}
+
+	// monitors
+	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+	{
+		auto& det = datret.m_monitors[detidx];
+
+		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
+		{
+			auto& cnt = det[cntidx];
+			cnt += dat2.m_monitors[detidx][cntidx];
+
+			datret.m_monitors_err[detidx][cntidx] =
+				std::sqrt(dat1.m_monitors_err[detidx][cntidx]*dat1.m_monitors_err[detidx][cntidx]
+					+ dat2.m_monitors_err[detidx][cntidx]*dat2.m_monitors_err[detidx][cntidx]);
+		}
+	}
+
+	return datret;
+}
+
+
+/**
+ * append dat2 to the end of dat1
+ */
+Data Data::append(const Data& dat1, const Data& dat2)
+{
+	if(dat1.m_counts.size() != dat2.m_counts.size())
+	{
+		print_err("Mismatch in number of detector counters.");
+		return Data();
+	}
+
+	if(dat1.m_monitors.size() != dat2.m_monitors.size())
+	{
+		print_err("Mismatch in number of monitor counters.");
+		return Data();
+	}
+
+
+	Data datret = dat1;
+
+	// append x axes
+	for(std::size_t xidx=0; xidx<dat1.m_x_names.size(); ++xidx)
+	{
+		// find matching axis
+		auto iter = std::find(dat2.m_x_names.begin(), dat2.m_x_names.end(), dat1.m_x_names[xidx]);
+		if(iter == dat2.m_x_names.end())
+		{
+			print_err("Column \"", dat1.m_x_names[xidx], "\" was not found in all data sets. Ignoring.");
+			continue;
+		}
+
+		// insert data
+		std::size_t xidx2 = iter - dat2.m_x_names.begin();
+		datret.m_x[xidx].insert(datret.m_x[xidx].end(), dat2.m_x[xidx2].begin(), dat2.m_x[xidx2].end());
+	}
+
+
+	// append counters, monitors, and their errors
+	for(std::size_t yidx=0; yidx<dat1.m_counts.size(); ++yidx)
+		datret.m_counts[yidx].insert(datret.m_counts[yidx].end(), dat2.m_counts[yidx].begin(), dat2.m_counts[yidx].end());
+	for(std::size_t yidx=0; yidx<dat1.m_counts_err.size(); ++yidx)
+		datret.m_counts_err[yidx].insert(datret.m_counts_err[yidx].end(), dat2.m_counts_err[yidx].begin(), dat2.m_counts_err[yidx].end());
+	for(std::size_t yidx=0; yidx<dat1.m_monitors.size(); ++yidx)
+		datret.m_monitors[yidx].insert(datret.m_monitors[yidx].end(), dat2.m_monitors[yidx].begin(), dat2.m_monitors[yidx].end());
+	for(std::size_t yidx=0; yidx<dat1.m_counts_err.size(); ++yidx)
+		datret.m_monitors_err[yidx].insert(datret.m_monitors_err[yidx].end(), dat2.m_monitors_err[yidx].begin(), dat2.m_monitors_err[yidx].end());
+
+
+	return datret;
+}
+
+
 const Data& operator +(const Data& dat)
 {
 	return dat;
@@ -180,43 +299,7 @@ Data operator -(const Data& dat)
 
 Data operator +(const Data& dat1, const Data& dat2)
 {
-	// TODO: check if x axes and dimensions are equal!
-
-	Data datret = dat1;
-
-	// detectors
-	for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
-	{
-		auto& det = datret.m_counts[detidx];
-
-		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
-		{
-			auto& cnt = det[cntidx];
-			cnt += dat2.m_counts[detidx][cntidx];
-
-			datret.m_counts_err[detidx][cntidx] =
-				std::sqrt(dat1.m_counts_err[detidx][cntidx]*dat1.m_counts_err[detidx][cntidx]
-					+ dat2.m_counts_err[detidx][cntidx]*dat2.m_counts_err[detidx][cntidx]);
-		}
-	}
-
-	// monitors
-	for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
-	{
-		auto& det = datret.m_monitors[detidx];
-
-		for(std::size_t cntidx=0; cntidx<det.size(); ++cntidx)
-		{
-			auto& cnt = det[cntidx];
-			cnt += dat2.m_monitors[detidx][cntidx];
-
-			datret.m_monitors_err[detidx][cntidx] =
-				std::sqrt(dat1.m_monitors_err[detidx][cntidx]*dat1.m_monitors_err[detidx][cntidx]
-					+ dat2.m_monitors_err[detidx][cntidx]*dat2.m_monitors_err[detidx][cntidx]);
-		}
-	}
-
-	return datret;
+	return Data::add_pointwise(dat1, dat2);
 }
 
 

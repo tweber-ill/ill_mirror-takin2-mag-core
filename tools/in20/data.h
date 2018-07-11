@@ -110,6 +110,10 @@ public:
 	// unary operators
 	friend const Data& operator +(const Data& dat);
 	friend Data operator -(const Data& dat);
+
+	// different ways of uniting data containers
+	static Data add_pointwise(const Data& dat1, const Data& dat2);
+	static Data append(const Data& dat1, const Data& dat2);
 };
 
 

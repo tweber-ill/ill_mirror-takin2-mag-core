@@ -9,6 +9,7 @@
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
+#include "tlibs/time/chrono.h"
 
 
 // ----------------------------------------------------------------------------
@@ -61,7 +62,9 @@ void CommandLineWidget::CommandEntered()
 	m_pEditCLI->clearEditText();
 	if(!cmd.length()) return;
 
-	m_pEditHistory->insertHtml("<font color=\"#0000ff\">" + cmd + "</font><br>");
+	std::string timestamp = tl::epoch_to_str(tl::epoch());
+	m_pEditHistory->insertHtml("<b><font color=\"#008800\">" + QString(timestamp.c_str()) + "&gt;</font> " +
+		"<font color=\"#0000ff\">" + cmd + "</font></b><br>");
 
 
 	// parse command
