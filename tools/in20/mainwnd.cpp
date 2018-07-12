@@ -83,15 +83,15 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// ------------------------------------------------------------------------
 	// add the built-in function list to the completer
 	QStringList lstFuncs;
-	for(const auto &pair : g_funcs_real_1arg) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_real_2args) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_arr_1arg) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_arr_2args) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_gen_0args) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_gen_1arg) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_gen_2args) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_funcs_gen_vararg) lstFuncs.push_back(pair.first.c_str());
-	for(const auto &pair : g_consts_real) lstFuncs.push_back(pair.first.c_str());
+	for(const auto &pair : g_funcs_real_1arg) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 1 argument]").c_str()));
+	for(const auto &pair : g_funcs_real_2args) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 2 arguments]").c_str()));
+	for(const auto &pair : g_funcs_arr_1arg) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 1 argument]").c_str()));
+	for(const auto &pair : g_funcs_arr_2args) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 2 arguments]").c_str()));
+	for(const auto &pair : g_funcs_gen_0args) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, no arguments]").c_str()));
+	for(const auto &pair : g_funcs_gen_1arg) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 1 argument]").c_str()));
+	for(const auto &pair : g_funcs_gen_2args) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, 2 arguments]").c_str()));
+	for(const auto &pair : g_funcs_gen_vararg) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [function, variable arguments]").c_str()));
+	for(const auto &pair : g_consts_real) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [constant]").c_str()));
 	m_pCLI->GetWidget()->SetCompleterItems(lstFuncs);
 	// ------------------------------------------------------------------------
 }

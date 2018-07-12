@@ -12,6 +12,8 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QCompleter>
 #include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QTableView>
+#include <QtWidgets/QHeaderView>
 #include <QtGui/QStandardItemModel>
 
 
@@ -28,12 +30,27 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 	m_pEditCLI->lineEdit()->setPlaceholderText("Enter Command");
 	m_pEditCLI->lineEdit()->setFocus();
 
+
 	m_pEditCLI->setCompleter(new QCompleter(this));
-	m_pEditCLI->completer()->setModel(new QStandardItemModel(m_pEditCLI->completer()));
-	//m_pEditCLI->completer()->popup()->setModel(m_pEditCLI->completer()->model());
+	m_pEditCLI->completer()->setModel(new QStandardItemModel(this));
+
+	auto *completerPopup = new QTableView(this);
+	completerPopup->setShowGrid(false);
+	completerPopup->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 2);
+	completerPopup->verticalHeader()->setVisible(false);
+	completerPopup->horizontalHeader()->setVisible(false);
+	completerPopup->setSelectionBehavior(QTableView::SelectRows);
+	completerPopup->setSelectionMode(QTableView::SingleSelection);
+	completerPopup->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	completerPopup->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+	m_pEditCLI->completer()->setPopup(completerPopup);
 	m_pEditCLI->completer()->setCaseSensitivity(Qt::CaseSensitive);
-	m_pEditCLI->completer()->setModelSorting(QCompleter::CaseSensitivelySortedModel);
+	m_pEditCLI->completer()->setModelSorting(/*QCompleter::CaseSensitivelySortedModel*/ QCompleter::UnsortedModel);
+	m_pEditCLI->completer()->setFilterMode(Qt::MatchStartsWith);
+	m_pEditCLI->completer()->setCompletionColumn(0);
 	m_pEditCLI->completer()->setCompletionMode(QCompleter::PopupCompletion);
+
 
 
 	// ------------------------------------------------------------------------
@@ -47,6 +64,8 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 	// ------------------------------------------------------------------------
 	// connections
 	connect(m_pEditCLI->lineEdit(), &QLineEdit::returnPressed, this, &CommandLineWidget::CommandEntered);
+	connect(m_pEditCLI->completer(), static_cast<void(QCompleter::*)(const QString&)>(&QCompleter::activated), 
+		this, &CommandLineWidget::CompleterActivated);
 	// ------------------------------------------------------------------------
 
 
@@ -64,6 +83,21 @@ CommandLineWidget::~CommandLineWidget()
 }
 
 
+void CommandLineWidget::resizeEvent(QResizeEvent *evt)
+{
+	// resize the completer popup
+	auto *completerPopup = static_cast<QTableView*>(m_pEditCLI->completer()->popup());
+	completerPopup->setColumnWidth(0, m_pEditCLI->width()/2 - 8);
+	completerPopup->setColumnWidth(1, m_pEditCLI->width()/2 - 8);
+
+	if(evt)
+		QWidget::resizeEvent(evt);
+}
+
+
+/**
+ * update the autocomplete list
+ */
 void CommandLineWidget::UpdateCompleter()
 {
 	auto *mod = static_cast<QStandardItemModel*>(m_pEditCLI->completer()->model());
@@ -72,16 +106,35 @@ void CommandLineWidget::UpdateCompleter()
 	// add user-defined items to list
 	for(const auto& str : m_completerItems)
 	{
-		auto item = new QStandardItem(str);
-		mod->appendRow(item);
+		auto lst = str.split("###");
+		QString strItem, strDesc;
+		if(lst.size() >= 1) strItem = lst[0];
+		if(lst.size() >= 2) strDesc = lst[1];
+
+		auto *item = new QStandardItem(strItem);
+		auto *desc = new QStandardItem(strDesc);
+		mod->appendRow({item, desc});
 	}
 
 	// recent commands stored in combo box
 	for(int idx=0; idx<m_pEditCLI->count(); ++idx)
 	{
-		auto item = new QStandardItem(m_pEditCLI->itemIcon(idx), m_pEditCLI->itemText(idx));
-		mod->appendRow(item);
+		auto *item = new QStandardItem(m_pEditCLI->itemIcon(idx), m_pEditCLI->itemText(idx));
+		auto *desc = new QStandardItem("command history");
+		mod->appendRow({item, desc});
 	}
+
+	// ensure the correct size of the columns in the popup table
+	resizeEvent(nullptr);
+}
+
+
+/**
+ * clicked on a completer item
+ */
+void CommandLineWidget::CompleterActivated(const QString &str)
+{
+	//std::cout << str.toStdString() << std::endl;
 }
 
 

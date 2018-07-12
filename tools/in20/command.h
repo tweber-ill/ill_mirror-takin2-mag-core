@@ -37,7 +37,12 @@ private:
 protected:
 	void CommandEntered();
 	void ScrollToEnd();
+
 	void UpdateCompleter();
+	void CompleterActivated(const QString &str);
+
+	virtual void resizeEvent(QResizeEvent *evt) override;
+
 
 public:
 	CommandLineWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
