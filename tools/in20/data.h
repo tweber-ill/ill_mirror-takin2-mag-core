@@ -96,6 +96,9 @@ public:
 			m_x_names.push_back("ax" + std::to_string(GetNumAxes()));
 	}
 
+public:
+	Data norm(std::size_t mon = 0) const;
+
 
 	// binary operators
 	friend Data operator +(const Data& dat1, const Data& dat2);
@@ -110,6 +113,7 @@ public:
 	// unary operators
 	friend const Data& operator +(const Data& dat);
 	friend Data operator -(const Data& dat);
+
 
 	// different ways of uniting data containers
 	static Data add_pointwise(const Data& dat1, const Data& dat2);
@@ -132,6 +136,9 @@ public:
 	void AddChannel(const Data &data) { m_data.push_back(data); }
 	void AddChannel(Data &&data) { m_data.emplace_back(std::move(data)); }
 
+public:
+	Dataset norm(std::size_t mon = 0) const;
+
 
 	// binary operators
 	friend Dataset operator +(const Dataset& dat1, const Dataset& dat2);
@@ -146,6 +153,7 @@ public:
 	// unary operators
 	friend const Dataset& operator +(const Dataset& dat);
 	friend Dataset operator -(const Dataset& dat);
+
 
 	// different ways of uniting data sets
 	static Dataset add_pointwise(const Dataset& dat1, const Dataset& dat2);

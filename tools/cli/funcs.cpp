@@ -549,6 +549,23 @@ std::shared_ptr<Symbol> func_add_pointwise(CliParserContext & ctx, const std::ve
 
 	return symRet;
 }
+
+
+
+/**
+ * normalise dataset to monitor counter
+ */
+std::shared_ptr<Symbol> func_normtomon(CliParserContext & ctx, std::shared_ptr<Symbol> arg)
+{
+	if(!arg || arg->GetType() != SymbolType::DATASET)
+	{
+		ctx.PrintError("Expected a data set.");
+		return nullptr;
+	}
+
+	const auto &dat = dynamic_cast<const SymbolDataset&>(*arg);
+	return std::make_shared<SymbolDataset>(dat.GetValue().norm(0));
+}
 // ----------------------------------------------------------------------------
 
 
@@ -668,6 +685,8 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 	std::make_pair("typeof", std::make_tuple(&func_typeof, "return symbol type")),
 	std::make_pair("sizeof", std::make_tuple(&func_sizeof, "return symbol size")),
 	std::make_pair("toarray", std::make_tuple(&func_array, "convert a dataset to an array")),
+
+	std::make_pair("normtomon", std::make_tuple(&func_normtomon, "normalise data set to monitor counter")),
 };
 
 /**

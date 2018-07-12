@@ -99,7 +99,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 		{
 			std::vector<t_real> thedat, theerr;
 			copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
-			std::transform(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(theerr),
+			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
 					if(tl::float_equal<t_real>(y, 0))
@@ -116,7 +116,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 		{
 			std::vector<t_real> thedat, theerr;
 			copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
-			std::transform(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(theerr),
+			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
 					if(tl::float_equal<t_real>(y, 0))
@@ -407,6 +407,60 @@ Data operator /(const Data& dat1, t_real d)
 	return dat1 * t_real(1)/d;
 }
 
+
+
+/**
+ * normalise to monitor counter
+ */
+Data Data::norm(std::size_t monidx) const
+{
+	if(GetNumCounters() != GetNumMonitors())
+	{
+		print_err("Number of monitors has to be equal to the number of detector counters.");
+		return *this;
+	}
+	if(monidx >= GetNumMonitors())
+	{
+		print_err("Invalid monitor selected.");
+		return *this;
+	}
+
+
+	Data datret = *this;
+
+	// normalise all counters
+	for(std::size_t detidx=0; detidx<GetNumCounters(); ++detidx)
+	{
+		const auto& det = GetCounter(detidx);
+		const auto& deterr = GetCounterErrors(detidx);
+		const auto& mon = GetMonitor(monidx);
+		const auto& monerr = GetMonitorErrors(monidx);
+
+		if(det.size()!=deterr.size() || det.size()!=mon.size() || det.size()!=monerr.size())
+		{
+			print_err("Data, monitor and error columns have to be of equal size."
+				" [det=", det.size(), " deterr=", deterr.size(), " mon=", mon.size(), ", monerr=", monerr.size(), "]");
+			return *this;
+		}
+
+		// newcnts = cnts/mon
+		for(std::size_t pt=0; pt<det.size(); ++pt)
+		{
+			datret.m_counts[detidx][pt] = det[pt] / mon[pt];
+			datret.m_counts_err[detidx][pt] = std::sqrt(std::pow(deterr[pt]/mon[pt], 2) + std::pow(-monerr[pt]*det[pt]/(mon[pt]*mon[pt]), 2));
+		}
+	}
+
+
+	// normalise monitor with itself
+	for(std::size_t pt=0; pt<GetMonitor(monidx).size(); ++pt)
+	{
+		datret.m_monitors[monidx][pt] = 1.;
+		datret.m_monitors_err[monidx][pt] = 0.;
+	}
+
+	return datret;
+}
 // ----------------------------------------------------------------------------
 
 
@@ -535,4 +589,18 @@ Dataset operator -(const Dataset& dat1)
 	return dataset;
 }
 
+
+
+/**
+ * normalise to monitor counter
+ */
+Dataset Dataset::norm(std::size_t mon) const
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<GetNumChannels(); ++ch)
+		dataset.AddChannel(GetChannel(ch).norm());
+
+	return dataset;
+}
 // ----------------------------------------------------------------------------

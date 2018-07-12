@@ -45,7 +45,10 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	// ------------------------------------------------------------------------
 	// connections
 	connect(pBtnFolders, &QPushButton::clicked, this, &FileBrowserWidget::SelectFolder);
-	connect(pCheckMultiSelect, &QCheckBox::stateChanged, this, &FileBrowserWidget::SetMultiSelect);
+	connect(pCheckMultiSelect, &QCheckBox::stateChanged, [this](bool checked)
+	{ 
+		m_pListFiles->setSelectionMode(checked ? QAbstractItemView::ExtendedSelection : QAbstractItemView::SingleSelection);
+	});
 	connect(pBtnTransfer, &QPushButton::clicked, this, &FileBrowserWidget::TransferSelectedToWorkspace);
 	connect(m_pEditFolder, &QLineEdit::textChanged, this, &FileBrowserWidget::SetFolder);
 	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &FileBrowserWidget::SetFile);
@@ -162,12 +165,6 @@ void FileBrowserWidget::SetFile(QListWidgetItem* pCur)
 	}
 }
 
-
-void FileBrowserWidget::SetMultiSelect(int checked)
-{
-	bool bMultiSel = checked != 0;
-	m_pListFiles->setSelectionMode(bMultiSel ? QAbstractItemView::MultiSelection : QAbstractItemView::SingleSelection);
-}
 
 
 /**

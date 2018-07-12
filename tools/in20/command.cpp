@@ -198,6 +198,13 @@ void CommandLineWidget::CommandEntered()
 
 				// add successful commands to completer
 				UpdateCompleter();
+
+				// save last result to workspace
+				if(auto *workspace = m_parsectx.GetWorkspace(); workspace)
+				{
+					workspace->insert_or_assign("__last__", sym);
+					m_parsectx.EmitWorkspaceUpdated("__last__");
+				}
 			}
 			else
 			{

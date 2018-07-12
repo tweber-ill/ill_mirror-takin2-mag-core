@@ -43,9 +43,7 @@ public:
 protected:
 	void SelectFolder();
 	void SetFolder(const QString& str);
-
 	void SetFile(QListWidgetItem *pCur);
-	void SetMultiSelect(int checked);
 
 	void FileDoubleClicked(QListWidgetItem *pItem);
 	void TransferSelectedToWorkspace();

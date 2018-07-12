@@ -203,8 +203,9 @@ void WorkSpaceWidget::UpdateList()
 	// remove superfluous symbols from list widget
 	for(int idx=m_pListFiles->count()-1; idx>=0; --idx)
 	{
-		std::string ident = m_pListFiles->item(idx)->text().toStdString();
-		if(m_workspace.find(ident) == m_workspace.end())
+		// only keep datasets
+		auto iter = m_workspace.find(m_pListFiles->item(idx)->text().toStdString());
+		if(iter == m_workspace.end() || (!iter->second) || iter->second->GetType() != SymbolType::DATASET)
 			delete m_pListFiles->item(idx);
 	}
 }
