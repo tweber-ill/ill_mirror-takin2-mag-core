@@ -34,13 +34,18 @@ private:
 	CommandLine *m_pCLI = nullptr;
 	PlotterDock *m_pCurPlot = nullptr;
 
-private:
+protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
 	virtual void closeEvent(QCloseEvent *pEvt) override;
 
 public:
 	MainWnd(QSettings* pSettings = nullptr);
 	virtual ~MainWnd();
+
+	void NewSession();
+	void OpenSession();
+	void SaveSession();
+	void SaveSessionAs();
 };
 
 #endif

@@ -27,25 +27,64 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 	// ------------------------------------------------------------------------
 	// Menu Bar
-	QMenu *pMenuView = new QMenu("View", m_pMenu);
+	QMenu *menuFile = new QMenu("File", m_pMenu);
+	QMenu *menuView = new QMenu("View", m_pMenu);
+	QMenu *menuHelp = new QMenu("Help", m_pMenu);
 
-	pMenuView->addAction(m_pBrowser->toggleViewAction());
-	pMenuView->addAction(m_pWS->toggleViewAction());
-	pMenuView->addAction(m_pCLI->toggleViewAction());
-	pMenuView->addAction(m_pCurPlot->toggleViewAction());
+	// file
+	auto *acNew = new QAction(QIcon::fromTheme("document-new"), "New", m_pMenu);
+	menuFile->addAction(acNew);
+	menuFile->addSeparator();
+	auto *acOpen = new QAction(QIcon::fromTheme("document-open"), "Open...", m_pMenu);
+	auto *menuOpenRecent = new QMenu("Open Recent", m_pMenu);
+	menuFile->addAction(acOpen);
+	menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
+	menuFile->addMenu(menuOpenRecent);
+	menuFile->addSeparator();
+	auto *acSave = new QAction(QIcon::fromTheme("document-save"), "Save", m_pMenu);
+	auto *acSaveAs = new QAction(QIcon::fromTheme("document-save-as"), "Save As...", m_pMenu);
+	menuFile->addAction(acSave);
+	menuFile->addAction(acSaveAs);
+	menuFile->addSeparator();
+	auto *acPrefs = new QAction("Preferences...", m_pMenu);
+	acPrefs->setMenuRole(QAction::PreferencesRole);
+	menuFile->addAction(acPrefs);
+	menuFile->addSeparator();
+	auto *acQuit = new QAction(QIcon::fromTheme("application-exit"), "Quit", m_pMenu);
+	acQuit->setMenuRole(QAction::QuitRole);
+	menuFile->addAction(acQuit);
 
-	m_pMenu->addMenu(pMenuView);
+	// view
+	menuView->addAction(m_pBrowser->toggleViewAction());
+	menuView->addAction(m_pWS->toggleViewAction());
+	menuView->addAction(m_pCLI->toggleViewAction());
+	menuView->addAction(m_pCurPlot->toggleViewAction());
+
+	// help
+	auto *acAbout = new QAction(QIcon::fromTheme("help-about"), "About...", m_pMenu);
+	auto *acAboutQt = new QAction(QIcon::fromTheme("help-about"), "About Qt...", m_pMenu);
+	acAbout->setMenuRole(QAction::AboutRole);
+	acAboutQt->setMenuRole(QAction::AboutQtRole);
+	menuHelp->addAction(acAbout);
+	menuHelp->addAction(acAboutQt);
+
+	m_pMenu->addMenu(menuFile);
+	m_pMenu->addMenu(menuView);
+	m_pMenu->addMenu(menuHelp);
 	this->setMenuBar(m_pMenu);
 	// ------------------------------------------------------------------------
 
 
+
+	// ------------------------------------------------------------------------
+	// docks
 	//this->setStatusBar(m_pStatus);
 	this->setCentralWidget(m_pMDI);
 	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
 	this->addDockWidget(Qt::RightDockWidgetArea, m_pWS);
 	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCLI);
 	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCurPlot);
-
+	// ------------------------------------------------------------------------
 
 
 
@@ -54,6 +93,14 @@ MainWnd::MainWnd(QSettings* pSettings)
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles, m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
 	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
+	connect(acNew, &QAction::triggered, this, &MainWnd::NewSession);
+	connect(acOpen, &QAction::triggered, this, &MainWnd::OpenSession);
+	connect(acSave, &QAction::triggered, this, &MainWnd::SaveSession);
+	connect(acSaveAs, &QAction::triggered, this, &MainWnd::SaveSessionAs);
+	//connect(acPrefs, &QAction::triggered, this, ....);	TODO
+	//connect(acAbout, &QAction::triggered, this, ....);	TODO
+	connect(acAboutQt, &QAction::triggered, this, []() { qApp->aboutQt(); });
+	connect(acQuit, &QAction::triggered, this, &QMainWindow::close);
 
 	// link symbol maps of workspace widget and command line parser
 	m_pCLI->GetWidget()->GetParserContext().SetWorkspace(m_pWS->GetWidget()->GetWorkspace());
@@ -64,6 +111,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 		m_pWS->GetWidget()->UpdateList();
 	});
 	// ------------------------------------------------------------------------
+
 
 
 	// ------------------------------------------------------------------------
@@ -118,3 +166,41 @@ void MainWnd::closeEvent(QCloseEvent *pEvt)
 
 	QMainWindow::closeEvent(pEvt);
 }
+
+
+
+/**
+ * File -> New
+ */
+void MainWnd::NewSession()
+{
+
+}
+
+
+/**
+ * File -> Open
+ */
+void MainWnd::OpenSession()
+{
+
+}
+
+
+/**
+ * File -> Save
+ */
+void MainWnd::SaveSession()
+{
+
+}
+
+
+/**
+ * File -> Save As
+ */
+void MainWnd::SaveSessionAs()
+{
+
+}
+
