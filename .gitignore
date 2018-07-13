@@ -45,3 +45,8 @@ build/**
 cliparser_impl.*
 clilexer_impl.*
 stack.hh
+
+# Temporary tex files
+*.log
+*.aux
+*.pdf
