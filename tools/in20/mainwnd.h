@@ -12,6 +12,7 @@
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMdiArea>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QStatusBar>
 
 #include "filebrowser.h"
@@ -34,18 +35,32 @@ private:
 	CommandLine *m_pCLI = nullptr;
 	PlotterDock *m_pCurPlot = nullptr;
 
+	QMenu *m_menuOpenRecent = nullptr;
+	QStringList m_recentFiles;
+	QString m_curFile;
+
 protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
 	virtual void closeEvent(QCloseEvent *pEvt) override;
+
+	void SetCurrentFile(const QString &file);
+	void SetRecentFiles(const QStringList &files);
+	void AddRecentFile(const QString &file);
+	void RebuildRecentFiles();
 
 public:
 	MainWnd(QSettings* pSettings = nullptr);
 	virtual ~MainWnd();
 
-	void NewSession();
-	void OpenSession();
-	void SaveSession();
-	void SaveSessionAs();
+	// session file menu operations
+	void NewFile();
+	void OpenFile();
+	void SaveFile();
+	void SaveFileAs();
+
+	// actual session file operations
+	bool OpenFile(const QString &file);
+	bool SaveFile(const QString &file);
 };
 
 #endif

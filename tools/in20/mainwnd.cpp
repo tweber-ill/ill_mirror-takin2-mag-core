@@ -5,10 +5,13 @@
  * @license see 'LICENSE' file
  */
 
+#define MAX_RECENT_FILES 16
+
 #include "mainwnd.h"
 #include "globals.h"
 #include "funcs.h"
 
+#include <QtWidgets/QFileDialog>
 
 MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
@@ -21,7 +24,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	g_pCLI = m_pCLI;
 
 	this->setObjectName("in20");
-	this->setWindowTitle("IN20 Tool");
+	SetCurrentFile("");
 	this->resize(800, 600);
 
 
@@ -36,10 +39,10 @@ MainWnd::MainWnd(QSettings* pSettings)
 	menuFile->addAction(acNew);
 	menuFile->addSeparator();
 	auto *acOpen = new QAction(QIcon::fromTheme("document-open"), "Open...", m_pMenu);
-	auto *menuOpenRecent = new QMenu("Open Recent", m_pMenu);
+	m_menuOpenRecent = new QMenu("Open Recent", m_pMenu);
 	menuFile->addAction(acOpen);
-	menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
-	menuFile->addMenu(menuOpenRecent);
+	m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
+	menuFile->addMenu(m_menuOpenRecent);
 	menuFile->addSeparator();
 	auto *acSave = new QAction(QIcon::fromTheme("document-save"), "Save", m_pMenu);
 	auto *acSaveAs = new QAction(QIcon::fromTheme("document-save-as"), "Save As...", m_pMenu);
@@ -93,10 +96,10 @@ MainWnd::MainWnd(QSettings* pSettings)
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles, m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
 	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
-	connect(acNew, &QAction::triggered, this, &MainWnd::NewSession);
-	connect(acOpen, &QAction::triggered, this, &MainWnd::OpenSession);
-	connect(acSave, &QAction::triggered, this, &MainWnd::SaveSession);
-	connect(acSaveAs, &QAction::triggered, this, &MainWnd::SaveSessionAs);
+	connect(acNew, &QAction::triggered, this, &MainWnd::NewFile);
+	connect(acOpen, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::OpenFile));
+	connect(acSave, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::SaveFile));
+	connect(acSaveAs, &QAction::triggered, this, &MainWnd::SaveFileAs);
 	//connect(acPrefs, &QAction::triggered, this, ....);	TODO
 	//connect(acAbout, &QAction::triggered, this, ....);	TODO
 	connect(acAboutQt, &QAction::triggered, this, []() { qApp->aboutQt(); });
@@ -118,6 +121,9 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// restore settings
 	if(m_pSettings)
 	{
+		if(m_pSettings->contains("mainwnd/recentsessions"))
+			SetRecentFiles(m_pSettings->value("mainwnd/recentsessions").toStringList());
+
 		// restore window state
 		if(m_pSettings->contains("mainwnd/geo"))
 			this->restoreGeometry(m_pSettings->value("mainwnd/geo").toByteArray());
@@ -159,6 +165,11 @@ void MainWnd::closeEvent(QCloseEvent *pEvt)
 {
 	if(m_pSettings)
 	{
+		// remove superfluous entries and save the recent files list
+		while(m_recentFiles.size() > MAX_RECENT_FILES)
+			m_recentFiles.pop_front();
+		m_pSettings->setValue("mainwnd/recentsessions", m_recentFiles);
+
 		// save window state
 		m_pSettings->setValue("mainwnd/geo", this->saveGeometry());
 		m_pSettings->setValue("mainwnd/state", this->saveState());
@@ -172,35 +183,147 @@ void MainWnd::closeEvent(QCloseEvent *pEvt)
 /**
  * File -> New
  */
-void MainWnd::NewSession()
+void MainWnd::NewFile()
 {
-
+	SetCurrentFile("");
 }
 
 
 /**
  * File -> Open
  */
-void MainWnd::OpenSession()
+void MainWnd::OpenFile()
 {
+	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
+	QString filename = QFileDialog::getOpenFileName(this, "Open File", dirLast, "IN20 Files (*.in20 *.IN20)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+
+	if(OpenFile(filename))
+		m_pSettings->setValue("mainwnd/sessiondir", QFileInfo(filename).path());
 }
 
 
 /**
  * File -> Save
  */
-void MainWnd::SaveSession()
+void MainWnd::SaveFile()
 {
-
+	if(m_curFile == "")
+		SaveFileAs();
+	else
+		SaveFile(m_curFile);
 }
 
 
 /**
  * File -> Save As
  */
-void MainWnd::SaveSessionAs()
+void MainWnd::SaveFileAs()
 {
+	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
+	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "IN20 Files (*.in20 *.IN20)");
+	if(filename=="")
+		return;
+
+	if(SaveFile(filename))
+		m_pSettings->setValue("mainwnd/sessiondir", QFileInfo(filename).path());
 }
 
+
+/**
+ * load File
+ */
+bool MainWnd::OpenFile(const QString &file)
+{
+	if(file=="" || !QFile::exists(file))
+		return false;
+
+	// TODO
+
+	SetCurrentFile(file);
+	AddRecentFile(file);
+	return true;
+}
+
+
+/**
+ * save File
+ */
+bool MainWnd::SaveFile(const QString &file)
+{
+	if(file=="")
+		return false;
+
+	// TODO
+
+	SetCurrentFile(file);
+	AddRecentFile(file);
+	return true;
+}
+
+
+/**
+ * add a file to the recent files menu
+ */
+void MainWnd::AddRecentFile(const QString &file)
+{
+	for(const auto &recentfile : m_recentFiles)
+	{
+		// file already in list?
+		if(recentfile == file)
+			return;
+	}
+
+	m_recentFiles.push_back(file);
+	RebuildRecentFiles();
+}
+
+
+/**
+ * set the recent file menu
+ */
+void MainWnd::SetRecentFiles(const QStringList &files)
+{
+	m_recentFiles = files;
+	RebuildRecentFiles();
+}
+
+
+/**
+ * create the "recent files" sub-menu
+ */
+void MainWnd::RebuildRecentFiles()
+{
+	m_menuOpenRecent->clear();
+
+	std::size_t num_recent_files = 0;
+	for(auto iter = m_recentFiles.rbegin(); iter != m_recentFiles.rend(); ++iter)
+	{
+		QString filename = *iter;
+		auto *acFile = new QAction(QIcon::fromTheme("document"), filename, m_pMenu);
+
+		connect(acFile, &QAction::triggered, [this, filename]() { this->OpenFile(filename); });
+		m_menuOpenRecent->addAction(acFile);
+
+		if(++num_recent_files >= MAX_RECENT_FILES)
+			break;
+	}
+}
+
+
+/**
+ * remember current file and set window title
+ */
+void MainWnd::SetCurrentFile(const QString &file)
+{
+	static const QString title("IN20 Tool");
+	m_curFile = file;
+
+	if(m_curFile == "")
+		this->setWindowTitle(title);
+	else	
+		this->setWindowTitle(title + " -- " + m_curFile);
+}
