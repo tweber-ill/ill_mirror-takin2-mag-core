@@ -10,8 +10,15 @@
 #include "mainwnd.h"
 #include "globals.h"
 #include "funcs.h"
+#include "tlibs/file/prop.h"
+#include "tlibs/time/chrono.h"
 
+#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+
+
+using t_real = double;
+
 
 MainWnd::MainWnd(QSettings* pSettings)
 	: QMainWindow(), m_pSettings(pSettings), 
@@ -241,7 +248,30 @@ bool MainWnd::OpenFile(const QString &file)
 	if(file=="" || !QFile::exists(file))
 		return false;
 
-	// TODO
+
+	// load xml
+	tl::Prop<std::string> prop;
+	if(!prop.Load(file.toStdString(), tl::PropType::XML))
+	{
+		QMessageBox::critical(this, "Error", "Could not open session.");	
+		return false;
+	}
+
+	// check format and version
+	auto optFmt = prop.QueryOpt<std::string>("in20/format");
+	auto optVer = prop.QueryOpt<std::string>("in20/version");
+	auto optTime = prop.QueryOpt<t_real>("in20/timestamp");
+	if(!optFmt || *optFmt != "session")
+	{
+		QMessageBox::critical(this, "Error", "Not a session file. Ignoring.");
+		return false;
+	}
+	if(optVer && optTime)
+		print_out("Loading session file version ", *optVer, ", dated ", tl::epoch_to_str(*optTime), ".");
+
+
+	// TODO: get properties
+
 
 	SetCurrentFile(file);
 	AddRecentFile(file);
@@ -257,7 +287,25 @@ bool MainWnd::SaveFile(const QString &file)
 	if(file=="")
 		return false;
 
-	// TODO
+	std::unordered_map<std::string, std::string> sessionmap;
+
+	// set format and version
+	sessionmap["in20/format"] = "session";
+	sessionmap["in20/version"] = PROGRAM_VERSION;
+	sessionmap["in20/timestamp"] = tl::var_to_str(tl::epoch<t_real>());
+
+
+	// TODO: set properties to sessionmap
+
+
+	tl::Prop<std::string> prop;
+	prop.Add(sessionmap);
+
+	if(!prop.Save(file.toStdString(), tl::PropType::XML))
+	{
+		QMessageBox::critical(this, "Error", "Could not save session.");	
+		return false;
+	}
 
 	SetCurrentFile(file);
 	AddRecentFile(file);
