@@ -245,12 +245,15 @@ void MainWnd::SaveFileAs()
  */
 bool MainWnd::OpenFile(const QString &file)
 {
+	static const std::string basename = "in20/";
+
 	if(file=="" || !QFile::exists(file))
 		return false;
 
 
 	// load xml
 	tl::Prop<std::string> prop;
+	prop.SetSeparator('/');
 	if(!prop.Load(file.toStdString(), tl::PropType::XML))
 	{
 		QMessageBox::critical(this, "Error", "Could not open session.");	
@@ -258,9 +261,9 @@ bool MainWnd::OpenFile(const QString &file)
 	}
 
 	// check format and version
-	auto optFmt = prop.QueryOpt<std::string>("in20/format");
-	auto optVer = prop.QueryOpt<std::string>("in20/version");
-	auto optTime = prop.QueryOpt<t_real>("in20/timestamp");
+	auto optFmt = prop.QueryOpt<std::string>(basename + "format");
+	auto optVer = prop.QueryOpt<std::string>(basename + "version");
+	auto optTime = prop.QueryOpt<t_real>(basename + "timestamp");
 	if(!optFmt || *optFmt != "session")
 	{
 		QMessageBox::critical(this, "Error", "Not a session file. Ignoring.");
@@ -270,7 +273,9 @@ bool MainWnd::OpenFile(const QString &file)
 		print_out("Loading session file version ", *optVer, ", dated ", tl::epoch_to_str(*optTime), ".");
 
 
-	// TODO: get properties
+	// TODO: clear old workspace and load saved workspace variables
+	m_pWS->GetWidget()->GetWorkspace()->clear();
+	m_pWS->GetWidget()->LoadWorkspace(basename, prop);
 
 
 	SetCurrentFile(file);
@@ -284,21 +289,25 @@ bool MainWnd::OpenFile(const QString &file)
  */
 bool MainWnd::SaveFile(const QString &file)
 {
+	static const std::string basename = "in20/";
+
 	if(file=="")
 		return false;
 
 	std::unordered_map<std::string, std::string> sessionmap;
 
 	// set format and version
-	sessionmap["in20/format"] = "session";
-	sessionmap["in20/version"] = PROGRAM_VERSION;
-	sessionmap["in20/timestamp"] = tl::var_to_str(tl::epoch<t_real>());
+	sessionmap[basename + "format"] = "session";
+	sessionmap[basename + "version"] = PROGRAM_VERSION;
+	sessionmap[basename + "timestamp"] = tl::var_to_str(tl::epoch<t_real>());
 
 
-	// TODO: set properties to sessionmap
+	// save workspace variables
+	m_pWS->GetWidget()->SaveWorkspace(basename, sessionmap);
 
 
 	tl::Prop<std::string> prop;
+	prop.SetSeparator('/');
 	prop.Add(sessionmap);
 
 	if(!prop.Save(file.toStdString(), tl::PropType::XML))

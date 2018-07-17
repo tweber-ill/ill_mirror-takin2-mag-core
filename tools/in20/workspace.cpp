@@ -12,8 +12,8 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 
+#include "tlibs/string/string.h"
 #include "globals.h"
-
 
 using t_real = t_real_dat;
 
@@ -224,6 +224,59 @@ bool WorkSpaceWidget::eventFilter(QObject *pObj, QEvent *pEvt)
 	}
 
 	return QObject::eventFilter(pObj, pEvt);
+}
+
+
+
+/**
+ * load workspace variables from a property tree
+ */
+bool WorkSpaceWidget::LoadWorkspace(const std::string &basename, const tl::Prop<std::string> &prop)
+{
+	// iterate over save variables
+	std::size_t varnum = 0;
+	while(true)
+	{
+		const std::string keyName = basename + "workspace/var_" + tl::var_to_str(varnum) + "/name";
+		const std::string keyValue = basename + "workspace/var_" + tl::var_to_str(varnum) + "/value";
+		++varnum;
+
+		auto key = prop.QueryOpt<std::string>(keyName);
+		auto val = prop.QueryOpt<std::string>(keyValue);
+		if(!key || !val) break;		// no more variables?
+
+		// unserialise symbol from value string
+		auto sym = Symbol::unserialise(*val);
+		if(!sym)
+		{
+			print_err("Cannot unserialise variable \"", *key, "\".");
+			continue;
+		}
+
+		m_workspace.insert(std::make_pair(*key, sym));
+	}
+
+	return true;
+}
+
+
+/**
+ * save workspace variables to a map
+ */
+bool WorkSpaceWidget::SaveWorkspace(const std::string &basename, std::unordered_map<std::string, std::string> &map) const
+{
+	std::size_t varnum = 0;
+	for(const auto &pair : m_workspace)
+	{
+		if(!pair.second)
+			continue;
+
+		map[basename + "workspace/var_" + tl::var_to_str(varnum) + "/name"] = pair.first;
+		map[basename + "workspace/var_" + tl::var_to_str(varnum) + "/value"] = pair.second->serialise();
+		++varnum;
+	}
+
+	return true;
 }
 
 // ----------------------------------------------------------------------------

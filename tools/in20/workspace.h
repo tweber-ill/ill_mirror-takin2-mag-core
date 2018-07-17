@@ -20,6 +20,7 @@
 
 #include "data.h"
 #include "tools/cli/cliparser.h"
+#include "tlibs/file/prop.h"
 
 
 
@@ -40,6 +41,9 @@ public:
 	virtual ~WorkSpaceWidget();
 
 	std::map<std::string, std::shared_ptr<Symbol>>* GetWorkspace() { return &m_workspace; }
+
+	bool LoadWorkspace(const std::string &basename, const tl::Prop<std::string> &prop);
+	bool SaveWorkspace(const std::string &basename, std::unordered_map<std::string, std::string> &map) const;
 
 protected:
 	void ItemSelected(QListWidgetItem* pCur);

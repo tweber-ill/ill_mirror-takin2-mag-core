@@ -353,3 +353,68 @@ std::shared_ptr<Symbol> Symbol::pow(const Symbol &sym1, const Symbol &sym2)
 }
 
 // ----------------------------------------------------------------------------
+
+
+/**
+ * string representation of real
+ */
+std::string SymbolReal::serialise() const
+{
+	std::ostringstream ostr;
+	ostr.precision(std::numeric_limits<t_real>::digits10);
+
+	ostr << Symbol::get_type_name(*this) << ":" << GetValue();
+	return ostr.str();
+}
+
+
+/**
+ * string representation of string (trivial)
+ */
+std::string SymbolString::serialise() const
+{
+	return Symbol::get_type_name(*this) + ":" + GetValue();
+}
+
+
+/**
+ * string representation of list
+ */
+std::string SymbolList::serialise() const
+{
+	std::ostringstream ostr;
+	ostr.precision(std::numeric_limits<t_real>::digits10);
+
+	ostr << Symbol::get_type_name(*this) << ":" << "###[";
+	bool firstelem = true;
+	for(const auto &elem : m_val)
+	{
+		if(!firstelem) ostr << "###, ";
+		ostr << elem->serialise();
+		firstelem = false;
+	}
+	ostr << "###]";
+
+	return ostr.str();
+}
+
+
+/**
+ * string representation of dataset
+ */
+std::string SymbolDataset::serialise() const
+{
+	std::ostringstream ostr;
+	ostr.precision(8);
+
+	return ostr.str();
+}
+
+
+/**
+ * re-construct a symbol from a string representation
+ */
+std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
+{
+	return nullptr;
+}

@@ -124,6 +124,9 @@ public:
 	virtual std::shared_ptr<Symbol> copy() const = 0;
 	virtual void print(std::ostream& ostr) const = 0;
 
+	virtual std::string serialise() const = 0;
+	static std::shared_ptr<Symbol> unserialise(const std::string &str);
+
 	static std::shared_ptr<Symbol> uminus(const Symbol &sym2);
 	static std::shared_ptr<Symbol> add(const Symbol &sym1, const Symbol &sym2);
 	static std::shared_ptr<Symbol> sub(const Symbol &sym1, const Symbol &sym2);
@@ -157,6 +160,7 @@ public:
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolReal>(m_val); }
 	virtual void print(std::ostream& ostr) const override { ostr << GetValue(); }
+	virtual std::string serialise() const override;
 };
 
 
@@ -176,6 +180,7 @@ public:
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolString>(m_val); }
 	virtual void print(std::ostream& ostr) const override { ostr << GetValue(); }
+	virtual std::string serialise() const override;
 };
 
 
@@ -212,6 +217,8 @@ public:
 		}
 		if(!m_islist) ostr << " ]";
 	}
+
+	virtual std::string serialise() const override;
 };
 
 
@@ -231,6 +238,7 @@ public:
 
 	virtual std::shared_ptr<Symbol> copy() const override { return std::make_shared<SymbolDataset>(m_val); }
 	virtual void print(std::ostream& ostr) const override { ostr << "&lt;Dataset&gt;"; }
+	virtual std::string serialise() const override;
 };
 
 
