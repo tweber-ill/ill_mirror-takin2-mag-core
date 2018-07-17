@@ -9,6 +9,7 @@
 #include "tools/in20/globals.h"
 #include "funcs.h"
 
+#include "tlibs/string/string.h"
 #include <cmath>
 
 
@@ -405,7 +406,7 @@ std::string SymbolList::serialise() const
 std::string SymbolDataset::serialise() const
 {
 	std::ostringstream ostr;
-	ostr.precision(8);
+	ostr.precision(std::numeric_limits<t_real>::digits10);
 
 	return ostr.str();
 }
@@ -416,5 +417,33 @@ std::string SymbolDataset::serialise() const
  */
 std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 {
+	auto [ty, val] = tl::split_first(str, std::string(":"));
+	tl::trim(ty);
+
+	if(ty == "real")
+	{
+		t_real d = tl::str_to_var<t_real>(val);
+		return std::make_shared<SymbolReal>(d);
+	}
+	else if(ty == "string")
+	{
+		return std::make_shared<SymbolString>(val);
+	}
+	else if(ty == "list" || ty == "array")
+	{
+		std::vector<std::shared_ptr<Symbol>> vec;
+		// TODO
+	
+		return std::make_shared<SymbolList>(vec, ty=="list");
+	}
+	else if(ty == "dataset")
+	{
+		Dataset dataset;
+		// TODO
+
+		return std::make_shared<SymbolDataset>(dataset);
+	}
+
+	print_err("Unknown variable type: ", ty, ".");
 	return nullptr;
 }
