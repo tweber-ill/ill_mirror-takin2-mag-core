@@ -9,6 +9,7 @@
 #define __IN20_ALGOS_H__
 
 #include <algorithm>
+#include <string>
 
 
 /**
@@ -26,6 +27,29 @@ void copy_interleave(T1 inIter, T1 inEnd, T2 outIter, std::size_t interleave, st
 		++outIter;
 		std::advance(inIter, interleave);
 	}
+}
+
+
+/**
+ * count number of ocurrences of a sub-string in a string
+ */
+static std::size_t count_occurrences(const std::string &str, const std::string &tok)
+{
+	std::size_t num = 0;
+	std::size_t start = 0;
+	const std::size_t len_tok = tok.length();
+
+	while(true)
+	{
+		std::size_t idx = str.find(tok, start);
+		if(idx == std::string::npos)
+			break;
+
+		++num;
+		start += idx+len_tok;
+	}
+
+	return num;
 }
 
 

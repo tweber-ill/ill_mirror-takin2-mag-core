@@ -256,6 +256,7 @@ bool WorkSpaceWidget::LoadWorkspace(const std::string &basename, const tl::Prop<
 		m_workspace.insert(std::make_pair(*key, sym));
 	}
 
+	UpdateList();
 	return true;
 }
 

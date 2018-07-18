@@ -8,6 +8,7 @@
 #include "cliparser.h"
 #include "tools/in20/globals.h"
 #include "funcs.h"
+#include "libs/algos.h"
 
 #include "tlibs/string/string.h"
 #include <cmath>
@@ -383,18 +384,22 @@ std::string SymbolString::serialise() const
  */
 std::string SymbolList::serialise() const
 {
+	static const std::string begin_arr = "###[";
+	static const std::string end_arr = "###]";
+	static const std::string arr_next_elem = "###,";
+
 	std::ostringstream ostr;
 	ostr.precision(std::numeric_limits<t_real>::digits10);
 
-	ostr << Symbol::get_type_name(*this) << ":" << "###[";
+	ostr << Symbol::get_type_name(*this) << ":" << begin_arr;
 	bool firstelem = true;
 	for(const auto &elem : m_val)
 	{
-		if(!firstelem) ostr << "###, ";
+		if(!firstelem) ostr << arr_next_elem;
 		ostr << elem->serialise();
 		firstelem = false;
 	}
-	ostr << "###]";
+	ostr << end_arr;
 
 	return ostr.str();
 }
@@ -431,9 +436,62 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 	}
 	else if(ty == "list" || ty == "array")
 	{
+		static const std::string begin_arr = "###[";
+		static const std::size_t len_begin_arr = begin_arr.length();
+		static const std::string end_arr = "###]";
+		static const std::string arr_next_elem = "###,";
+
+		// find array boundaries in string repr
+		std::size_t arr_begin = val.find(begin_arr);
+		std::size_t arr_end = val.rfind(end_arr);
+		if(arr_begin == std::string::npos || arr_end == std::string::npos)
+		{
+			print_err("Invalid array begin or end indicators: \"", val, "\".");
+			return nullptr;
+		}
+		arr_begin += len_begin_arr;
+		val = val.substr(arr_begin, arr_end-arr_begin);
+
+
 		std::vector<std::shared_ptr<Symbol>> vec;
-		// TODO
-	
+
+		// unserialise vector elements
+		std::vector<std::string> toks;
+		tl::get_tokens_seq<std::string, std::string>(val, arr_next_elem, toks);
+		std::string accum_tok;
+		for(const auto &tok : toks)
+		{
+			// chain back together elements of nested sub-array
+			if(accum_tok == "")
+				accum_tok += tok;
+			else
+				accum_tok += arr_next_elem + tok;
+
+			// balance brackets of nested arrays
+			int nest_level = int(count_occurrences(accum_tok, begin_arr)) - int(count_occurrences(accum_tok, end_arr));
+			if(nest_level < 0)
+			{
+				print_err("Unbalanced brackets in serialised array representation: \"", accum_tok, "\"");
+				return nullptr;
+			}
+			else if(nest_level > 0) 	// get next token until end bracket is found
+			{
+				continue;
+			}
+			else if(nest_level == 0)	// found matching brackets
+			{
+				auto elemsym = unserialise(accum_tok);
+				if(elemsym == nullptr)
+				{
+					print_err("Invalid array element: \"", accum_tok, "\".");
+					return nullptr;
+				}
+				vec.emplace_back(elemsym);
+
+				accum_tok = "";
+			}
+		}
+
 		return std::make_shared<SymbolList>(vec, ty=="list");
 	}
 	else if(ty == "dataset")
