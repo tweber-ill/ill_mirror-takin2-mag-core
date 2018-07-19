@@ -38,6 +38,7 @@ private:
 	std::vector<std::vector<t_real_dat>> m_x;
 	std::vector<std::string> m_x_names;
 
+
 public:
 	std::size_t GetNumCounters() const { return m_counts.size(); }
 	std::size_t GetNumMonitors() const { return m_monitors.size(); }
@@ -77,6 +78,8 @@ public:
 	// x axes
 	const std::vector<t_real_dat>& GetAxis(std::size_t i) const { return m_x[i]; }
 	const std::string& GetAxisName(std::size_t i) const { return m_x_names[i]; }
+	void SetAxisNames(const std::vector<std::string> &names) { m_x_names = names; }
+	void SetAxisNames(std::vector<std::string> &&names) { m_x_names = std::move(names); }
 	void AddAxis(const std::vector<t_real_dat> &dat, const std::string &name="")
 	{
 		m_x.push_back(dat);

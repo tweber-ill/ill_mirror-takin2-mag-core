@@ -354,7 +354,31 @@ std::shared_ptr<Symbol> Symbol::pow(const Symbol &sym1, const Symbol &sym2)
 	return nullptr;
 }
 
+
 // ----------------------------------------------------------------------------
+
+
+// array markers
+static const std::string begin_arr = "###[";
+static const std::string end_arr = "###]";
+static const std::string arr_next_elem = "###,";
+
+// dataset markers
+static const std::string next_ch = "###CH;";
+static const std::string begin_ax_name = "###AXID[";
+static const std::string end_ax_name = "###AXID]";
+static const std::string begin_axes = "###AXES[";
+static const std::string end_axes = "###AXES]";
+static const std::string begin_ctrs = "###CTRS[";
+static const std::string end_ctrs = "###CTRS]";
+static const std::string begin_ctr_errs = "###CTRERRS[";
+static const std::string end_ctr_errs = "###CTRERRS]";
+static const std::string begin_mons = "###MONS[";
+static const std::string end_mons = "###MONS]";
+static const std::string begin_mon_errs = "###MONERRS[";
+static const std::string end_mon_errs = "###MONERRS]";
+static const std::string next_elem = "###;";
+
 
 
 /**
@@ -380,14 +404,10 @@ std::string SymbolString::serialise() const
 
 
 /**
- * string representation of list
+ * string representation of a list
  */
 std::string SymbolList::serialise() const
 {
-	static const std::string begin_arr = "###[";
-	static const std::string end_arr = "###]";
-	static const std::string arr_next_elem = "###,";
-
 	std::ostringstream ostr;
 	ostr.precision(std::numeric_limits<t_real>::digits10);
 
@@ -406,12 +426,109 @@ std::string SymbolList::serialise() const
 
 
 /**
- * string representation of dataset
+ * string representation of a dataset
  */
 std::string SymbolDataset::serialise() const
 {
 	std::ostringstream ostr;
 	ostr.precision(std::numeric_limits<t_real>::digits10);
+	ostr << Symbol::get_type_name(*this) << ":";
+
+	const auto &dataset = GetValue();
+	for(std::size_t chnr=0; chnr<dataset.GetNumChannels(); ++chnr)
+	{
+		const auto &data = dataset.GetChannel(chnr);
+		const std::size_t num_x = data.GetNumAxes();
+		const std::size_t num_ctr = data.GetNumCounters();
+		const std::size_t num_mon = data.GetNumMonitors();
+
+		// x axis names
+		ostr << begin_ax_name;
+		for(std::size_t xidx=0; xidx<num_x; ++xidx)
+		{
+			ostr << data.GetAxisName(xidx);
+			if(xidx < num_x-1) ostr << ",";
+		}
+		ostr << end_ax_name;
+
+		// x axes
+		ostr << begin_axes;
+		for(std::size_t xidx=0; xidx<num_x; ++xidx)
+		{
+			const auto &ax = data.GetAxis(xidx);
+			for(std::size_t axidx=0; axidx<ax.size(); ++axidx)
+			{
+				ostr << ax[axidx];
+				if(axidx < ax.size()-1) ostr << ",";
+			}
+			if(xidx < num_x-1) ostr << next_elem;
+		}
+		ostr << end_axes;
+
+
+		// counters
+		ostr << begin_ctrs;
+		for(std::size_t ctridx=0; ctridx<num_ctr; ++ctridx)
+		{
+			const auto &ax = data.GetCounter(ctridx);
+			for(std::size_t axidx=0; axidx<ax.size(); ++axidx)
+			{
+				ostr << ax[axidx];
+				if(axidx < ax.size()-1) ostr << ",";
+			}
+
+			if(ctridx < num_ctr-1) ostr << next_elem;
+		}
+		ostr << end_ctrs;
+
+		// counter errors
+		ostr << begin_ctr_errs;
+		for(std::size_t ctridx=0; ctridx<num_ctr; ++ctridx)
+		{
+			const auto &ax = data.GetCounterErrors(ctridx);
+			for(std::size_t axidx=0; axidx<ax.size(); ++axidx)
+			{
+				ostr << ax[axidx];
+				if(axidx < ax.size()-1) ostr << ",";
+			}
+
+			if(ctridx < num_ctr-1) ostr << next_elem;
+		}
+		ostr << end_ctr_errs;
+
+
+		// monitors
+		ostr << begin_mons;
+		for(std::size_t ctridx=0; ctridx<num_mon; ++ctridx)
+		{
+			const auto &ax = data.GetMonitor(ctridx);
+			for(std::size_t axidx=0; axidx<ax.size(); ++axidx)
+			{
+				ostr << ax[axidx];
+				if(axidx < ax.size()-1) ostr << ",";
+			}
+
+			if(ctridx < num_mon-1) ostr << next_elem;
+		}
+		ostr << end_mons;
+
+		// monitor errors
+		ostr << begin_mon_errs;
+		for(std::size_t ctridx=0; ctridx<num_mon; ++ctridx)
+		{
+			const auto &ax = data.GetMonitorErrors(ctridx);
+			for(std::size_t axidx=0; axidx<ax.size(); ++axidx)
+			{
+				ostr << ax[axidx];
+				if(axidx < ax.size()-1) ostr << ",";
+			}
+
+			if(ctridx < num_mon-1) ostr << next_elem;
+		}
+		ostr << end_mon_errs;
+
+		ostr << next_ch;
+	}
 
 	return ostr.str();
 }
@@ -422,6 +539,9 @@ std::string SymbolDataset::serialise() const
  */
 std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 {
+	static const std::size_t len_begin_arr = begin_arr.length();
+
+
 	auto [ty, val] = tl::split_first(str, std::string(":"));
 	tl::trim(ty);
 
@@ -436,11 +556,6 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 	}
 	else if(ty == "list" || ty == "array")
 	{
-		static const std::string begin_arr = "###[";
-		static const std::size_t len_begin_arr = begin_arr.length();
-		static const std::string end_arr = "###]";
-		static const std::string arr_next_elem = "###,";
-
 		// find array boundaries in string repr
 		std::size_t arr_begin = val.find(begin_arr);
 		std::size_t arr_end = val.rfind(end_arr);
@@ -497,7 +612,83 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 	else if(ty == "dataset")
 	{
 		Dataset dataset;
-		// TODO
+
+		// iterate channels
+		std::vector<std::string> tok_channels;
+		tl::get_tokens_seq<std::string, std::string>(val, next_ch, tok_channels, true);
+		for(auto &tok_ch : tok_channels)
+		{
+			tl::trim(tok_ch);
+			if(tok_ch == "") continue;
+
+			// get the various parts of the data structure
+			std::string str_axis_names = tl::str_between(tok_ch, begin_ax_name, end_ax_name, false, true);
+			std::string str_axes = tl::str_between(tok_ch, begin_axes, end_axes, false, true);
+			std::string str_ctrs = tl::str_between(tok_ch, begin_ctrs, end_ctrs, false, true);
+			std::string str_ctr_errs = tl::str_between(tok_ch, begin_ctr_errs, end_ctr_errs, false, true);
+			std::string str_mons = tl::str_between(tok_ch, begin_mons, end_mons, false, true);
+			std::string str_mon_errs = tl::str_between(tok_ch, begin_mon_errs, end_mon_errs, false, true);
+
+
+			Data data;
+
+			// axis names
+			{
+				std::vector<std::string> axis_names;
+				tl::get_tokens<std::string, std::string>(str_axis_names, ",", axis_names);
+				data.SetAxisNames(std::move(axis_names));
+			}
+
+			// axes
+			{
+				std::vector<std::string> tok_axes;
+				tl::get_tokens_seq<std::string, std::string>(str_axes, next_elem, tok_axes, true);
+				for(const auto &tok_axis : tok_axes)
+				{
+					std::vector<t_real_dat> axis;
+					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					data.AddAxis(std::move(axis));
+				}
+			}
+
+			// counters
+			{
+				std::vector<std::string> tok_ctrs, tok_ctr_errs;
+				tl::get_tokens_seq<std::string, std::string>(str_ctrs, next_elem, tok_ctrs, true);
+				tl::get_tokens_seq<std::string, std::string>(str_ctr_errs, next_elem, tok_ctr_errs, true);
+				for(std::size_t idxax=0; idxax<std::min(tok_ctrs.size(),tok_ctr_errs.size()); ++idxax)
+				{
+					const auto &tok_axis = tok_ctrs[idxax];
+					const auto &tok_axis_err = tok_ctr_errs[idxax];
+
+					std::vector<t_real_dat> axis, axis_err;
+					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					tl::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
+
+					data.AddCounter(std::move(axis), std::move(axis_err));
+				}
+			}
+
+			// monitors
+			{
+				std::vector<std::string> tok_ctrs, tok_ctr_errs;
+				tl::get_tokens_seq<std::string, std::string>(str_mons, next_elem, tok_ctrs, true);
+				tl::get_tokens_seq<std::string, std::string>(str_mon_errs, next_elem, tok_ctr_errs, true);
+				for(std::size_t idxax=0; idxax<std::min(tok_ctrs.size(),tok_ctr_errs.size()); ++idxax)
+				{
+					const auto &tok_axis = tok_ctrs[idxax];
+					const auto &tok_axis_err = tok_ctr_errs[idxax];
+
+					std::vector<t_real_dat> axis, axis_err;
+					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					tl::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
+
+					data.AddMonitor(std::move(axis), std::move(axis_err));
+				}
+			}
+
+			dataset.AddChannel(std::move(data));
+		}
 
 		return std::make_shared<SymbolDataset>(dataset);
 	}

@@ -193,6 +193,8 @@ void MainWnd::closeEvent(QCloseEvent *pEvt)
 void MainWnd::NewFile()
 {
 	SetCurrentFile("");
+	m_pWS->GetWidget()->GetWorkspace()->clear();
+	m_pWS->GetWidget()->UpdateList();
 }
 
 
@@ -273,7 +275,6 @@ bool MainWnd::OpenFile(const QString &file)
 		print_out("Loading session file version ", *optVer, ", dated ", tl::epoch_to_str(*optTime), ".");
 
 
-	// TODO: clear old workspace and load saved workspace variables
 	m_pWS->GetWidget()->GetWorkspace()->clear();
 	m_pWS->GetWidget()->LoadWorkspace(basename, prop);
 
