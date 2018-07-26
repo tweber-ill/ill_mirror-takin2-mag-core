@@ -38,8 +38,8 @@ set(CMAKE_AUTOUIC ON)
 
 # -----------------------------------------------------------------------------
 # Build parser
-find_package(Flex REQUIRED)
-find_package(Bison 3.0 REQUIRED)
+find_package(FLEX REQUIRED)
+find_package(BISON 3.0 REQUIRED)
 
 # temp dir for parser
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/parser)
