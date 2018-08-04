@@ -7,13 +7,25 @@
 
 import numpy as np
 import numpy.linalg as la
-import scipy as sp
-import scipy.constants as co
 
 
-hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
-E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
+use_scipy = False
+#a3_offs = np.pi
+a3_offs = 0.
+
+
+# -----------------------------------------------------------------------------
+if use_scipy:
+	import scipy as sp
+	import scipy.constants as co
+
+	hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
+	E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
+else:
+	E_to_k2 = 0.482596406464	# calculated with scipy, using the formula above
+
 #print(1./E_to_k2)
+# -----------------------------------------------------------------------------
 
 
 # A1 & A2 angles (also A5 & A6)
@@ -69,7 +81,7 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, B):
 	# Angle psi enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
 
-	a3 = np.pi - psi - xi
+	a3 = - psi - xi + a3_offs
 	a4 = get_a4(ki, kf, Qlen)
 
 	return [a3, a4]
@@ -107,3 +119,4 @@ if __name__ == "__main__":
 	print("a1 = %.4f, a2 = %.4f, a3 = %.4f, a4 = %.4f, a5 = %.4f, a6 = %.4f" \
 		% (a1/np.pi*180., a2/np.pi*180., a3/np.pi*180., a4/np.pi*180., a5/np.pi*180., a6/np.pi*180.))
 # ------------------------------------------------------------------------------
+
