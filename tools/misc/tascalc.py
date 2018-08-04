@@ -15,6 +15,31 @@ a3_offs = 0.
 
 
 # -----------------------------------------------------------------------------
+# rotate a vector around an axis using Rodrigues' formula
+# see: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+def rotate(_axis, vec, phi):
+	axis = _axis / la.norm(_axis)
+
+	s = np.sin(phi)
+	c = np.cos(phi)
+
+	return c*vec + (1.-c)*np.dot(vec, axis)*axis + s*np.cross(axis, vec)
+
+
+# cross product in fractional coordinates
+def cross(a, b, B):
+	# levi-civita in fractional coordinates
+	def levi(i,j,k, B):
+		M = np.array([B[:,i], B[:,j], B[:,k]])
+		return la.det(M)
+
+	metric_inv = la.inv(np.einsum("ij,ik -> jk", B, B))
+	eps = [[[ levi(i,j,k, B) for k in range(0,3) ] for j in range(0,3) ] for i in range(0,3) ]
+	return np.einsum("ijk,j,k,li -> l", eps, a, b, metric_inv)
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
 if use_scipy:
 	import scipy as sp
 	import scipy.constants as co
@@ -36,7 +61,7 @@ def get_a1a2(k, d):
 	return [a1, 2.*a1]
 
 
-# A1 angle (or A5)  ->  mono (or ana) k
+# a1 angle (or a5)  ->  mono (or ana) k
 def get_monok(theta, d):
 	s = np.sin(theta)
 	k = np.pi/(d*s)
@@ -45,13 +70,13 @@ def get_monok(theta, d):
 
 
 # -----------------------------------------------------------------------------
-# Scattering angle a4
+# scattering angle a4
 def get_a4(ki, kf, Q):
 	c = (ki**2. + kf**2. - Q**2.) / (2.*ki*kf)
 	return np.arccos(c)
 
 
-# Get |Q| from ki, kf and a4
+# get |Q| from ki, kf and a4
 def get_Q(ki, kf, a4):
 	c = np.cos(a4)
 	return np.sqrt(ki**2. + kf**2. - c*(2.*ki*kf))
@@ -59,13 +84,13 @@ def get_Q(ki, kf, a4):
 
 
 # -----------------------------------------------------------------------------
-# Angle enclosed by ki and Q
+# angle enclosed by ki and Q
 def get_psi(ki, kf, Q):
 	c = (ki**2. + Q**2. - kf**2.) / (2.*ki*Q)
 	return np.arccos(c)
 
 
-# Crystallographic A matrix converting fractional to lab coordinates
+# crystallographic A matrix converting fractional to lab coordinates
 # see: https://de.wikipedia.org/wiki/Fraktionelle_Koordinaten
 def get_A(lattice, angles):
 	cs = np.cos(angles)
@@ -80,24 +105,25 @@ def get_A(lattice, angles):
 	return np.transpose(np.array([a, b, c]))
 
 
-# Crystallographic B matrix converting rlu to 1/A
+# crystallographic B matrix converting rlu to 1/A
 def get_B(lattice, angles):
 	A = get_A(lattice, angles)
 	B = 2.*np.pi * np.transpose(la.inv(A))
 	return B
 
 
-# A3 & A4 angles
+# a3 & a4 angles
 def get_a3a4(ki, kf, Q_rlu, orient_rlu, B):
 	metric = np.einsum("ij,ik -> jk", B, B)
 	Qlen = np.sqrt(np.dot(Q_rlu, np.dot(metric, Q_rlu)))
 	orientlen = np.sqrt(np.dot(orient_rlu, np.dot(metric, orient_rlu)))
 
-	# Angle xi between Q and orientation reflex
+	# angle xi between Q and orientation reflex
 	c = np.dot(Q_rlu, np.dot(metric, orient_rlu)) / (Qlen*orientlen)
 	xi = np.arccos(c)
+	# !! TODO: sign of xi !!
 
-	# Angle psi enclosed by ki and Q
+	# angle psi enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
 
 	a3 = - psi - xi + a3_offs
@@ -107,31 +133,20 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, B):
 	return [a3, a4]
 
 
-# rotate a vector around an axis using Rodrigues' formula
-# see: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-def rotate(_axis, vec, phi):
-	axis = _axis / la.norm(_axis)
-
-	s = np.sin(phi)
-	c = np.cos(phi)
-
-	return c*vec + (1.-c)*np.dot(vec, axis)*axis + s*np.cross(axis, vec)
-
-
 def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient2_rlu, B):
 	B_inv = la.inv(B)
 
-	# Angle enclosed by ki and Q
+	# angle enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
 
-	# Angle between Q and orientation reflex
+	# angle between Q and orientation reflex
 	xi = - a3 + a3_offs - psi
 
-	orient_lab = np.dot(B, orient_rlu)
-	orient2_lab = np.dot(B, orient2_rlu)
-	orient_up_lab = np.cross(orient_lab, orient2_lab)
-	Q_lab = rotate(orient_up_lab, orient_lab, xi)
-	Q_lab = Q_lab / la.norm(Q_lab) * Qlen
+	# up vector in rlu
+	orient_up_rlu = cross(orient_rlu, orient2_rlu, B)
+
+	Q_lab = rotate(np.dot(B, orient_up_rlu), np.dot(B, orient_rlu*Qlen), xi)
+	Q_lab *= Qlen / la.norm(Q_lab)
 	Q_rlu = np.dot(B_inv, Q_lab)
 
 	return Q_rlu
@@ -139,17 +154,17 @@ def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient2_rlu, B):
 
 
 # -----------------------------------------------------------------------------
-# Get ki from kf and energy transfer
+# get ki from kf and energy transfer
 def get_ki(kf, E):
 	return np.sqrt(kf**2. + E_to_k2*E)
 
 
-# Get kf from ki and energy transfer
+# get kf from ki and energy transfer
 def get_kf(ki, E):
 	return np.sqrt(ki**2. - E_to_k2*E)
 
 
-# Get energy transfer from ki and kf
+# get energy transfer from ki and kf
 def get_E(ki, kf):
 	return (ki**2. - kf**2.) / E_to_k2
 # -----------------------------------------------------------------------------
@@ -157,22 +172,22 @@ def get_E(ki, kf):
 
 
 # ------------------------------------------------------------------------------
-# Example calculations
+# example calculations
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
 	# --------------------------------------------------------------------------
-	# Lattice input
+	# lattice input
 	# --------------------------------------------------------------------------
-	lattice = np.array([5, 5, 5])
-	angles = np.array([90, 90, 60])
+	lattice = np.array([4, 5, 6])
+	angles = np.array([90, 60, 60])
 	orient_rlu = np.array([1, 0, 0])
 	orient2_rlu = np.array([0, 1, 0])
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
-	# Measurement position and instrument configuration input
+	# measurement position and instrument configuration input
 	# --------------------------------------------------------------------------
-	Q_rlu = np.array([1,1,0])
+	Q_rlu = np.array([1,2,0])
 	E = 0.5
 	kf = 1.4
 	dmono = 3.355
@@ -180,10 +195,9 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
-	# Lattice and TAS angle calculation
+	# lattice and TAS angle calculation
 	# --------------------------------------------------------------------------
 	B = get_B(lattice, angles/180.*np.pi)
-	#B_inv = la.inv(B)
 
 	ki = get_ki(kf, E)
 	[a1, a2] = get_a1a2(ki, dmono)
@@ -192,12 +206,11 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
-	# Output
+	# output
 	# --------------------------------------------------------------------------
 	np.set_printoptions(suppress=True, precision=4)
 
 	print("B [rlu -> 1/A] = \n" + str(B))
-	#print("B^(-1) [1/A -> rlu] = \n" + str(B_inv))
 	print("a1 = %.4f deg, a2 = %.4f deg, a3 = %.4f deg, a4 = %.4f deg, a5 = %.4f deg, a6 = %.4f deg" \
 		% (a1/np.pi*180., a2/np.pi*180., a3/np.pi*180., a4/np.pi*180., a5/np.pi*180., a6/np.pi*180.))
 	# --------------------------------------------------------------------------
@@ -214,7 +227,7 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
-	# Output
+	# output
 	# --------------------------------------------------------------------------
 	print("ki = %.4f 1/A, kf = %.4f 1/A, E = %.4f meV, |Q| = %.4f 1/A, "\
 		"Q = %s rlu" % (ki, kf, E, Qlen, Qvec))
