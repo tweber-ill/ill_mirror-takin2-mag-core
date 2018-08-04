@@ -26,6 +26,11 @@ def rotate(_axis, vec, phi):
 	return c*vec + (1.-c)*np.dot(vec, axis)*axis + s*np.cross(axis, vec)
 
 
+# get metric from crystal B matrix
+def get_metric(B):
+	return np.einsum("ij,ik -> jk", B, B)
+
+
 # cross product in fractional coordinates
 def cross(a, b, B):
 	# levi-civita in fractional coordinates
@@ -33,9 +38,14 @@ def cross(a, b, B):
 		M = np.array([B[:,i], B[:,j], B[:,k]])
 		return la.det(M)
 
-	metric_inv = la.inv(np.einsum("ij,ik -> jk", B, B))
+	metric_inv = la.inv(get_metric(B))
 	eps = [[[ levi(i,j,k, B) for k in range(0,3) ] for j in range(0,3) ] for i in range(0,3) ]
 	return np.einsum("ijk,j,k,li -> l", eps, a, b, metric_inv)
+
+
+# dot product in fractional coordinates
+def dot(a, b, metric):
+	return np.dot(a, np.dot(metric, b))
 # -----------------------------------------------------------------------------
 
 
@@ -113,15 +123,18 @@ def get_B(lattice, angles):
 
 
 # a3 & a4 angles
-def get_a3a4(ki, kf, Q_rlu, orient_rlu, B):
-	metric = np.einsum("ij,ik -> jk", B, B)
-	Qlen = np.sqrt(np.dot(Q_rlu, np.dot(metric, Q_rlu)))
-	orientlen = np.sqrt(np.dot(orient_rlu, np.dot(metric, orient_rlu)))
+def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
+	metric = get_metric(B)
+	Qlen = np.sqrt(dot(Q_rlu, Q_rlu, metric))
+	orientlen = np.sqrt(dot(orient_rlu, orient_rlu, metric))
 
 	# angle xi between Q and orientation reflex
-	c = np.dot(Q_rlu, np.dot(metric, orient_rlu)) / (Qlen*orientlen)
+	c = dot(Q_rlu, orient_rlu, metric) / (Qlen*orientlen)
 	xi = np.arccos(c)
-	# !! TODO: sign of xi !!
+
+	# sign of xi
+	if dot(cross(orient_rlu, Q_rlu, B), orient_up_rlu, metric) < 0.:
+		xi = -xi
 
 	# angle psi enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
@@ -133,7 +146,7 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, B):
 	return [a3, a4]
 
 
-def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient2_rlu, B):
+def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B):
 	B_inv = la.inv(B)
 
 	# angle enclosed by ki and Q
@@ -141,9 +154,6 @@ def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient2_rlu, B):
 
 	# angle between Q and orientation reflex
 	xi = - a3 + a3_offs - psi
-
-	# up vector in rlu
-	orient_up_rlu = cross(orient_rlu, orient2_rlu, B)
 
 	Q_lab = rotate(np.dot(B, orient_up_rlu), np.dot(B, orient_rlu*Qlen), xi)
 	Q_lab *= Qlen / la.norm(Q_lab)
@@ -178,8 +188,8 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 	# lattice input
 	# --------------------------------------------------------------------------
-	lattice = np.array([4, 5, 6])
-	angles = np.array([90, 60, 60])
+	lattice = np.array([5, 5, 5])
+	angles = np.array([90, 90, 90])
 	orient_rlu = np.array([1, 0, 0])
 	orient2_rlu = np.array([0, 1, 0])
 	# --------------------------------------------------------------------------
@@ -187,7 +197,7 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 	# measurement position and instrument configuration input
 	# --------------------------------------------------------------------------
-	Q_rlu = np.array([1,2,0])
+	Q_rlu = np.array([1, -1, 0])
 	E = 0.5
 	kf = 1.4
 	dmono = 3.355
@@ -198,11 +208,12 @@ if __name__ == "__main__":
 	# lattice and TAS angle calculation
 	# --------------------------------------------------------------------------
 	B = get_B(lattice, angles/180.*np.pi)
+	orient_up_rlu = cross(orient_rlu, orient2_rlu, B)	# up vector in rlu
 
 	ki = get_ki(kf, E)
 	[a1, a2] = get_a1a2(ki, dmono)
 	[a5, a6] = get_a1a2(kf, dana)
-	[a3, a4] = get_a3a4(ki, kf, Q_rlu, orient_rlu, B)
+	[a3, a4] = get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
@@ -223,7 +234,7 @@ if __name__ == "__main__":
 	kf = get_monok(a5, dana)
 	E = get_E(ki, kf)
 	Qlen = get_Q(ki, kf, a4)
-	Qvec = get_hkl(ki, kf, a3, Qlen, orient_rlu, orient2_rlu, B)
+	Qvec = get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------
