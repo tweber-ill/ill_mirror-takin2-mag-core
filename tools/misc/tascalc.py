@@ -222,6 +222,7 @@ if __name__ == "__main__":
 	np.set_printoptions(suppress=True, precision=4)
 
 	print("B [rlu -> 1/A] = \n" + str(B))
+	print("scattering plane normal = " + str(orient_up_rlu/la.norm(orient_up_rlu)) + " rlu")
 	print("a1 = %.4f deg, a2 = %.4f deg, a3 = %.4f deg, a4 = %.4f deg, a5 = %.4f deg, a6 = %.4f deg" \
 		% (a1/np.pi*180., a2/np.pi*180., a3/np.pi*180., a4/np.pi*180., a5/np.pi*180., a6/np.pi*180.))
 	# --------------------------------------------------------------------------
