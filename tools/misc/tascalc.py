@@ -46,6 +46,15 @@ def cross(a, b, B):
 # dot product in fractional coordinates
 def dot(a, b, metric):
 	return np.dot(a, np.dot(metric, b))
+
+
+# angle between peaks in fractional coordinates
+def angle(a, b, metric):
+	len_a = np.sqrt(dot(a, a, metric))
+	len_b = np.sqrt(dot(b, b, metric))
+
+	c = dot(a, b, metric) / (len_a * len_b)
+	return np.arccos(c)
 # -----------------------------------------------------------------------------
 
 
@@ -125,16 +134,15 @@ def get_B(lattice, angles):
 # a3 & a4 angles
 def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	metric = get_metric(B)
-	Qlen = np.sqrt(dot(Q_rlu, Q_rlu, metric))
-	orientlen = np.sqrt(dot(orient_rlu, orient_rlu, metric))
 
 	# angle xi between Q and orientation reflex
-	c = dot(Q_rlu, orient_rlu, metric) / (Qlen*orientlen)
-	xi = np.arccos(c)
+	xi = angle(Q_rlu, orient_rlu, metric)
 
 	# sign of xi
 	if dot(cross(orient_rlu, Q_rlu, B), orient_up_rlu, metric) < 0.:
 		xi = -xi
+
+	Qlen = np.sqrt(dot(Q_rlu, Q_rlu, metric))
 
 	# angle psi enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
@@ -223,7 +231,7 @@ if __name__ == "__main__":
 
 	print("B [rlu -> 1/A] = \n" + str(B))
 	print("scattering plane normal = " + str(orient_up_rlu/la.norm(orient_up_rlu)) + " rlu")
-	print("a1 = %.4f deg, a2 = %.4f deg, a3 = %.4f deg, a4 = %.4f deg, a5 = %.4f deg, a6 = %.4f deg" \
+	print("\na1 = %.4f deg, a2 = %.4f deg, a3 = %.4f deg, a4 = %.4f deg, a5 = %.4f deg, a6 = %.4f deg" \
 		% (a1/np.pi*180., a2/np.pi*180., a3/np.pi*180., a4/np.pi*180., a5/np.pi*180., a6/np.pi*180.))
 	# --------------------------------------------------------------------------
 
@@ -243,6 +251,16 @@ if __name__ == "__main__":
 	# --------------------------------------------------------------------------
 	print("ki = %.4f 1/A, kf = %.4f 1/A, E = %.4f meV, |Q| = %.4f 1/A, "\
 		"Q = %s rlu" % (ki, kf, E, Qlen, Qvec))
+	# --------------------------------------------------------------------------
+
+
+	# --------------------------------------------------------------------------
+	# angle between two reciprocal vectors
+	metric = get_metric(B)
+	vec1  = np.array([1., 0., 0.])
+	vec2  = np.array([0., 1., 0.])
+	ang = angle(vec1, vec2, metric)
+	print("\nAngle between %s rlu and %s rlu: %.4f deg" % (str(vec1), str(vec2), ang/np.pi*180.))
 	# --------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
