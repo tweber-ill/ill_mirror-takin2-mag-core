@@ -13,7 +13,7 @@ use_scipy = False
 
 # -----------------------------------------------------------------------------
 # choose an a3 convention
-#a3_offs = 0.
+#a3_offs = 0.			# for sics
 #a3_offs = np.pi/2.		# for takin: Q along orient1 => a3:=a4/2
 a3_offs = np.pi 		# for nomad: ki along orient1 => a3:=0
 # -----------------------------------------------------------------------------
