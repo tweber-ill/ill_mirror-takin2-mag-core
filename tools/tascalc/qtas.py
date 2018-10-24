@@ -62,14 +62,14 @@ editC = qtw.QLineEdit(xtalpanel)
 editAlpha = qtw.QLineEdit(xtalpanel)
 editBeta = qtw.QLineEdit(xtalpanel)
 editGamma = qtw.QLineEdit(xtalpanel)
-editBMat = qtw.QPlainTextEdit(xtalpanel)
-editBMat.setReadOnly(True)
 editAx = qtw.QLineEdit(scpanel)
 editAy = qtw.QLineEdit(scpanel)
 editAz = qtw.QLineEdit(scpanel)
 editBx = qtw.QLineEdit(scpanel)
 editBy = qtw.QLineEdit(scpanel)
 editBz = qtw.QLineEdit(scpanel)
+editBMat = qtw.QPlainTextEdit(xtalpanel)
+editBMat.setReadOnly(True)
 
 
 def xtalChanged():
@@ -117,17 +117,17 @@ editBx.setText("%.6g" % sett.value("bx", 0., type=float))
 editBy.setText("%.6g" % sett.value("by", 1., type=float))
 editBz.setText("%.6g" % sett.value("bz", 0., type=float))
 
-xtallayout.addWidget(qtw.QLabel("a (A):", xtalpanel), 0,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"a (\u212b):", xtalpanel), 0,0, 1,1)
 xtallayout.addWidget(editA, 0,1, 1,3)
-xtallayout.addWidget(qtw.QLabel("b (A):", xtalpanel), 1,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"b (\u212b):", xtalpanel), 1,0, 1,1)
 xtallayout.addWidget(editB, 1,1, 1,3)
-xtallayout.addWidget(qtw.QLabel("c (A):", xtalpanel), 2,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"c (\u212b):", xtalpanel), 2,0, 1,1)
 xtallayout.addWidget(editC, 2,1, 1,3)
-xtallayout.addWidget(qtw.QLabel("alpha (A):", xtalpanel), 3,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"\u03b1 (deg):", xtalpanel), 3,0, 1,1)
 xtallayout.addWidget(editAlpha, 3,1, 1,3)
-xtallayout.addWidget(qtw.QLabel("beta (A):", xtalpanel), 4,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"\u03b2 (deg):", xtalpanel), 4,0, 1,1)
 xtallayout.addWidget(editBeta, 4,1, 1,3)
-xtallayout.addWidget(qtw.QLabel("gamma (A):", xtalpanel), 5,0, 1,1)
+xtallayout.addWidget(qtw.QLabel(u"\u03b3 (deg):", xtalpanel), 5,0, 1,1)
 xtallayout.addWidget(editGamma, 5,1, 1,3)
 sclayout.addWidget(qtw.QLabel("orient 1 (rlu):", scpanel), 6,0, 1,1)
 sclayout.addWidget(editAx, 6,1, 1,1)
@@ -166,9 +166,10 @@ edith = qtw.QLineEdit(Qpanel)
 editk = qtw.QLineEdit(Qpanel)
 editl = qtw.QLineEdit(Qpanel)
 editE = qtw.QLineEdit(Qpanel)
-
 editKi = qtw.QLineEdit(Qpanel)
 editKf = qtw.QLineEdit(Qpanel)
+editQAbs = qtw.QLineEdit(Qpanel)
+editQAbs.setReadOnly(True)
 
 separatorTas = qtw.QFrame(Qpanel)
 separatorTas.setFrameStyle(qtw.QFrame.HLine)
@@ -184,21 +185,30 @@ def TASChanged():
 	dmono = getfloat(editDm.text())
 	dana = getfloat(editDa.text())
 
-	ki = tas.get_monok(a1, dmono)
-	kf = tas.get_monok(a5, dana)
-	E = tas.get_E(ki, kf)
-	Qlen = tas.get_Q(ki, kf, a4)
-	Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
-
 	editA2.setText("%.6g" % (a2 / np.pi * 180.))
 	editA6.setText("%.6g" % (a6 / np.pi * 180.))
 
-	edith.setText("%.6g" % Qvec[0])
-	editk.setText("%.6g" % Qvec[1])
-	editl.setText("%.6g" % Qvec[2])
-	editKi.setText("%.6g" % ki)
-	editKf.setText("%.6g" % kf)
-	editE.setText("%.6g" % E)
+	try:
+		ki = tas.get_monok(a1, dmono)
+		kf = tas.get_monok(a5, dana)
+		E = tas.get_E(ki, kf)
+		Qlen = tas.get_Q(ki, kf, a4)
+		Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
+
+		edith.setText("%.6g" % Qvec[0])
+		editk.setText("%.6g" % Qvec[1])
+		editl.setText("%.6g" % Qvec[2])
+		editQAbs.setText("%.6g" % Qlen)
+		editKi.setText("%.6g" % ki)
+		editKf.setText("%.6g" % kf)
+		editE.setText("%.6g" % E)
+	except ArithmeticError:
+		edith.setText("invalid")
+		editk.setText("invalid")
+		editl.setText("invalid")
+		editKi.setText("invalid")
+		editKf.setText("invalid")
+		editE.setText("invalid")
 
 
 def A2Changed():
@@ -220,30 +230,54 @@ def QChanged():
 	Q_rlu = np.array([getfloat(edith.text()), getfloat(editk.text()), getfloat(editl.text())])
 	ki = getfloat(editKi.text())
 	kf = getfloat(editKf.text())
-	E = tas.get_E(ki, kf)
-
 	orient_rlu = np.array([getfloat(editAx.text()), getfloat(editAy.text()), getfloat(editAz.text())])
 	orient2_rlu = np.array([getfloat(editBx.text()), getfloat(editBy.text()), getfloat(editBz.text())])
-	orient_up_rlu = tas.cross(orient_rlu, orient2_rlu, B)   # up vector in rlu
 
-	[a1, a2] = tas.get_a1a2(ki, getfloat(editDm.text()))
-	[a5, a6] = tas.get_a1a2(kf, getfloat(editDa.text()))
-	[a3, a4] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
+	try:
+		[a1, a2] = tas.get_a1a2(ki, getfloat(editDm.text()))
 
-	editE.setText("%.6g" % E)
-	editA1.setText("%.6g" % (a1 / np.pi * 180.))
-	editA2.setText("%.6g" % (a2 / np.pi * 180.))
-	editA3.setText("%.6g" % (a3 / np.pi * 180.))
-	editA4.setText("%.6g" % (a4 / np.pi * 180.))
-	editA5.setText("%.6g" % (a5 / np.pi * 180.))
-	editA6.setText("%.6g" % (a6 / np.pi * 180.))
+		editA1.setText("%.6g" % (a1 / np.pi * 180.))
+		editA2.setText("%.6g" % (a2 / np.pi * 180.))
+	except ArithmeticError:
+		editA1.setText("invalid")
+		editA2.setText("invalid")
 
+	try:
+		[a5, a6] = tas.get_a1a2(kf, getfloat(editDa.text()))
+
+		editA5.setText("%.6g" % (a5 / np.pi * 180.))
+		editA6.setText("%.6g" % (a6 / np.pi * 180.))
+	except ArithmeticError:
+		editA5.setText("invalid")
+		editA6.setText("invalid")
+
+	try:
+		orient_up_rlu = tas.cross(orient_rlu, orient2_rlu, B)   # up vector in rlu
+		[a3, a4] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
+		Qlen = tas.get_Q(ki, kf, a4)
+
+		editA3.setText("%.6g" % (a3 / np.pi * 180.))
+		editA4.setText("%.6g" % (a4 / np.pi * 180.))
+		editQAbs.setText("%.6g" % Qlen)
+	except ArithmeticError:
+		editA3.setText("invalid")
+		editA4.setText("invalid")
+
+	try:
+		E = tas.get_E(ki, kf)
+		editE.setText("%.6g" % E)
+	except ArithmeticError:
+		editE.setText("invalid")
 
 def EChanged():
 	E = getfloat(editE.text())
 	kf = getfloat(editKf.text())
-	ki = tas.get_ki(kf, E)
-	editKi.setText("%.6g" % ki)
+
+	try:
+		ki = tas.get_ki(kf, E)
+		editKi.setText("%.6g" % ki)
+	except ArithmeticError:
+		editKi.setText("invalid")
 
 
 editA1.textEdited.connect(TASChanged)
@@ -279,23 +313,25 @@ Qlayout.addWidget(qtw.QLabel("l (rlu):", Qpanel), 2,0, 1,1)
 Qlayout.addWidget(editl, 2,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("E (meV):", Qpanel), 3,0, 1,1)
 Qlayout.addWidget(editE, 3,1, 1,2)
-Qlayout.addWidget(qtw.QLabel("ki/kf (1/A):", Qpanel), 4,0, 1,1)
+Qlayout.addWidget(qtw.QLabel(u"ki, kf (1/\u212b):", Qpanel), 4,0, 1,1)
 Qlayout.addWidget(editKi, 4,1, 1,1)
 Qlayout.addWidget(editKf, 4,2, 1,1)
-Qlayout.addWidget(separatorTas, 5,0,1,3)
-taslayout.addWidget(qtw.QLabel("a1/a2 (deg):", taspanel), 6,0, 1,1)
-taslayout.addWidget(editA1, 6,1, 1,1)
-taslayout.addWidget(editA2, 6,2, 1,1)
-taslayout.addWidget(qtw.QLabel("a3/a4 (deg):", taspanel), 7,0, 1,1)
-taslayout.addWidget(editA3, 7,1, 1,1)
-taslayout.addWidget(editA4, 7,2, 1,1)
-taslayout.addWidget(qtw.QLabel("a5/a6 (deg):", taspanel), 8,0, 1,1)
-taslayout.addWidget(editA5, 8,1, 1,1)
-taslayout.addWidget(editA6, 8,2, 1,1)
-taslayout.addWidget(qtw.QLabel("Mono./Ana. d (A):", taspanel), 9,0, 1,1)
-taslayout.addWidget(editDm, 9,1, 1,1)
-taslayout.addWidget(editDa, 9,2, 1,1)
-taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 10,0, 1,3)
+Qlayout.addWidget(qtw.QLabel(u"|Q| (1/\u212b):", Qpanel), 5,0, 1,1)
+Qlayout.addWidget(editQAbs, 5,1, 1,2)
+Qlayout.addWidget(separatorTas, 6,0,1,3)
+taslayout.addWidget(qtw.QLabel("a1, a2 (deg):", taspanel), 7,0, 1,1)
+taslayout.addWidget(editA1, 7,1, 1,1)
+taslayout.addWidget(editA2, 7,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a3, a4 (deg):", taspanel), 8,0, 1,1)
+taslayout.addWidget(editA3, 8,1, 1,1)
+taslayout.addWidget(editA4, 8,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a5, a6 (deg):", taspanel), 9,0, 1,1)
+taslayout.addWidget(editA5, 9,1, 1,1)
+taslayout.addWidget(editA6, 9,2, 1,1)
+taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 10,0, 1,1)
+taslayout.addWidget(editDm, 10,1, 1,1)
+taslayout.addWidget(editDa, 10,2, 1,1)
+taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 11,0, 1,3)
 
 tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------
