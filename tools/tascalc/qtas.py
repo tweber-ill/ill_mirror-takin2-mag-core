@@ -83,7 +83,7 @@ def xtalChanged():
 			% (B[0,0],B[0,1],B[0,2], B[1,0],B[1,1],B[1,2], B[2,0],B[2,1],B[2,2]) \
 			+"\nB^(-1) =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
 			% (invB[0,0],invB[0,1],invB[0,2], invB[1,0],invB[1,1],invB[1,2], invB[2,0],invB[2,1],invB[2,2]))
-	except la.LinAlgError:
+	except (ArithmeticError, la.LinAlgError) as err:
 		editBMat.setPlainText("invalid")
 	QChanged()
 
@@ -203,7 +203,7 @@ def TASChanged():
 		editKi.setText("%.6g" % ki)
 		editKf.setText("%.6g" % kf)
 		editE.setText("%.6g" % E)
-	except ArithmeticError:
+	except (ArithmeticError, la.LinAlgError) as err:
 		edith.setText("invalid")
 		editk.setText("invalid")
 		editl.setText("invalid")
@@ -239,7 +239,7 @@ def QChanged():
 
 		editA1.setText("%.6g" % (a1 / np.pi * 180.))
 		editA2.setText("%.6g" % (a2 / np.pi * 180.))
-	except ArithmeticError:
+	except (ArithmeticError, la.LinAlgError) as err:
 		editA1.setText("invalid")
 		editA2.setText("invalid")
 
@@ -248,7 +248,7 @@ def QChanged():
 
 		editA5.setText("%.6g" % (a5 / np.pi * 180.))
 		editA6.setText("%.6g" % (a6 / np.pi * 180.))
-	except ArithmeticError:
+	except (ArithmeticError, la.LinAlgError) as err:
 		editA5.setText("invalid")
 		editA6.setText("invalid")
 
@@ -260,14 +260,20 @@ def QChanged():
 		editA3.setText("%.6g" % (a3 / np.pi * 180.))
 		editA4.setText("%.6g" % (a4 / np.pi * 180.))
 		editQAbs.setText("%.6g" % Qlen)
-	except ArithmeticError:
+	except (ArithmeticError, la.LinAlgError) as err:
 		editA3.setText("invalid")
 		editA4.setText("invalid")
+
+def KiKfChanged():
+	ki = getfloat(editKi.text())
+	kf = getfloat(editKf.text())
 
 	try:
 		E = tas.get_E(ki, kf)
 		editE.setText("%.6g" % E)
-	except ArithmeticError:
+
+		QChanged()
+	except (ArithmeticError, la.LinAlgError) as err:
 		editE.setText("invalid")
 
 def EChanged():
@@ -277,7 +283,9 @@ def EChanged():
 	try:
 		ki = tas.get_ki(kf, E)
 		editKi.setText("%.6g" % ki)
-	except ArithmeticError:
+
+		QChanged()
+	except (ArithmeticError, la.LinAlgError) as err:
 		editKi.setText("invalid")
 
 
@@ -292,8 +300,8 @@ editDa.textEdited.connect(DChanged)
 edith.textEdited.connect(QChanged)
 editk.textEdited.connect(QChanged)
 editl.textEdited.connect(QChanged)
-editKi.textEdited.connect(QChanged)
-editKf.textEdited.connect(QChanged)
+editKi.textEdited.connect(KiKfChanged)
+editKf.textEdited.connect(KiKfChanged)
 editE.textEdited.connect(EChanged)
 
 
@@ -389,6 +397,7 @@ if sett.contains("geo"):
 	dlg.restoreGeometry(sett.value("geo"))
 
 xtalChanged()
+KiKfChanged()
 comboA3ConvChanged()
 #QChanged()
 
