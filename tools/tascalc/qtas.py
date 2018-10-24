@@ -170,6 +170,9 @@ editE = qtw.QLineEdit(Qpanel)
 editKi = qtw.QLineEdit(Qpanel)
 editKf = qtw.QLineEdit(Qpanel)
 
+separatorTas = qtw.QFrame(Qpanel)
+separatorTas.setFrameStyle(qtw.QFrame.HLine)
+
 
 def TASChanged():
 	a1 = getfloat(editA1.text()) / 180. * np.pi
@@ -181,11 +184,11 @@ def TASChanged():
 	dmono = getfloat(editDm.text())
 	dana = getfloat(editDa.text())
 
-        ki = tas.get_monok(a1, dmono)
-        kf = tas.get_monok(a5, dana)
-        E = tas.get_E(ki, kf)
-        Qlen = tas.get_Q(ki, kf, a4)
-        Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
+	ki = tas.get_monok(a1, dmono)
+	kf = tas.get_monok(a5, dana)
+	E = tas.get_E(ki, kf)
+	Qlen = tas.get_Q(ki, kf, a4)
+	Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
 
 	editA2.setText("%.6g" % (a2 / np.pi * 180.))
 	editA6.setText("%.6g" % (a6 / np.pi * 180.))
@@ -279,19 +282,20 @@ Qlayout.addWidget(editE, 3,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("ki/kf (1/A):", Qpanel), 4,0, 1,1)
 Qlayout.addWidget(editKi, 4,1, 1,1)
 Qlayout.addWidget(editKf, 4,2, 1,1)
-taslayout.addWidget(qtw.QLabel("a1/a2 (deg):", taspanel), 5,0, 1,1)
-taslayout.addWidget(editA1, 5,1, 1,1)
-taslayout.addWidget(editA2, 5,2, 1,1)
-taslayout.addWidget(qtw.QLabel("a3/a4 (deg):", taspanel), 6,0, 1,1)
-taslayout.addWidget(editA3, 6,1, 1,1)
-taslayout.addWidget(editA4, 6,2, 1,1)
-taslayout.addWidget(qtw.QLabel("a5/a6 (deg):", taspanel), 7,0, 1,1)
-taslayout.addWidget(editA5, 7,1, 1,1)
-taslayout.addWidget(editA6, 7,2, 1,1)
-taslayout.addWidget(qtw.QLabel("Mono./Ana. d (A):", taspanel), 8,0, 1,1)
-taslayout.addWidget(editDm, 8,1, 1,1)
-taslayout.addWidget(editDa, 8,2, 1,1)
-taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 9,0, 1,2)
+Qlayout.addWidget(separatorTas, 5,0,1,3)
+taslayout.addWidget(qtw.QLabel("a1/a2 (deg):", taspanel), 6,0, 1,1)
+taslayout.addWidget(editA1, 6,1, 1,1)
+taslayout.addWidget(editA2, 6,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a3/a4 (deg):", taspanel), 7,0, 1,1)
+taslayout.addWidget(editA3, 7,1, 1,1)
+taslayout.addWidget(editA4, 7,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a5/a6 (deg):", taspanel), 8,0, 1,1)
+taslayout.addWidget(editA5, 8,1, 1,1)
+taslayout.addWidget(editA6, 8,2, 1,1)
+taslayout.addWidget(qtw.QLabel("Mono./Ana. d (A):", taspanel), 9,0, 1,1)
+taslayout.addWidget(editDm, 9,1, 1,1)
+taslayout.addWidget(editDa, 9,2, 1,1)
+taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 10,0, 1,3)
 
 tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------
@@ -316,12 +320,20 @@ def comboA3ConvChanged():
 comboA3.currentIndexChanged.connect(comboA3ConvChanged)
 
 
+separatorInfo = qtw.QFrame(infopanel)
+separatorInfo.setFrameStyle(qtw.QFrame.HLine)
+
+
 infolayout.addWidget(qtw.QLabel("TAS Calculator.", infopanel), 0,0, 1,2)
 infolayout.addWidget(qtw.QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel), 1,0, 1,2)
 infolayout.addWidget(qtw.QLabel("Date: October 24, 2018.", infopanel), 2,0, 1,2)
-infolayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 3,0, 1,2)
-infolayout.addWidget(qtw.QLabel("A3 Convention:", infopanel), 4,0, 1,1)
-infolayout.addWidget(comboA3, 4,1, 1,1)
+infolayout.addWidget(separatorInfo, 3,0, 1,2)
+infolayout.addWidget(qtw.QLabel("Interpreter Version: " + sys.version + ".", infopanel), 4,0, 1,2)
+infolayout.addWidget(qtw.QLabel("Numpy Version: " + np.__version__ + ".", infopanel), 5,0, 1,2)
+infolayout.addWidget(qtw.QLabel("Qt Version: " + qtc.QT_VERSION_STR + ".", infopanel), 6,0, 1,2)
+infolayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 7,0, 1,2)
+infolayout.addWidget(qtw.QLabel("A3 Convention:", infopanel), 8,0, 1,1)
+infolayout.addWidget(comboA3, 8,1, 1,1)
 
 tabs.addTab(infopanel, "Infos")
 # -----------------------------------------------------------------------------
@@ -335,6 +347,9 @@ dlg = qtw.QDialog()
 dlg.setWindowTitle("TAS Calculator")
 mainlayout = qtw.QGridLayout(dlg)
 mainlayout.addWidget(tabs)
+
+if sett.contains("geo"):
+	dlg.restoreGeometry(sett.value("geo"))
 
 xtalChanged()
 comboA3ConvChanged()
@@ -366,4 +381,5 @@ sett.setValue("l", getfloat(editl.text()))
 sett.setValue("ki", getfloat(editKi.text()))
 sett.setValue("kf", getfloat(editKf.text()))
 sett.setValue("a3_conv", comboA3.currentIndex())
+sett.setValue("geo", dlg.saveGeometry())
 # -----------------------------------------------------------------------------
