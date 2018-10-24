@@ -19,6 +19,7 @@ import sys
 
 
 app = qtw.QApplication(sys.argv)
+app.setApplicationName("qtas")
 app.setStyle("Fusion")
 
 sett = qtc.QSettings("tobis_stuff", "qtas")
@@ -52,6 +53,8 @@ def getfloat(str):
 
 xtalpanel = qtw.QWidget()
 xtallayout = qtw.QGridLayout(xtalpanel)
+scpanel = xtalpanel
+sclayout = xtallayout
 
 editA = qtw.QLineEdit(xtalpanel)
 editB = qtw.QLineEdit(xtalpanel)
@@ -61,6 +64,12 @@ editBeta = qtw.QLineEdit(xtalpanel)
 editGamma = qtw.QLineEdit(xtalpanel)
 editBMat = qtw.QPlainTextEdit(xtalpanel)
 editBMat.setReadOnly(True)
+editAx = qtw.QLineEdit(scpanel)
+editAy = qtw.QLineEdit(scpanel)
+editAz = qtw.QLineEdit(scpanel)
+editBx = qtw.QLineEdit(scpanel)
+editBy = qtw.QLineEdit(scpanel)
+editBz = qtw.QLineEdit(scpanel)
 
 
 def xtalChanged():
@@ -70,12 +79,16 @@ def xtalChanged():
 	try:
 		B = tas.get_B(lattice, angles/180.*np.pi)
 		invB = la.inv(B)
-		editBMat.setPlainText("%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
+		editBMat.setPlainText("B =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
 			% (B[0,0],B[0,1],B[0,2], B[1,0],B[1,1],B[1,2], B[2,0],B[2,1],B[2,2]) \
-			+"\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
+			+"\nB^(-1) =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
 			% (invB[0,0],invB[0,1],invB[0,2], invB[1,0],invB[1,1],invB[1,2], invB[2,0],invB[2,1],invB[2,2]))
 	except la.LinAlgError:
 		editBMat.setPlainText("invalid")
+
+def planeChanged():
+	QChanged()
+
 
 editA.textEdited.connect(xtalChanged)
 editB.textEdited.connect(xtalChanged)
@@ -83,51 +96,6 @@ editC.textEdited.connect(xtalChanged)
 editAlpha.textEdited.connect(xtalChanged)
 editBeta.textEdited.connect(xtalChanged)
 editGamma.textEdited.connect(xtalChanged)
-
-editA.setText("%.6g" % sett.value("a", 5., type=float))
-editB.setText("%.6g" % sett.value("b", 5., type=float))
-editC.setText("%.6g" % sett.value("c", 5., type=float))
-editAlpha.setText("%.6g" % sett.value("alpha", 90., type=float))
-editBeta.setText("%.6g" % sett.value("beta", 90., type=float))
-editGamma.setText("%.6g" % sett.value("gamma", 90., type=float))
-
-xtallayout.addWidget(qtw.QLabel("a (A):", xtalpanel), 0,0, 1,1)
-xtallayout.addWidget(editA, 0,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("b (A):", xtalpanel), 1,0, 1,1)
-xtallayout.addWidget(editB, 1,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("c (A):", xtalpanel), 2,0, 1,1)
-xtallayout.addWidget(editC, 2,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("alpha (A):", xtalpanel), 3,0, 1,1)
-xtallayout.addWidget(editAlpha, 3,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("beta (A):", xtalpanel), 4,0, 1,1)
-xtallayout.addWidget(editBeta, 4,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("gamma (A):", xtalpanel), 5,0, 1,1)
-xtallayout.addWidget(editGamma, 5,1, 1,1)
-xtallayout.addWidget(qtw.QLabel("B matrix and inverse:", xtalpanel), 6,0, 1,2)
-xtallayout.addWidget(editBMat, 7,0, 2,2)
-
-tabs.addTab(xtalpanel, "Crystal")
-# -----------------------------------------------------------------------------
-
-
-
-# -----------------------------------------------------------------------------
-# plane tab
-
-scpanel = qtw.QWidget()
-sclayout = qtw.QGridLayout(scpanel)
-
-editAx = qtw.QLineEdit(scpanel)
-editAy = qtw.QLineEdit(scpanel)
-editAz = qtw.QLineEdit(scpanel)
-editBx = qtw.QLineEdit(scpanel)
-editBy = qtw.QLineEdit(scpanel)
-editBz = qtw.QLineEdit(scpanel)
-
-
-def planeChanged():
-	QChanged()
-
 editAx.textEdited.connect(planeChanged)
 editAy.textEdited.connect(planeChanged)
 editAz.textEdited.connect(planeChanged)
@@ -136,6 +104,12 @@ editBy.textEdited.connect(planeChanged)
 editBz.textEdited.connect(planeChanged)
 
 
+editA.setText("%.6g" % sett.value("a", 5., type=float))
+editB.setText("%.6g" % sett.value("b", 5., type=float))
+editC.setText("%.6g" % sett.value("c", 5., type=float))
+editAlpha.setText("%.6g" % sett.value("alpha", 90., type=float))
+editBeta.setText("%.6g" % sett.value("beta", 90., type=float))
+editGamma.setText("%.6g" % sett.value("gamma", 90., type=float))
 editAx.setText("%.6g" % sett.value("ax", 1., type=float))
 editAy.setText("%.6g" % sett.value("ay", 0., type=float))
 editAz.setText("%.6g" % sett.value("az", 0., type=float))
@@ -143,22 +117,30 @@ editBx.setText("%.6g" % sett.value("bx", 0., type=float))
 editBy.setText("%.6g" % sett.value("by", 1., type=float))
 editBz.setText("%.6g" % sett.value("bz", 0., type=float))
 
-sclayout.addWidget(qtw.QLabel("ax (rlu):", scpanel), 0,0, 1,1)
-sclayout.addWidget(editAx, 0,1, 1,1)
-sclayout.addWidget(qtw.QLabel("ay (rlu):", scpanel), 1,0, 1,1)
-sclayout.addWidget(editAy, 1,1, 1,1)
-sclayout.addWidget(qtw.QLabel("az (rlu):", scpanel), 2,0, 1,1)
-sclayout.addWidget(editAz, 2,1, 1,1)
-sclayout.addWidget(qtw.QLabel("bx (rlu):", scpanel), 3,0, 1,1)
-sclayout.addWidget(editBx, 3,1, 1,1)
-sclayout.addWidget(qtw.QLabel("by (rlu):", scpanel), 4,0, 1,1)
-sclayout.addWidget(editBy, 4,1, 1,1)
-sclayout.addWidget(qtw.QLabel("bz (rlu):", scpanel), 5,0, 1,1)
-sclayout.addWidget(editBz, 5,1, 1,1)
+xtallayout.addWidget(qtw.QLabel("a (A):", xtalpanel), 0,0, 1,1)
+xtallayout.addWidget(editA, 0,1, 1,3)
+xtallayout.addWidget(qtw.QLabel("b (A):", xtalpanel), 1,0, 1,1)
+xtallayout.addWidget(editB, 1,1, 1,3)
+xtallayout.addWidget(qtw.QLabel("c (A):", xtalpanel), 2,0, 1,1)
+xtallayout.addWidget(editC, 2,1, 1,3)
+xtallayout.addWidget(qtw.QLabel("alpha (A):", xtalpanel), 3,0, 1,1)
+xtallayout.addWidget(editAlpha, 3,1, 1,3)
+xtallayout.addWidget(qtw.QLabel("beta (A):", xtalpanel), 4,0, 1,1)
+xtallayout.addWidget(editBeta, 4,1, 1,3)
+xtallayout.addWidget(qtw.QLabel("gamma (A):", xtalpanel), 5,0, 1,1)
+xtallayout.addWidget(editGamma, 5,1, 1,3)
+sclayout.addWidget(qtw.QLabel("orient 1 (rlu):", scpanel), 6,0, 1,1)
+sclayout.addWidget(editAx, 6,1, 1,1)
+sclayout.addWidget(editAy, 6,2, 1,1)
+sclayout.addWidget(editAz, 6,3, 1,1)
+sclayout.addWidget(qtw.QLabel("orient 2 (rlu):", scpanel), 7,0, 1,1)
+sclayout.addWidget(editBx, 7,1, 1,1)
+sclayout.addWidget(editBy, 7,2, 1,1)
+sclayout.addWidget(editBz, 7,3, 1,1)
+xtallayout.addWidget(editBMat, 8,0, 2,4)
 
-tabs.addTab(scpanel, "Plane")
+tabs.addTab(xtalpanel, "Crystal")
 # -----------------------------------------------------------------------------
-
 
 
 
@@ -167,6 +149,8 @@ tabs.addTab(scpanel, "Plane")
 
 taspanel = qtw.QWidget()
 taslayout = qtw.QGridLayout(taspanel)
+Qpanel = taspanel
+Qlayout = taslayout
 
 editA1 = qtw.QLineEdit(taspanel)
 editA2 = qtw.QLineEdit(taspanel)
@@ -174,8 +158,17 @@ editA3 = qtw.QLineEdit(taspanel)
 editA4 = qtw.QLineEdit(taspanel)
 editA5 = qtw.QLineEdit(taspanel)
 editA6 = qtw.QLineEdit(taspanel)
+
 editDm = qtw.QLineEdit(taspanel)
 editDa = qtw.QLineEdit(taspanel)
+
+edith = qtw.QLineEdit(Qpanel)
+editk = qtw.QLineEdit(Qpanel)
+editl = qtw.QLineEdit(Qpanel)
+editE = qtw.QLineEdit(Qpanel)
+
+editKi = qtw.QLineEdit(Qpanel)
+editKf = qtw.QLineEdit(Qpanel)
 
 
 def TASChanged():
@@ -218,58 +211,6 @@ def A6Changed():
 def DChanged():
 	QChanged()
 
-
-editA1.textEdited.connect(TASChanged)
-editA3.textEdited.connect(TASChanged)
-editA4.textEdited.connect(TASChanged)
-editA5.textEdited.connect(TASChanged)
-editA2.textEdited.connect(A2Changed)
-editA6.textEdited.connect(A6Changed)
-editDm.textEdited.connect(DChanged)
-editDa.textEdited.connect(DChanged)
-
-
-editDm.setText("%.6g" % sett.value("dm", 3.355, type=float))
-editDa.setText("%.6g" % sett.value("da", 3.355, type=float))
-
-taslayout.addWidget(qtw.QLabel("a1 (deg):", taspanel), 0,0, 1,1)
-taslayout.addWidget(editA1, 0,1, 1,1)
-taslayout.addWidget(qtw.QLabel("a2 (deg):", taspanel), 1,0, 1,1)
-taslayout.addWidget(editA2, 1,1, 1,1)
-taslayout.addWidget(qtw.QLabel("a3 (deg):", taspanel), 2,0, 1,1)
-taslayout.addWidget(editA3, 2,1, 1,1)
-taslayout.addWidget(qtw.QLabel("a4 (deg):", taspanel), 3,0, 1,1)
-taslayout.addWidget(editA4, 3,1, 1,1)
-taslayout.addWidget(qtw.QLabel("a5 (deg):", taspanel), 4,0, 1,1)
-taslayout.addWidget(editA5, 4,1, 1,1)
-taslayout.addWidget(qtw.QLabel("a6 (deg):", taspanel), 5,0, 1,1)
-taslayout.addWidget(editA6, 5,1, 1,1)
-taslayout.addWidget(qtw.QLabel("Mono. d (A):", taspanel), 6,0, 1,1)
-taslayout.addWidget(editDm, 6,1, 1,1)
-taslayout.addWidget(qtw.QLabel("Ana. d (A):", taspanel), 7,0, 1,1)
-taslayout.addWidget(editDa, 7,1, 1,1)
-
-tabs.addTab(taspanel, "TAS")
-# -----------------------------------------------------------------------------
-
-
-
-
-# -----------------------------------------------------------------------------
-# hkl tab
-
-Qpanel = qtw.QWidget()
-Qlayout = qtw.QGridLayout(Qpanel)
-
-edith = qtw.QLineEdit(Qpanel)
-editk = qtw.QLineEdit(Qpanel)
-editl = qtw.QLineEdit(Qpanel)
-editE = qtw.QLineEdit(Qpanel)
-
-editKi = qtw.QLineEdit(Qpanel)
-editKf = qtw.QLineEdit(Qpanel)
-
-
 def QChanged():
 	global orient_rlu, orient2_rlu, orient_up_rlu
 
@@ -301,6 +242,15 @@ def EChanged():
 	ki = tas.get_ki(kf, E)
 	editKi.setText("%.6g" % ki)
 
+
+editA1.textEdited.connect(TASChanged)
+editA3.textEdited.connect(TASChanged)
+editA4.textEdited.connect(TASChanged)
+editA5.textEdited.connect(TASChanged)
+editA2.textEdited.connect(A2Changed)
+editA6.textEdited.connect(A6Changed)
+editDm.textEdited.connect(DChanged)
+editDa.textEdited.connect(DChanged)
 edith.textEdited.connect(QChanged)
 editk.textEdited.connect(QChanged)
 editl.textEdited.connect(QChanged)
@@ -309,30 +259,72 @@ editKf.textEdited.connect(QChanged)
 editE.textEdited.connect(EChanged)
 
 
+editDm.setText("%.6g" % sett.value("dm", 3.355, type=float))
+editDa.setText("%.6g" % sett.value("da", 3.355, type=float))
 edith.setText("%.6g" % sett.value("h", 1., type=float))
 editk.setText("%.6g" % sett.value("k", 0., type=float))
 editl.setText("%.6g" % sett.value("l", 0., type=float))
 #editE.setText("%.6g" % sett.value("E", 0., type=float))
-
 editKi.setText("%.6g" % sett.value("ki", 2.662, type=float))
 editKf.setText("%.6g" % sett.value("kf", 2.662, type=float))
 
 Qlayout.addWidget(qtw.QLabel("h (rlu):", Qpanel), 0,0, 1,1)
-Qlayout.addWidget(edith, 0,1, 1,1)
+Qlayout.addWidget(edith, 0,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("k (rlu):", Qpanel), 1,0, 1,1)
-Qlayout.addWidget(editk, 1,1, 1,1)
+Qlayout.addWidget(editk, 1,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("l (rlu):", Qpanel), 2,0, 1,1)
-Qlayout.addWidget(editl, 2,1, 1,1)
+Qlayout.addWidget(editl, 2,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("E (meV):", Qpanel), 3,0, 1,1)
-Qlayout.addWidget(editE, 3,1, 1,1)
-Qlayout.addWidget(qtw.QLabel("ki (1/A):", Qpanel), 4,0, 1,1)
+Qlayout.addWidget(editE, 3,1, 1,2)
+Qlayout.addWidget(qtw.QLabel("ki/kf (1/A):", Qpanel), 4,0, 1,1)
 Qlayout.addWidget(editKi, 4,1, 1,1)
-Qlayout.addWidget(qtw.QLabel("kf (1/A):", Qpanel), 5,0, 1,1)
-Qlayout.addWidget(editKf, 5,1, 1,1)
+Qlayout.addWidget(editKf, 4,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a1/a2 (deg):", taspanel), 5,0, 1,1)
+taslayout.addWidget(editA1, 5,1, 1,1)
+taslayout.addWidget(editA2, 5,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a3/a4 (deg):", taspanel), 6,0, 1,1)
+taslayout.addWidget(editA3, 6,1, 1,1)
+taslayout.addWidget(editA4, 6,2, 1,1)
+taslayout.addWidget(qtw.QLabel("a5/a6 (deg):", taspanel), 7,0, 1,1)
+taslayout.addWidget(editA5, 7,1, 1,1)
+taslayout.addWidget(editA6, 7,2, 1,1)
+taslayout.addWidget(qtw.QLabel("Mono./Ana. d (A):", taspanel), 8,0, 1,1)
+taslayout.addWidget(editDm, 8,1, 1,1)
+taslayout.addWidget(editDa, 8,2, 1,1)
+taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 9,0, 1,2)
 
-tabs.addTab(Qpanel, "hkl")
+tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------
 
+
+
+# -----------------------------------------------------------------------------
+# info/settings tab
+infopanel = qtw.QWidget()
+infolayout = qtw.QGridLayout(infopanel)
+
+comboA3 = qtw.QComboBox(infopanel)
+comboA3.addItems(["Takin", "NOMAD", "SICS", "NICOS"])
+a3_offs = [np.pi/2., np.pi, 0., 0.]
+comboA3.setCurrentIndex(sett.value("a3_conv", 1, type=int))
+
+def comboA3ConvChanged():
+	idx = comboA3.currentIndex()
+	tas.set_a3_offs(a3_offs[idx])
+	QChanged()
+
+comboA3.currentIndexChanged.connect(comboA3ConvChanged)
+
+
+infolayout.addWidget(qtw.QLabel("TAS Calculator.", infopanel), 0,0, 1,2)
+infolayout.addWidget(qtw.QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel), 1,0, 1,2)
+infolayout.addWidget(qtw.QLabel("Date: October 24, 2018.", infopanel), 2,0, 1,2)
+infolayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 3,0, 1,2)
+infolayout.addWidget(qtw.QLabel("A3 Convention:", infopanel), 4,0, 1,1)
+infolayout.addWidget(comboA3, 4,1, 1,1)
+
+tabs.addTab(infopanel, "Infos")
+# -----------------------------------------------------------------------------
 
 
 
@@ -344,10 +336,11 @@ dlg.setWindowTitle("TAS Calculator")
 mainlayout = qtw.QGridLayout(dlg)
 mainlayout.addWidget(tabs)
 
-dlg.show()
 xtalChanged()
-QChanged()
+comboA3ConvChanged()
+#QChanged()
 
+dlg.show()
 app.exec_()
 
 
@@ -372,4 +365,5 @@ sett.setValue("l", getfloat(editl.text()))
 #sett.setValue("E", getfloat(editE.text()))
 sett.setValue("ki", getfloat(editKi.text()))
 sett.setValue("kf", getfloat(editKf.text()))
+sett.setValue("a3_conv", comboA3.currentIndex())
 # -----------------------------------------------------------------------------

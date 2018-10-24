@@ -16,6 +16,10 @@ use_scipy = False
 #a3_offs = 0.			# for sics
 #a3_offs = np.pi/2.		# for takin: Q along orient1 => a3:=a4/2
 a3_offs = np.pi 		# for nomad: ki along orient1 => a3:=0
+
+def set_a3_offs(offs):
+	global a3_offs
+	a3_offs = offs
 # -----------------------------------------------------------------------------
 
 
