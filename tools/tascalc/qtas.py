@@ -85,6 +85,7 @@ def xtalChanged():
 			% (invB[0,0],invB[0,1],invB[0,2], invB[1,0],invB[1,1],invB[1,2], invB[2,0],invB[2,1],invB[2,2]))
 	except la.LinAlgError:
 		editBMat.setPlainText("invalid")
+	QChanged()
 
 def planeChanged():
 	QChanged()
