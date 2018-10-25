@@ -172,6 +172,8 @@ editKf = qtw.QLineEdit(Qpanel)
 editQAbs = qtw.QLineEdit(Qpanel)
 editQAbs.setReadOnly(True)
 
+tasstatus = qtw.QLabel(taspanel)
+
 separatorTas = qtw.QFrame(Qpanel)
 separatorTas.setFrameStyle(qtw.QFrame.HLine)
 
@@ -254,12 +256,17 @@ def QChanged():
 
 	try:
 		orient_up_rlu = tas.cross(orient_rlu, orient2_rlu, B)   # up vector in rlu
-		[a3, a4] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
+		[a3, a4, dist_Q_plane] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
 		Qlen = tas.get_Q(ki, kf, a4)
+		Q_in_plane = np.abs(dist_Q_plane) < 1e-4
 
 		editA3.setText("%.6g" % (a3 / np.pi * 180.))
 		editA4.setText("%.6g" % (a4 / np.pi * 180.))
 		editQAbs.setText("%.6g" % Qlen)
+		if Q_in_plane:
+			tasstatus.setText("")
+		else:
+			tasstatus.setText(u"WARNING: Q is out of the plane by %.4g / \u212b!" % dist_Q_plane)
 	except (ArithmeticError, la.LinAlgError) as err:
 		editA3.setText("invalid")
 		editA4.setText("invalid")
@@ -341,6 +348,7 @@ taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 10,0, 1,1)
 taslayout.addWidget(editDm, 10,1, 1,1)
 taslayout.addWidget(editDa, 10,2, 1,1)
 taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 11,0, 1,3)
+taslayout.addWidget(tasstatus, 12,0, 1,3)
 
 tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------

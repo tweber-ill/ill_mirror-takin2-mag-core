@@ -43,7 +43,7 @@ if __name__ == "__main__":
 	ki = tas.get_ki(kf, E)
 	[a1, a2] = tas.get_a1a2(ki, dmono)
 	[a5, a6] = tas.get_a1a2(kf, dana)
-	[a3, a4] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
+	[a3, a4, dist_Q_plane] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------

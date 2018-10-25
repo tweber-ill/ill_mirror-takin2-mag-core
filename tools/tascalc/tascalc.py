@@ -13,9 +13,9 @@ use_scipy = False
 
 # -----------------------------------------------------------------------------
 # choose an a3 convention
-#a3_offs = 0.			# for sics
+#a3_offs = 0.			# for sics: a3 is angle between ki and orient1
 #a3_offs = np.pi/2.		# for takin: Q along orient1 => a3:=a4/2
-a3_offs = np.pi 		# for nomad: ki along orient1 => a3:=0
+a3_offs = np.pi 		# for nomad: a3 is angle between ki and orient1 + 180 deg
 
 def set_a3_offs(offs):
 	global a3_offs
@@ -151,7 +151,12 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	if dot(cross(orient_rlu, Q_rlu, B), orient_up_rlu, metric) < 0.:
 		xi = -xi
 
+	# length of Q
 	Qlen = np.sqrt(dot(Q_rlu, Q_rlu, metric))
+
+	# distance to plane
+	up_len = np.sqrt(dot(orient_up_rlu, orient_up_rlu, metric))
+	dist_Q_plane = dot(Q_rlu, orient_up_rlu, metric) / up_len
 
 	# angle psi enclosed by ki and Q
 	psi = get_psi(ki, kf, Qlen)
@@ -160,7 +165,7 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	a4 = get_a4(ki, kf, Qlen)
 
 	#print("xi = " + str(xi/np.pi*180.) + ", psi = " + str(psi/np.pi*180.))
-	return [a3, a4]
+	return [a3, a4, dist_Q_plane]
 
 
 def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B):
