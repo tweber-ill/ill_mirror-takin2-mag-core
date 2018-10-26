@@ -5,25 +5,42 @@
 # @license see 'LICENSE' file
 #
 
+# -----------------------------------------------------------------------------
+# dependencies
+import sys
 import tascalc as tas
-
 import numpy as np
 import numpy.linalg as la
 
-import PyQt5 as qt
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qtw
+# try to import qt5...
+try:
+	import PyQt5 as qt
+	import PyQt5.QtCore as qtc
+	import PyQt5.QtWidgets as qtw
+	qt_ver = 5
+except ImportError:
+	# ...and if not possible try to import qt4 instead
+	try:
+		import PyQt4 as qt
+		import PyQt4.QtCore as qtc
+		import PyQt4.QtGui as qtw
+		qt_ver = 4
+	except ImportError:
+		print("Error: No suitable version of Qt was found!")
+		exit(-1)
+# -----------------------------------------------------------------------------
 
-import sys
 
 
-
+# -----------------------------------------------------------------------------
+# main application
 app = qtw.QApplication(sys.argv)
 app.setApplicationName("qtas")
 app.setStyle("Fusion")
 
 sett = qtc.QSettings("tobis_stuff", "qtas")
 tabs = qtw.QTabWidget()
+# -----------------------------------------------------------------------------
 
 
 
@@ -402,7 +419,10 @@ mainlayout = qtw.QGridLayout(dlg)
 mainlayout.addWidget(tabs)
 
 if sett.contains("geo"):
-	dlg.restoreGeometry(sett.value("geo"))
+	geo = sett.value("geo")
+	if qt_ver == 4:
+		geo = geo.toByteArray()
+	dlg.restoreGeometry(geo)
 
 xtalChanged()
 KiKfChanged()
