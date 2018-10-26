@@ -140,6 +140,20 @@ def get_B(lattice, angles):
 	return B
 
 
+# UB orientation matrix
+def get_UB(B, orient1_rlu, orient2_rlu, orientup_rlu):
+	orient1_invA = np.dot(B, orient1_rlu)
+	orient2_invA = np.dot(B, orient2_rlu)
+	orientup_invA = np.dot(B, orientup_rlu)
+
+	orient1_invA = orient1_invA / la.norm(orient1_invA)
+	orient2_invA = orient2_invA / la.norm(orient2_invA)
+	orientup_invA = orientup_invA / la.norm(orientup_invA)
+
+	U_invA = np.array([orient1_invA, orient2_invA, orientup_invA])
+	UB = np.dot(U_invA, B)
+	return UB
+
 # a3 & a4 angles
 def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	metric = get_metric(B)

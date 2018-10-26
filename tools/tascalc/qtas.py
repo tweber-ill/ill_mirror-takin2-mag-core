@@ -34,6 +34,8 @@ except ImportError:
 
 # -----------------------------------------------------------------------------
 # main application
+np.set_printoptions(suppress=True, precision=4)
+
 app = qtw.QApplication(sys.argv)
 app.setApplicationName("qtas")
 app.setStyle("Fusion")
@@ -48,7 +50,7 @@ tabs = qtw.QTabWidget()
 # variables
 B = np.array([[1,0,0], [0,1,0], [0,0,1]])
 orient_rlu = np.array([1,0,0])
-orient2_rlu = np.array([0,1,0])
+#orient2_rlu = np.array([0,1,0])
 orient_up_rlu = np.array([0,0,1])
 # -----------------------------------------------------------------------------
 
@@ -79,6 +81,8 @@ editC = qtw.QLineEdit(xtalpanel)
 editAlpha = qtw.QLineEdit(xtalpanel)
 editBeta = qtw.QLineEdit(xtalpanel)
 editGamma = qtw.QLineEdit(xtalpanel)
+separatorXtal = qtw.QFrame(xtalpanel)
+separatorXtal.setFrameStyle(qtw.QFrame.HLine)
 editAx = qtw.QLineEdit(scpanel)
 editAy = qtw.QLineEdit(scpanel)
 editAz = qtw.QLineEdit(scpanel)
@@ -90,22 +94,43 @@ editBMat.setReadOnly(True)
 
 
 def xtalChanged():
-	global B
+	global B, orient_rlu, orient_up_rlu
 	lattice = np.array([getfloat(editA.text()), getfloat(editB.text()), getfloat(editC.text())])
 	angles = np.array([getfloat(editAlpha.text()), getfloat(editBeta.text()), getfloat(editGamma.text())])
+	orient_rlu = np.array([getfloat(editAx.text()), getfloat(editAy.text()), getfloat(editAz.text())])
+	orient2_rlu = np.array([getfloat(editBx.text()), getfloat(editBy.text()), getfloat(editBz.text())])
+
 	try:
 		B = tas.get_B(lattice, angles/180.*np.pi)
 		invB = la.inv(B)
-		editBMat.setPlainText("B =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
+
+		metric = tas.get_metric(B)
+		ang = tas.angle(orient_rlu, orient2_rlu, metric)
+
+		orient_up_rlu = tas.cross(orient_rlu, orient2_rlu, B)
+		orient_up_rlu_norm = orient_up_rlu / la.norm(orient_up_rlu)
+
+		UB = tas.get_UB(B, orient_rlu, orient2_rlu, orient_up_rlu)
+		invUB = la.inv(UB)
+
+		editBMat.setPlainText("Scattering plane normal: %s rlu.\n" % str(orient_up_rlu_norm) \
+			+"Angle between orientation vectors 1 and 2: %.4g deg.\n" % (ang/np.pi*180.) \
+			+"\nB =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
 			% (B[0,0],B[0,1],B[0,2], B[1,0],B[1,1],B[1,2], B[2,0],B[2,1],B[2,2]) \
 			+"\nB^(-1) =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
-			% (invB[0,0],invB[0,1],invB[0,2], invB[1,0],invB[1,1],invB[1,2], invB[2,0],invB[2,1],invB[2,2]))
+			% (invB[0,0],invB[0,1],invB[0,2], invB[1,0],invB[1,1],invB[1,2], invB[2,0],invB[2,1],invB[2,2]) \
+			+"\nUB =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
+			% (UB[0,0],UB[0,1],UB[0,2], UB[1,0],UB[1,1],UB[1,2], UB[2,0],UB[2,1],UB[2,2]) \
+			+"\n(UB)^(-1) =\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n%10.4f %10.4f %10.4f\n" \
+			% (invUB[0,0],invUB[0,1],invUB[0,2], invUB[1,0],invUB[1,1],invUB[1,2], invUB[2,0],invUB[2,1],invUB[2,2]) \
+		)
 	except (ArithmeticError, la.LinAlgError) as err:
 		editBMat.setPlainText("invalid")
 	QChanged()
 
 def planeChanged():
-	QChanged()
+	xtalChanged()
+	#QChanged()
 
 
 editA.textEdited.connect(xtalChanged)
@@ -147,15 +172,16 @@ xtallayout.addWidget(qtw.QLabel(u"\u03b2 (deg):", xtalpanel), 4,0, 1,1)
 xtallayout.addWidget(editBeta, 4,1, 1,3)
 xtallayout.addWidget(qtw.QLabel(u"\u03b3 (deg):", xtalpanel), 5,0, 1,1)
 xtallayout.addWidget(editGamma, 5,1, 1,3)
-sclayout.addWidget(qtw.QLabel("orient 1 (rlu):", scpanel), 6,0, 1,1)
-sclayout.addWidget(editAx, 6,1, 1,1)
-sclayout.addWidget(editAy, 6,2, 1,1)
-sclayout.addWidget(editAz, 6,3, 1,1)
-sclayout.addWidget(qtw.QLabel("orient 2 (rlu):", scpanel), 7,0, 1,1)
-sclayout.addWidget(editBx, 7,1, 1,1)
-sclayout.addWidget(editBy, 7,2, 1,1)
-sclayout.addWidget(editBz, 7,3, 1,1)
-xtallayout.addWidget(editBMat, 8,0, 2,4)
+xtallayout.addWidget(separatorXtal, 6,0, 1,4)
+sclayout.addWidget(qtw.QLabel("Orient. 1 (rlu):", scpanel), 7,0, 1,1)
+sclayout.addWidget(editAx, 7,1, 1,1)
+sclayout.addWidget(editAy, 7,2, 1,1)
+sclayout.addWidget(editAz, 7,3, 1,1)
+sclayout.addWidget(qtw.QLabel("Orient. 2 (rlu):", scpanel), 8,0, 1,1)
+sclayout.addWidget(editBx, 8,1, 1,1)
+sclayout.addWidget(editBy, 8,2, 1,1)
+sclayout.addWidget(editBz, 8,3, 1,1)
+xtallayout.addWidget(editBMat, 9,0, 2,4)
 
 tabs.addTab(xtalpanel, "Crystal")
 # -----------------------------------------------------------------------------
@@ -193,9 +219,13 @@ tasstatus = qtw.QLabel(taspanel)
 
 separatorTas = qtw.QFrame(Qpanel)
 separatorTas.setFrameStyle(qtw.QFrame.HLine)
+separatorTas2 = qtw.QFrame(Qpanel)
+separatorTas2.setFrameStyle(qtw.QFrame.HLine)
 
 
 def TASChanged():
+	global orient_rlu, orient_up_rlu
+
 	a1 = getfloat(editA1.text()) / 180. * np.pi
 	a2 = a1 * 2.
 	a3 = getfloat(editA3.text()) / 180. * np.pi
@@ -245,13 +275,11 @@ def DChanged():
 	QChanged()
 
 def QChanged():
-	global orient_rlu, orient2_rlu, orient_up_rlu
+	global orient_rlu, orient_up_rlu
 
 	Q_rlu = np.array([getfloat(edith.text()), getfloat(editk.text()), getfloat(editl.text())])
 	ki = getfloat(editKi.text())
 	kf = getfloat(editKf.text())
-	orient_rlu = np.array([getfloat(editAx.text()), getfloat(editAy.text()), getfloat(editAz.text())])
-	orient2_rlu = np.array([getfloat(editBx.text()), getfloat(editBy.text()), getfloat(editBz.text())])
 
 	try:
 		[a1, a2] = tas.get_a1a2(ki, getfloat(editDm.text()))
@@ -272,7 +300,6 @@ def QChanged():
 		editA6.setText("invalid")
 
 	try:
-		orient_up_rlu = tas.cross(orient_rlu, orient2_rlu, B)   # up vector in rlu
 		[a3, a4, dist_Q_plane] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
 		Qlen = tas.get_Q(ki, kf, a4)
 		Q_in_plane = np.abs(dist_Q_plane) < 1e-4
@@ -361,11 +388,12 @@ taslayout.addWidget(editA4, 8,2, 1,1)
 taslayout.addWidget(qtw.QLabel("a5, a6 (deg):", taspanel), 9,0, 1,1)
 taslayout.addWidget(editA5, 9,1, 1,1)
 taslayout.addWidget(editA6, 9,2, 1,1)
-taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 10,0, 1,1)
-taslayout.addWidget(editDm, 10,1, 1,1)
-taslayout.addWidget(editDa, 10,2, 1,1)
-taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 11,0, 1,3)
-taslayout.addWidget(tasstatus, 12,0, 1,3)
+taslayout.addWidget(separatorTas2, 10,0, 1,3)
+taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 11,0, 1,1)
+taslayout.addWidget(editDm, 11,1, 1,1)
+taslayout.addWidget(editDa, 11,2, 1,1)
+taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 12,0, 1,3)
+taslayout.addWidget(tasstatus, 13,0, 1,3)
 
 tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------
