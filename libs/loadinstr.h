@@ -26,9 +26,6 @@
 #include "math.h"
 #include "phys.h"
 
-#include <vector>
-#include <unordered_map>
-
 
 namespace rex = ::std;
 

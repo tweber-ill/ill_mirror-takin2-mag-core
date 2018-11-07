@@ -15,7 +15,6 @@
 #include "log.h"
 
 #include <boost/units/pow.hpp>
-#include <cmath>
 
 
 namespace tl2 {
