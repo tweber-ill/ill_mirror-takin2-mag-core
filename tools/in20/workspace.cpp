@@ -12,7 +12,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 
-#include "tlibs/string/string.h"
+#include "libs/string.h"
 #include "globals.h"
 
 using t_real = t_real_dat;
@@ -231,14 +231,14 @@ bool WorkSpaceWidget::eventFilter(QObject *pObj, QEvent *pEvt)
 /**
  * load workspace variables from a property tree
  */
-bool WorkSpaceWidget::LoadWorkspace(const std::string &basename, const tl::Prop<std::string> &prop)
+bool WorkSpaceWidget::LoadWorkspace(const std::string &basename, const tl2::Prop<std::string> &prop)
 {
 	// iterate over save variables
 	std::size_t varnum = 0;
 	while(true)
 	{
-		const std::string keyName = basename + "workspace/var_" + tl::var_to_str(varnum) + "/name";
-		const std::string keyValue = basename + "workspace/var_" + tl::var_to_str(varnum) + "/value";
+		const std::string keyName = basename + "workspace/var_" + tl2::var_to_str(varnum) + "/name";
+		const std::string keyValue = basename + "workspace/var_" + tl2::var_to_str(varnum) + "/value";
 		++varnum;
 
 		auto key = prop.QueryOpt<std::string>(keyName);
@@ -272,8 +272,8 @@ bool WorkSpaceWidget::SaveWorkspace(const std::string &basename, std::unordered_
 		if(!pair.second)
 			continue;
 
-		map[basename + "workspace/var_" + tl::var_to_str(varnum) + "/name"] = pair.first;
-		map[basename + "workspace/var_" + tl::var_to_str(varnum) + "/value"] = pair.second->serialise();
+		map[basename + "workspace/var_" + tl2::var_to_str(varnum) + "/name"] = pair.first;
+		map[basename + "workspace/var_" + tl2::var_to_str(varnum) + "/value"] = pair.second->serialise();
 		++varnum;
 	}
 

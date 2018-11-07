@@ -9,8 +9,8 @@
 #include "tools/in20/globals.h"
 #include "funcs.h"
 #include "libs/algos.h"
+#include "libs/string.h"
 
-#include "tlibs/string/string.h"
 #include <cmath>
 
 
@@ -542,12 +542,12 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 	static const std::size_t len_begin_arr = begin_arr.length();
 
 
-	auto [ty, val] = tl::split_first(str, std::string(":"));
-	tl::trim(ty);
+	auto [ty, val] = tl2::split_first(str, std::string(":"));
+	tl2::trim(ty);
 
 	if(ty == "real")
 	{
-		t_real d = tl::str_to_var<t_real>(val);
+		t_real d = tl2::str_to_var<t_real>(val);
 		return std::make_shared<SymbolReal>(d);
 	}
 	else if(ty == "string")
@@ -572,7 +572,7 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 
 		// unserialise vector elements
 		std::vector<std::string> toks;
-		tl::get_tokens_seq<std::string, std::string>(val, arr_next_elem, toks);
+		tl2::get_tokens_seq<std::string, std::string>(val, arr_next_elem, toks);
 		std::string accum_tok;
 		for(const auto &tok : toks)
 		{
@@ -583,7 +583,7 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 				accum_tok += arr_next_elem + tok;
 
 			// balance brackets of nested arrays
-			int nest_level = int(count_occurrences(accum_tok, begin_arr)) - int(count_occurrences(accum_tok, end_arr));
+			int nest_level = int(tl2::count_occurrences(accum_tok, begin_arr)) - int(tl2::count_occurrences(accum_tok, end_arr));
 			if(nest_level < 0)
 			{
 				print_err("Unbalanced brackets in serialised array representation: \"", accum_tok, "\"");
@@ -615,19 +615,19 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 
 		// iterate channels
 		std::vector<std::string> tok_channels;
-		tl::get_tokens_seq<std::string, std::string>(val, next_ch, tok_channels, true);
+		tl2::get_tokens_seq<std::string, std::string>(val, next_ch, tok_channels, true);
 		for(auto &tok_ch : tok_channels)
 		{
-			tl::trim(tok_ch);
+			tl2::trim(tok_ch);
 			if(tok_ch == "") continue;
 
 			// get the various parts of the data structure
-			std::string str_axis_names = tl::str_between(tok_ch, begin_ax_name, end_ax_name, false, true);
-			std::string str_axes = tl::str_between(tok_ch, begin_axes, end_axes, false, true);
-			std::string str_ctrs = tl::str_between(tok_ch, begin_ctrs, end_ctrs, false, true);
-			std::string str_ctr_errs = tl::str_between(tok_ch, begin_ctr_errs, end_ctr_errs, false, true);
-			std::string str_mons = tl::str_between(tok_ch, begin_mons, end_mons, false, true);
-			std::string str_mon_errs = tl::str_between(tok_ch, begin_mon_errs, end_mon_errs, false, true);
+			std::string str_axis_names = tl2::str_between(tok_ch, begin_ax_name, end_ax_name, false, true);
+			std::string str_axes = tl2::str_between(tok_ch, begin_axes, end_axes, false, true);
+			std::string str_ctrs = tl2::str_between(tok_ch, begin_ctrs, end_ctrs, false, true);
+			std::string str_ctr_errs = tl2::str_between(tok_ch, begin_ctr_errs, end_ctr_errs, false, true);
+			std::string str_mons = tl2::str_between(tok_ch, begin_mons, end_mons, false, true);
+			std::string str_mon_errs = tl2::str_between(tok_ch, begin_mon_errs, end_mon_errs, false, true);
 
 
 			Data data;
@@ -635,18 +635,18 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 			// axis names
 			{
 				std::vector<std::string> axis_names;
-				tl::get_tokens<std::string, std::string>(str_axis_names, ",", axis_names);
+				tl2::get_tokens<std::string, std::string>(str_axis_names, ",", axis_names);
 				data.SetAxisNames(std::move(axis_names));
 			}
 
 			// axes
 			{
 				std::vector<std::string> tok_axes;
-				tl::get_tokens_seq<std::string, std::string>(str_axes, next_elem, tok_axes, true);
+				tl2::get_tokens_seq<std::string, std::string>(str_axes, next_elem, tok_axes, true);
 				for(const auto &tok_axis : tok_axes)
 				{
 					std::vector<t_real_dat> axis;
-					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					tl2::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
 					data.AddAxis(std::move(axis));
 				}
 			}
@@ -654,16 +654,16 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 			// counters
 			{
 				std::vector<std::string> tok_ctrs, tok_ctr_errs;
-				tl::get_tokens_seq<std::string, std::string>(str_ctrs, next_elem, tok_ctrs, true);
-				tl::get_tokens_seq<std::string, std::string>(str_ctr_errs, next_elem, tok_ctr_errs, true);
+				tl2::get_tokens_seq<std::string, std::string>(str_ctrs, next_elem, tok_ctrs, true);
+				tl2::get_tokens_seq<std::string, std::string>(str_ctr_errs, next_elem, tok_ctr_errs, true);
 				for(std::size_t idxax=0; idxax<std::min(tok_ctrs.size(),tok_ctr_errs.size()); ++idxax)
 				{
 					const auto &tok_axis = tok_ctrs[idxax];
 					const auto &tok_axis_err = tok_ctr_errs[idxax];
 
 					std::vector<t_real_dat> axis, axis_err;
-					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
-					tl::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
+					tl2::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					tl2::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
 
 					data.AddCounter(std::move(axis), std::move(axis_err));
 				}
@@ -672,16 +672,16 @@ std::shared_ptr<Symbol> Symbol::unserialise(const std::string &str)
 			// monitors
 			{
 				std::vector<std::string> tok_ctrs, tok_ctr_errs;
-				tl::get_tokens_seq<std::string, std::string>(str_mons, next_elem, tok_ctrs, true);
-				tl::get_tokens_seq<std::string, std::string>(str_mon_errs, next_elem, tok_ctr_errs, true);
+				tl2::get_tokens_seq<std::string, std::string>(str_mons, next_elem, tok_ctrs, true);
+				tl2::get_tokens_seq<std::string, std::string>(str_mon_errs, next_elem, tok_ctr_errs, true);
 				for(std::size_t idxax=0; idxax<std::min(tok_ctrs.size(),tok_ctr_errs.size()); ++idxax)
 				{
 					const auto &tok_axis = tok_ctrs[idxax];
 					const auto &tok_axis_err = tok_ctr_errs[idxax];
 
 					std::vector<t_real_dat> axis, axis_err;
-					tl::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
-					tl::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
+					tl2::get_tokens<t_real_dat, std::string>(tok_axis, ",", axis);
+					tl2::get_tokens<t_real_dat, std::string>(tok_axis_err, ",", axis_err);
 
 					data.AddMonitor(std::move(axis), std::move(axis_err));
 				}

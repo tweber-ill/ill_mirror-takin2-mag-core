@@ -84,7 +84,7 @@ add_executable(in20
 	tools/cli/ast.cpp tools/cli/sym.cpp
 	tools/cli/funcs.cpp tools/cli/funcs.h
 
-	ext/tlibs/log/log.cpp ext/tlibs/file/loadinstr.cpp
+	libs/log.cpp
 
 	ext/qcp/qcustomplot.cpp ext/qcp/qcustomplot.h
 )

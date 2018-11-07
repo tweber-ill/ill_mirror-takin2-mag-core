@@ -6,7 +6,7 @@
  */
 
 #include "command.h"
-#include "tlibs/time/chrono.h"
+#include "libs/algos.h"
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
@@ -146,7 +146,7 @@ void CommandLineWidget::CommandEntered()
 	m_pEditCLI->clearEditText();
 	if(!cmd.length()) return;
 
-	std::string timestamp = tl::epoch_to_str(tl::epoch());
+	std::string timestamp = tl2::epoch_to_str(tl2::epoch());
 	m_pEditHistory->insertHtml("<b><font color=\"#008800\">" + QString(timestamp.c_str()) + "&gt;</font> " +
 		"<font color=\"#0000ff\">" + cmd + "</font></b><br>");
 

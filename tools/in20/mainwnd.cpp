@@ -10,8 +10,8 @@
 #include "mainwnd.h"
 #include "globals.h"
 #include "funcs.h"
-#include "tlibs/file/prop.h"
-#include "tlibs/time/chrono.h"
+#include "libs/file.h"
+#include "libs/algos.h"
 
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
@@ -254,9 +254,9 @@ bool MainWnd::OpenFile(const QString &file)
 
 
 	// load xml
-	tl::Prop<std::string> prop;
+	tl2::Prop<std::string> prop;
 	prop.SetSeparator('/');
-	if(!prop.Load(file.toStdString(), tl::PropType::XML))
+	if(!prop.Load(file.toStdString(), tl2::PropType::XML))
 	{
 		QMessageBox::critical(this, "Error", "Could not open session.");	
 		return false;
@@ -272,7 +272,7 @@ bool MainWnd::OpenFile(const QString &file)
 		return false;
 	}
 	if(optVer && optTime)
-		print_out("Loading session file version ", *optVer, ", dated ", tl::epoch_to_str(*optTime), ".");
+		print_out("Loading session file version ", *optVer, ", dated ", tl2::epoch_to_str(*optTime), ".");
 
 
 	m_pWS->GetWidget()->GetWorkspace()->clear();
@@ -300,18 +300,18 @@ bool MainWnd::SaveFile(const QString &file)
 	// set format and version
 	sessionmap[basename + "format"] = "session";
 	sessionmap[basename + "version"] = PROGRAM_VERSION;
-	sessionmap[basename + "timestamp"] = tl::var_to_str(tl::epoch<t_real>());
+	sessionmap[basename + "timestamp"] = tl2::var_to_str(tl2::epoch<t_real>());
 
 
 	// save workspace variables
 	m_pWS->GetWidget()->SaveWorkspace(basename, sessionmap);
 
 
-	tl::Prop<std::string> prop;
+	tl2::Prop<std::string> prop;
 	prop.SetSeparator('/');
 	prop.Add(sessionmap);
 
-	if(!prop.Save(file.toStdString(), tl::PropType::XML))
+	if(!prop.Save(file.toStdString(), tl2::PropType::XML))
 	{
 		QMessageBox::critical(this, "Error", "Could not save session.");	
 		return false;

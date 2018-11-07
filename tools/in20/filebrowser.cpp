@@ -13,7 +13,8 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 
-#include "tlibs/file/loadinstr.h"
+#include "libs/loadinstr.h"
+
 using t_real = t_real_dat;
 
 
@@ -121,7 +122,7 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 		QString fileFull = dir + QDir::separator() + strFile;
 
 		// load file to get a description
-		std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(fileFull.toStdString().c_str()));
+		std::unique_ptr<tl2::FileInstrBase<t_real>> pInstr(tl2::FileInstrBase<t_real>::LoadInstr(fileFull.toStdString().c_str()));
 		if(pInstr && pInstr->GetColNames().size())	// only valid files with a non-zero column count
 		{
 			QString strDescr;

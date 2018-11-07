@@ -7,8 +7,7 @@
 
 #include "funcs.h"
 #include "tools/in20/globals.h"
-
-#include <cmath>
+#include "libs/phys.h"
 
 
 using t_real = t_real_cli;
@@ -714,6 +713,6 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
  */
 std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real
 {
-	std::make_pair("pi", std::make_tuple(t_real(M_PI), "pi")),
+	std::make_pair("pi", std::make_tuple(tl2::pi<t_real>, "pi")),
 };
 // ----------------------------------------------------------------------------

@@ -7,8 +7,8 @@
 
 #include "data.h"
 #include "globals.h"
-#include "tlibs/file/loadinstr.h"
-#include "tlibs/math/linalg.h"
+#include "libs/loadinstr.h"
+#include "libs/math.h"
 #include "libs/algos.h"
 
 
@@ -25,7 +25,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 
 
 	// load instrument data file
-	std::unique_ptr<tl::FileInstrBase<t_real>> pInstr(tl::FileInstrBase<t_real>::LoadInstr(pcFile));
+	std::unique_ptr<tl2::FileInstrBase<t_real>> pInstr(tl2::FileInstrBase<t_real>::LoadInstr(pcFile));
 	if(!pInstr)
 		return std::make_tuple(false, dataset);
 	const auto &colnames = pInstr->GetColNames();
@@ -89,7 +89,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 		for(std::size_t idx : scan_idx)
 		{
 			std::vector<t_real> thedat;
-			copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
+			tl2::copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
 			data.AddAxis(thedat, colnames[idx]);
 		}
 
@@ -98,11 +98,11 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 		for(std::size_t idx : ctr_idx)
 		{
 			std::vector<t_real> thedat, theerr;
-			copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
+			tl2::copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
 			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
-					if(tl::float_equal<t_real>(y, 0))
+					if(tl2::float_equal<t_real>(y, 0))
 						return 1;
 					return std::sqrt(y);
 				});
@@ -115,11 +115,11 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 		for(std::size_t idx : mon_idx)
 		{
 			std::vector<t_real> thedat, theerr;
-			copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
+			tl2::copy_interleave(filedata[idx].begin(), filedata[idx].end(), std::back_inserter(thedat), numpolstates, polstate);
 			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
-					if(tl::float_equal<t_real>(y, 0))
+					if(tl2::float_equal<t_real>(y, 0))
 						return 1;
 					return std::sqrt(y);
 				});
@@ -154,7 +154,7 @@ Data Data::add_pointwise(const Data& dat1, const Data& dat2)
 	{
 		for(std::size_t i=0; i<dat2.m_x.size(); ++i)
 		{
-			if(!tl::vec_equal(dat1.m_x[i], dat2.m_x[i], eps))
+			if(!tl2::vec_equal(dat1.m_x[i], dat2.m_x[i], eps))
 			{
 				compatible = false;
 				break;
