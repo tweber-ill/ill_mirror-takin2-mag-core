@@ -1,0 +1,57 @@
+/**
+ * space group browser
+ * @author Tobias Weber <tweber@ill.fr>
+ * @date Apr-2018
+ * @license GPLv3, see 'LICENSE' file
+ * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
+ */
+
+#ifndef __SGBROWSE_H__
+#define __SGBROWSE_H__
+
+
+#include <QtCore/QSettings>
+#include <QtGui/QGenericMatrix>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QTreeWidgetItem>
+#include <QtWidgets/QListWidgetItem>
+
+#include "libs/_cxx20/magsg.h"
+#include "libs/_cxx20/math_algos.h"
+
+#include "ui_browser.h"
+
+
+using t_real_sg = double;
+using t_vec_sg = m::qvec_adapter<int, 3, t_real_sg, QGenericMatrix>;
+using t_mat_sg = m::qmat_adapter<int, 3, 3, t_real_sg, QGenericMatrix>;
+
+
+class SgBrowserDlg : public QDialog, Ui::SgBrowserDlg
+{
+private:
+	QSettings *m_pSettings = nullptr;
+	Spacegroups<t_mat_sg, t_vec_sg> m_sgs;
+	bool m_showBNS = true;
+
+private:
+	void SetupSpaceGroup(const Spacegroup<t_mat_sg, t_vec_sg>& sg);
+	void SetupSpaceGroups();
+
+protected:
+	virtual void showEvent(QShowEvent *pEvt) override;
+	virtual void hideEvent(QHideEvent *pEvt) override;
+	virtual void closeEvent(QCloseEvent *pEvt) override;
+
+	// slots
+	void SpaceGroupSelected(QTreeWidgetItem *pItem);
+	void SwitchToBNS(bool bBNS);
+
+public:
+	using QDialog::QDialog;
+	SgBrowserDlg(QWidget* pParent = nullptr, QSettings* pSett = nullptr);
+	~SgBrowserDlg() = default;
+};
+
+
+#endif

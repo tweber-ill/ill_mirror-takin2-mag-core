@@ -23,9 +23,6 @@
 #include <algorithm>
 #include <limits>
 
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/math/special_functions/binomial.hpp>
-
 #include "math.h"
 #include "log.h"
 #include "traits.h"
