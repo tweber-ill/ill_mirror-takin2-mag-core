@@ -493,6 +493,8 @@ public:
 				m::create<t_vec_gl>({0,0,1}));		// from
 			m_plot->GetImpl()->SetObjectMatrix(m_arrow_M_Im, matMIm);
 			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Im, !m::equals(lenImM, t_real_gl(0)));
+
+			m_plot->update();
 		}
 	}
 };
