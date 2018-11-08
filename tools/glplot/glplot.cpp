@@ -437,12 +437,10 @@ void main()
 	auto *pGl = GetGlFunctions();
 	if(!pGl) return;
 
-	std::ostringstream ostrGlDescr;
-	ostrGlDescr << (char*)pGl->glGetString(GL_VERSION) << ", "
-		<< (char*)pGl->glGetString(GL_VENDOR) << ", "
-		<< (char*)pGl->glGetString(GL_RENDERER) << ", "
-		<< "glsl: " << (char*)pGl->glGetString(GL_SHADING_LANGUAGE_VERSION);
-	m_strGlDescr = ostrGlDescr.str();
+	m_strGlVer = (char*)pGl->glGetString(GL_VERSION);
+	m_strGlShaderVer = (char*)pGl->glGetString(GL_SHADING_LANGUAGE_VERSION);
+	m_strGlVendor = (char*)pGl->glGetString(GL_VENDOR);
+	m_strGlRenderer = (char*)pGl->glGetString(GL_RENDERER);
 	LOGGLERR(pGl);
 
 

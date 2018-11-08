@@ -43,7 +43,7 @@ private:
 	QSettings m_sett{"tobis_stuff", "pol"};
 
 	std::shared_ptr<GlPlot> m_plot{std::make_shared<GlPlot>(this)};
-	QLabel *m_labelGlInfo = nullptr;
+	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 
 	QLineEdit* m_editNRe = new QLineEdit("0", this);
 	QLineEdit* m_editNIm = new QLineEdit("0", this);
@@ -105,9 +105,12 @@ protected slots:
 	void AfterGLInitialisation()
 	{
 		// GL device info
-		std::ostringstream ostrGL;
-		ostrGL << "GL device: " + m_plot->GetImpl()->GetGlDescr() << ".";
-		m_labelGlInfo->setText(ostrGL.str().c_str());
+		auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
+			= m_plot->GetImpl()->GetGlDescr();
+		m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
+		m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
+		m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
+		m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
 
 
 		if(!m_3dobjsReady)		// create 3d objects
@@ -358,13 +361,15 @@ public:
 			pGrid->setSpacing(4);
 			pGrid->setContentsMargins(4,4,4,4);
 
-			auto sep1 = new QFrame(infopanel);
-			sep1->setFrameStyle(QFrame::HLine);
-			auto sep2 = new QFrame(infopanel);
-			sep2->setFrameStyle(QFrame::HLine);
+			auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
+			auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
+			auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
 
-			m_labelGlInfo = new QLabel("GL Device: <unknown>", infopanel);
-			m_labelGlInfo->setSizePolicy(QSizePolicy::Ignored, m_labelGlInfo->sizePolicy().verticalPolicy());
+			for(int i=0; i<4; ++i)
+			{
+				m_labelGlInfos[i] = new QLabel("", infopanel);
+				m_labelGlInfos[i]->setSizePolicy(QSizePolicy::Ignored, m_labelGlInfos[i]->sizePolicy().verticalPolicy());
+			}
 
 			std::string strBoost = BOOST_LIB_VERSION;
 			algo::replace_all(strBoost, "_", ".");
@@ -387,13 +392,15 @@ public:
 			pGrid->addWidget(labelDate, y++,0, 1,1);
 			pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Fixed), y++,0, 1,1);
 			pGrid->addWidget(sep1, y++,0, 1,1);
-			pGrid->addWidget(m_labelGlInfo, y++,0, 1,1);
-			pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
-			pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
-			pGrid->addWidget(sep2, y++,0, 1,1);
 			pGrid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
 			pGrid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
 			pGrid->addWidget(new QLabel(QString("Build Date: ") + QString(__DATE__) + ", " + QString(__TIME__) + ".", infopanel), y++,0, 1,1);
+			pGrid->addWidget(sep2, y++,0, 1,1);
+			pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
+			pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
+			pGrid->addWidget(sep3, y++,0, 1,1);
+			for(int i=0; i<4; ++i)
+				pGrid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
 			pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Expanding), y++,0, 1,1);
 
 			tabs->addTab(infopanel, "Infos");

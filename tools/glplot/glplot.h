@@ -117,7 +117,8 @@ class GlPlot_impl : public QObject
 { Q_OBJECT
 protected:
 	GlPlot *m_pPlot = nullptr;
-	std::string m_strGlDescr;
+	std::string m_strGlVer, m_strGlShaderVer, m_strGlVendor, m_strGlRenderer;
+
 	std::shared_ptr<QOpenGLShaderProgram> m_pShaders;
 
 	GLint m_attrVertex = -1;
@@ -169,7 +170,8 @@ public:
 	static constexpr bool m_isthreaded = false;
 	static constexpr bool m_usetimer = false;
 
-	const std::string& GetGlDescr() const { return m_strGlDescr; }
+	std::tuple<std::string, std::string, std::string, std::string>
+		GetGlDescr() const { return std::make_tuple(m_strGlVer, m_strGlShaderVer, m_strGlVendor, m_strGlRenderer); }
 
 	QPointF GlToScreenCoords(const t_vec_gl& vec, bool *pVisible=nullptr);
 	static t_mat_gl GetArrowMatrix(const t_vec_gl& vecTo, t_real_gl scale,
