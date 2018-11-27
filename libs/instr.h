@@ -20,10 +20,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "string.h"
+#include "str.h"
 #include "log.h"
 #include "file.h"
-#include "math.h"
+#include "mat.h"
 #include "phys.h"
 
 

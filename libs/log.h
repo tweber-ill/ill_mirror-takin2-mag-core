@@ -10,6 +10,9 @@
 #ifndef __TLIBS2_LOGGER_H__
 #define __TLIBS2_LOGGER_H__
 
+#include <cstring>
+#include <cmath>
+#include <ctime>
 #include <vector>
 #include <unordered_map>
 #include <iostream>
@@ -17,14 +20,10 @@
 #include <thread>
 #include <mutex>
 #include <utility>
-#include <chrono>
-#include <ctime>
-#include <cmath>
-#include <string>
 #include <exception>
-#include <boost/type_index.hpp>
-
 #include "algos.h"
+
+#include <boost/type_index.hpp>
 
 
 namespace tl2 {

@@ -13,7 +13,7 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 
-#include "libs/loadinstr.h"
+#include "libs/instr.h"
 
 using t_real = t_real_dat;
 

@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "math.h"
+#include "mat.h"
 #include "log.h"
 #include "traits.h"
 
@@ -217,6 +217,9 @@ bool fit(t_func&& func,
 {
 	try
 	{
+		for(auto x : vecYErr)
+			std::cout << x << ", ";
+		std::cout << std::endl;
 		if(!vecX.size() || !vecY.size() || !vecYErr.size())
 		{
 			log_err("No data given to fitter.");

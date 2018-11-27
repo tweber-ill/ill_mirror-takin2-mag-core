@@ -15,8 +15,8 @@
 //#define USE_LAPACK
 
 #include "log.h"
+#include "str.h"
 #include "traits.h"
-#include "string.h"
 
 #include <initializer_list>
 #include <cmath>

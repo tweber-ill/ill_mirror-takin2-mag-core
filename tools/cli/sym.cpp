@@ -9,7 +9,7 @@
 #include "tools/in20/globals.h"
 #include "funcs.h"
 #include "libs/algos.h"
-#include "libs/string.h"
+#include "libs/str.h"
 
 #include <cmath>
 

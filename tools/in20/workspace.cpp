@@ -12,7 +12,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 
-#include "libs/string.h"
+#include "libs/str.h"
 #include "globals.h"
 
 using t_real = t_real_dat;

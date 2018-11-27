@@ -7,8 +7,8 @@
 
 #include "data.h"
 #include "globals.h"
-#include "libs/loadinstr.h"
-#include "libs/math.h"
+#include "libs/instr.h"
+#include "libs/mat.h"
 #include "libs/algos.h"
 
 

@@ -29,7 +29,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/optional.hpp>
 
-#include "string.h"
+#include "str.h"
 #include "traits.h"
 
 
