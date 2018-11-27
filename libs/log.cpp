@@ -233,3 +233,7 @@ Log log_info("INFO", LogColor::WHITE, &std::cerr),
 	log_crit("CRITICAL", LogColor::PURPLE, &std::cerr),
 	log_debug("DEBUG", LogColor::CYAN, &std::cerr);
 }
+
+
+
+tl2::Log log_info, log_warn, log_err, log_crit, log_debug;

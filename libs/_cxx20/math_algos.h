@@ -43,7 +43,7 @@ template<typename T> T golden = T(0.5) + std::sqrt(T(5))/T(2);
  * requirements for a scalar type
  */
 template<class T>
-concept bool is_scalar = 
+concept bool is_scalar =
 	std::is_floating_point_v<T> || std::is_integral_v<T> /*|| std::is_arithmetic_v<T>*/;
 
 
@@ -1106,6 +1106,24 @@ requires is_basic_vec<t_vec>
 	// recursively expand determiant along a row
 	T fullDet = T(0);
 	std::size_t iRow = 0;
+
+	// get row with maximum number of zeros
+	std::size_t iMaxNumZeros = 0;
+	for(std::size_t iCurRow=0; iCurRow<iN; ++iCurRow)
+	{
+		std::size_t iNumZeros = 0;
+		for(std::size_t iCurCol=0; iCurCol<iN; ++iCurCol)
+		{
+			if(equals<T>(mat[iCurRow*iN + iCurCol], T(0)))
+				++iNumZeros;
+		}
+
+		if(iNumZeros > iMaxNumZeros)
+		{
+			iRow = iCurRow;
+			iMaxNumZeros = iNumZeros;
+		}
+	}
 
 	for(std::size_t iCol=0; iCol<iN; ++iCol)
 	{
@@ -3259,7 +3277,7 @@ requires m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
  */
 template<class t_vec>
 t_vec operator*(typename t_vec::value_type d, const t_vec& vec)
-requires m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec> 
+requires m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
 	//&& !m::is_basic_mat<typename t_vec::value_type>	// hack!
 {
 	return vec * d;

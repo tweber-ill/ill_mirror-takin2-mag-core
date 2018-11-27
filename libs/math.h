@@ -565,7 +565,7 @@ bool is_in_angular_range(T dStart, T dRange, T dAngle)
 	}
 	else // else end point wraps around
 	{
-		return is_in_linear_range<T>(dStart, T(2)*pi<T>, dAngle) || 
+		return is_in_linear_range<T>(dStart, T(2)*pi<T>, dAngle) ||
 			is_in_linear_range<T>(T(0), dRange-(T(2)*pi<T>-dStart), dAngle);
 	}
 }
@@ -2066,8 +2066,7 @@ matrix_type column_matrix(const container_type& vecs)
 template<class t_mat/*=ublas::matrix<double>*/>
 typename t_mat::value_type determinant(const t_mat& mat)
 {
-	typedef typename t_mat::value_type T;
-	typedef typename t_mat::size_type t_size;
+	using T = typename t_mat::value_type;
 
 	if(mat.size1() != mat.size2())
 		return T(0);
@@ -2089,17 +2088,32 @@ typename t_mat::value_type determinant(const t_mat& mat)
 	}
 	else if(mat.size1()>3 && mat.size1()<6)		// recursive expansion, complexity: O(n!)
 	{
-		const t_size i = 0;
+		size_t i = 0;
+		size_t iZeros = 0;
+
+		// count zeros
+		for(size_t _i=0; _i<mat.size1(); ++_i)
+		{
+			ublas::vector<T> vecRow = get_row<ublas::vector<T>, t_mat>(mat, _i);
+			size_t iNewZeros = std::count_if(vecRow.begin(), vecRow.end(),
+				[](T d) -> bool { return float_equal<T>(d, 0.); });
+			if(iNewZeros > iZeros)
+			{
+				i = _i;
+				iZeros = iNewZeros;
+			}
+		}
+
+
 		T val = T(0);
 
-		for(t_size j=0; j<mat.size2(); ++j)
+		for(size_t j=0; j<mat.size2(); ++j)
 		{
 			if(float_equal<T>(mat(i,j), 0.))
 				continue;
 
-			//std::cout << "col " << j << std::endl;
 			T dSign = 1.;
-			if(is_odd<std::size_t>(i+j))
+			if(is_odd<size_t>(i+j))
 				dSign = -1.;
 
 			t_mat matSub = submatrix(mat, i, j);
@@ -2111,7 +2125,7 @@ typename t_mat::value_type determinant(const t_mat& mat)
 	else if(mat.size1()>=6)				// LU decomposition, complexity: O(n^3)
 	{
 		t_mat lu = mat;
-		t_size N = mat.size1();
+		size_t N = mat.size1();
 		ublas::permutation_matrix<typename t_mat::size_type> perm(N);
 
 		ublas::lu_factorize(lu, perm);
@@ -2120,15 +2134,15 @@ typename t_mat::value_type determinant(const t_mat& mat)
 		t_mat U = ublas::triangular_adaptor<t_mat, ublas::upper>(lu);
 
 		T dDet = T(1.);
-		for(t_size i=0; i<mat.size1(); ++i)
+		for(size_t i=0; i<mat.size1(); ++i)
 			dDet *= L(i,i)*U(i,i);
 
-		std::size_t iNumSwaps=0;
-		for(t_size iSwap=0; iSwap<perm.size(); ++iSwap)
+		size_t iNumSwaps=0;
+		for(size_t iSwap=0; iSwap<perm.size(); ++iSwap)
 			if(iSwap != perm(iSwap))
 				++iNumSwaps;
 
-		if(is_odd<std::size_t>(iNumSwaps))
+		if(is_odd<size_t>(iNumSwaps))
 			dDet *= T(-1.);
 
 		return dDet;
@@ -3138,7 +3152,7 @@ t_mat<std::complex<t_real>> rot_spin(int iComp, t_real dAngle)
 /**
  * CG coefficients
  * formula: see (Arfken 2013), p. 790
- * 
+ *
  * e.g. two e- spins: s1 = s2 = 0.5, ms[1,2] = 0.5 (up) or -0.5 (down), S = 0 (sing.) or 1 (trip.)
  */
 template<class T = double>
@@ -5591,7 +5605,7 @@ t_cont<t_cont<t_vec>> verts_to_polyhedron(
 					t_cont<t_vec>& vecPoly = vecPolys[iPlane];
 
 					// plane already in set?
-					if(plane.IsOnPlane(vert0, T(10)*eps) && 
+					if(plane.IsOnPlane(vert0, T(10)*eps) &&
 						plane.IsOnPlane(vert1, T(10)*eps) &&
 						plane.IsOnPlane(vert2, T(10)*eps))
 					{
@@ -6531,10 +6545,10 @@ struct select_func
 	select_func(F1* f1, F2* f2) : m_f1(f1), m_f2(f2) {}
 
 	template<class T>
-	typename std::enable_if<std::is_same<T, T1>::value, F1*>::type 
+	typename std::enable_if<std::is_same<T, T1>::value, F1*>::type
 		get_func() { return m_f1; }
 	template<class T>
-	typename std::enable_if<std::is_same<T, T2>::value, F2*>::type 
+	typename std::enable_if<std::is_same<T, T2>::value, F2*>::type
 		get_func() { return m_f2; }
 };
 
@@ -6808,7 +6822,7 @@ bool eigenvec(const ublas::matrix<T>& mat,
 
 	if(iInfo!=0)
 	{
-		log_err("Could not solve general real eigenproblem", 
+		log_err("Could not solve general real eigenproblem",
 			" (lapack error ", iInfo , ").");
 		bOk = false;
 	}
@@ -6894,7 +6908,7 @@ bool eigenval(const ublas::matrix<T>& mat, std::vector<T>& evals_real, std::vect
 
 	if(iInfo!=0)
 	{
-		log_err("Could not solve general real eigenproblem", 
+		log_err("Could not solve general real eigenproblem",
 			" (lapack error ", iInfo , ").");
 		bOk = false;
 	}
@@ -6947,7 +6961,7 @@ bool eigenvec_cplx(const ublas::matrix<std::complex<T>>& mat,
 
 	if(iInfo!=0)
 	{
-		log_err("Could not solve general complex eigenproblem", 
+		log_err("Could not solve general complex eigenproblem",
 			" (lapack error ", iInfo , ").");
 		bOk = false;
 	}
@@ -7134,7 +7148,7 @@ bool eigenvec_herm(const ublas::matrix<std::complex<T>>& mat,
 	using t_cplx = std::complex<T>;
 	bool bOk = true;
 
-	select_func<float, double, decltype(LAPACKE_cheev), decltype(LAPACKE_zheev)> 
+	select_func<float, double, decltype(LAPACKE_cheev), decltype(LAPACKE_zheev)>
 		sfunc(LAPACKE_cheev, LAPACKE_zheev);
 	auto pfunc = sfunc.get_func<T>();
 
