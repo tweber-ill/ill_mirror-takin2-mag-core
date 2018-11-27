@@ -217,9 +217,8 @@ bool fit(t_func&& func,
 {
 	try
 	{
-		for(auto x : vecYErr)
-			std::cout << x << ", ";
-		std::cout << std::endl;
+		//for(auto x : vecYErr) std::cout << x << ", "; std::cout << std::endl;
+
 		if(!vecX.size() || !vecY.size() || !vecYErr.size())
 		{
 			log_err("No data given to fitter.");

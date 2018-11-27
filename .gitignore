@@ -16,6 +16,9 @@
 *.so
 *.dylib
 *.dll
+!libs/tl2jl.dylib
+!tools/test/jl/tl2jl.dylib
+!tools/test/jl/tl2jl.so
 
 # Fortran module files
 *.mod
