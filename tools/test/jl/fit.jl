@@ -2,8 +2,8 @@
 # tlibs2 julia module test
 # @author Tobias Weber <tobias.weber@tum.de>, <tweber@ill.fr>
 # @date 2017 -- 2018
-# @license GPLv3, see 'LICENSE' file
-# @desc Forked on 7-Nov-2018 from the privately and TUM-PhD-developed "tlibs" project (https://github.com/t-weber/tlibs).
+# @license GPLv3, see <<LICENSE>> file
+# @desc Forked on 7-Nov-2018 from the privately and TUM-PhD-developed <<tlibs>> project (https://github.com/t-weber/tlibs).
 #
 
 include("tl2.jl")
@@ -16,12 +16,13 @@ data = a[2]
 #println(cols)
 #println(typeof(data))
 
-idxx = findfirst(cols, "h")
-idxCtr = findfirst(cols, "ctr1")
+idxx = findfirst(isequal("h"), cols)
+idxCtr = findfirst(isequal("ctr1"), cols)
 
 xs = data[:,idxx]
 cts = data[:,idxCtr]
 cts_err = tl2.poisson_err.(cts)
+#println(typeof(xs))
 #println(typeof(cts))
 #println(typeof(cts_err))
 

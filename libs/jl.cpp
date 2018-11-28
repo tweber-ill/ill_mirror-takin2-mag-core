@@ -25,8 +25,7 @@ extern "C" void load_tl2(int bDebug)
 {
 	g_bDebug = (bDebug != 0);
 	tl2::log_debug.SetEnabled(g_bDebug);
-
-	tl2::log_debug("Loaded tl2 jl module.");
+	tl2::log_debug("Loaded tl2 module, compiled for jl version ", JULIA_VERSION_STRING, ".");
 }
 
 
@@ -81,6 +80,7 @@ static inline bool _invoke_fit(void *_pFkt,
 	std::vector<tl2::t_real_min>& vecVals, std::vector<tl2::t_real_min>& vecErrs,
 	const std::vector<bool>& vecFixed)
 {
+	// TODO: check thread-safety with jl!
 	auto *pFkt = reinterpret_cast<tl2::t_fkt_vararg<t_real, iNumArgs>>(_pFkt);
 	return tl2::fit<iNumArgs>(pFkt,
 		vecX, vecY, vecYerr, vecParamNames, vecVals, vecErrs, &vecFixed, g_bDebug);

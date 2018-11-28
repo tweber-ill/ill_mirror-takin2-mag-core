@@ -68,12 +68,14 @@ public:
 		m_vecVals.resize(m_bSeparateFreeParam ? iNumArgs-1 : iNumArgs);
 	}
 
+
 	virtual bool SetParams(const std::vector<t_real>& vecParams) override
 	{
 		for(std::size_t i=0; i<std::min(vecParams.size(), m_vecVals.size()); ++i)
 			m_vecVals[i] = vecParams[i];
 		return true;
 	}
+
 
 	virtual t_real operator()(t_real x = t_real(0)) const override
 	{
@@ -85,8 +87,10 @@ public:
 		}
 
 		const std::vector<t_real> *pvecVals = m_bSeparateFreeParam ? &vecValsWithX : &m_vecVals;
-		return call<iNumArgs, t_func, t_real, std::vector>(m_func, *pvecVals);
+		t_real funcval = call<iNumArgs, t_func, t_real, std::vector>(m_func, *pvecVals);
+		return funcval;
 	}
+
 
 	virtual FitterLamFuncModel* copy() const override
 	{
