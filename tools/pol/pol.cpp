@@ -521,6 +521,9 @@ static inline void set_locales()
 }
 
 
+#ifndef BUILD_LIB	// build application
+
+
 int main(int argc, char** argv)
 {
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
@@ -532,4 +535,26 @@ int main(int argc, char** argv)
 
 	return app->exec();
 }
+
+
+#else	// build library
+
+
+#include <boost/dll/alias.hpp>
+
+std::shared_ptr<QDialog>
+//QDialog* 
+create(QWidget *pParent)
+{
+	//std::cout << "In " << __FUNCTION__ << std::endl;
+	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+
+	//return new PolDlg(pParent);
+	return std::make_shared<PolDlg>(pParent);
+}
+
+BOOST_DLL_ALIAS(create, create);
+
+
+#endif
 // ----------------------------------------------------------------------------

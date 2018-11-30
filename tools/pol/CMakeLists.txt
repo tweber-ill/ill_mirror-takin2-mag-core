@@ -8,6 +8,8 @@
 project(pol)
 cmake_minimum_required(VERSION 3.0)
 
+set(BUILD_LIB TRUE)
+
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 
@@ -17,9 +19,19 @@ set(CMAKE_AUTOMOC TRUE)
 set(CMAKE_CXX_STANDARD 17)
 add_definitions(-std=c++17 -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
+
 include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../..")
 
-add_executable(pol pol.cpp
-	../glplot/glplot.cpp ../glplot/glplot.h)
+if(BUILD_LIB)
+	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
+	add_definitions(-DBUILD_LIB)
+	add_library(pol SHARED 
+		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
+else()
+	add_executable(pol 
+		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
+endif()
+
 target_link_libraries(pol ${Boost_LIBRARIES})
 qt5_use_modules(pol Core Gui Widgets OpenGL)
