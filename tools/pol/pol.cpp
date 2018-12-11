@@ -542,18 +542,25 @@ int main(int argc, char** argv)
 
 #include <boost/dll/alias.hpp>
 
-std::shared_ptr<QDialog>
-//QDialog* 
-create(QWidget *pParent)
+
+bool init()
+{
+	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	set_locales();
+
+	return true;
+}
+
+
+std::shared_ptr<QDialog> create(QWidget *pParent)
 {
 	//std::cout << "In " << __FUNCTION__ << std::endl;
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
-
-	//return new PolDlg(pParent);
 	return std::make_shared<PolDlg>(pParent);
 }
 
-BOOST_DLL_ALIAS(create, create);
+
+BOOST_DLL_ALIAS(init, tl_init);
+BOOST_DLL_ALIAS(create, tl_create);
 
 
 #endif

@@ -8,6 +8,7 @@
 project(pol)
 cmake_minimum_required(VERSION 3.0)
 
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
 set(BUILD_LIB TRUE)
 
 find_package(Boost REQUIRED)
@@ -26,10 +27,10 @@ if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 	add_definitions(-DBUILD_LIB)
-	add_library(pol SHARED 
+	add_library(pol SHARED
 		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
 else()
-	add_executable(pol 
+	add_executable(pol
 		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
 endif()
 

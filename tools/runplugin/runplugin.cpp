@@ -3,8 +3,9 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date Nov-2018
  * @license GPLv3, see 'LICENSE' file
- * 
+ *
  * g++-8 -std=c++17 -I/usr/local/include -L/usr/local/lib -o runplugin runplugin.cpp -F/usr/local/opt/qt5/lib -framework QtCore -framework QtWidgets -lboost_filesystem -lboost_system
+ * g++ -std=c++17 -I/usr/local/include -I/usr/include/qt5 -L/usr/local/lib -fPIC -o runplugin runplugin.cpp -lQt5Core -lQt5Widgets -lboost_filesystem -lboost_system -ldl
  */
 
 #include <QtWidgets/QApplication>
@@ -44,20 +45,26 @@ int main(int argc, char** argv)
 	std::cerr << "Plugin " << dll->location() << " loaded." << std::endl;
 
 
-	if(!dll->has("create"))
+	if(!dll->has("tl_init") || !dll->has("tl_create"))
 	{
-		std::cerr << "Plugin does not have the \"create\" function." << std::endl;
+		std::cerr << "Plugin does not have the \"tl_init\" or \"tl_create\" functions." << std::endl;
 		return -1;
 	}
 
 
+	if(auto initDlg = dll->get<bool(*)()>("tl_init"); initDlg)
+		initDlg();
+
 	auto app = std::make_unique<QApplication>(argc, argv);
 
-	//auto createDlg = dll->get<QDialog*(*)(QWidget*)>("create");
-	auto createDlg = dll->get<std::shared_ptr<QDialog>(*)(QWidget*)>("create");
-	auto dlg = createDlg(nullptr);
-	if(dlg)
-		dlg->show();
+	if(auto createDlg = dll->get<std::shared_ptr<QDialog>(*)(QWidget*)>("tl_create"); createDlg)
+	{
+		if(auto dlg = createDlg(nullptr); dlg)
+		{
+			dlg->show();
+			dlg->activateWindow();
+		}
+	}
 
 	return app->exec();
 }
