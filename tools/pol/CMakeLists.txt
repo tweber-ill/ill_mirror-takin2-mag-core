@@ -9,7 +9,7 @@ project(pol)
 cmake_minimum_required(VERSION 3.0)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
-set(BUILD_LIB TRUE)
+set(BUILD_LIB FALSE)
 
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)

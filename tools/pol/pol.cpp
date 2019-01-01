@@ -455,6 +455,7 @@ public:
 
 		// calculate final polarisation vector and intensity
 		auto [I, P_f] = m::blume_maleev_indir<t_mat, t_vec, t_cplx>(Pi, Mperp, N);
+		//auto [I, P_f] = m::blume_maleev<t_vec, t_cplx>(Pi, Mperp, N);
 
 		// set final polarisation
 		m_editPfX->setText(std::to_string(P_f[0].real()).c_str());
