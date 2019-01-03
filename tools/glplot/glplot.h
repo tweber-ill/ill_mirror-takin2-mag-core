@@ -87,6 +87,9 @@ enum class GlPlotObjType
 
 struct GlPlotObj
 {
+	// does not define a geometry itself, but just links to another object
+	std::optional<std::size_t> linkedObj;
+
 	GlPlotObjType m_type = GlPlotObjType::TRIANGLES;
 	GLuint m_vertexarr = 0;
 
@@ -115,6 +118,9 @@ struct GlPlotObj
  */
 class GlPlot_impl : public QObject
 { Q_OBJECT
+private:
+	QMutex m_mutexObj{QMutex::Recursive};
+
 protected:
 	GlPlot *m_pPlot = nullptr;
 	std::string m_strGlVer, m_strGlShaderVer, m_strGlVendor, m_strGlRenderer;
@@ -199,6 +205,8 @@ public:
 		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,
 		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
 	std::size_t AddCoordinateCross(t_real_gl min, t_real_gl max);
+	std::size_t AddLinkedObject(std::size_t linkTo,
+		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0);
 
 	void SetObjectMatrix(std::size_t idx, const t_mat_gl& mat);
 	void SetObjectLabel(std::size_t idx, const std::string& label);
@@ -261,7 +269,7 @@ protected slots:
 	void afterResizing();
 
 private:
-	mutable QMutex m_mutex;
+	mutable QMutex m_mutex{QMutex::Recursive};
 	std::unique_ptr<GlPlot_impl> m_impl;
 	std::unique_ptr<QThread> m_thread_impl;
 

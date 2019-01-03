@@ -19,6 +19,8 @@ add_definitions(${Boost_CXX_FLAGS})
 
 include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../..")
 
-add_executable(structfact structfact.cpp structfact.h)
+add_executable(structfact
+	structfact.cpp structfact.h
+	../glplot/glplot.cpp ../glplot/glplot.h)
 target_link_libraries(structfact ${Boost_LIBRARIES})
 qt5_use_modules(structfact Core Gui Widgets OpenGL)

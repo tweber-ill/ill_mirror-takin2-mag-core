@@ -156,8 +156,10 @@ GlPlotObj GlPlot_impl::CreateTriangleObject(const std::vector<t_vec3_gl>& verts,
 	{	// vertices
 		obj.m_pvertexbuf = std::make_shared<QOpenGLBuffer>(QOpenGLBuffer::VertexBuffer);
 
-		obj.m_pvertexbuf->create();
-		obj.m_pvertexbuf->bind();
+		if(!obj.m_pvertexbuf->create())
+			std::cerr << "Cannot create vertex buffer." << std::endl;
+		if(!obj.m_pvertexbuf->bind())
+			std::cerr << "Cannot bind vertex buffer." << std::endl;
 		BOOST_SCOPE_EXIT(&obj) { obj.m_pvertexbuf->release(); } BOOST_SCOPE_EXIT_END
 
 		auto vecVerts = to_float_array(triagverts, 1,3, false);
@@ -296,6 +298,20 @@ void GlPlot_impl::SetObjectVisible(std::size_t idx, bool visible)
 }
 
 
+std::size_t GlPlot_impl::AddLinkedObject(std::size_t linkTo,
+	t_real_gl x, t_real_gl y, t_real_gl z)
+{
+	GlPlotObj obj;
+	obj.linkedObj = linkTo;
+	obj.m_mat = m::hom_translation<t_mat_gl>(x, y, z);
+
+	QMutexLocker _locker{&m_mutexObj};
+	m_objs.emplace_back(std::move(obj));
+
+	return m_objs.size()-1;		// object handle
+}
+
+
 std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_real_gl z,
 	t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
 {
@@ -303,6 +319,8 @@ std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_re
 	auto [triagverts, norms, uvs] = m::spherify<t_vec3_gl>(
 		m::subdivide_triangles<t_vec3_gl>(
 			m::create_triangles<t_vec3_gl>(solid), 2), rad);
+
+	QMutexLocker _locker{&m_mutexObj};
 
 	auto obj = CreateTriangleObject(std::get<0>(solid), triagverts, norms, m::create<t_vec_gl>({r,g,b,a}), true);
 	obj.m_mat = m::hom_translation<t_mat_gl>(x, y, z);
@@ -319,6 +337,8 @@ std::size_t GlPlot_impl::AddCylinder(t_real_gl rad, t_real_gl h,
 	auto solid = m::create_cylinder<t_vec3_gl>(rad, h, true);
 	auto [triagverts, norms, uvs] = m::create_triangles<t_vec3_gl>(solid);
 
+	QMutexLocker _locker{&m_mutexObj};
+
 	auto obj = CreateTriangleObject(std::get<0>(solid), triagverts, norms, m::create<t_vec_gl>({r,g,b,a}), false);
 	obj.m_mat = m::hom_translation<t_mat_gl>(x, y, z);
 	m_objs.emplace_back(std::move(obj));
@@ -334,6 +354,8 @@ std::size_t GlPlot_impl::AddCone(t_real_gl rad, t_real_gl h,
 	auto solid = m::create_cone<t_vec3_gl>(rad, h);
 	auto [triagverts, norms, uvs] = m::create_triangles<t_vec3_gl>(solid);
 
+	QMutexLocker _locker{&m_mutexObj};
+
 	auto obj = CreateTriangleObject(std::get<0>(solid), triagverts, norms, m::create<t_vec_gl>({r,g,b,a}), false);
 	obj.m_mat = m::hom_translation<t_mat_gl>(x, y, z);
 	m_objs.emplace_back(std::move(obj));
@@ -348,6 +370,8 @@ std::size_t GlPlot_impl::AddArrow(t_real_gl rad, t_real_gl h,
 {
 	auto solid = m::create_cylinder<t_vec3_gl>(rad, h, 2, 32, rad, rad*1.5);
 	auto [triagverts, norms, uvs] = m::create_triangles<t_vec3_gl>(solid);
+
+	QMutexLocker _locker{&m_mutexObj};
 
 	auto obj = CreateTriangleObject(std::get<0>(solid), triagverts, norms, m::create<t_vec_gl>({r,g,b,a}), false);
 	obj.m_mat = GetArrowMatrix(m::create<t_vec_gl>({1,0,0}), 1., m::create<t_vec_gl>({x,y,z}), m::create<t_vec_gl>({0,0,1}));
@@ -367,6 +391,8 @@ std::size_t GlPlot_impl::AddCoordinateCross(t_real_gl min, t_real_gl max)
 		m::create<t_vec3_gl>({0,min,0}), m::create<t_vec3_gl>({0,max,0}),
 		m::create<t_vec3_gl>({0,0,min}), m::create<t_vec3_gl>({0,0,max}),
 	}};
+
+	QMutexLocker _locker{&m_mutexObj};
 
 	auto obj = CreateLineObject(verts, col);
 	m_objs.emplace_back(std::move(obj));
@@ -605,19 +631,24 @@ void GlPlot_impl::UpdatePicker()
 	t_vec_gl vecClosestInters = m::create<t_vec_gl>({0,0,0,0});
 	std::size_t objInters = 0xffffffff;
 
+	QMutexLocker _locker{&m_mutexObj};
+
 	for(std::size_t curObj=0; curObj<m_objs.size(); ++curObj)
 	{
 		const auto& obj = m_objs[curObj];
+		const GlPlotObj *linkedObj = &obj;
+		if(obj.linkedObj)
+			linkedObj = &m_objs[*obj.linkedObj];
 
-		if(obj.m_type != GlPlotObjType::TRIANGLES || !obj.m_visible)
+		if(linkedObj->m_type != GlPlotObjType::TRIANGLES || !obj.m_visible)
 			continue;
 
-		obj.m_pcolorbuf->bind();
-		BOOST_SCOPE_EXIT(&obj) { obj.m_pcolorbuf->release(); } BOOST_SCOPE_EXIT_END
+		linkedObj->m_pcolorbuf->bind();
+		BOOST_SCOPE_EXIT(&linkedObj) { linkedObj->m_pcolorbuf->release(); } BOOST_SCOPE_EXIT_END
 
-		for(std::size_t startidx=0; startidx+2<obj.m_triangles.size(); startidx+=3)
+		for(std::size_t startidx=0; startidx+2<linkedObj->m_triangles.size(); startidx+=3)
 		{
-			std::vector<t_vec3_gl> poly{{ obj.m_triangles[startidx+0], obj.m_triangles[startidx+1], obj.m_triangles[startidx+2] }};
+			std::vector<t_vec3_gl> poly{{ linkedObj->m_triangles[startidx+0], linkedObj->m_triangles[startidx+1], linkedObj->m_triangles[startidx+2] }};
 			auto [vecInters, bInters, lamInters] =
 			m::intersect_line_poly<t_vec3_gl, t_mat_gl>(org3, dir3, poly, obj.m_mat);
 
@@ -724,6 +755,8 @@ void GlPlot_impl::tick(const std::chrono::milliseconds& ms)
 
 void GlPlot_impl::paintGL()
 {
+	QMutexLocker _locker{&m_mutexObj};
+
 	if constexpr(!m_isthreaded)
 	{
 		auto *pContext = m_pPlot->context();
@@ -760,15 +793,19 @@ void GlPlot_impl::paintGL()
 			// render triangle geometry
 			for(const auto& obj : m_objs)
 			{
+				const GlPlotObj *linkedObj = &obj;
+				if(obj.linkedObj)
+					linkedObj = &m_objs[*obj.linkedObj];
+
 				if(!obj.m_visible) continue;
 
 				// main vertex array object
-				pGl->glBindVertexArray(obj.m_vertexarr);
+				pGl->glBindVertexArray(linkedObj->m_vertexarr);
 
 				m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
 
 				pGl->glEnableVertexAttribArray(m_attrVertex);
-				if(obj.m_type == GlPlotObjType::TRIANGLES)
+				if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
 					pGl->glEnableVertexAttribArray(m_attrVertexNormal);
 				pGl->glEnableVertexAttribArray(m_attrVertexColor);
 				BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNormal, &m_attrVertexColor)
@@ -780,10 +817,10 @@ void GlPlot_impl::paintGL()
 				BOOST_SCOPE_EXIT_END
 				LOGGLERR(pGl);
 
-				if(obj.m_type == GlPlotObjType::TRIANGLES)
-					pGl->glDrawArrays(GL_TRIANGLES, 0, obj.m_triangles.size());
-				else if(obj.m_type == GlPlotObjType::LINES)
-					pGl->glDrawArrays(GL_LINES, 0, obj.m_vertices.size());
+				if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
+					pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
+				else if(linkedObj->m_type == GlPlotObjType::LINES)
+					pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
 				else
 					std::cerr << "Error: Unknown plot object." << std::endl;
 
@@ -914,15 +951,19 @@ void GlPlot_impl::paintGL()
 		// render triangle geometry
 		for(const auto& obj : m_objs)
 		{
+			const GlPlotObj *linkedObj = &obj;
+			if(obj.linkedObj)
+				linkedObj = &m_objs[*obj.linkedObj];
+
 			if(!obj.m_visible) continue;
 
 			// main vertex array object
-			pGl->glBindVertexArray(obj.m_vertexarr);
+			pGl->glBindVertexArray(linkedObj->m_vertexarr);
 
 			m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
 
 			pGl->glEnableVertexAttribArray(m_attrVertex);
-			if(obj.m_type == GlPlotObjType::TRIANGLES)
+			if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
 				pGl->glEnableVertexAttribArray(m_attrVertexNormal);
 			pGl->glEnableVertexAttribArray(m_attrVertexColor);
 			BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNormal, &m_attrVertexColor)
@@ -934,10 +975,10 @@ void GlPlot_impl::paintGL()
 			BOOST_SCOPE_EXIT_END
 			LOGGLERR(pGl);
 
-			if(obj.m_type == GlPlotObjType::TRIANGLES)
-				pGl->glDrawArrays(GL_TRIANGLES, 0, obj.m_triangles.size());
-			else if(obj.m_type == GlPlotObjType::LINES)
-				pGl->glDrawArrays(GL_LINES, 0, obj.m_vertices.size());
+			if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
+				pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
+			else if(linkedObj->m_type == GlPlotObjType::LINES)
+				pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
 			else
 				std::cerr << "Error: Unknown plot object." << std::endl;
 

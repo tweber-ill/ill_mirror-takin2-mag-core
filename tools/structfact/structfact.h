@@ -15,11 +15,15 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QLabel>
 #include <QtCore/QSettings>
 
 #include <vector>
 #include <sstream>
 #include <complex>
+
+#include "../glplot/glplot.h"
+
 
 using t_real = double;
 using t_cplx = std::complex<t_real>;
@@ -33,6 +37,9 @@ public:
 		: QTableWidgetItem(std::to_string(std::forward<T>(val)).c_str())
 	{}
 
+	NumericTableWidgetItem(const QString& val) : QTableWidgetItem(val)
+	{}
+
 	virtual bool operator<(const QTableWidgetItem& item) const override
 	{
 		T val1{}, val2{};
@@ -41,6 +48,11 @@ public:
 
 		return val1 < val2;
 	}
+
+	virtual QTableWidgetItem* clone() const override
+	{
+		return new NumericTableWidgetItem<T>(this->text());
+	};
 };
 
 
@@ -61,6 +73,10 @@ public:
 protected:
 	QSettings *m_sett = nullptr;
 
+	std::shared_ptr<GlPlot> m_plot;
+	std::size_t m_sphere = 0;
+	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
+
 	QWidget *m_nucleipanel = nullptr;
 	QTableWidget *m_nuclei = nullptr;
 	QPlainTextEdit *m_structfacts = nullptr;
@@ -75,7 +91,8 @@ protected:
 
 	QSpinBox *m_maxBZ = nullptr;
 
-	QMenu *m_pTabContextMenu = nullptr;
+	QMenu *m_pTabContextMenu = nullptr;			// menu in case a nucleus is selected
+	QMenu *m_pTabContextMenuNoItem = nullptr;	// menu if nothing is selected
 
 protected:
 	void AddTabItem(int row = -1);
@@ -88,8 +105,13 @@ protected:
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
 
+	void Load();
+	void Save();
+
 	std::vector<NuclPos> GetNuclei() const;
 	void Calc();
+
+	void AfterGLInitialisation();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 

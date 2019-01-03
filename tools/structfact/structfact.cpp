@@ -64,6 +64,9 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	auto tabs = new QTabWidget(this);
 	{
 		m_nucleipanel = new QWidget(this);
+
+		m_plot = std::make_shared<GlPlot>(m_nucleipanel);
+
 		m_nuclei = new QTableWidget(m_nucleipanel);
 		m_nuclei->setShowGrid(true);
 		m_nuclei->setSortingEnabled(true);
@@ -90,25 +93,28 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setColumnWidth(COL_Y, 75);
 		m_nuclei->setColumnWidth(COL_Z, 75);
 
-		QToolButton *m_pTabBtnAdd = new QToolButton(m_nucleipanel);
-		QToolButton *m_pTabBtnDel = new QToolButton(m_nucleipanel);
-		QToolButton *m_pTabBtnUp = new QToolButton(m_nucleipanel);
-		QToolButton *m_pTabBtnDown = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnUp = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnDown = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnLoad = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnSave = new QToolButton(m_nucleipanel);
 
-		m_pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnLoad->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnSave->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		m_pTabBtnAdd->setText("Add Nucleus");
-		m_pTabBtnDel->setText("Delete Nuclei");
-		m_pTabBtnUp->setText("Move Nuclei Up");
-		m_pTabBtnDown->setText("Move Nuclei Down");
-
-		m_pTabBtnAdd->setToolTip("Add nucleus.");
-		m_pTabBtnDel->setToolTip("Delete selected nuclei.");
-		m_pTabBtnUp->setToolTip("Move selected nuclei up.");
-		m_pTabBtnDown->setToolTip("Move selected nuclei down.");
+		pTabBtnAdd->setText("Add Nucleus");
+		pTabBtnDel->setText("Delete Nuclei");
+		pTabBtnUp->setText("Move Nuclei Up");
+		pTabBtnDown->setText("Move Nuclei Down");
+		pTabBtnLoad->setText("Load...");
+		pTabBtnSave->setText("Save...");
 
 
 		m_editA = new QLineEdit("5", m_nucleipanel);
@@ -119,46 +125,59 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_editGamma = new QLineEdit("90", m_nucleipanel);
 
 
-		// table grid
 		auto pTabGrid = new QGridLayout(m_nucleipanel);
 		pTabGrid->setSpacing(2);
 		pTabGrid->setContentsMargins(4,4,4,4);
-		pTabGrid->addWidget(m_nuclei, 0,0,1,4);
-		pTabGrid->addWidget(m_pTabBtnAdd, 1,0,1,1);
-		pTabGrid->addWidget(m_pTabBtnDel, 1,1,1,1);
-		pTabGrid->addItem(new QSpacerItem(4, 4, QSizePolicy::Expanding, QSizePolicy::Minimum), 1,2,1,1);
-		pTabGrid->addWidget(m_pTabBtnUp, 1,2,1,1);
-		pTabGrid->addWidget(m_pTabBtnDown, 1,3,1,1);
+		int y=0;
+		pTabGrid->addWidget(m_plot.get(), y,0,1,4);
+		pTabGrid->addWidget(m_nuclei, ++y,0,1,4);
+		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
+		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
+		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+		pTabGrid->addWidget(pTabBtnLoad, ++y,0,1,1);
+		pTabGrid->addWidget(pTabBtnSave, y,1,1,1);
 
 		auto sep1 = new QFrame(m_nucleipanel); sep1->setFrameStyle(QFrame::HLine);
-		pTabGrid->addWidget(sep1, 2,0, 1,4);
+		pTabGrid->addWidget(sep1, ++y,0, 1,4);
 
-		pTabGrid->addWidget(new QLabel("Lattice (A):"), 3,0,1,1);
-		pTabGrid->addWidget(m_editA, 3,1,1,1);
-		pTabGrid->addWidget(m_editB, 3,2,1,1);
-		pTabGrid->addWidget(m_editC, 3,3,1,1);
-		pTabGrid->addWidget(new QLabel("Angles (deg):"), 4,0,1,1);
-		pTabGrid->addWidget(m_editAlpha, 4,1,1,1);
-		pTabGrid->addWidget(m_editBeta, 4,2,1,1);
-		pTabGrid->addWidget(m_editGamma, 4,3,1,1);
+		pTabGrid->addWidget(new QLabel("Lattice (A):"), 5,0,1,1);
+		pTabGrid->addWidget(m_editA, ++y,1,1,1);
+		pTabGrid->addWidget(m_editB, y,2,1,1);
+		pTabGrid->addWidget(m_editC, y,3,1,1);
+		pTabGrid->addWidget(new QLabel("Angles (deg):"), ++y,0,1,1);
+		pTabGrid->addWidget(m_editAlpha, y,1,1,1);
+		pTabGrid->addWidget(m_editBeta, y,2,1,1);
+		pTabGrid->addWidget(m_editGamma, y,3,1,1);
 
 
-		// table context CustomContextMenu
+		// table CustomContextMenu
 		m_pTabContextMenu = new QMenu(m_nuclei);
 		m_pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
 		m_pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
+		m_pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
 		m_pTabContextMenu->addAction("Delete Nucleus", this, &StructFactDlg::DelTabItem);
 
 
+		// table CustomContextMenu in case nothing is selected
+		m_pTabContextMenuNoItem = new QMenu(m_nuclei);
+		m_pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
+		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, &StructFactDlg::DelTabItem);
+		//m_pTabContextMenuNoItem->addSeparator();
+
+
 		// signals
-		connect(m_pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(m_pTabBtnDel, &QToolButton::clicked, this, &StructFactDlg::DelTabItem);
-		connect(m_pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
-		connect(m_pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this, &StructFactDlg::DelTabItem);
+		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
+		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
+		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
+		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &StructFactDlg::TableCurCellChanged);
 		connect(m_nuclei, &QTableWidget::entered, this, &StructFactDlg::TableCellEntered);
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged);
 		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu);
+		connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
 
 
 		tabs->addTab(m_nucleipanel, "Nuclei");
@@ -214,6 +233,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->setSpacing(4);
 		pGrid->setContentsMargins(4,4,4,4);
 
+		// table grid
+		for(int i=0; i<4; ++i)
+		{
+			m_labelGlInfos[i] = new QLabel("", infopanel);
+			m_labelGlInfos[i]->setSizePolicy(QSizePolicy::Ignored, m_labelGlInfos[i]->sizePolicy().verticalPolicy());
+		}
+
 		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
 		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
 		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
@@ -246,6 +272,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
 		pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
 		pGrid->addWidget(sep3, y++,0, 1,1);
+		for(int i=0; i<4; ++i)
+			pGrid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
 		pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Expanding), y++,0, 1,1);
 
 		tabs->addTab(infopanel, "Infos");
@@ -272,6 +300,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 void StructFactDlg::AddTabItem(int row)
 {
+	bool bclone = 0;
 	m_ignoreChanges = 1;
 
 	if(row == -1)	// append to end of table
@@ -280,18 +309,46 @@ void StructFactDlg::AddTabItem(int row)
 		row = m_iCursorRow;
 	else if(row == -3 && m_iCursorRow >= 0)	// use row from member variable +1
 		row = m_iCursorRow + 1;
+	else if(row == -4 && m_iCursorRow >= 0)	// use row from member variable +1
+	{
+		row = m_iCursorRow + 1;
+		bclone = 1;
+	}
 
 	//bool sorting = m_nuclei->isSortingEnabled();
 	m_nuclei->setSortingEnabled(false);
-
 	m_nuclei->insertRow(row);
 
-	m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem("n/a"));
-	m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(0));
-	m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(0));
-	m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(0));
-	m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(0));
-	m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(0));
+	if(bclone)
+	{
+		for(int thecol=0; thecol<6; ++thecol)
+			m_nuclei->setItem(row, thecol, m_nuclei->item(m_iCursorRow, thecol)->clone());
+	}
+	else
+	{
+		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem("n/a"));
+		m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(0));
+		m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(0));
+		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(0));
+		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(0));
+		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(0));
+	}
+
+
+	// add 3d object
+	{
+		auto *itemx = m_nuclei->item(row, COL_X);
+		auto *itemy = m_nuclei->item(row, COL_Y);
+		auto *itemz = m_nuclei->item(row, COL_Z);
+		t_real_gl posx, posy, posz;
+		std::istringstream{itemx->text().toStdString()} >> posx;
+		std::istringstream{itemy->text().toStdString()} >> posy;
+		std::istringstream{itemz->text().toStdString()} >> posz;
+
+		auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere);
+		m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+	}
+
 
 	m_nuclei->scrollToItem(m_nuclei->item(row, 0));
 	m_nuclei->setCurrentCell(row, 0);
@@ -441,15 +498,38 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 
 void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
 {
-	const auto* item = m_nuclei->itemAt(pt);
-	if(!item)
-		return;
-
-	m_iCursorRow = item->row();
 	auto ptGlob = m_nuclei->mapToGlobal(pt);
-	ptGlob.setY(ptGlob.y() + m_pTabContextMenu->sizeHint().height()/2);
-	m_pTabContextMenu->popup(ptGlob);
+
+	if(const auto* item = m_nuclei->itemAt(pt); item)
+	{
+		m_iCursorRow = item->row();
+		ptGlob.setY(ptGlob.y() + m_pTabContextMenu->sizeHint().height()/2);
+		m_pTabContextMenu->popup(ptGlob);
+	}
+	else
+	{
+		ptGlob.setY(ptGlob.y() + m_pTabContextMenuNoItem->sizeHint().height()/2);
+		m_pTabContextMenuNoItem->popup(ptGlob);
+	}
 }
+
+
+
+// ----------------------------------------------------------------------------
+
+
+void StructFactDlg::Load()
+{
+}
+
+
+void StructFactDlg::Save()
+{
+}
+
+
+// ----------------------------------------------------------------------------
+
 
 
 /**
@@ -489,6 +569,7 @@ std::vector<NuclPos> StructFactDlg::GetNuclei() const
 
 	return vec;
 }
+
 
 
 /**
@@ -630,6 +711,22 @@ void StructFactDlg::Calc()
 }
 
 
+void StructFactDlg::AfterGLInitialisation()
+{
+	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,0.,0.,1.);
+	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+
+
+	// GL device info
+	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
+		= m_plot->GetImpl()->GetGlDescr();
+	m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
+	m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
+	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
+	m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
+}
+
+
 void StructFactDlg::closeEvent(QCloseEvent *evt)
 {
 	if(m_sett) m_sett->setValue("geo", saveGeometry());
@@ -651,9 +748,10 @@ static inline void set_locales()
 
 int main(int argc, char** argv)
 {
-	auto app = std::make_unique<QApplication>(argc, argv);
+	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	set_locales();
 
+	auto app = std::make_unique<QApplication>(argc, argv);
 	auto dlg = std::make_unique<StructFactDlg>(nullptr);
 	dlg->show();
 
