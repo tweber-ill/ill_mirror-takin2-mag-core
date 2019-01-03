@@ -36,11 +36,11 @@ using t_mat_cplx = m::mat<t_cplx, std::vector>;
 enum : int
 {
 	COL_NAME = 0,
-	COL_SCATLEN_RE = 1,
-	COL_SCATLEN_IM = 2,
-	COL_X = 3,
-	COL_Y = 4,
-	COL_Z = 5,
+	COL_SCATLEN_RE,
+	COL_SCATLEN_IM,
+	COL_X, COL_Y, COL_Z,
+
+	NUM_COLS
 };
 
 
@@ -78,7 +78,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
 		m_nuclei->verticalHeader()->setVisible(false);
 
-		m_nuclei->setColumnCount(6);
+		m_nuclei->setColumnCount(NUM_COLS);
 		m_nuclei->setHorizontalHeaderItem(COL_NAME, new QTableWidgetItem{"Name"});
 		m_nuclei->setHorizontalHeaderItem(COL_SCATLEN_RE, new QTableWidgetItem{"Re{b} (fm)"});
 		m_nuclei->setHorizontalHeaderItem(COL_SCATLEN_IM, new QTableWidgetItem{"Im{b} (fm)"});
@@ -321,7 +321,7 @@ void StructFactDlg::AddTabItem(int row)
 
 	if(bclone)
 	{
-		for(int thecol=0; thecol<6; ++thecol)
+		for(int thecol=0; thecol<NUM_COLS; ++thecol)
 			m_nuclei->setItem(row, thecol, m_nuclei->item(m_iCursorRow, thecol)->clone());
 	}
 	else
@@ -347,6 +347,9 @@ void StructFactDlg::AddTabItem(int row)
 
 		auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere);
 		m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+		m_plot->update();
+
+		m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
 	}
 
 
@@ -367,12 +370,25 @@ void StructFactDlg::DelTabItem()
 	// if nothing is selected, clear all items
 	if(m_nuclei->selectedItems().count() == 0)
 	{
+		for(int row=0; row<m_nuclei->rowCount(); ++row)
+			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+				m_plot->GetImpl()->RemoveObject(obj);
+		m_plot->update();
+
 		m_nuclei->clearContents();
 		m_nuclei->setRowCount(0);
 	}
 
+	
 	for(int row : GetSelectedRows(true))
+	{
+		// remove 3d object
+		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+			m_plot->GetImpl()->RemoveObject(obj);
+		m_plot->update();
+
 		m_nuclei->removeRow(row);
+	}
 
 	m_ignoreChanges = 0;
 	Calc();
@@ -491,6 +507,25 @@ void StructFactDlg::TableCellEntered(const QModelIndex& idx)
  */
 void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 {
+	// update associated 3d object
+	if(item)
+	{
+		int row = item->row();
+		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+		{
+			auto *itemx = m_nuclei->item(row, COL_X);
+			auto *itemy = m_nuclei->item(row, COL_Y);
+			auto *itemz = m_nuclei->item(row, COL_Z);
+			t_real_gl posx, posy, posz;
+			std::istringstream{itemx->text().toStdString()} >> posx;
+			std::istringstream{itemy->text().toStdString()} >> posy;
+			std::istringstream{itemz->text().toStdString()} >> posz;
+
+			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+			m_plot->update();
+		}
+	}
+
 	if(!m_ignoreChanges)
 		Calc();
 }

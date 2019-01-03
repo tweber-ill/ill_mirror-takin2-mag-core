@@ -103,6 +103,7 @@ struct GlPlotObj
 	t_mat_gl m_mat = m::unit<t_mat_gl>();
 
 	bool m_visible = true;		// object shown?
+	bool m_valid = true;		// object deleted?
 
 	t_vec3_gl m_labelPos = m::create<t_vec3_gl>({0., 0., 0.});
 	std::string m_label;
@@ -192,6 +193,9 @@ public:
 		const t_vec_gl& color, bool bUseVertsAsNorm=false);
 	GlPlotObj CreateLineObject(const std::vector<t_vec3_gl>& verts, const t_vec_gl& color);
 
+	void RemoveObject(std::size_t obj);
+	std::size_t AddLinkedObject(std::size_t linkTo,
+		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0);
 	std::size_t AddSphere(t_real_gl rad=1,
 		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,
 		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
@@ -205,8 +209,6 @@ public:
 		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,
 		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
 	std::size_t AddCoordinateCross(t_real_gl min, t_real_gl max);
-	std::size_t AddLinkedObject(std::size_t linkTo,
-		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0);
 
 	void SetObjectMatrix(std::size_t idx, const t_mat_gl& mat);
 	void SetObjectLabel(std::size_t idx, const std::string& label);

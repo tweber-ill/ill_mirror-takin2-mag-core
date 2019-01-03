@@ -298,6 +298,14 @@ void GlPlot_impl::SetObjectVisible(std::size_t idx, bool visible)
 }
 
 
+void GlPlot_impl::RemoveObject(std::size_t idx)
+{
+	m_objs[idx].m_valid = false;
+
+	// TODO: remove if object has no follow-up indices
+}
+
+
 std::size_t GlPlot_impl::AddLinkedObject(std::size_t linkTo,
 	t_real_gl x, t_real_gl y, t_real_gl z)
 {
@@ -640,7 +648,7 @@ void GlPlot_impl::UpdatePicker()
 		if(obj.linkedObj)
 			linkedObj = &m_objs[*obj.linkedObj];
 
-		if(linkedObj->m_type != GlPlotObjType::TRIANGLES || !obj.m_visible)
+		if(linkedObj->m_type != GlPlotObjType::TRIANGLES || !obj.m_visible || !obj.m_valid)
 			continue;
 
 		linkedObj->m_pcolorbuf->bind();
@@ -797,7 +805,7 @@ void GlPlot_impl::paintGL()
 				if(obj.linkedObj)
 					linkedObj = &m_objs[*obj.linkedObj];
 
-				if(!obj.m_visible) continue;
+				if(!obj.m_visible || !obj.m_valid) continue;
 
 				// main vertex array object
 				pGl->glBindVertexArray(linkedObj->m_vertexarr);
@@ -855,7 +863,7 @@ void GlPlot_impl::paintGL()
 			// render object labels
 			for(const auto& obj : m_objs)
 			{
-				if(!obj.m_visible) continue;
+				if(!obj.m_visible || !obj.m_valid) continue;
 
 				if(obj.m_label != "")
 				{
@@ -955,7 +963,7 @@ void GlPlot_impl::paintGL()
 			if(obj.linkedObj)
 				linkedObj = &m_objs[*obj.linkedObj];
 
-			if(!obj.m_visible) continue;
+			if(!obj.m_visible || !obj.m_valid) continue;
 
 			// main vertex array object
 			pGl->glBindVertexArray(linkedObj->m_vertexarr);

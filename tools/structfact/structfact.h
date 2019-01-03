@@ -51,7 +51,9 @@ public:
 
 	virtual QTableWidgetItem* clone() const override
 	{
-		return new NumericTableWidgetItem<T>(this->text());
+		auto item = new NumericTableWidgetItem<T>(this->text());
+		item->setData(Qt::UserRole, this->data(Qt::UserRole));
+		return item;
 	};
 };
 
