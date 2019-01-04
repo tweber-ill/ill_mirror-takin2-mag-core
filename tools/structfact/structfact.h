@@ -75,6 +75,7 @@ public:
 protected:
 	QSettings *m_sett = nullptr;
 
+	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
@@ -113,6 +114,9 @@ protected:
 	std::vector<NuclPos> GetNuclei() const;
 	void Calc();
 
+	void PlotMouseDown(bool left, bool mid, bool right);
+	void PlotMouseUp(bool left, bool mid, bool right);
+	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
@@ -120,6 +124,8 @@ protected:
 private:
 	int m_iCursorRow = -1;
 	bool m_ignoreChanges = 1;
+
+	long m_curPickedObj = -1;
 
 private:
 	std::vector<int> GetSelectedRows(bool sort_reversed = false) const;

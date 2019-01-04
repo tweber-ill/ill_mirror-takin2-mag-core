@@ -60,12 +60,32 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
+	
+	{	// plot widget
+		m_dlgPlot = new QDialog(this);
+		m_dlgPlot->setWindowTitle("3D View");
+		if(m_sett && m_sett->contains("geo_3dview"))
+			m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
+		m_dlgPlot->show();
 
+		m_plot = std::make_shared<GlPlot>(this);
+		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+		auto grid = new QGridLayout(m_dlgPlot);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
+		grid->addWidget(m_plot.get(), 0,0,1,1);
+
+		connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
+		connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
+		connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
+		connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+	}
+
+	
 	auto tabs = new QTabWidget(this);
 	{
 		m_nucleipanel = new QWidget(this);
-
-		m_plot = std::make_shared<GlPlot>(m_nucleipanel);
 
 		m_nuclei = new QTableWidget(m_nucleipanel);
 		m_nuclei->setShowGrid(true);
@@ -86,12 +106,12 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
 
-		m_nuclei->setColumnWidth(COL_NAME, 100);
-		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 75);
-		m_nuclei->setColumnWidth(COL_SCATLEN_IM, 75);
-		m_nuclei->setColumnWidth(COL_X, 75);
-		m_nuclei->setColumnWidth(COL_Y, 75);
-		m_nuclei->setColumnWidth(COL_Z, 75);
+		m_nuclei->setColumnWidth(COL_NAME, 90);
+		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 65);
+		m_nuclei->setColumnWidth(COL_SCATLEN_IM, 65);
+		m_nuclei->setColumnWidth(COL_X, 65);
+		m_nuclei->setColumnWidth(COL_Y, 65);
+		m_nuclei->setColumnWidth(COL_Z, 65);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
@@ -99,8 +119,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnDown = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnLoad = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnSave = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtn3DView = new QToolButton(m_nucleipanel);
 
-		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -108,6 +128,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnLoad->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnSave->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtn3DView->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Nucleus");
 		pTabBtnDel->setText("Delete Nuclei");
@@ -115,6 +136,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setText("Move Nuclei Down");
 		pTabBtnLoad->setText("Load...");
 		pTabBtnSave->setText("Save...");
+		pTabBtn3DView->setText("3D View...");
 
 
 		m_editA = new QLineEdit("5", m_nucleipanel);
@@ -129,20 +151,21 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->setSpacing(2);
 		pTabGrid->setContentsMargins(4,4,4,4);
 		int y=0;
-		pTabGrid->addWidget(m_plot.get(), y,0,1,4);
-		pTabGrid->addWidget(m_nuclei, ++y,0,1,4);
+		//pTabGrid->addWidget(m_plot.get(), y,0,1,4);
+		pTabGrid->addWidget(m_nuclei, y,0,1,4);
 		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
 		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
 		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
 		pTabGrid->addWidget(pTabBtnLoad, ++y,0,1,1);
 		pTabGrid->addWidget(pTabBtnSave, y,1,1,1);
+		pTabGrid->addWidget(pTabBtn3DView, y,3,1,1);
 
 		auto sep1 = new QFrame(m_nucleipanel); sep1->setFrameStyle(QFrame::HLine);
 		pTabGrid->addWidget(sep1, ++y,0, 1,4);
 
-		pTabGrid->addWidget(new QLabel("Lattice (A):"), 5,0,1,1);
-		pTabGrid->addWidget(m_editA, ++y,1,1,1);
+		pTabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
+		pTabGrid->addWidget(m_editA, y,1,1,1);
 		pTabGrid->addWidget(m_editB, y,2,1,1);
 		pTabGrid->addWidget(m_editC, y,3,1,1);
 		pTabGrid->addWidget(new QLabel("Angles (deg):"), ++y,0,1,1);
@@ -167,19 +190,27 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]()
+		{
+			this->AddTabItem(-1);
+		});
 		connect(pTabBtnDel, &QToolButton::clicked, this, &StructFactDlg::DelTabItem);
 		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
 		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
 		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
+		connect(pTabBtn3DView, &QToolButton::clicked, this, [this]()
+		{
+			this->m_dlgPlot->show();
+			this->m_dlgPlot->raise();
+			this->m_dlgPlot->focusWidget();
+		});
+
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &StructFactDlg::TableCurCellChanged);
 		connect(m_nuclei, &QTableWidget::entered, this, &StructFactDlg::TableCellEntered);
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged);
 		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu);
-		connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-
-
+		
 		tabs->addTab(m_nucleipanel, "Nuclei");
 	}
 
@@ -746,6 +777,46 @@ void StructFactDlg::Calc()
 }
 
 
+/**
+ * mouse hovers over 3d object
+ */
+void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
+{
+	if(pos)
+		m_curPickedObj = long(objIdx);
+	else
+		m_curPickedObj = -1;
+}
+
+
+/**
+ * mouse button pressed
+ */
+void StructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
+{
+	if(left && m_curPickedObj > 0)
+	{
+		// find corresponding nucleus in table
+		for(int row=0; row<m_nuclei->rowCount(); ++row)
+		{
+			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); long(obj)==m_curPickedObj)
+			{
+				m_nuclei->setCurrentCell(row, 0);
+				break;
+			}
+		}
+	}
+}
+
+
+/**
+ * mouse button released
+ */
+void StructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
+{
+}
+
+
 void StructFactDlg::AfterGLInitialisation()
 {
 	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,0.,0.,1.);
@@ -764,7 +835,11 @@ void StructFactDlg::AfterGLInitialisation()
 
 void StructFactDlg::closeEvent(QCloseEvent *evt)
 {
-	if(m_sett) m_sett->setValue("geo", saveGeometry());
+	if(m_sett)
+	{
+		m_sett->setValue("geo", saveGeometry());
+		m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
+	}
 }
 // ----------------------------------------------------------------------------
 
