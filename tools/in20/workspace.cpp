@@ -10,7 +10,6 @@
 #include <QtCore/QDirIterator>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QFileDialog>
 
 #include "libs/str.h"
 #include "globals.h"

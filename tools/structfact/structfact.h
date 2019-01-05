@@ -36,6 +36,9 @@ public:
 	NumericTableWidgetItem(T&& val)
 		: QTableWidgetItem(std::to_string(std::forward<T>(val)).c_str())
 	{}
+	NumericTableWidgetItem(const T& val)
+		: QTableWidgetItem(std::to_string(val).c_str())
+	{}
 
 	NumericTableWidgetItem(const QString& val) : QTableWidgetItem(val)
 	{}
@@ -98,8 +101,8 @@ protected:
 	QMenu *m_pTabContextMenuNoItem = nullptr;	// menu if nothing is selected
 
 protected:
-	void AddTabItem(int row = -1);
-	void DelTabItem();
+	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0., t_real x=0., t_real y=0., t_real z=0.);
+	void DelTabItem(bool clearAll=false);
 	void MoveTabItemUp();
 	void MoveTabItemDown();
 

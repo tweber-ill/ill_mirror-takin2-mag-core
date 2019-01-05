@@ -14,15 +14,22 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QToolButton>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
 
 #include <locale>
 #include <iostream>
+#include <fstream>
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
 namespace algo = boost::algorithm;
+namespace pt = boost::property_tree;
 
+#include "libs/algos.h"
 #include "libs/_cxx20/math_algos.h"
 //using namespace m;
 using namespace m_ops;
@@ -210,7 +217,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_nuclei, &QTableWidget::entered, this, &StructFactDlg::TableCellEntered);
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged);
 		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu);
-		
+
 		tabs->addTab(m_nucleipanel, "Nuclei");
 	}
 
@@ -329,7 +336,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 }
 
 
-void StructFactDlg::AddTabItem(int row)
+
+// ----------------------------------------------------------------------------
+void StructFactDlg::AddTabItem(int row, 
+	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -357,12 +367,12 @@ void StructFactDlg::AddTabItem(int row)
 	}
 	else
 	{
-		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem("n/a"));
-		m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(0));
-		m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(0));
-		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(0));
-		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(0));
-		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(0));
+		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem(name.c_str()));
+		m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(bRe));
+		m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(bIm));
+		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
+		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
+		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
 	}
 
 
@@ -394,12 +404,12 @@ void StructFactDlg::AddTabItem(int row)
 }
 
 
-void StructFactDlg::DelTabItem()
+void StructFactDlg::DelTabItem(bool clearAll)
 {
 	m_ignoreChanges = 1;
 
 	// if nothing is selected, clear all items
-	if(m_nuclei->selectedItems().count() == 0)
+	if(clearAll || m_nuclei->selectedItems().count() == 0)
 	{
 		for(int row=0; row<m_nuclei->rowCount(); ++row)
 			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
@@ -409,16 +419,17 @@ void StructFactDlg::DelTabItem()
 		m_nuclei->clearContents();
 		m_nuclei->setRowCount(0);
 	}
-
-	
-	for(int row : GetSelectedRows(true))
+	else	// clear selected
 	{
-		// remove 3d object
-		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-			m_plot->GetImpl()->RemoveObject(obj);
-		m_plot->update();
+		for(int row : GetSelectedRows(true))
+		{
+			// remove 3d object
+			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+				m_plot->GetImpl()->RemoveObject(obj);
+			m_plot->update();
 
-		m_nuclei->removeRow(row);
+			m_nuclei->removeRow(row);
+		}
 	}
 
 	m_ignoreChanges = 0;
@@ -494,8 +505,11 @@ void StructFactDlg::MoveTabItemDown()
 
 	m_ignoreChanges = 0;
 }
+// ----------------------------------------------------------------------------
 
 
+
+// ----------------------------------------------------------------------------
 std::vector<int> StructFactDlg::GetSelectedRows(bool sort_reversed) const
 {
 	std::vector<int> vec;
@@ -578,26 +592,159 @@ void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
 		m_pTabContextMenuNoItem->popup(ptGlob);
 	}
 }
+// ----------------------------------------------------------------------------
+
 
 
 
 // ----------------------------------------------------------------------------
-
-
 void StructFactDlg::Load()
 {
+	try
+	{
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+		if(filename=="" || !QFile::exists(filename))
+			return;
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+		pt::ptree node;
+
+		std::ifstream ifstr{filename.toStdString()};
+		pt::read_xml(ifstr, node);
+
+		// check signature
+		if(auto opt = node.get_optional<std::string>("sfact.meta.info"); !opt || *opt!=std::string{"sfact_tool"})
+		{
+			QMessageBox::critical(this, "Structure Factors", "Unrecognised file format.");
+			return;
+		}
+
+
+		// clear old nuclei
+		DelTabItem(true);
+
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.a"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editA->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.b"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editB->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.c"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editC->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.alpha"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editAlpha->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.beta"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editBeta->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("sfact.xtal.gamma"); opt)
+		{
+			std::ostringstream ostr; ostr << *opt;
+			m_editGamma->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<int>("sfact.order"); opt)
+		{
+			m_maxBZ->setValue(*opt);
+		}
+
+
+		// nuclei
+		if(auto nuclei = node.get_child_optional("sfact.nuclei"); nuclei)
+		{
+			for(const auto &nucl : *nuclei)
+			{
+				auto optName = nucl.second.get<std::string>("name", "n/a");
+				auto optbRe = nucl.second.get<t_real>("b_Re", 0.);
+				auto optbIm = nucl.second.get<t_real>("b_Im", 0.);
+				auto optX = nucl.second.get<t_real>("x", 0.);
+				auto optY = nucl.second.get<t_real>("y", 0.);
+				auto optZ = nucl.second.get<t_real>("z", 0.);
+
+				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ);
+			}
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Structure Factors", ex.what());
+	}
 }
 
 
 void StructFactDlg::Save()
 {
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "XML Files (*.xml *.XML)");
+	if(filename=="")
+		return;
+	m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+	pt::ptree node;
+	node.put<std::string>("sfact.meta.info", "sfact_tool");
+	node.put<std::string>("sfact.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+
+
+	// lattice
+	t_real a,b,c, alpha,beta,gamma;
+	std::istringstream{m_editA->text().toStdString()} >> a;
+	std::istringstream{m_editB->text().toStdString()} >> b;
+	std::istringstream{m_editC->text().toStdString()} >> c;
+	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
+	std::istringstream{m_editBeta->text().toStdString()} >> beta;
+	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
+
+	node.put<t_real>("sfact.xtal.a", a);
+	node.put<t_real>("sfact.xtal.b", b);
+	node.put<t_real>("sfact.xtal.c", c);
+	node.put<t_real>("sfact.xtal.alpha", alpha);
+	node.put<t_real>("sfact.xtal.beta", beta);
+	node.put<t_real>("sfact.xtal.gamma", gamma);
+	node.put<int>("sfact.order", m_maxBZ->value());
+
+	// nucleus list
+	for(int row=0; row<m_nuclei->rowCount(); ++row)
+	{
+		t_real bRe,bIm, x,y,z;
+		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
+		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
+		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
+		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
+		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+
+		pt::ptree itemNode;
+		itemNode.put<std::string>("name", m_nuclei->item(row, COL_NAME)->text().toStdString());
+		itemNode.put<t_real>("b_Re", bRe);
+		itemNode.put<t_real>("b_Im", bIm);
+		itemNode.put<t_real>("x", x);
+		itemNode.put<t_real>("y", y);
+		itemNode.put<t_real>("z", z);
+
+		node.add_child("sfact.nuclei.nucleus", itemNode);
+	}
+
+	std::ofstream ofstr{filename.toStdString()};
+	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 }
-
-
 // ----------------------------------------------------------------------------
 
 
 
+
+// ----------------------------------------------------------------------------
 /**
  * reads nuclei positions from table
  */
@@ -775,8 +922,12 @@ void StructFactDlg::Calc()
 
 	m_powderlines->setPlainText(ostrPowder.str().c_str());
 }
+// ----------------------------------------------------------------------------
 
 
+
+
+// ----------------------------------------------------------------------------
 /**
  * mouse hovers over 3d object
  */
@@ -815,8 +966,11 @@ void StructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 void StructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
 {
 }
+// ----------------------------------------------------------------------------
 
 
+
+// ----------------------------------------------------------------------------
 void StructFactDlg::AfterGLInitialisation()
 {
 	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,0.,0.,1.);
