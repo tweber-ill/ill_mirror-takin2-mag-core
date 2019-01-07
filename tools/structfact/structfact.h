@@ -82,6 +82,7 @@ protected:
 	std::shared_ptr<GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
+	QLabel *m_status3D = nullptr;
 
 	QWidget *m_nucleipanel = nullptr;
 	QTableWidget *m_nuclei = nullptr;
@@ -105,6 +106,9 @@ protected:
 	void DelTabItem(bool clearAll=false);
 	void MoveTabItemUp();
 	void MoveTabItemDown();
+
+	void Add3DItem(int row=-1);
+	void Set3DStatusMsg(const std::string& msg);
 
 	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
 	void TableCellEntered(const QModelIndex& idx);

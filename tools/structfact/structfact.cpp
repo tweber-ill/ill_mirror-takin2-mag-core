@@ -68,28 +68,6 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
 	
-	{	// plot widget
-		m_dlgPlot = new QDialog(this);
-		m_dlgPlot->setWindowTitle("3D View");
-		if(m_sett && m_sett->contains("geo_3dview"))
-			m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
-		m_dlgPlot->show();
-
-		m_plot = std::make_shared<GlPlot>(this);
-		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-
-		auto grid = new QGridLayout(m_dlgPlot);
-		grid->setSpacing(2);
-		grid->setContentsMargins(4,4,4,4);
-		grid->addWidget(m_plot.get(), 0,0,1,1);
-
-		connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-		connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
-		connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
-		connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
-	}
-
-	
 	auto tabs = new QTabWidget(this);
 	{
 		m_nucleipanel = new QWidget(this);
@@ -114,11 +92,11 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
-		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 65);
-		m_nuclei->setColumnWidth(COL_SCATLEN_IM, 65);
-		m_nuclei->setColumnWidth(COL_X, 65);
-		m_nuclei->setColumnWidth(COL_Y, 65);
-		m_nuclei->setColumnWidth(COL_Z, 65);
+		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 75);
+		m_nuclei->setColumnWidth(COL_SCATLEN_IM, 75);
+		m_nuclei->setColumnWidth(COL_X, 75);
+		m_nuclei->setColumnWidth(COL_Y, 75);
+		m_nuclei->setColumnWidth(COL_Z, 75);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
@@ -208,9 +186,37 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
 		connect(pTabBtn3DView, &QToolButton::clicked, this, [this]()
 		{
-			this->m_dlgPlot->show();
-			this->m_dlgPlot->raise();
-			this->m_dlgPlot->focusWidget();
+			// plot widget
+			if(!m_dlgPlot)
+			{
+				m_dlgPlot = new QDialog(this);
+				m_dlgPlot->setWindowTitle("3D View");
+
+				m_plot = std::make_shared<GlPlot>(this);
+				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
+				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
+				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
+				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+
+				m_status3D = new QLabel(this);
+
+				auto grid = new QGridLayout(m_dlgPlot);
+				grid->setSpacing(2);
+				grid->setContentsMargins(4,4,4,4);
+				grid->addWidget(m_plot.get(), 0,0,1,1);
+				grid->addWidget(m_status3D, 1,0,1,1);
+
+				if(m_sett && m_sett->contains("geo_3dview"))
+					m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
+				else
+					m_dlgPlot->resize(500,500);
+			}
+
+			m_dlgPlot->show();
+			m_dlgPlot->raise();
+			m_dlgPlot->focusWidget();
 		});
 
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &StructFactDlg::TableCurCellChanged);
@@ -375,24 +381,7 @@ void StructFactDlg::AddTabItem(int row,
 		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
 	}
 
-
-	// add 3d object
-	{
-		auto *itemx = m_nuclei->item(row, COL_X);
-		auto *itemy = m_nuclei->item(row, COL_Y);
-		auto *itemz = m_nuclei->item(row, COL_Z);
-		t_real_gl posx, posy, posz;
-		std::istringstream{itemx->text().toStdString()} >> posx;
-		std::istringstream{itemy->text().toStdString()} >> posy;
-		std::istringstream{itemz->text().toStdString()} >> posz;
-
-		auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere);
-		m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
-		m_plot->update();
-
-		m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
-	}
-
+	Add3DItem(row);
 
 	m_nuclei->scrollToItem(m_nuclei->item(row, 0));
 	m_nuclei->setCurrentCell(row, 0);
@@ -404,6 +393,37 @@ void StructFactDlg::AddTabItem(int row,
 }
 
 
+/**
+ * add 3d object
+ */
+void StructFactDlg::Add3DItem(int row)
+{
+	if(!m_plot) return;
+
+	// add all items
+	if(row < 0)
+	{
+		for(int row=0; row<m_nuclei->rowCount(); ++row)
+			Add3DItem(row);
+		return;
+	}
+
+	auto *itemx = m_nuclei->item(row, COL_X);
+	auto *itemy = m_nuclei->item(row, COL_Y);
+	auto *itemz = m_nuclei->item(row, COL_Z);
+	t_real_gl posx, posy, posz;
+	std::istringstream{itemx->text().toStdString()} >> posx;
+	std::istringstream{itemy->text().toStdString()} >> posy;
+	std::istringstream{itemz->text().toStdString()} >> posz;
+
+	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere);
+	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+	m_plot->update();
+
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
+}
+
+
 void StructFactDlg::DelTabItem(bool clearAll)
 {
 	m_ignoreChanges = 1;
@@ -411,10 +431,13 @@ void StructFactDlg::DelTabItem(bool clearAll)
 	// if nothing is selected, clear all items
 	if(clearAll || m_nuclei->selectedItems().count() == 0)
 	{
-		for(int row=0; row<m_nuclei->rowCount(); ++row)
-			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-				m_plot->GetImpl()->RemoveObject(obj);
-		m_plot->update();
+		if(m_plot)
+		{
+			for(int row=0; row<m_nuclei->rowCount(); ++row)
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+			m_plot->update();
+		}
 
 		m_nuclei->clearContents();
 		m_nuclei->setRowCount(0);
@@ -424,9 +447,12 @@ void StructFactDlg::DelTabItem(bool clearAll)
 		for(int row : GetSelectedRows(true))
 		{
 			// remove 3d object
-			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-				m_plot->GetImpl()->RemoveObject(obj);
-			m_plot->update();
+			if(m_plot)
+			{
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				m_plot->update();
+			}
 
 			m_nuclei->removeRow(row);
 		}
@@ -509,6 +535,7 @@ void StructFactDlg::MoveTabItemDown()
 
 
 
+
 // ----------------------------------------------------------------------------
 std::vector<int> StructFactDlg::GetSelectedRows(bool sort_reversed) const
 {
@@ -553,7 +580,7 @@ void StructFactDlg::TableCellEntered(const QModelIndex& idx)
 void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 {
 	// update associated 3d object
-	if(item)
+	if(item && m_plot)
 	{
 		int row = item->row();
 		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
@@ -937,7 +964,46 @@ void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx,
 		m_curPickedObj = long(objIdx);
 	else
 		m_curPickedObj = -1;
+
+
+	if(m_curPickedObj > 0)
+	{
+		// find corresponding nucleus in table
+		for(int row=0; row<m_nuclei->rowCount(); ++row)
+		{
+			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); long(obj)==m_curPickedObj)
+			{
+				auto *itemname = m_nuclei->item(row, COL_NAME);
+				auto *itemX = m_nuclei->item(row, COL_X);
+				auto *itemY = m_nuclei->item(row, COL_Y);
+				auto *itemZ = m_nuclei->item(row, COL_Z);
+
+				std::ostringstream ostr;
+				ostr << itemname->text().toStdString();
+				ostr << ", r = (";
+				ostr << itemX->text().toStdString() << ", ";
+				ostr << itemY->text().toStdString() << ", ";
+				ostr << itemZ->text().toStdString();
+				ostr << ") rlu";
+
+				Set3DStatusMsg(ostr.str().c_str());
+				break;
+			}
+		}
+	}
+	else
+		Set3DStatusMsg("");
 }
+
+
+/**
+ * set status label text in 3d dialog
+ */
+void StructFactDlg::Set3DStatusMsg(const std::string& msg)
+{
+	m_status3D->setText(msg.c_str());
+}
+
 
 
 /**
@@ -973,9 +1039,13 @@ void StructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
 // ----------------------------------------------------------------------------
 void StructFactDlg::AfterGLInitialisation()
 {
+	if(!m_plot) return;
+
 	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,0.,0.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
 
+	// add all 3d objects
+	Add3DItem(-1);
 
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
@@ -992,7 +1062,8 @@ void StructFactDlg::closeEvent(QCloseEvent *evt)
 	if(m_sett)
 	{
 		m_sett->setValue("geo", saveGeometry());
-		m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
+		if(m_dlgPlot)
+			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
 	}
 }
 // ----------------------------------------------------------------------------
