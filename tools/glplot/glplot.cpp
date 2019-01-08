@@ -123,8 +123,8 @@ GlPlotObj GlPlot_impl::CreateTriangleObject(const std::vector<t_vec3_gl>& verts,
 {
 	qgl_funcs* pGl = GetGlFunctions();
 	GLint attrVertex = m_attrVertex;
-	GLint attrVertexNormal = m_attrVertexNormal;
-	GLint attrVertexColor = m_attrVertexColor;
+	GLint attrVertexNormal = m_attrVertexNorm;
+	GLint attrVertexColor = m_attrVertexCol;
 
 	GlPlotObj obj;
 	obj.m_type = GlPlotObjType::TRIANGLES;
@@ -213,7 +213,7 @@ GlPlotObj GlPlot_impl::CreateLineObject(const std::vector<t_vec3_gl>& verts, con
 {
 	qgl_funcs* pGl = GetGlFunctions();
 	GLint attrVertex = m_attrVertex;
-	GLint attrVertexColor = m_attrVertexColor;
+	GLint attrVertexColor = m_attrVertexCol;
 
 	GlPlotObj obj;
 	obj.m_type = GlPlotObjType::LINES;
@@ -284,6 +284,12 @@ void GlPlot_impl::SetObjectMatrix(std::size_t idx, const t_mat_gl& mat)
 }
 
 
+void GlPlot_impl::SetObjectCol(std::size_t idx, t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
+{
+	if(idx >= m_objs.size()) return;
+	m_objs[idx].m_color = m::create<t_vec_gl>({r,g,b,a});
+}
+
 void GlPlot_impl::SetObjectLabel(std::size_t idx, const std::string& label)
 {
 	if(idx >= m_objs.size()) return;
@@ -307,11 +313,13 @@ void GlPlot_impl::RemoveObject(std::size_t idx)
 
 
 std::size_t GlPlot_impl::AddLinkedObject(std::size_t linkTo,
-	t_real_gl x, t_real_gl y, t_real_gl z)
+	t_real_gl x, t_real_gl y, t_real_gl z,
+	t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
 {
 	GlPlotObj obj;
 	obj.linkedObj = linkTo;
 	obj.m_mat = m::hom_translation<t_mat_gl>(x, y, z);
+	obj.m_color = m::create<t_vec_gl>({r, g, b, a});
 
 	QMutexLocker _locker{&m_mutexObj};
 	m_objs.emplace_back(std::move(obj));
@@ -417,13 +425,13 @@ void GlPlot_impl::initialiseGL()
 	// --------------------------------------------------------------------
 	std::string strFragShader = R"RAW(#version ${GLSL_VERSION}
 
-in vec4 fragcolor;
-out vec4 outcolor;
+in vec4 fragcol;
+out vec4 outcol;
+
 
 void main()
 {
-	//outcolor = vec4(0,0,0,1);
-	outcolor = fragcolor;
+	outcol = fragcol;
 })RAW";
 // --------------------------------------------------------------------
 
@@ -433,15 +441,16 @@ std::string strVertexShader = R"RAW(#version ${GLSL_VERSION}
 
 in vec4 vertex;
 in vec4 normal;
-in vec4 vertexcolor;
-out vec4 fragcolor;
+in vec4 vertexcol;
+out vec4 fragcol;
 
 uniform mat4 proj = mat4(1.);
 uniform mat4 cam = mat4(1.);
 uniform mat4 obj = mat4(1.);
 
-//vec4 vertexcolor = vec4(0, 0, 1, 1);
+uniform vec4 constcol = vec4(1, 1, 1, 1);
 vec3 light_dir = vec3(2, 2, -1);
+
 
 float lighting(vec3 lightdir)
 {
@@ -450,13 +459,15 @@ float lighting(vec3 lightdir)
 	return I;
 }
 
+
 void main()
 {
 	gl_Position = proj * cam * obj * vertex;
 
 	float I = lighting(light_dir);
-	fragcolor = vertexcolor * I;
-	fragcolor[3] = 1;
+	fragcol = vertexcol * I;
+	fragcol *= constcol;
+	fragcol[3] = 1;
 })RAW";
 // --------------------------------------------------------------------
 
@@ -510,9 +521,10 @@ void main()
 		m_uniMatrixCam = m_pShaders->uniformLocation("cam");
 		m_uniMatrixProj = m_pShaders->uniformLocation("proj");
 		m_uniMatrixObj = m_pShaders->uniformLocation("obj");
+		m_uniConstCol = m_pShaders->uniformLocation("constcol");
 		m_attrVertex = m_pShaders->attributeLocation("vertex");
-		m_attrVertexNormal = m_pShaders->attributeLocation("normal");
-		m_attrVertexColor = m_pShaders->attributeLocation("vertexcolor");
+		m_attrVertexNorm = m_pShaders->attributeLocation("normal");
+		m_attrVertexCol = m_pShaders->attributeLocation("vertexcol");
 	}
 	LOGGLERR(pGl);
 
@@ -803,7 +815,18 @@ void GlPlot_impl::paintGL()
 			{
 				const GlPlotObj *linkedObj = &obj;
 				if(obj.linkedObj)
+				{
+					// get linked object
 					linkedObj = &m_objs[*obj.linkedObj];
+
+					// override constant color for linked object
+					m_pShaders->setUniformValue(m_uniConstCol, obj.m_color);
+				}
+				else
+				{
+					// set override color to white for non-linked objects
+					m_pShaders->setUniformValue(m_uniConstCol, m::create<t_vec_gl>({1,1,1,1}));
+				}
 
 				if(!obj.m_visible || !obj.m_valid) continue;
 
@@ -814,12 +837,12 @@ void GlPlot_impl::paintGL()
 
 				pGl->glEnableVertexAttribArray(m_attrVertex);
 				if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-					pGl->glEnableVertexAttribArray(m_attrVertexNormal);
-				pGl->glEnableVertexAttribArray(m_attrVertexColor);
-				BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNormal, &m_attrVertexColor)
+					pGl->glEnableVertexAttribArray(m_attrVertexNorm);
+				pGl->glEnableVertexAttribArray(m_attrVertexCol);
+				BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol)
 				{
-					pGl->glDisableVertexAttribArray(m_attrVertexColor);
-					pGl->glDisableVertexAttribArray(m_attrVertexNormal);
+					pGl->glDisableVertexAttribArray(m_attrVertexCol);
+					pGl->glDisableVertexAttribArray(m_attrVertexNorm);
 					pGl->glDisableVertexAttribArray(m_attrVertex);
 				}
 				BOOST_SCOPE_EXIT_END
@@ -875,8 +898,12 @@ void GlPlot_impl::paintGL()
 					QFont fontLabel = fontOrig;
 					QPen penLabel = penOrig;
 
+					fontLabel.setStyleStrategy(QFont::StyleStrategy(QFont::OpenGLCompatible | QFont::PreferAntialias | QFont::PreferQuality));
 					fontLabel.setWeight(QFont::Medium);
+					//penLabel.setColor(QColor(int((1.-obj.m_color[0])*255.), int((1.-obj.m_color[1])*255.), int((1.-obj.m_color[2])*255.), int(obj.m_color[3]*255.)));
+					penLabel.setColor(QColor(0,0,0,255));
 					painter.setFont(fontLabel);
+					painter.setPen(penLabel);
 					painter.drawText(posLabel2d, obj.m_label.c_str());
 
 					fontLabel.setWeight(QFont::Normal);
@@ -961,7 +988,18 @@ void GlPlot_impl::paintGL()
 		{
 			const GlPlotObj *linkedObj = &obj;
 			if(obj.linkedObj)
+			{
+				// get linked object
 				linkedObj = &m_objs[*obj.linkedObj];
+
+				// override constant color for linked object
+				m_pShaders->setUniformValue(m_uniConstCol, obj.m_color);
+			}
+			else
+			{
+				// set override color to white for non-linked objects
+				m_pShaders->setUniformValue(m_uniConstCol, m::create<t_vec_gl>({1,1,1,1}));
+			}
 
 			if(!obj.m_visible || !obj.m_valid) continue;
 
@@ -972,12 +1010,12 @@ void GlPlot_impl::paintGL()
 
 			pGl->glEnableVertexAttribArray(m_attrVertex);
 			if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-				pGl->glEnableVertexAttribArray(m_attrVertexNormal);
-			pGl->glEnableVertexAttribArray(m_attrVertexColor);
-			BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNormal, &m_attrVertexColor)
+				pGl->glEnableVertexAttribArray(m_attrVertexNorm);
+			pGl->glEnableVertexAttribArray(m_attrVertexCol);
+			BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol)
 			{
-				pGl->glDisableVertexAttribArray(m_attrVertexColor);
-				pGl->glDisableVertexAttribArray(m_attrVertexNormal);
+				pGl->glDisableVertexAttribArray(m_attrVertexCol);
+				pGl->glDisableVertexAttribArray(m_attrVertexNorm);
 				pGl->glDisableVertexAttribArray(m_attrVertex);
 			}
 			BOOST_SCOPE_EXIT_END

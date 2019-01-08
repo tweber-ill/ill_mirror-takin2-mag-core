@@ -46,6 +46,7 @@ enum : int
 	COL_SCATLEN_RE,
 	COL_SCATLEN_IM,
 	COL_X, COL_Y, COL_Z,
+	COL_COL,
 
 	NUM_COLS
 };
@@ -90,6 +91,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_X, new QTableWidgetItem{"x (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
+		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
 		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 75);
@@ -97,6 +99,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setColumnWidth(COL_X, 75);
 		m_nuclei->setColumnWidth(COL_Y, 75);
 		m_nuclei->setColumnWidth(COL_Z, 75);
+		m_nuclei->setColumnWidth(COL_COL, 75);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
@@ -291,7 +294,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
 
-		auto labelTitle = new QLabel("Structure Factors", infopanel);
+		auto labelTitle = new QLabel("Structure Factor Calculator", infopanel);
 		auto fontTitle = labelTitle->font();
 		fontTitle.setBold(true);
 		labelTitle->setFont(fontTitle);
@@ -345,7 +348,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 // ----------------------------------------------------------------------------
 void StructFactDlg::AddTabItem(int row, 
-	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z)
+	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, const std::string& col)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -379,6 +382,7 @@ void StructFactDlg::AddTabItem(int row,
 		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
 		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
 		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
+		m_nuclei->setItem(row, COL_COL, new QTableWidgetItem(col.c_str()));
 	}
 
 	Add3DItem(row);
@@ -408,16 +412,24 @@ void StructFactDlg::Add3DItem(int row)
 		return;
 	}
 
+	auto *itemName = m_nuclei->item(row, COL_NAME);
 	auto *itemx = m_nuclei->item(row, COL_X);
 	auto *itemy = m_nuclei->item(row, COL_Y);
 	auto *itemz = m_nuclei->item(row, COL_Z);
-	t_real_gl posx, posy, posz;
+	auto *itemCol = m_nuclei->item(row, COL_COL);
+
+	t_real_gl posx=0, posy=0, posz=0;
 	std::istringstream{itemx->text().toStdString()} >> posx;
 	std::istringstream{itemy->text().toStdString()} >> posy;
 	std::istringstream{itemz->text().toStdString()} >> posz;
 
-	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere);
+	qreal r=1, g=1, b=1;
+	QColor col{itemCol->text()};
+	col.getRgbF(&r, &g, &b);
+
+	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
 	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 	m_plot->update();
 
 	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
@@ -585,15 +597,24 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 		int row = item->row();
 		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
 		{
+			auto *itemName = m_nuclei->item(row, COL_NAME);
 			auto *itemx = m_nuclei->item(row, COL_X);
 			auto *itemy = m_nuclei->item(row, COL_Y);
 			auto *itemz = m_nuclei->item(row, COL_Z);
+			auto *itemCol = m_nuclei->item(row, COL_COL);
+
 			t_real_gl posx, posy, posz;
 			std::istringstream{itemx->text().toStdString()} >> posx;
 			std::istringstream{itemy->text().toStdString()} >> posy;
 			std::istringstream{itemz->text().toStdString()} >> posz;
 
+			qreal r=1, g=1, b=1;
+			QColor col{itemCol->text()};
+			col.getRgbF(&r, &g, &b);
+
 			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+			m_plot->GetImpl()->SetObjectCol(obj, r, g, b, 1);
+			m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 			m_plot->update();
 		}
 	}
@@ -699,8 +720,9 @@ void StructFactDlg::Load()
 				auto optX = nucl.second.get<t_real>("x", 0.);
 				auto optY = nucl.second.get<t_real>("y", 0.);
 				auto optZ = nucl.second.get<t_real>("z", 0.);
+				auto optCol = nucl.second.get<std::string>("col", "#ff0000");
 
-				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ);
+				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ, optCol);
 			}
 		}
 	}
@@ -759,6 +781,7 @@ void StructFactDlg::Save()
 		itemNode.put<t_real>("x", x);
 		itemNode.put<t_real>("y", y);
 		itemNode.put<t_real>("z", z);
+		itemNode.put<std::string>("col", m_nuclei->item(row, COL_COL)->text().toStdString());
 
 		node.add_child("sfact.nuclei.nucleus", itemNode);
 	}
@@ -996,6 +1019,7 @@ void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx,
 }
 
 
+
 /**
  * set status label text in 3d dialog
  */
@@ -1041,7 +1065,7 @@ void StructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
 
-	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,0.,0.,1.);
+	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
 
 	// add all 3d objects

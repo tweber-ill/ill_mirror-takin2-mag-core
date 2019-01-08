@@ -129,8 +129,9 @@ protected:
 	std::shared_ptr<QOpenGLShaderProgram> m_pShaders;
 
 	GLint m_attrVertex = -1;
-	GLint m_attrVertexNormal = -1;
-	GLint m_attrVertexColor = -1;
+	GLint m_attrVertexNorm = -1;
+	GLint m_attrVertexCol = -1;
+	GLint m_uniConstCol = -1;
 	GLint m_uniMatrixProj = -1;
 	GLint m_uniMatrixCam = -1;
 	GLint m_uniMatrixObj = -1;
@@ -195,7 +196,8 @@ public:
 
 	void RemoveObject(std::size_t obj);
 	std::size_t AddLinkedObject(std::size_t linkTo,
-		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0);
+		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,
+		t_real_gl r=1, t_real_gl g=1, t_real_gl b=1, t_real_gl a=1);
 	std::size_t AddSphere(t_real_gl rad=1,
 		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,
 		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
@@ -211,6 +213,7 @@ public:
 	std::size_t AddCoordinateCross(t_real_gl min, t_real_gl max);
 
 	void SetObjectMatrix(std::size_t idx, const t_mat_gl& mat);
+	void SetObjectCol(std::size_t idx, t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a=1);
 	void SetObjectLabel(std::size_t idx, const std::string& label);
 	void SetObjectVisible(std::size_t idx, bool visible);
 
