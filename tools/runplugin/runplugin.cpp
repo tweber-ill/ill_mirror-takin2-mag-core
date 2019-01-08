@@ -4,7 +4,7 @@
  * @date Nov-2018
  * @license GPLv3, see 'LICENSE' file
  *
- * g++-8 -std=c++17 -I/usr/local/include -L/usr/local/lib -o runplugin runplugin.cpp -F/usr/local/opt/qt5/lib -framework QtCore -framework QtWidgets -lboost_filesystem -lboost_system
+ * clang++ -std=c++17 -I/usr/local/include -L/usr/local/lib -I../.. -o runplugin runplugin.cpp -F/usr/local/opt/qt5/lib -framework QtCore -framework QtWidgets -lboost_filesystem -lboost_system
  * g++ -std=c++17 -I/usr/local/include -I/usr/include/qt5 -L/usr/local/lib -fPIC -o runplugin runplugin.cpp -lQt5Core -lQt5Widgets -lboost_filesystem -lboost_system -ldl
  */
 
@@ -13,21 +13,12 @@
 #include <iostream>
 #include <memory>
 #include <boost/dll/shared_library.hpp>
-
-
-static inline void set_locales()
-{
-	std::ios_base::sync_with_stdio(false);
-
-	::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-	QLocale::setDefault(QLocale::C);
-}
+#include "libs/helper.h"
 
 
 int main(int argc, char** argv)
 {
-	set_locales();
+	tl2::set_locales();
 
 	if(argc <= 1)
 	{
@@ -57,6 +48,7 @@ int main(int argc, char** argv)
 
 	auto app = std::make_unique<QApplication>(argc, argv);
 
+	//if(auto createDlg = dll->get<QDialog*(*)(QWidget*)>("tl_create"); createDlg)
 	if(auto createDlg = dll->get<std::shared_ptr<QDialog>(*)(QWidget*)>("tl_create"); createDlg)
 	{
 		if(auto dlg = createDlg(nullptr); dlg)

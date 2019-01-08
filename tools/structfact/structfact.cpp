@@ -17,7 +17,6 @@
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
-#include <locale>
 #include <iostream>
 #include <fstream>
 
@@ -30,6 +29,7 @@ namespace algo = boost::algorithm;
 namespace pt = boost::property_tree;
 
 #include "libs/algos.h"
+#include "libs/helper.h"
 #include "libs/_cxx20/math_algos.h"
 //using namespace m;
 using namespace m_ops;
@@ -1094,21 +1094,15 @@ void StructFactDlg::closeEvent(QCloseEvent *evt)
 
 
 
-// ----------------------------------------------------------------------------
-static inline void set_locales()
-{
-	std::ios_base::sync_with_stdio(false);
 
-	::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-	QLocale::setDefault(QLocale::C);
-}
+// ----------------------------------------------------------------------------
+#ifndef BUILD_LIB	// build application
 
 
 int main(int argc, char** argv)
 {
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
-	set_locales();
+	tl2::set_locales();
 
 	auto app = std::make_unique<QApplication>(argc, argv);
 	auto dlg = std::make_unique<StructFactDlg>(nullptr);
@@ -1116,4 +1110,52 @@ int main(int argc, char** argv)
 
 	return app->exec();
 }
+
+
+#else	// build library
+
+
+#include <boost/dll/alias.hpp>
+
+
+/**
+ * initialise plugin
+ */
+bool init()
+{
+	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_locales();
+
+	return true;
+}
+
+
+/**
+ * plugin descriptor
+ * type, title, description
+ */
+std::tuple<std::string, std::string, std::string> descr()
+{
+	return std::make_tuple("dlg", "Structure Factors", "Calculates nuclear structure factors.");
+}
+
+
+/**
+ * create the plugin main dialog
+ */
+std::shared_ptr<QDialog> create(QWidget *pParent)
+//QDialog* create(QWidget *pParent)
+{
+	//std::cout << "In " << __FUNCTION__ << std::endl;
+	return std::make_shared<StructFactDlg>(pParent);
+	//return new StructFactDlg(pParent);
+}
+
+
+BOOST_DLL_ALIAS(init, tl_init);
+BOOST_DLL_ALIAS(descr, tl_descr);
+BOOST_DLL_ALIAS(create, tl_create);
+
+
+#endif
 // ----------------------------------------------------------------------------

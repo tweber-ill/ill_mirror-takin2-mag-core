@@ -5,21 +5,16 @@
  * @license see 'LICENSE' file
  */
 
-#include <locale>
 #include <iostream>
 #include <QtWidgets/QApplication>
 
+#include "libs/helper.h"
 #include "mainwnd.h"
 
 
 int main(int argc, char** argv)
 {
-	std::ios_base::sync_with_stdio(false);
-
-	setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-	QLocale::setDefault(QLocale::C);
-
+	tl2::set_locales();
 
 	QApplication app(argc, argv);
 	QSettings sett("tobis_stuff", "in20tool");

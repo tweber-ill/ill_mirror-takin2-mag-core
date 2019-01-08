@@ -20,6 +20,7 @@
 
 #include "../glplot/glplot.h"
 #include "libs/_cxx20/math_algos.h"
+#include "libs/helper.h"
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
@@ -512,23 +513,13 @@ public:
 
 
 // ----------------------------------------------------------------------------
-static inline void set_locales()
-{
-	std::ios_base::sync_with_stdio(false);
-
-	::setlocale(LC_ALL, "C");
-	std::locale::global(std::locale("C"));
-	QLocale::setDefault(QLocale::C);
-}
-
-
 #ifndef BUILD_LIB	// build application
 
 
 int main(int argc, char** argv)
 {
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
-	set_locales();
+	tl2::set_locales();
 	auto app = std::make_unique<QApplication>(argc, argv);
 
 	auto dlg = std::make_unique<PolDlg>(nullptr);
@@ -544,15 +535,31 @@ int main(int argc, char** argv)
 #include <boost/dll/alias.hpp>
 
 
+/**
+ * initialise plugin
+ */
 bool init()
 {
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
-	set_locales();
+	tl2::set_locales();
 
 	return true;
 }
 
 
+/**
+ * plugin descriptor
+ * type, title, description
+ */
+std::tuple<std::string, std::string, std::string> descr()
+{
+	return std::make_tuple("dlg", "Polarisation Vectors", "Calculates polarisation vectors.");
+}
+
+
+/**
+ * create the plugin main dialog
+ */
 std::shared_ptr<QDialog> create(QWidget *pParent)
 {
 	//std::cout << "In " << __FUNCTION__ << std::endl;
@@ -561,6 +568,7 @@ std::shared_ptr<QDialog> create(QWidget *pParent)
 
 
 BOOST_DLL_ALIAS(init, tl_init);
+BOOST_DLL_ALIAS(descr, tl_descr);
 BOOST_DLL_ALIAS(create, tl_create);
 
 
