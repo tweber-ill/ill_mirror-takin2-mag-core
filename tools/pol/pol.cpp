@@ -549,27 +549,38 @@ bool init()
 
 /**
  * plugin descriptor
- * type, title, description
+ * type; title; description
  */
-std::tuple<std::string, std::string, std::string> descr()
+const char* descr()
 {
-	return std::make_tuple("dlg", "Polarisation Vectors", "Calculates polarisation vectors.");
+	return "dlg;Polarisation Vectors;Calculates polarisation vectors.";
 }
 
 
 /**
  * create the plugin main dialog
  */
-std::shared_ptr<QDialog> create(QWidget *pParent)
+QDialog* create(QWidget *pParent)
 {
 	//std::cout << "In " << __FUNCTION__ << std::endl;
-	return std::make_shared<PolDlg>(pParent);
+	return new PolDlg(pParent);
+}
+
+
+/**
+ * destroy the plugin main dialog
+ */
+void destroy(QDialog* dlg)
+{
+	//std::cout << "In " << __FUNCTION__ << std::endl;
+	if(dlg) delete dlg;
 }
 
 
 BOOST_DLL_ALIAS(init, tl_init);
 BOOST_DLL_ALIAS(descr, tl_descr);
 BOOST_DLL_ALIAS(create, tl_create);
+BOOST_DLL_ALIAS(destroy, tl_destroy);
 
 
 #endif

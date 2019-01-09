@@ -12,9 +12,16 @@
 #include "funcs.h"
 #include "libs/file.h"
 #include "libs/algos.h"
+#include "libs/helper.h"
+#include "libs/str.h"
 
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QDialog>
+
+#include <iostream>
+#include <memory>
+#include <boost/dll/shared_library.hpp>
 
 
 using t_real = double;
@@ -32,7 +39,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 	this->setObjectName("in20");
 	SetCurrentFile("");
-	this->resize(800, 600);
+	LoadPlugins();
 
 
 	// ------------------------------------------------------------------------
@@ -134,6 +141,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 		// restore window state
 		if(m_pSettings->contains("mainwnd/geo"))
 			this->restoreGeometry(m_pSettings->value("mainwnd/geo").toByteArray());
+		else
+			this->resize(800, 600);
 		if(m_pSettings->contains("mainwnd/state"))
 			this->restoreState(m_pSettings->value("mainwnd/state").toByteArray());
 	}
@@ -384,4 +393,66 @@ void MainWnd::SetCurrentFile(const QString &file)
 		this->setWindowTitle(title);
 	else	
 		this->setWindowTitle(title + " -- " + m_curFile);
+}
+
+
+
+/**
+ * looks for and loads plugin tools
+ */
+void MainWnd::LoadPlugins()
+{
+	QDirIterator iter("./plugins", QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+	while(iter.hasNext())
+	{
+		std::string dllfile = iter.next().toStdString();
+		if(dllfile == "." || dllfile == "..")
+			continue;
+
+		try
+		{
+			auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
+			if(!dll || !dll->is_loaded())
+			{
+				print_err("Could not load plugin \"", dllfile, "\".");
+				continue;
+			}
+
+			if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
+			{
+				print_err("Not a valid plugin: \"", dllfile, "\".");
+				continue;
+			}
+
+
+			PluginDlg plugin;
+
+			// plugin functions
+			plugin.f_descr = dll->get<PluginDlg::t_descr>("tl_descr");
+			plugin.f_init = dll->get<PluginDlg::t_init>("tl_init");
+			plugin.f_create = dll->get<PluginDlg::t_create>("tl_create");
+			plugin.f_destroy = dll->get<PluginDlg::t_destroy>("tl_destroy");
+
+			// plugin descriptors
+			{
+				std::vector<std::string> vecdescr;
+				tl2::get_tokens<std::string, std::string>(plugin.f_descr(), ";", vecdescr);
+
+				plugin.ty = vecdescr[0];
+				plugin.name = vecdescr[1];
+				plugin.descr = vecdescr[2];
+
+				print_out("Plugin \"", dll->location(), "\" loaded. ",
+					"Module type: \"", plugin.ty, "\", ",
+					"name: \"", plugin.name, "\", ",
+					"descr: \"", plugin.descr, "\"."); 
+			}
+
+			m_plugin_dlgs.emplace_back(std::move(plugin));
+		}
+		catch(const std::exception& ex)
+		{
+			print_err("Error loading plugin \"", dllfile, "\": ", ex.what(), ".");
+		}
+	}
 }

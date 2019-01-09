@@ -21,6 +21,30 @@
 #include "plot.h"
 
 
+
+/**
+ * dialog plugins
+ */
+struct PluginDlg
+{
+	std::string ty, name, descr;
+
+	using t_descr = const char*(*)();
+	using t_init = bool(*)();
+	using t_create = QDialog*(*)(QWidget*);
+	using t_destroy = void(*)(QDialog*);
+
+	t_descr f_descr = nullptr;
+	t_init f_init = nullptr;
+	t_create f_create = nullptr;
+	t_destroy f_destroy = nullptr;
+};
+
+
+
+/**
+ * main dialog
+ */
 class MainWnd : public QMainWindow
 {
 private:
@@ -39,6 +63,8 @@ private:
 	QStringList m_recentFiles;
 	QString m_curFile;
 
+	std::vector<PluginDlg> m_plugin_dlgs;
+
 protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
 	virtual void closeEvent(QCloseEvent *pEvt) override;
@@ -47,6 +73,8 @@ protected:
 	void SetRecentFiles(const QStringList &files);
 	void AddRecentFile(const QString &file);
 	void RebuildRecentFiles();
+
+	void LoadPlugins();
 
 public:
 	MainWnd(QSettings* pSettings = nullptr);

@@ -14,49 +14,76 @@
 #include <memory>
 #include <boost/dll/shared_library.hpp>
 #include "libs/helper.h"
+#include "libs/str.h"
 
 
 int main(int argc, char** argv)
 {
-	tl2::set_locales();
-
-	if(argc <= 1)
+	try
 	{
-		std::cerr << "Specify a plugin library." << std::endl;
-		return -1;
-	}
+		tl2::set_locales();
 
-	const char *dllfile = argv[1];
-	auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
-	if(!dll || !dll->is_loaded())
-	{
-		std::cerr << "Could not load plugin." << std::endl;
-		return -1;
-	}
-	std::cerr << "Plugin " << dll->location() << " loaded." << std::endl;
-
-
-	if(!dll->has("tl_init") || !dll->has("tl_create"))
-	{
-		std::cerr << "Plugin does not have the \"tl_init\" or \"tl_create\" functions." << std::endl;
-		return -1;
-	}
-
-
-	if(auto initDlg = dll->get<bool(*)()>("tl_init"); initDlg)
-		initDlg();
-
-	auto app = std::make_unique<QApplication>(argc, argv);
-
-	//if(auto createDlg = dll->get<QDialog*(*)(QWidget*)>("tl_create"); createDlg)
-	if(auto createDlg = dll->get<std::shared_ptr<QDialog>(*)(QWidget*)>("tl_create"); createDlg)
-	{
-		if(auto dlg = createDlg(nullptr); dlg)
+		if(argc <= 1)
 		{
-			dlg->show();
-			dlg->activateWindow();
+			std::cerr << "Specify a plugin library." << std::endl;
+			return -1;
 		}
+
+		const char *dllfile = argv[1];
+		auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
+		if(!dll || !dll->is_loaded())
+		{
+			std::cerr << "Could not load plugin." << std::endl;
+			return -1;
+		}
+		std::cerr << "Plugin " << dll->location() << " loaded." << std::endl;
+
+
+		if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
+		{
+			std::cerr << "Not a valid plugin" << std::endl;
+			return -1;
+		}
+
+
+		if(auto descr = dll->get<const char*(*)()>("tl_descr"); descr)
+		{
+			std::vector<std::string> vecdescr;
+			tl2::get_tokens<std::string, std::string>(descr(), ";", vecdescr);
+			std::cout << "Module type: \"" << vecdescr[0] << "\", " 
+				<< "Name: \"" << vecdescr[1] << "\", " 
+				<< "Descr: \"" << vecdescr[2] << "\"" << std::endl; 
+		}
+
+
+		if(auto initDlg = dll->get<bool(*)()>("tl_init"); initDlg)
+			initDlg();
+
+
+		auto app = std::make_unique<QApplication>(argc, argv);
+		QDialog *dlg = nullptr;
+
+		if(auto createDlg = dll->get<QDialog*(*)(QWidget*)>("tl_create"); createDlg)
+		//if(auto createDlg = dll->get<std::shared_ptr<QDialog>(*)(QWidget*)>("tl_create"); createDlg)
+		{
+			if(dlg = createDlg(nullptr); dlg)
+			{
+				dlg->show();
+				dlg->activateWindow();
+			}
+		}
+
+
+		int ret = app->exec();
+		if(auto destroyDlg = dll->get<void(*)(QDialog*)>("tl_destroy"); destroyDlg)
+			destroyDlg(dlg);
+
+		return ret;
+	}
+	catch(const std::exception& ex)
+	{
+		std::cerr << "Error: " << ex.what() << std::endl;
 	}
 
-	return app->exec();
+	return -1;
 }

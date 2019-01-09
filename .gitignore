@@ -37,7 +37,9 @@
 
 # External libraries
 ext/**
+plugins/**
 !ext/.dir
+!plugins/.dir
 
 # Temporary files
 tmp/**
