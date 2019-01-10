@@ -146,9 +146,12 @@ void CommandLineWidget::CommandEntered()
 	m_pEditCLI->clearEditText();
 	if(!cmd.length()) return;
 
+	bool bLightTheme = palette().color(QPalette::WindowText).lightnessF() < 0.5;
+	QString colInput = bLightTheme ? "#0000ff" : "#ffff00";
+
 	std::string timestamp = tl2::epoch_to_str(tl2::epoch());
 	m_pEditHistory->insertHtml("<b><font color=\"#008800\">" + QString(timestamp.c_str()) + "&gt;</font> " +
-		"<font color=\"#0000ff\">" + cmd + "</font></b><br>");
+		"<font color=\"" + colInput + "\">" + cmd + "</font></b><br>");
 
 
 	// parse command
@@ -226,10 +229,12 @@ void CommandLineWidget::ScrollToEnd()
 
 void CommandLineWidget::PrintOutputString(bool is_err, const QString &str)
 {
+	QString colText = palette().color(QPalette::WindowText).name();
+
 	if(is_err)
 		m_pEditHistory->insertHtml("<b><font color=\"#ff0000\">" + str + "</font></b><br>");
 	else
-		m_pEditHistory->insertHtml("<font color=\"#000000\">" + str + "</font><br>");
+		m_pEditHistory->insertHtml("<font color=\"" + colText + "\">" + str + "</font><br>");
 
 	ScrollToEnd();
 }

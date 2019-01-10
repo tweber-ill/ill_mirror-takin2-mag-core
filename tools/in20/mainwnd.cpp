@@ -406,7 +406,8 @@ void MainWnd::LoadPlugins()
 {
 	m_pmenuPluginTools = new QMenu("Tools", m_pMenu);
 
-	std::vector<QString> plugindirs{{ "plugins", "../plugins", qApp->applicationDirPath()+"/plugins" }};
+	std::vector<QString> plugindirs{{ "plugins", "../plugins",
+		qApp->applicationDirPath()+"/plugins", qApp->applicationDirPath()+"/../plugins" }};
 	for(const auto& plugindir : plugindirs)
 	{
 		print_out("Looking for plugins in \"", plugindir.toStdString(), "\"...");
@@ -452,6 +453,14 @@ void MainWnd::LoadPlugins()
 					plugin.ty = vecdescr[0];
 					plugin.name = vecdescr[1];
 					plugin.descr = vecdescr[2];
+
+					// skip plugin if another one with the same name is already registered
+					if(std::find_if(m_plugin_dlgs.begin(), m_plugin_dlgs.end(),
+						[&plugin](const PluginDlg& otherplugin) -> bool
+						{
+							return otherplugin.name == plugin.name;
+						}) != m_plugin_dlgs.end())
+						continue;
 
 					// add menu item
 					auto *acTool = new QAction(plugin.name.c_str(), m_pMenu);

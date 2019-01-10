@@ -864,6 +864,12 @@ void GlPlot_impl::paintGL()
 
 		// qt painting
 		{
+			QFont fontOrig = painter.font();
+			QPen penOrig = painter.pen();
+
+			QPen penLabel(Qt::black);
+			painter.setPen(penLabel);
+
 			// coordinate labels
 			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,0.,1.})), "0");
 			for(t_real_gl f=-2.; f<=2.; f+=0.5)
@@ -893,8 +899,6 @@ void GlPlot_impl::paintGL()
 					t_vec3_gl posLabel3d = obj.m_mat * obj.m_labelPos;
 					auto posLabel2d = GlToScreenCoords(m::create<t_vec_gl>({posLabel3d[0], posLabel3d[1], posLabel3d[2], 1.}));
 
-					QFont fontOrig = painter.font();
-					QPen penOrig = painter.pen();
 					QFont fontLabel = fontOrig;
 					QPen penLabel = penOrig;
 
@@ -911,12 +915,12 @@ void GlPlot_impl::paintGL()
 					painter.setFont(fontLabel);
 					painter.setPen(penLabel);
 					painter.drawText(posLabel2d, obj.m_label.c_str());
-
-					// restore original styles
-					painter.setFont(fontOrig);
-					painter.setPen(penOrig);
 				}
 			}
+
+			// restore original styles
+			painter.setFont(fontOrig);
+			painter.setPen(penOrig);
 		}
 	}
 	else
