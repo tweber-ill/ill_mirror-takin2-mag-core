@@ -4,8 +4,8 @@
 # @license GPLv3, see 'LICENSE' file
 #
 
-project(structfact)
 cmake_minimum_required(VERSION 3.0)
+project(structfact)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 set(BUILD_LIB TRUE)

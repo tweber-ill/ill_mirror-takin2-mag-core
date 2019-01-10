@@ -20,6 +20,9 @@
 #include "command.h"
 #include "plot.h"
 
+#include <boost/dll/shared_library.hpp>
+#include <memory>
+
 
 
 /**
@@ -27,7 +30,9 @@
  */
 struct PluginDlg
 {
+	std::shared_ptr<boost::dll::shared_library> dll;
 	std::string ty, name, descr;
+	bool inited = false;
 
 	using t_descr = const char*(*)();
 	using t_init = bool(*)();
@@ -38,6 +43,8 @@ struct PluginDlg
 	t_init f_init = nullptr;
 	t_create f_create = nullptr;
 	t_destroy f_destroy = nullptr;
+
+	QDialog *dlg = nullptr;
 };
 
 
@@ -51,6 +58,7 @@ private:
 	QSettings *m_pSettings = nullptr;
 
 	QMenuBar *m_pMenu = new QMenuBar(this);
+	QMenu *m_pmenuPluginTools = nullptr;
 	//QStatusBar *m_pStatus = new QStatusBar(this);
 	QMdiArea *m_pMDI = new QMdiArea(this);
 
@@ -75,6 +83,7 @@ protected:
 	void RebuildRecentFiles();
 
 	void LoadPlugins();
+	void UnloadPlugins();
 
 public:
 	MainWnd(QSettings* pSettings = nullptr);

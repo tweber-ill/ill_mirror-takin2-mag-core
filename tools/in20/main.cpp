@@ -19,6 +19,15 @@ int main(int argc, char** argv)
 	QApplication app(argc, argv);
 	QSettings sett("tobis_stuff", "in20tool");
 
+	// set GUI style
+	//sett.setValue("mainwnd/theme", "fusion");
+	if(sett.contains("mainwnd/theme"))
+	{
+		if(auto style = QStyleFactory::create(sett.value("mainwnd/theme").toString()); style)
+			app.setStyle(style);
+	}
+
+	// main dialog
 	MainWnd wnd(&sett);
 	wnd.show();
 

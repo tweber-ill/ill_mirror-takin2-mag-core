@@ -20,8 +20,6 @@
 #include <QtWidgets/QDialog>
 
 #include <iostream>
-#include <memory>
-#include <boost/dll/shared_library.hpp>
 
 
 using t_real = double;
@@ -87,6 +85,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 	m_pMenu->addMenu(menuFile);
 	m_pMenu->addMenu(menuView);
+	if(m_plugin_dlgs.size())
+		m_pMenu->addMenu(m_pmenuPluginTools);
 	m_pMenu->addMenu(menuHelp);
 	this->setMenuBar(m_pMenu);
 	// ------------------------------------------------------------------------
@@ -168,7 +168,9 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 
 MainWnd::~MainWnd()
-{}
+{
+	UnloadPlugins();
+}
 
 
 void MainWnd::showEvent(QShowEvent *pEvt)
@@ -402,57 +404,118 @@ void MainWnd::SetCurrentFile(const QString &file)
  */
 void MainWnd::LoadPlugins()
 {
-	QDirIterator iter("./plugins", QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
-	while(iter.hasNext())
+	m_pmenuPluginTools = new QMenu("Tools", m_pMenu);
+
+	std::vector<QString> plugindirs{{ "plugins", "../plugins", qApp->applicationDirPath()+"/plugins" }};
+	for(const auto& plugindir : plugindirs)
 	{
-		std::string dllfile = iter.next().toStdString();
-		if(dllfile == "." || dllfile == "..")
-			continue;
+		print_out("Looking for plugins in \"", plugindir.toStdString(), "\"...");
 
-		try
+		QDirIterator iter(plugindir, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+		while(iter.hasNext())
 		{
-			auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
-			if(!dll || !dll->is_loaded())
-			{
-				print_err("Could not load plugin \"", dllfile, "\".");
+			std::string dllfile = iter.next().toStdString();
+			std::string rawfile = tl2::get_file_nodir(dllfile, false);
+			if(rawfile == "." || rawfile == "..")
 				continue;
-			}
 
-			if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
+			try
 			{
-				print_err("Not a valid plugin: \"", dllfile, "\".");
-				continue;
+				auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
+				if(!dll || !dll->is_loaded())
+				{
+					print_err("Could not load plugin \"", dllfile, "\".");
+					continue;
+				}
+
+				if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
+				{
+					print_err("Not a valid plugin: \"", dllfile, "\".");
+					continue;
+				}
+
+
+				PluginDlg plugin;
+				plugin.dll = dll;
+
+				// plugin functions
+				plugin.f_descr = dll->get<PluginDlg::t_descr>("tl_descr");
+				plugin.f_init = dll->get<PluginDlg::t_init>("tl_init");
+				plugin.f_create = dll->get<PluginDlg::t_create>("tl_create");
+				plugin.f_destroy = dll->get<PluginDlg::t_destroy>("tl_destroy");
+
+				// plugin descriptors
+				{
+					std::vector<std::string> vecdescr;
+					tl2::get_tokens<std::string, std::string>(plugin.f_descr(), ";", vecdescr);
+
+					plugin.ty = vecdescr[0];
+					plugin.name = vecdescr[1];
+					plugin.descr = vecdescr[2];
+
+					// add menu item
+					auto *acTool = new QAction(plugin.name.c_str(), m_pMenu);
+					acTool->setToolTip(plugin.descr.c_str());
+					m_pmenuPluginTools->addAction(acTool);
+					const std::size_t pluginNr = m_plugin_dlgs.size();
+					connect(acTool, &QAction::triggered, this, [this, pluginNr]()
+					{
+						if(pluginNr >= m_plugin_dlgs.size())
+						{
+							print_err("Invalid plugin number ", pluginNr, ".");
+							return;
+						}
+
+						// get plugin corresponding to this menu item
+						auto& plugin = m_plugin_dlgs[pluginNr];
+						if(!plugin.inited)
+							plugin.inited = plugin.f_init();
+
+						if(plugin.inited && !plugin.dlg)
+							plugin.dlg = plugin.f_create(this);
+
+						if(plugin.dlg)
+						{
+							plugin.dlg->show();
+							plugin.dlg->activateWindow();
+							plugin.dlg->raise();
+							plugin.dlg->setFocus();
+						}
+					});
+
+					print_out("Plugin ", dll->location(), " loaded. ",
+						"Module type: \"", plugin.ty, "\", ",
+						"name: \"", plugin.name, "\", ",
+						"description: \"", plugin.descr, "\"."); 
+
+					m_plugin_dlgs.emplace_back(std::move(plugin));
+				}
 			}
-
-
-			PluginDlg plugin;
-
-			// plugin functions
-			plugin.f_descr = dll->get<PluginDlg::t_descr>("tl_descr");
-			plugin.f_init = dll->get<PluginDlg::t_init>("tl_init");
-			plugin.f_create = dll->get<PluginDlg::t_create>("tl_create");
-			plugin.f_destroy = dll->get<PluginDlg::t_destroy>("tl_destroy");
-
-			// plugin descriptors
+			catch(const std::exception& ex)
 			{
-				std::vector<std::string> vecdescr;
-				tl2::get_tokens<std::string, std::string>(plugin.f_descr(), ";", vecdescr);
-
-				plugin.ty = vecdescr[0];
-				plugin.name = vecdescr[1];
-				plugin.descr = vecdescr[2];
-
-				print_out("Plugin \"", dll->location(), "\" loaded. ",
-					"Module type: \"", plugin.ty, "\", ",
-					"name: \"", plugin.name, "\", ",
-					"descr: \"", plugin.descr, "\"."); 
+				print_err("Error loading plugin \"", dllfile, "\": ", ex.what(), ".");
 			}
-
-			m_plugin_dlgs.emplace_back(std::move(plugin));
-		}
-		catch(const std::exception& ex)
-		{
-			print_err("Error loading plugin \"", dllfile, "\": ", ex.what(), ".");
 		}
 	}
+}
+
+
+/**
+ * unloads plugins
+ */
+void MainWnd::UnloadPlugins()
+{
+	for(auto &plugin : m_plugin_dlgs)
+	{
+		// remove dialogs
+		if(plugin.dlg && plugin.f_destroy)
+		{
+			plugin.f_destroy(plugin.dlg);
+			plugin.dlg = nullptr;
+		}
+
+		plugin.inited = false;
+	}
+
+	m_plugin_dlgs.clear();
 }

@@ -5,8 +5,8 @@
 # @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
 #
 
-project(pol)
 cmake_minimum_required(VERSION 3.0)
+project(pol)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 set(BUILD_LIB TRUE)

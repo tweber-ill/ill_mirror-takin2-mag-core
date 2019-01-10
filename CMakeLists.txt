@@ -4,8 +4,8 @@
 # @license see 'LICENSE' file
 #
 
-project(in20tools)
 cmake_minimum_required(VERSION 3.0)
+project(in20tools)
 
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
