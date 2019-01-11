@@ -40,6 +40,7 @@ ext/**
 plugins/**
 !ext/.dir
 !plugins/.dir
+!plugins/qtas.py
 
 # Temporary files
 tmp/**

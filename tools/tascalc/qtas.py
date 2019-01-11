@@ -4,6 +4,9 @@
 # @date 24-oct-18
 # @license see 'LICENSE' file
 #
+# __ident__ : TAS Calculator
+# __descr__ : Calculates triple-axis angles.
+#
 
 # -----------------------------------------------------------------------------
 # dependencies
@@ -38,9 +41,12 @@ np.set_printoptions(suppress=True, precision=4)
 
 app = qtw.QApplication(sys.argv)
 app.setApplicationName("qtas")
-app.setStyle("Fusion")
+#app.setStyle("Fusion")
 
-sett = qtc.QSettings("tobis_stuff", "qtas")
+sett = qtc.QSettings("tobis_stuff", "in20tool")
+if sett.contains("mainwnd/theme"):
+	app.setStyle(sett.value("mainwnd/theme"))
+
 tabs = qtw.QTabWidget()
 # -----------------------------------------------------------------------------
 
@@ -147,18 +153,18 @@ editBy.textEdited.connect(planeChanged)
 editBz.textEdited.connect(planeChanged)
 
 
-editA.setText("%.6g" % sett.value("a", 5., type=float))
-editB.setText("%.6g" % sett.value("b", 5., type=float))
-editC.setText("%.6g" % sett.value("c", 5., type=float))
-editAlpha.setText("%.6g" % sett.value("alpha", 90., type=float))
-editBeta.setText("%.6g" % sett.value("beta", 90., type=float))
-editGamma.setText("%.6g" % sett.value("gamma", 90., type=float))
-editAx.setText("%.6g" % sett.value("ax", 1., type=float))
-editAy.setText("%.6g" % sett.value("ay", 0., type=float))
-editAz.setText("%.6g" % sett.value("az", 0., type=float))
-editBx.setText("%.6g" % sett.value("bx", 0., type=float))
-editBy.setText("%.6g" % sett.value("by", 1., type=float))
-editBz.setText("%.6g" % sett.value("bz", 0., type=float))
+editA.setText("%.6g" % sett.value("qtas/a", 5., type=float))
+editB.setText("%.6g" % sett.value("qtas/b", 5., type=float))
+editC.setText("%.6g" % sett.value("qtas/c", 5., type=float))
+editAlpha.setText("%.6g" % sett.value("qtas/alpha", 90., type=float))
+editBeta.setText("%.6g" % sett.value("qtas/beta", 90., type=float))
+editGamma.setText("%.6g" % sett.value("qtas/gamma", 90., type=float))
+editAx.setText("%.6g" % sett.value("qtas/ax", 1., type=float))
+editAy.setText("%.6g" % sett.value("qtas/ay", 0., type=float))
+editAz.setText("%.6g" % sett.value("qtas/az", 0., type=float))
+editBx.setText("%.6g" % sett.value("qtas/bx", 0., type=float))
+editBy.setText("%.6g" % sett.value("qtas/by", 1., type=float))
+editBz.setText("%.6g" % sett.value("qtas/bz", 0., type=float))
 
 xtallayout.addWidget(qtw.QLabel(u"a (\u212b):", xtalpanel), 0,0, 1,1)
 xtallayout.addWidget(editA, 0,1, 1,3)
@@ -356,14 +362,14 @@ editKf.textEdited.connect(KiKfChanged)
 editE.textEdited.connect(EChanged)
 
 
-editDm.setText("%.6g" % sett.value("dm", 3.355, type=float))
-editDa.setText("%.6g" % sett.value("da", 3.355, type=float))
-edith.setText("%.6g" % sett.value("h", 1., type=float))
-editk.setText("%.6g" % sett.value("k", 0., type=float))
-editl.setText("%.6g" % sett.value("l", 0., type=float))
-#editE.setText("%.6g" % sett.value("E", 0., type=float))
-editKi.setText("%.6g" % sett.value("ki", 2.662, type=float))
-editKf.setText("%.6g" % sett.value("kf", 2.662, type=float))
+editDm.setText("%.6g" % sett.value("qtas/dm", 3.355, type=float))
+editDa.setText("%.6g" % sett.value("qtas/da", 3.355, type=float))
+edith.setText("%.6g" % sett.value("qtas/h", 1., type=float))
+editk.setText("%.6g" % sett.value("qtas/k", 0., type=float))
+editl.setText("%.6g" % sett.value("qtas/l", 0., type=float))
+#editE.setText("%.6g" % sett.value("qtas/E", 0., type=float))
+editKi.setText("%.6g" % sett.value("qtas/ki", 2.662, type=float))
+editKf.setText("%.6g" % sett.value("qtas/kf", 2.662, type=float))
 
 Qlayout.addWidget(qtw.QLabel("h (rlu):", Qpanel), 0,0, 1,1)
 Qlayout.addWidget(edith, 0,1, 1,2)
@@ -408,7 +414,7 @@ infolayout = qtw.QGridLayout(infopanel)
 comboA3 = qtw.QComboBox(infopanel)
 comboA3.addItems(["Takin", "NOMAD", "SICS", "NICOS"])
 a3_offs = [np.pi/2., np.pi, 0., 0.]
-comboA3.setCurrentIndex(sett.value("a3_conv", 1, type=int))
+comboA3.setCurrentIndex(sett.value("qtas/a3_conv", 1, type=int))
 
 def comboA3ConvChanged():
 	idx = comboA3.currentIndex()
@@ -446,8 +452,8 @@ dlg.setWindowTitle("TAS Calculator")
 mainlayout = qtw.QGridLayout(dlg)
 mainlayout.addWidget(tabs)
 
-if sett.contains("geo"):
-	geo = sett.value("geo")
+if sett.contains("qtas/geo"):
+	geo = sett.value("qtas/geo")
 	if qt_ver == 4:
 		geo = geo.toByteArray()
 	dlg.restoreGeometry(geo)
@@ -462,26 +468,26 @@ app.exec_()
 
 
 # save settings
-sett.setValue("a", getfloat(editA.text()))
-sett.setValue("b", getfloat(editB.text()))
-sett.setValue("c", getfloat(editC.text()))
-sett.setValue("alpha", getfloat(editAlpha.text()))
-sett.setValue("beta", getfloat(editBeta.text()))
-sett.setValue("gamma", getfloat(editGamma.text()))
-sett.setValue("ax", getfloat(editAx.text()))
-sett.setValue("ay", getfloat(editAy.text()))
-sett.setValue("az", getfloat(editAz.text()))
-sett.setValue("bx", getfloat(editBx.text()))
-sett.setValue("by", getfloat(editBy.text()))
-sett.setValue("bz", getfloat(editBz.text()))
-sett.setValue("dm", getfloat(editDm.text()))
-sett.setValue("da", getfloat(editDa.text()))
-sett.setValue("h", getfloat(edith.text()))
-sett.setValue("k", getfloat(editk.text()))
-sett.setValue("l", getfloat(editl.text()))
-#sett.setValue("E", getfloat(editE.text()))
-sett.setValue("ki", getfloat(editKi.text()))
-sett.setValue("kf", getfloat(editKf.text()))
-sett.setValue("a3_conv", comboA3.currentIndex())
-sett.setValue("geo", dlg.saveGeometry())
+sett.setValue("qtas/a", getfloat(editA.text()))
+sett.setValue("qtas/b", getfloat(editB.text()))
+sett.setValue("qtas/c", getfloat(editC.text()))
+sett.setValue("qtas/alpha", getfloat(editAlpha.text()))
+sett.setValue("qtas/beta", getfloat(editBeta.text()))
+sett.setValue("qtas/gamma", getfloat(editGamma.text()))
+sett.setValue("qtas/ax", getfloat(editAx.text()))
+sett.setValue("qtas/ay", getfloat(editAy.text()))
+sett.setValue("qtas/az", getfloat(editAz.text()))
+sett.setValue("qtas/bx", getfloat(editBx.text()))
+sett.setValue("qtas/by", getfloat(editBy.text()))
+sett.setValue("qtas/bz", getfloat(editBz.text()))
+sett.setValue("qtas/dm", getfloat(editDm.text()))
+sett.setValue("qtas/da", getfloat(editDa.text()))
+sett.setValue("qtas/h", getfloat(edith.text()))
+sett.setValue("qtas/k", getfloat(editk.text()))
+sett.setValue("qtas/l", getfloat(editl.text()))
+#sett.setValue("qtas/E", getfloat(editE.text()))
+sett.setValue("qtas/ki", getfloat(editKi.text()))
+sett.setValue("qtas/kf", getfloat(editKf.text()))
+sett.setValue("qtas/a3_conv", comboA3.currentIndex())
+sett.setValue("qtas/geo", dlg.saveGeometry())
 # -----------------------------------------------------------------------------

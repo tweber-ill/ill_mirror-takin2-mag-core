@@ -416,94 +416,148 @@ void MainWnd::LoadPlugins()
 		while(iter.hasNext())
 		{
 			std::string dllfile = iter.next().toStdString();
+			std::string fileext = tl2::get_fileext(dllfile, true);
 			std::string rawfile = tl2::get_file_nodir(dllfile, false);
 			if(rawfile == "." || rawfile == "..")
 				continue;
 
-			try
+			if(fileext == "so" || fileext == "dll" || fileext == "dylib")
 			{
-				auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
-				if(!dll || !dll->is_loaded())
+				try
 				{
-					print_err("Could not load plugin \"", dllfile, "\".");
-					continue;
-				}
+					auto dll = std::make_shared<boost::dll::shared_library>(dllfile);
+					if(!dll || !dll->is_loaded())
+					{
+						print_err("Could not load plugin \"", dllfile, "\".");
+						continue;
+					}
 
-				if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
-				{
-					print_err("Not a valid plugin: \"", dllfile, "\".");
-					continue;
-				}
+					if(!dll->has("tl_descr") || !dll->has("tl_init") || !dll->has("tl_create") || !dll->has("tl_destroy"))
+					{
+						print_err("Not a valid plugin: \"", dllfile, "\".");
+						continue;
+					}
 
 
-				PluginDlg plugin;
-				plugin.dll = dll;
+					PluginDlg plugin;
+					plugin.dll = dll;
 
-				// plugin functions
-				plugin.f_descr = dll->get<PluginDlg::t_descr>("tl_descr");
-				plugin.f_init = dll->get<PluginDlg::t_init>("tl_init");
-				plugin.f_create = dll->get<PluginDlg::t_create>("tl_create");
-				plugin.f_destroy = dll->get<PluginDlg::t_destroy>("tl_destroy");
+					// plugin functions
+					plugin.f_descr = dll->get<PluginDlg::t_descr>("tl_descr");
+					plugin.f_init = dll->get<PluginDlg::t_init>("tl_init");
+					plugin.f_create = dll->get<PluginDlg::t_create>("tl_create");
+					plugin.f_destroy = dll->get<PluginDlg::t_destroy>("tl_destroy");
 
-				// plugin descriptors
-				{
-					std::vector<std::string> vecdescr;
-					tl2::get_tokens<std::string, std::string>(plugin.f_descr(), ";", vecdescr);
+					// plugin descriptors
+					{
+						std::vector<std::string> vecdescr;
+						tl2::get_tokens<std::string, std::string>(plugin.f_descr(), ";", vecdescr);
 
-					plugin.ty = vecdescr[0];
-					plugin.name = vecdescr[1];
-					plugin.descr = vecdescr[2];
+						plugin.name = vecdescr[1];
+						plugin.descr = vecdescr[2];
 
-					// skip plugin if another one with the same name is already registered
-					if(std::find_if(m_plugin_dlgs.begin(), m_plugin_dlgs.end(),
-						[&plugin](const PluginDlg& otherplugin) -> bool
+						// only accept dialog plugins
+						if(vecdescr[0] != "dlg")
+							continue;
+
+						// skip plugin if another one with the same name is already registered
+						if(std::find_if(m_plugin_dlgs.begin(), m_plugin_dlgs.end(),
+							[&plugin](const PluginDlg& otherplugin) -> bool
+							{
+								return otherplugin.name == plugin.name;
+							}) != m_plugin_dlgs.end())
+							continue;
+
+						// add menu item
+						auto *acTool = new QAction(plugin.name.c_str(), m_pMenu);
+						acTool->setToolTip(plugin.descr.c_str());
+						m_pmenuPluginTools->addAction(acTool);
+						const std::size_t pluginNr = m_plugin_dlgs.size();
+						connect(acTool, &QAction::triggered, this, [this, pluginNr]()
 						{
-							return otherplugin.name == plugin.name;
-						}) != m_plugin_dlgs.end())
+							if(pluginNr >= m_plugin_dlgs.size())
+							{
+								print_err("Invalid plugin number ", pluginNr, ".");
+								return;
+							}
+
+							// get plugin corresponding to this menu item
+							auto& plugin = m_plugin_dlgs[pluginNr];
+							if(!plugin.inited)
+								plugin.inited = plugin.f_init();
+
+							if(plugin.inited && !plugin.dlg)
+								plugin.dlg = plugin.f_create(this);
+
+							if(plugin.dlg)
+							{
+								plugin.dlg->show();
+								plugin.dlg->activateWindow();
+								plugin.dlg->raise();
+								plugin.dlg->setFocus();
+							}
+						});
+
+						print_out("Tool plugin ", dll->location(), " loaded. ",
+							"name: \"", plugin.name, "\", ",
+							"description: \"", plugin.descr, "\"."); 
+
+						m_plugin_dlgs.emplace_back(std::move(plugin));
+					}
+				}
+				catch(const std::exception& ex)
+				{
+					print_err("Error loading plugin \"", dllfile, "\": ", ex.what(), ".");
+				}
+			} // dialog plugins in so libraries
+			else if(fileext == "py")
+			{
+				std::ifstream ifstr(dllfile);
+				if(!ifstr)
+					continue;
+
+				PluginScr plugin;
+				bool bHasName = false;
+
+				std::string line;
+				while(std::getline(ifstr, line))
+				{
+					tl2::trim(line);
+					// looking for plugin descriptors in header comments
+					if(line.size()==0 || line[0]!='#')
 						continue;
 
-					// add menu item
-					auto *acTool = new QAction(plugin.name.c_str(), m_pMenu);
-					acTool->setToolTip(plugin.descr.c_str());
-					m_pmenuPluginTools->addAction(acTool);
-					const std::size_t pluginNr = m_plugin_dlgs.size();
-					connect(acTool, &QAction::triggered, this, [this, pluginNr]()
+					if(line.find("__ident__") != std::string::npos)
 					{
-						if(pluginNr >= m_plugin_dlgs.size())
-						{
-							print_err("Invalid plugin number ", pluginNr, ".");
-							return;
-						}
-
-						// get plugin corresponding to this menu item
-						auto& plugin = m_plugin_dlgs[pluginNr];
-						if(!plugin.inited)
-							plugin.inited = plugin.f_init();
-
-						if(plugin.inited && !plugin.dlg)
-							plugin.dlg = plugin.f_create(this);
-
-						if(plugin.dlg)
-						{
-							plugin.dlg->show();
-							plugin.dlg->activateWindow();
-							plugin.dlg->raise();
-							plugin.dlg->setFocus();
-						}
-					});
-
-					print_out("Plugin ", dll->location(), " loaded. ",
-						"Module type: \"", plugin.ty, "\", ",
-						"name: \"", plugin.name, "\", ",
-						"description: \"", plugin.descr, "\"."); 
-
-					m_plugin_dlgs.emplace_back(std::move(plugin));
+						std::tie(std::ignore, plugin.name) = tl2::split_first<std::string>(line, ":", true, false);
+						bHasName = true;
+					}
+					else if(line.find("__descr__") != std::string::npos)
+					{
+						std::tie(std::ignore, plugin.descr) = tl2::split_first<std::string>(line, ":", true, false);
+					}
 				}
-			}
-			catch(const std::exception& ex)
-			{
-				print_err("Error loading plugin \"", dllfile, "\": ", ex.what(), ".");
-			}
+
+				// not a recognised script plugin
+				if(!bHasName)
+					continue;
+
+				// skip plugin if another one with the same name is already registered
+				if(std::find_if(m_plugin_scr.begin(), m_plugin_scr.end(),
+					[&plugin](const PluginScr& otherplugin) -> bool
+					{
+						return otherplugin.name == plugin.name;
+					}) != m_plugin_scr.end())
+					continue;
+
+				// TODO: Add menu item
+
+				print_out("Script plugin \"", dllfile, "\" loaded. ",
+					"name: \"", plugin.name, "\", ",
+					"description: \"", plugin.descr, "\"."); 
+
+				m_plugin_scr.emplace_back(std::move(plugin));
+			} // py script plugins
 		}
 	}
 }

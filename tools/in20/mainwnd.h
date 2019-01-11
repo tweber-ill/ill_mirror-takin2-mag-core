@@ -31,7 +31,7 @@
 struct PluginDlg
 {
 	std::shared_ptr<boost::dll::shared_library> dll;
-	std::string ty, name, descr;
+	std::string name, descr;
 	bool inited = false;
 
 	using t_descr = const char*(*)();
@@ -45,6 +45,16 @@ struct PluginDlg
 	t_destroy f_destroy = nullptr;
 
 	QDialog *dlg = nullptr;
+};
+
+
+
+/**
+ * script plugins
+ */
+struct PluginScr
+{
+	std::string name, descr;
 };
 
 
@@ -71,7 +81,8 @@ private:
 	QStringList m_recentFiles;
 	QString m_curFile;
 
-	std::vector<PluginDlg> m_plugin_dlgs;
+	std::vector<PluginDlg> m_plugin_dlgs;	// tool/dialog plugins
+	std::vector<PluginScr> m_plugin_scr;	// callable script plugins
 
 protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
