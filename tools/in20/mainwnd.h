@@ -55,6 +55,7 @@ struct PluginDlg
 struct PluginScr
 {
 	std::string name, descr;
+	std::string filename;
 };
 
 

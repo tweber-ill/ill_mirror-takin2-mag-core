@@ -393,7 +393,7 @@ void MainWnd::SetCurrentFile(const QString &file)
 
 	if(m_curFile == "")
 		this->setWindowTitle(title);
-	else	
+	else
 		this->setWindowTitle(title + " -- " + m_curFile);
 }
 
@@ -469,7 +469,7 @@ void MainWnd::LoadPlugins()
 							continue;
 
 						// add menu item
-						auto *acTool = new QAction(plugin.name.c_str(), m_pMenu);
+						auto *acTool = new QAction((plugin.name + "...").c_str(), m_pMenu);
 						acTool->setToolTip(plugin.descr.c_str());
 						m_pmenuPluginTools->addAction(acTool);
 						const std::size_t pluginNr = m_plugin_dlgs.size();
@@ -477,7 +477,7 @@ void MainWnd::LoadPlugins()
 						{
 							if(pluginNr >= m_plugin_dlgs.size())
 							{
-								print_err("Invalid plugin number ", pluginNr, ".");
+								print_err("Invalid tool plugin number ", pluginNr, ".");
 								return;
 							}
 
@@ -500,7 +500,7 @@ void MainWnd::LoadPlugins()
 
 						print_out("Tool plugin ", dll->location(), " loaded. ",
 							"name: \"", plugin.name, "\", ",
-							"description: \"", plugin.descr, "\"."); 
+							"description: \"", plugin.descr, "\".");
 
 						m_plugin_dlgs.emplace_back(std::move(plugin));
 					}
@@ -517,6 +517,7 @@ void MainWnd::LoadPlugins()
 					continue;
 
 				PluginScr plugin;
+				plugin.filename = dllfile;
 				bool bHasName = false;
 
 				std::string line;
@@ -550,11 +551,31 @@ void MainWnd::LoadPlugins()
 					}) != m_plugin_scr.end())
 					continue;
 
-				// TODO: Add menu item
 
-				print_out("Script plugin \"", dllfile, "\" loaded. ",
+				// add menu item
+				auto *acTool = new QAction((plugin.name + "...").c_str(), m_pMenu);
+				acTool->setToolTip(plugin.descr.c_str());
+				m_pmenuPluginTools->addAction(acTool);
+				const std::size_t pluginNr = m_plugin_scr.size();
+				connect(acTool, &QAction::triggered, this, [this, pluginNr]()
+				{
+					if(pluginNr >= m_plugin_scr.size())
+					{
+						print_err("Invalid script plugin number ", pluginNr, ".");
+						return;
+					}
+
+					// get plugin corresponding to this menu item
+					auto& plugin = m_plugin_scr[pluginNr];
+
+					std::string interp = "python";
+					std::system((interp + std::string{" "} + plugin.filename).c_str());
+				});
+
+
+				print_out("Script plugin \"", plugin.filename, "\" loaded. ",
 					"name: \"", plugin.name, "\", ",
-					"description: \"", plugin.descr, "\"."); 
+					"description: \"", plugin.descr, "\".");
 
 				m_plugin_scr.emplace_back(std::move(plugin));
 			} // py script plugins

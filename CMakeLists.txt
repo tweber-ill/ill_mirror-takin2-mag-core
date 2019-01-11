@@ -93,4 +93,5 @@ add_executable(in20
 target_link_libraries(in20
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
+	-ldl
 )
