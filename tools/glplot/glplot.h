@@ -149,6 +149,7 @@ protected:
 	t_real_gl m_phi_saved = 0, m_theta_saved = 0;
 	t_real_gl m_zoom = 1.;
 
+	std::atomic<bool> m_bPlatformSupported = true;
 	std::atomic<bool> m_bInitialised = false;
 	std::atomic<bool> m_bWantsResize = false;
 	std::atomic<bool> m_bPickerNeedsUpdate = false;

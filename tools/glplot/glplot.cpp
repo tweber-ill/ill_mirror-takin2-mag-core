@@ -67,7 +67,17 @@ GlPlot_impl::~GlPlot_impl()
 	if constexpr(m_usetimer)
 		m_timer.stop();
 
-	// TODO: make thread-safe
+	// get context
+	if constexpr(m_isthreaded)
+	{
+		QMetaObject::invokeMethod(m_pPlot, &GlPlot::MoveContextToThread, Qt::ConnectionType::BlockingQueuedConnection);
+		if(!m_pPlot->IsContextInThread())
+		{
+			std::cerr << __func__ << ": Context is not in thread!" << std::endl;
+			return;
+		}
+	}
+
 	m_pPlot->makeCurrent();
 	BOOST_SCOPE_EXIT(m_pPlot) { m_pPlot->doneCurrent(); } BOOST_SCOPE_EXIT_END
 
@@ -563,6 +573,16 @@ void main()
 	pGl->glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 	m_bInitialised = true;
+
+	// check threading compatibility
+	if constexpr(m_isthreaded)
+	{
+		if(auto *pContext = ((QOpenGLWidget*)m_pPlot)->context(); pContext && !pContext->supportsThreadedOpenGL())
+		{
+			m_bPlatformSupported = false;
+			std::cerr << "Threaded GL is not supported on this platform." << std::endl;
+		}
+	}
 }
 
 
@@ -576,11 +596,12 @@ void GlPlot_impl::SetScreenDims(int w, int h)
 
 void GlPlot_impl::resizeGL()
 {
+	if(!m_bPlatformSupported) return;
+
 	const int w = m_iScreenDims[0];
 	const int h = m_iScreenDims[1];
 
-	auto *pContext = ((QOpenGLWidget*)m_pPlot)->context();
-	if(!pContext) return;
+	if(auto *pContext = ((QOpenGLWidget*)m_pPlot)->context(); !pContext) return;
 
 	m_matViewport = m::hom_viewport<t_mat_gl>(w, h, 0., 1.);
 	std::tie(m_matViewport_inv, std::ignore) = m::inv<t_mat_gl>(m_matViewport);
@@ -627,7 +648,7 @@ void GlPlot_impl::UpdateCam()
 
 void GlPlot_impl::UpdatePicker()
 {
-	if(!m_bInitialised) return;
+	if(!m_bInitialised || !m_bPlatformSupported) return;
 
 	// picker ray
 	auto [org, dir] = m::hom_line_from_screen_coords<t_mat_gl, t_vec_gl>(
@@ -794,15 +815,14 @@ void GlPlot_impl::tick(const std::chrono::milliseconds& ms)
 
 void GlPlot_impl::paintGL()
 {
+	if(!m_bPlatformSupported) return;
 	QMutexLocker _locker{&m_mutexObj};
 
 	if constexpr(!m_isthreaded)
 	{
-		auto *pContext = m_pPlot->context();
-		if(!pContext) return;
+		if(auto *pContext = m_pPlot->context(); !pContext) return;
 		QPainter painter(m_pPlot);
 		painter.setRenderHint(QPainter::HighQualityAntialiasing);
-
 
 		// gl painting
 		{
@@ -872,7 +892,7 @@ void GlPlot_impl::paintGL()
 				else if(linkedObj->m_type == GlPlotObjType::LINES)
 					pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
 				else
-					std::cerr << "Error: Unknown plot object." << std::endl;
+					std::cerr << "Unknown plot object." << std::endl;
 
 				LOGGLERR(pGl);
 			}
@@ -942,14 +962,13 @@ void GlPlot_impl::paintGL()
 			painter.setPen(penOrig);
 		}
 	}
-	else
-	{	// threaded
+	else	// threaded
+	{
 		QThread *pThisThread = QThread::currentThread();
 		if(!pThisThread->isRunning() || pThisThread->isInterruptionRequested())
 			return;
 
-		auto *pContext = m_pPlot->context();
-		if(!pContext) return;
+		if(auto *pContext = m_pPlot->context(); !pContext) return;
 
 		QMetaObject::invokeMethod(m_pPlot, &GlPlot::MoveContextToThread, Qt::ConnectionType::BlockingQueuedConnection);
 		if(!m_pPlot->IsContextInThread())
@@ -988,14 +1007,12 @@ void GlPlot_impl::paintGL()
 		if(m_bPickerNeedsUpdate)
 			UpdatePicker();
 
-
 		auto *pGl = GetGlFunctions();
 
 		// clear
 		pGl->glClearColor(1., 1., 1., 1.);
 		pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		pGl->glEnable(GL_DEPTH_TEST);
-
 
 		// bind shaders
 		m_pShaders->bind();
@@ -1049,7 +1066,7 @@ void GlPlot_impl::paintGL()
 			else if(linkedObj->m_type == GlPlotObjType::LINES)
 				pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
 			else
-				std::cerr << "Error: Unknown plot object." << std::endl;
+				std::cerr << "Unknown plot object." << std::endl;
 
 			LOGGLERR(pGl);
 		}
@@ -1069,23 +1086,26 @@ GlPlot::GlPlot(QWidget *pParent) : QOpenGLWidget(pParent),
 	m_thread_impl(std::make_unique<QThread>(this)),
 	m_impl(std::make_unique<GlPlot_impl>(this))
 {
+	qRegisterMetaType<std::size_t>("std::size_t");
+
 	if constexpr(m_isthreaded)
 	{
 		m_impl->moveToThread(m_thread_impl.get());
 
-		connect(this, &QOpenGLWidget::aboutToCompose, this, &GlPlot::beforeComposing);
-		connect(this, &QOpenGLWidget::frameSwapped, this, &GlPlot::afterComposing);
-		connect(this, &QOpenGLWidget::aboutToResize, this, &GlPlot::beforeResizing);
-		connect(this, &QOpenGLWidget::resized, this, &GlPlot::afterResizing);
-
 		connect(m_thread_impl.get(), &QThread::started, m_impl.get(), &GlPlot_impl::startedThread);
 		connect(m_thread_impl.get(), &QThread::finished, m_impl.get(), &GlPlot_impl::stoppedThread);
-
-		m_thread_impl->start();
 	}
+
+	connect(this, &QOpenGLWidget::aboutToCompose, this, &GlPlot::beforeComposing);
+	connect(this, &QOpenGLWidget::frameSwapped, this, &GlPlot::afterComposing);
+	connect(this, &QOpenGLWidget::aboutToResize, this, &GlPlot::beforeResizing);
+	connect(this, &QOpenGLWidget::resized, this, &GlPlot::afterResizing);
 
 	setUpdateBehavior(QOpenGLWidget::PartialUpdate);
 	setMouseTracking(true);
+
+	if constexpr(m_isthreaded)
+		m_thread_impl->start();
 }
 
 
@@ -1194,8 +1214,7 @@ void GlPlot::MoveContextToThread()
 {
 	if constexpr(m_isthreaded)
 	{
-		auto *pContext = context();
-		if(pContext)
+		if(auto *pContext = context(); pContext && m_thread_impl.get())
 			pContext->moveToThread(m_thread_impl.get());
 	}
 }

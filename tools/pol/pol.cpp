@@ -520,6 +520,7 @@ int main(int argc, char** argv)
 {
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
+
 	auto app = std::make_unique<QApplication>(argc, argv);
 
 	auto dlg = std::make_unique<PolDlg>(nullptr);
