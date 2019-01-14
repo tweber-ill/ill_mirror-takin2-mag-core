@@ -66,6 +66,25 @@ GlPlot_impl::~GlPlot_impl()
 {
 	if constexpr(m_usetimer)
 		m_timer.stop();
+
+	// TODO: make thread-safe
+	m_pPlot->makeCurrent();
+	BOOST_SCOPE_EXIT(m_pPlot) { m_pPlot->doneCurrent(); } BOOST_SCOPE_EXIT_END
+
+	// delete gl objects within current gl context
+	m_pShaders.reset();
+
+	qgl_funcs* pGl = GetGlFunctions();
+	for(auto &obj : m_objs)
+	{
+		obj.m_pvertexbuf.reset();
+		obj.m_pnormalsbuf.reset();
+		obj.m_pcolorbuf.reset();
+		pGl->glDeleteVertexArrays(1, &obj.m_vertexarr);
+	}
+
+	m_objs.clear();
+	LOGGLERR(pGl)
 }
 
 
@@ -1065,6 +1084,7 @@ GlPlot::GlPlot(QWidget *pParent) : QOpenGLWidget(pParent),
 		m_thread_impl->start();
 	}
 
+	setUpdateBehavior(QOpenGLWidget::PartialUpdate);
 	setMouseTracking(true);
 }
 
