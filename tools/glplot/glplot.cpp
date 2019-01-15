@@ -70,12 +70,7 @@ GlPlot_impl::~GlPlot_impl()
 	// get context
 	if constexpr(m_isthreaded)
 	{
-		QMetaObject::invokeMethod(m_pPlot, &GlPlot::MoveContextToThread, Qt::ConnectionType::BlockingQueuedConnection);
-		if(!m_pPlot->IsContextInThread())
-		{
-			std::cerr << __func__ << ": Context is not in thread!" << std::endl;
-			return;
-		}
+		m_pPlot->context()->moveToThread(qGuiApp->thread());
 	}
 
 	m_pPlot->makeCurrent();
@@ -150,6 +145,11 @@ GlPlotObj GlPlot_impl::CreateTriangleObject(const std::vector<t_vec3_gl>& verts,
 	const std::vector<t_vec3_gl>& triagverts, const std::vector<t_vec3_gl>& norms,
 	const t_vec_gl& color, bool bUseVertsAsNorm)
 {
+	// TODO: move context to calling thread
+	m_pPlot->makeCurrent();
+	BOOST_SCOPE_EXIT(m_pPlot) { m_pPlot->doneCurrent(); } BOOST_SCOPE_EXIT_END
+
+
 	qgl_funcs* pGl = GetGlFunctions();
 	GLint attrVertex = m_attrVertex;
 	GLint attrVertexNormal = m_attrVertexNorm;
@@ -240,6 +240,11 @@ GlPlotObj GlPlot_impl::CreateTriangleObject(const std::vector<t_vec3_gl>& verts,
 
 GlPlotObj GlPlot_impl::CreateLineObject(const std::vector<t_vec3_gl>& verts, const t_vec_gl& color)
 {
+	// TODO: move context to calling thread
+	m_pPlot->makeCurrent();
+	BOOST_SCOPE_EXIT(m_pPlot) { m_pPlot->doneCurrent(); } BOOST_SCOPE_EXIT_END
+
+
 	qgl_funcs* pGl = GetGlFunctions();
 	GLint attrVertex = m_attrVertex;
 	GLint attrVertexColor = m_attrVertexCol;

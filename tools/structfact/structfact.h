@@ -103,7 +103,7 @@ protected:
 
 protected:
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
-		t_real x=0., t_real y=0., t_real z=0., const std::string &col="#ff0000");
+		t_real x=0., t_real y=0., t_real z=0., t_real scale=1., const std::string &col="#ff0000");
 	void DelTabItem(bool clearAll=false);
 	void MoveTabItemUp();
 	void MoveTabItemDown();

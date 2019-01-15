@@ -46,6 +46,7 @@ enum : int
 	COL_SCATLEN_RE,
 	COL_SCATLEN_IM,
 	COL_X, COL_Y, COL_Z,
+	COL_RAD,
 	COL_COL,
 
 	NUM_COLS
@@ -91,6 +92,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_X, new QTableWidgetItem{"x (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
+		m_nuclei->setHorizontalHeaderItem(COL_RAD, new QTableWidgetItem{"Radius"});
 		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
@@ -99,6 +101,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setColumnWidth(COL_X, 75);
 		m_nuclei->setColumnWidth(COL_Y, 75);
 		m_nuclei->setColumnWidth(COL_Z, 75);
+		m_nuclei->setColumnWidth(COL_RAD, 75);
 		m_nuclei->setColumnWidth(COL_COL, 75);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
@@ -348,7 +351,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 // ----------------------------------------------------------------------------
 void StructFactDlg::AddTabItem(int row, 
-	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, const std::string& col)
+	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, t_real scale, const std::string& col)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -382,6 +385,7 @@ void StructFactDlg::AddTabItem(int row,
 		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
 		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
 		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
+		m_nuclei->setItem(row, COL_RAD, new NumericTableWidgetItem<t_real>(scale));
 		m_nuclei->setItem(row, COL_COL, new QTableWidgetItem(col.c_str()));
 	}
 
@@ -416,19 +420,22 @@ void StructFactDlg::Add3DItem(int row)
 	auto *itemx = m_nuclei->item(row, COL_X);
 	auto *itemy = m_nuclei->item(row, COL_Y);
 	auto *itemz = m_nuclei->item(row, COL_Z);
+	auto *itemsc = m_nuclei->item(row, COL_RAD);
 	auto *itemCol = m_nuclei->item(row, COL_COL);
 
-	t_real_gl posx=0, posy=0, posz=0;
+	t_real_gl posx=0, posy=0, posz=0, scale=1;
 	std::istringstream{itemx->text().toStdString()} >> posx;
 	std::istringstream{itemy->text().toStdString()} >> posy;
 	std::istringstream{itemz->text().toStdString()} >> posz;
+	std::istringstream{itemsc->text().toStdString()} >> scale;
 
 	qreal r=1, g=1, b=1;
 	QColor col{itemCol->text()};
 	col.getRgbF(&r, &g, &b);
 
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
-	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+	//auto obj = m_plot->GetImpl()->AddSphere(0.1, 0,0,0, r,g,b,1);
+	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
 	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 	m_plot->update();
 
@@ -601,18 +608,20 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 			auto *itemx = m_nuclei->item(row, COL_X);
 			auto *itemy = m_nuclei->item(row, COL_Y);
 			auto *itemz = m_nuclei->item(row, COL_Z);
+			auto *itemsc = m_nuclei->item(row, COL_RAD);
 			auto *itemCol = m_nuclei->item(row, COL_COL);
 
-			t_real_gl posx, posy, posz;
+			t_real_gl posx=0, posy=0, posz=0, scale=1;
 			std::istringstream{itemx->text().toStdString()} >> posx;
 			std::istringstream{itemy->text().toStdString()} >> posy;
 			std::istringstream{itemz->text().toStdString()} >> posz;
+			std::istringstream{itemsc->text().toStdString()} >> scale;
 
 			qreal r=1, g=1, b=1;
 			QColor col{itemCol->text()};
 			col.getRgbF(&r, &g, &b);
 
-			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz));
+			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
 			m_plot->GetImpl()->SetObjectCol(obj, r, g, b, 1);
 			m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 			m_plot->update();
@@ -720,9 +729,10 @@ void StructFactDlg::Load()
 				auto optX = nucl.second.get<t_real>("x", 0.);
 				auto optY = nucl.second.get<t_real>("y", 0.);
 				auto optZ = nucl.second.get<t_real>("z", 0.);
+				auto optRad = nucl.second.get<t_real>("rad", 1.);
 				auto optCol = nucl.second.get<std::string>("col", "#ff0000");
 
-				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ, optCol);
+				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ, optRad, optCol);
 			}
 		}
 	}
@@ -767,12 +777,13 @@ void StructFactDlg::Save()
 	// nucleus list
 	for(int row=0; row<m_nuclei->rowCount(); ++row)
 	{
-		t_real bRe,bIm, x,y,z;
+		t_real bRe,bIm, x,y,z, scale;
 		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
 		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
 		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
 		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
 		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("name", m_nuclei->item(row, COL_NAME)->text().toStdString());
@@ -781,6 +792,7 @@ void StructFactDlg::Save()
 		itemNode.put<t_real>("x", x);
 		itemNode.put<t_real>("y", y);
 		itemNode.put<t_real>("z", z);
+		itemNode.put<t_real>("rad", scale);
 		itemNode.put<std::string>("col", m_nuclei->item(row, COL_COL)->text().toStdString());
 
 		node.add_child("sfact.nuclei.nucleus", itemNode);
@@ -1065,6 +1077,7 @@ void StructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
 
+	// reference sphere for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
 
