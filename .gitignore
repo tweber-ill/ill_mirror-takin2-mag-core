@@ -46,6 +46,8 @@ plugins/**
 tmp/**
 !tmp/.dir
 build/**
+tools/structfact/build/**
+tools/pol/build/**
 *.pyc
 
 # Temporary lexer/parser files

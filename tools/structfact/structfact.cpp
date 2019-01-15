@@ -181,10 +181,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]()
-		{
-			this->AddTabItem(-1);
-		});
+		for(auto* edit : std::vector<QLineEdit*>{{ m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma }})
+			connect(edit, &QLineEdit::textEdited, this, [this]() { this->Calc(); });
+
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
 		connect(pTabBtnDel, &QToolButton::clicked, this, &StructFactDlg::DelTabItem);
 		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
