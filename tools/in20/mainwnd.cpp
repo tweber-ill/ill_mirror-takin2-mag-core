@@ -88,6 +88,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	if(m_plugin_dlgs.size())
 		m_pMenu->addMenu(m_pmenuPluginTools);
 	m_pMenu->addMenu(menuHelp);
+	m_pMenu->setNativeMenuBar(false);
 	this->setMenuBar(m_pMenu);
 	// ------------------------------------------------------------------------
 

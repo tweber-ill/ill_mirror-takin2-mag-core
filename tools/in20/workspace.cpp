@@ -22,8 +22,17 @@ using t_real = t_real_dat;
 WorkSpaceWidget::WorkSpaceWidget(QWidget *pParent, QSettings *pSettings)
 	: QWidget(pParent), m_pSettings(pSettings)
 {
+	// ------------------------------------------------------------------------
+	// file list
 	m_pListFiles->setAlternatingRowColors(true);
 	m_pListFiles->installEventFilter(this);
+	m_pListFiles->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	m_pFileListContextMenu->setTitle("Workspace");
+	m_pFileListContextMenu->addAction("Rename Variable", this, &WorkSpaceWidget::StartItemEditor);
+	m_pFileListContextMenu->addAction("Remove Variable", this, &WorkSpaceWidget::RemoveSelectedItems);
+	// ------------------------------------------------------------------------
+
 
 	// ------------------------------------------------------------------------
 	auto *pGrid = new QGridLayout(this);
@@ -36,6 +45,7 @@ WorkSpaceWidget::WorkSpaceWidget(QWidget *pParent, QSettings *pSettings)
 	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &WorkSpaceWidget::ItemSelected);
 	connect(m_pListFiles, &QListWidget::itemDoubleClicked, this, &WorkSpaceWidget::ItemDoubleClicked);
 	connect(m_pListFiles->itemDelegate(), &QAbstractItemDelegate::commitData, this, &WorkSpaceWidget::ItemEdited);
+	connect(m_pListFiles, &QListWidget::customContextMenuRequested, this, &WorkSpaceWidget::ShowFileListContextMenu);
 	// ------------------------------------------------------------------------
 
 
@@ -50,6 +60,21 @@ WorkSpaceWidget::WorkSpaceWidget(QWidget *pParent, QSettings *pSettings)
 
 WorkSpaceWidget::~WorkSpaceWidget()
 {
+}
+
+
+/**
+ * shows a context menu for selected files
+ */
+void WorkSpaceWidget::ShowFileListContextMenu(const QPoint& pt)
+{
+	// no file selected
+	if(!m_pListFiles->itemAt(pt))
+		return;
+
+	auto ptGlob = m_pListFiles->mapToGlobal(pt);
+	ptGlob.setY(ptGlob.y() + 8);
+	m_pFileListContextMenu->popup(ptGlob);
 }
 
 
@@ -85,6 +110,18 @@ void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
  */
 void WorkSpaceWidget::ItemDoubleClicked(QListWidgetItem* pCur)
 {
+}
+
+
+/**
+ * show the editor to rename the (first) selected item
+ */
+void WorkSpaceWidget::StartItemEditor()
+{
+	auto selected = m_pListFiles->selectedItems();
+	if(selected.size() == 0) return;
+
+	m_pListFiles->editItem(*selected.begin());
 }
 
 
@@ -140,6 +177,25 @@ void WorkSpaceWidget::ItemEdited()
 			print_out("Variable renamed: \"", oldName.toStdString(), "\" -> \"", newName.toStdString(), "\".");
 		}
 	}
+}
+
+
+
+/**
+ * removes selected items from the workspace
+ */
+void WorkSpaceWidget::RemoveSelectedItems()
+{
+	auto selected = m_pListFiles->selectedItems();
+
+	for(auto* item : selected)
+	{
+		// remove corresponding workspace variable
+		if(auto iter = m_workspace.find(item->text().toStdString()); iter != m_workspace.end())
+			m_workspace.erase(iter);
+	}
+
+	UpdateList();
 }
 
 

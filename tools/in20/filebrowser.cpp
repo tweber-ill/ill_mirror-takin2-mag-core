@@ -23,8 +23,15 @@ using t_real = t_real_dat;
 FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	: QWidget(pParent), m_pSettings(pSettings)
 {
+	// ------------------------------------------------------------------------
+	// file list
 	m_pListFiles->setAlternatingRowColors(true);
 	m_pListFiles->installEventFilter(this);
+	m_pListFiles->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	m_pFileListContextMenu->setTitle("File Browser");
+	m_pFileListContextMenu->addAction("Send File to Workspace", this, &FileBrowserWidget::TransferSelectedToWorkspace);
+	// ------------------------------------------------------------------------
 
 
 	// ------------------------------------------------------------------------
@@ -43,6 +50,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	// ------------------------------------------------------------------------
 
 
+
 	// ------------------------------------------------------------------------
 	// connections
 	connect(pBtnFolders, &QPushButton::clicked, this, &FileBrowserWidget::SelectFolder);
@@ -54,6 +62,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	connect(m_pEditFolder, &QLineEdit::textChanged, this, &FileBrowserWidget::SetFolder);
 	connect(m_pListFiles, &QListWidget::currentItemChanged, this, &FileBrowserWidget::SetFile);
 	connect(m_pListFiles, &QListWidget::itemDoubleClicked, this, &FileBrowserWidget::FileDoubleClicked);
+	connect(m_pListFiles, &QListWidget::customContextMenuRequested, this, &FileBrowserWidget::ShowFileListContextMenu);
 	// ------------------------------------------------------------------------
 
 
@@ -69,6 +78,21 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 
 FileBrowserWidget::~FileBrowserWidget()
 {
+}
+
+
+/**
+ * shows a context menu for selected files
+ */
+void FileBrowserWidget::ShowFileListContextMenu(const QPoint& pt)
+{
+	// no file selected
+	if(!m_pListFiles->itemAt(pt))
+		return;
+
+	auto ptGlob = m_pListFiles->mapToGlobal(pt);
+	ptGlob.setY(ptGlob.y() + 8);
+	m_pFileListContextMenu->popup(ptGlob);
 }
 
 

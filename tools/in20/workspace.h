@@ -14,6 +14,7 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
+#include <QtWidgets/QMenu>
 
 #include <memory>
 #include <map>
@@ -32,6 +33,7 @@ class WorkSpaceWidget : public QWidget
 private:
 	QSettings *m_pSettings = nullptr;
 	QListWidget *m_pListFiles = new QListWidget(this);
+	QMenu *m_pFileListContextMenu = new QMenu(m_pListFiles);
 
 	// maps an identifier to a dataset
 	std::map<std::string, std::shared_ptr<Symbol>> m_workspace;
@@ -46,9 +48,12 @@ public:
 	bool SaveWorkspace(const std::string &basename, std::unordered_map<std::string, std::string> &map) const;
 
 protected:
+	void ShowFileListContextMenu(const QPoint& pt);
 	void ItemSelected(QListWidgetItem* pCur);
 	void ItemDoubleClicked(QListWidgetItem* pCur);
-	void ItemEdited();
+	void StartItemEditor();		// rename item
+	void ItemEdited();			// item was renamed
+	void RemoveSelectedItems();
 	bool eventFilter(QObject *pObj, QEvent *pEvt);
 
 public:

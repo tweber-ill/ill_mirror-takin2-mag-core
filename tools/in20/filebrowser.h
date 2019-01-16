@@ -14,6 +14,7 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
+#include <QtWidgets/QMenu>
 
 #include <memory>
 #include <vector>
@@ -35,6 +36,7 @@ private:
 	QLineEdit *m_pEditFolder = new QLineEdit(this);
 	QListWidget *m_pListFiles = new QListWidget(this);
 	//Plotter *m_pPlotter = new Plotter(this);
+	QMenu *m_pFileListContextMenu = new QMenu(m_pListFiles);
 
 public:
 	FileBrowserWidget(QWidget *pParent = nullptr, QSettings *pSettings = nullptr);
@@ -45,6 +47,7 @@ protected:
 	void SetFolder(const QString& str);
 	void SetFile(QListWidgetItem *pCur);
 
+	void ShowFileListContextMenu(const QPoint& pt);
 	void FileDoubleClicked(QListWidgetItem *pItem);
 	void TransferSelectedToWorkspace();
 	void TransferToWorkspace(const QList<QListWidgetItem*>&);

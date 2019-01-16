@@ -212,7 +212,7 @@ std::shared_ptr<Symbol> func_help(CliParserContext & ctx)
 	std::ostringstream ostr;
 
 	ostr << "<hr>IN20 data treatment tool version " << PROGRAM_VERSION << ".<br>\n";
-	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018.<hr><br>\n";
+	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018-2019.<hr><br>\n";
 
 	ostr << "Type funcs() or vars() to list available functions or variables.<br>\n";
 
@@ -427,7 +427,7 @@ std::shared_ptr<Symbol> func_vars(CliParserContext & ctx)
 /**
  * clear all variables
  */
-std::shared_ptr<Symbol> func_clear(CliParserContext & ctx)
+std::shared_ptr<Symbol> func_clear(CliParserContext &ctx)
 {
 	if(auto *workspace = ctx.GetWorkspace(); workspace)
 	{
