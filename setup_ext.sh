@@ -10,6 +10,7 @@
 # tools
 WGET=wget
 TAR=tar
+UZIP=unzip
 # -----------------------------------------------------------------------------
 
 
@@ -17,10 +18,12 @@ TAR=tar
 # URLs for external libs
 TLIBS=https://forge.frm2.tum.de/cgit/cgit.cgi/frm2/mira/tlibs.git/snapshot/tlibs-master.tar.bz2
 QCP=http://www.qcustomplot.com/release/2.0.0/QCustomPlot-source.tar.gz
+GEMMI=https://github.com/project-gemmi/gemmi/archive/master.zip
 
 # local file names
 TLIBS_LOCAL=${TLIBS##*[/\\]}
 QCP_LOCAL=${QCP##*[/\\]}
+GEMMI_LOCAL=${GEMMI##*[/\\]}
 # -----------------------------------------------------------------------------
 
 
@@ -30,12 +33,14 @@ function clean_dirs()
 {
 	rm -rf tlibs
 	rm -rf qcp
+	rm -rf gemmi
 }
 
 function clean_files()
 {
 	rm -f ${TLIBS_LOCAL}
 	rm -f ${QCP_LOCAL}
+	rm -f ${GEMMI_LOCAL}
 }
 # -----------------------------------------------------------------------------
 
@@ -76,6 +81,25 @@ function dl_qcp()
 
 	mv qcustomplot-source qcp
 }
+
+
+function dl_gemmi()
+{
+	if ! ${WGET} ${GEMMI}
+	then
+		echo -e "Error downloading gemmi.";
+		exit -1;
+	fi
+
+
+	if ! ${UZIP} ${GEMMI_LOCAL}
+	then
+		echo -e "Error extracting gemmi.";
+		exit -1;
+	fi
+
+	mv gemmi-master gemmi
+}
 # -----------------------------------------------------------------------------
 
 
@@ -95,6 +119,11 @@ echo -e "-----------------------------------------------------------------------
 echo -e "\n--------------------------------------------------------------------------------"
 echo -e "Installing external qcustomplot library...\n"
 dl_qcp
+echo -e "--------------------------------------------------------------------------------\n"
+
+echo -e "\n--------------------------------------------------------------------------------"
+echo -e "Installing external Gemmi library...\n"
+dl_gemmi
 echo -e "--------------------------------------------------------------------------------\n"
 
 echo -e "\n--------------------------------------------------------------------------------"
