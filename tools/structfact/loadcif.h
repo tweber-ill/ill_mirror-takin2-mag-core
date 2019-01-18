@@ -185,6 +185,10 @@ load_cif(const std::string& filename)
 			}
 		}
 
+		// if no ops are given, just output the raw atom position
+		if(!ops.size())
+			generatedatoms.push_back(std::vector<t_vec>{{atom}});
+
 		generatedatoms.emplace_back(std::move(newatoms));
 	}
 
