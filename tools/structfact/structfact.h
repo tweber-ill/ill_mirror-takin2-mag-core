@@ -16,6 +16,7 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QComboBox>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -96,6 +97,8 @@ protected:
 	QLineEdit *m_editBeta = nullptr;
 	QLineEdit *m_editGamma = nullptr;
 
+	QComboBox *m_comboSG = nullptr;
+
 	QSpinBox *m_maxBZ = nullptr;
 
 	QMenu *m_pTabContextMenu = nullptr;			// menu in case a nucleus is selected
@@ -119,6 +122,7 @@ protected:
 	void Load();
 	void Save();
 	void ImportCIF();
+	void GenerateFromSG();
 
 	std::vector<NuclPos> GetNuclei() const;
 	void Calc();

@@ -116,6 +116,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnSave = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnImportCIF = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtn3DView = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnSG = new QToolButton(m_nucleipanel);
 
 		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -126,6 +127,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnSave->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnImportCIF->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtn3DView->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Nucleus");
 		pTabBtnDel->setText("Delete Nuclei");
@@ -135,6 +137,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnSave->setText("Save...");
 		pTabBtnImportCIF->setText("Import CIF...");
 		pTabBtn3DView->setText("3D View...");
+		pTabBtnSG->setText("Generate");
 
 
 		m_editA = new QLineEdit("5", m_nucleipanel);
@@ -143,6 +146,15 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_editAlpha = new QLineEdit("90", m_nucleipanel);
 		m_editBeta = new QLineEdit("90", m_nucleipanel);
 		m_editGamma = new QLineEdit("90", m_nucleipanel);
+
+		m_comboSG = new QComboBox(m_nucleipanel);
+
+
+		// get space groups and symops
+		for(auto [sgnum, descr, ops] : get_sgs<t_mat>())
+		{
+			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
+		}
 
 
 		auto pTabGrid = new QGridLayout(m_nucleipanel);
@@ -159,6 +171,11 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnSave, y,1,1,1);
 		pTabGrid->addWidget(pTabBtnImportCIF, y,2,1,1);
 		pTabGrid->addWidget(pTabBtn3DView, y,3,1,1);
+
+		pTabGrid->addWidget(new QLabel("Space Groups:"), ++y,0,1,1);
+		pTabGrid->addWidget(m_comboSG, y,1,1,2);
+		pTabGrid->addWidget(pTabBtnSG, y,3,1,1);
+
 
 		auto sep1 = new QFrame(m_nucleipanel); sep1->setFrameStyle(QFrame::HLine);
 		pTabGrid->addWidget(sep1, ++y,0, 1,4);
@@ -199,6 +216,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
 		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
 		connect(pTabBtnImportCIF, &QToolButton::clicked, this, &StructFactDlg::ImportCIF);
+		connect(pTabBtnSG, &QToolButton::clicked, this, &StructFactDlg::GenerateFromSG);
 		connect(pTabBtn3DView, &QToolButton::clicked, this, [this]()
 		{
 			// plot widget
@@ -879,6 +897,14 @@ void StructFactDlg::ImportCIF()
 }
 // ----------------------------------------------------------------------------
 
+
+
+/**
+ * generate symmetric nuclei from space group
+ */
+void StructFactDlg::GenerateFromSG()
+{
+}
 
 
 

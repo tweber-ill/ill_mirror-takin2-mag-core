@@ -196,4 +196,46 @@ load_cif(const std::string& filename)
 	return std::make_tuple(nullptr, atoms, generatedatoms, atomnames, latt);
 }
 
+
+
+/**
+ * gets space group description strings and symmetry operations
+ */
+template<class t_mat, class t_real = typename t_mat::value_type>
+std::vector<std::tuple<int, std::string, std::vector<t_mat>>>
+get_sgs()
+{
+	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> sgs;
+
+	for(const auto &sg : gemmi::spacegroup_tables::main)
+	{
+		std::ostringstream ostrDescr;
+		ostrDescr << "#" << sg.number << ": " << sg.hm << " (" << sg.hall << ")";
+
+		std::vector<t_mat> ops;
+		for(const auto &op : sg.operations().all_ops_sorted())
+		{
+			auto M = op.float_seitz();
+
+			t_mat mat = m::create<t_mat>({
+				std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
+				std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
+				std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
+				std::get<0>(std::get<3>(M)), std::get<1>(std::get<3>(M)), std::get<2>(std::get<3>(M)), std::get<3>(std::get<3>(M)) });
+
+			ops.emplace_back(std::move(mat));
+		}
+
+		sgs.emplace_back(std::make_tuple(sg.number, ostrDescr.str(), ops));
+	}
+
+	std::stable_sort(sgs.begin(), sgs.end(), [](const auto& sg1, const auto& sg2) -> bool
+	{
+		return std::get<0>(sg1) < std::get<0>(sg2);
+	});
+
+	return sgs;
+}
+
+
 #endif

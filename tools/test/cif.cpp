@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 
 		for(std::size_t row=0; row<colSym.length(); ++row)
 			std::cout << colSym[row] << ": " << colX[row] << ", " << colY[row] << ", " << colZ[row] << std::endl;
-		
+
 	}
 
 	std::cout << std::endl;
