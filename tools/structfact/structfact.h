@@ -118,6 +118,7 @@ protected:
 
 	void Load();
 	void Save();
+	void ImportCIF();
 
 	std::vector<NuclPos> GetNuclei() const;
 	void Calc();

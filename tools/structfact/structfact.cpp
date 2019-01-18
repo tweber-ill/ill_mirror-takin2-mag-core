@@ -19,15 +19,19 @@
 
 #include <iostream>
 #include <fstream>
+#include <random>
+#include <chrono>
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 namespace algo = boost::algorithm;
 namespace pt = boost::property_tree;
 
+#include "loadcif.h"
 #include "libs/algos.h"
 #include "libs/helper.h"
 #include "libs/_cxx20/math_algos.h"
@@ -110,6 +114,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnDown = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnLoad = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnSave = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnImportCIF = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtn3DView = new QToolButton(m_nucleipanel);
 
 		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
@@ -119,6 +124,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnLoad->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnSave->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnImportCIF->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtn3DView->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Nucleus");
@@ -127,6 +133,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setText("Move Nuclei Down");
 		pTabBtnLoad->setText("Load...");
 		pTabBtnSave->setText("Save...");
+		pTabBtnImportCIF->setText("Import CIF...");
 		pTabBtn3DView->setText("3D View...");
 
 
@@ -150,6 +157,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
 		pTabGrid->addWidget(pTabBtnLoad, ++y,0,1,1);
 		pTabGrid->addWidget(pTabBtnSave, y,1,1,1);
+		pTabGrid->addWidget(pTabBtnImportCIF, y,2,1,1);
 		pTabGrid->addWidget(pTabBtn3DView, y,3,1,1);
 
 		auto sep1 = new QFrame(m_nucleipanel); sep1->setFrameStyle(QFrame::HLine);
@@ -190,6 +198,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
 		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
 		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
+		connect(pTabBtnImportCIF, &QToolButton::clicked, this, &StructFactDlg::ImportCIF);
 		connect(pTabBtn3DView, &QToolButton::clicked, this, [this]()
 		{
 			// plot widget
@@ -800,6 +809,73 @@ void StructFactDlg::Save()
 
 	std::ofstream ofstr{filename.toStdString()};
 	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+}
+
+
+void StructFactDlg::ImportCIF()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getOpenFileName(this, "Import CIF", dirLast, "CIF Files (*.cif *.CIF)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+	m_sett->setValue("dir", QFileInfo(filename).path());
+
+	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString());
+	if(errstr)
+	{
+		QMessageBox::critical(this, "Structure Factors", errstr);
+		return;
+	}
+
+
+	// clear old nuclei
+	DelTabItem(true);
+
+	// lattice
+	{
+		std::ostringstream ostr; ostr << lattice.a;
+		m_editA->setText(ostr.str().c_str());
+	}
+	{
+		std::ostringstream ostr; ostr << lattice.b;
+		m_editB->setText(ostr.str().c_str());
+	}
+	{
+		std::ostringstream ostr; ostr << lattice.c;
+		m_editC->setText(ostr.str().c_str());
+	}
+	{
+		std::ostringstream ostr; ostr << lattice.alpha;
+		m_editAlpha->setText(ostr.str().c_str());
+	}
+	{
+		std::ostringstream ostr; ostr << lattice.beta;
+		m_editBeta->setText(ostr.str().c_str());
+	}
+	{
+		std::ostringstream ostr; ostr << lattice.gamma;
+		m_editGamma->setText(ostr.str().c_str());
+	}
+
+
+	// atoms
+	std::mt19937 gen{tl2::epoch<unsigned int>()};
+	for(std::size_t atomnum=0; atomnum<atoms.size(); ++atomnum)
+	{
+		// random colour
+		std::ostringstream ostrcol;
+		std::uniform_int_distribution<int> dist{0, 255};
+		ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen) 
+			<< std::setw(2) << std::setfill('0') << dist(gen) 
+			<< std::setw(2) << std::setfill('0') << dist(gen);
+
+		for(std::size_t symnr=0; symnr<generatedatoms[atomnum].size(); ++symnr)
+		{
+			AddTabItem(-1, atomnames[atomnum], 0, 0, 
+				generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
+				1, ostrcol.str());
+		}
+	}
 }
 // ----------------------------------------------------------------------------
 

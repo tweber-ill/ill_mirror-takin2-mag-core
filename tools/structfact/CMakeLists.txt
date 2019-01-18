@@ -20,7 +20,8 @@ set(CMAKE_CXX_STANDARD 17)
 add_definitions(-std=c++17 -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
 
-include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../..")
+include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
+	"../../ext/gemmi/include" "../../ext/gemmi/third_party")
 
 if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
