@@ -22,12 +22,14 @@
 using namespace m_ops;
 
 
+
 template<class t_real=double>
 struct Lattice
 {
 	t_real a, b, c;
 	t_real alpha, beta, gamma;
 };
+
 
 
 /**
@@ -55,6 +57,7 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 
 	return ops;
 }
+
 
 
 /**
@@ -95,6 +98,7 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
 
 	return ops;
 }
+
 
 
 /**
@@ -158,32 +162,7 @@ load_cif(const std::string& filename)
 		// make homogeneuous 4-vector
 		if(atom.size() == 3) atom.push_back(1);
 
-		std::vector<t_vec> newatoms;
-
-		for(const auto& op : ops)
-		{
-			auto newatom = op*atom;
-			newatom.resize(3);
-
-			for(int i=0; i<3; ++i)
-			{
-				newatom[i] = std::fmod(newatom[i], 1);
-				while(newatom[i] < 0) newatom[i] += 1;
-				while(newatom[i] >= 1) newatom[i] -= 1;
-
-				newatom[i] -= 0.5;
-			}
-
-
-			// position already occupied?
-			if(std::find_if(newatoms.begin(), newatoms.end(), [&newatom](const t_vec& vec)->bool
-			{
-				return m::equals<t_vec>(vec, newatom);
-			}) == newatoms.end())
-			{
-				newatoms.emplace_back(std::move(newatom));
-			}
-		}
+		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops);
 
 		// if no ops are given, just output the raw atom position
 		if(!ops.size())

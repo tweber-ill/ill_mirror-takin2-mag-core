@@ -34,14 +34,10 @@ namespace pt = boost::property_tree;
 #include "loadcif.h"
 #include "libs/algos.h"
 #include "libs/helper.h"
-#include "libs/_cxx20/math_algos.h"
+
+
 //using namespace m;
 using namespace m_ops;
-
-using t_vec = std::vector<t_real>;
-using t_vec_cplx = std::vector<t_cplx>;
-using t_mat = m::mat<t_real, std::vector>;
-using t_mat_cplx = m::mat<t_cplx, std::vector>;
 
 
 enum : int
@@ -154,6 +150,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		for(auto [sgnum, descr, ops] : get_sgs<t_mat>())
 		{
 			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
+			m_SGops.emplace_back(std::move(ops));
 		}
 
 
@@ -195,13 +192,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
 		m_pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
 		m_pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
-		m_pTabContextMenu->addAction("Delete Nucleus", this, &StructFactDlg::DelTabItem);
+		m_pTabContextMenu->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		m_pTabContextMenuNoItem = new QMenu(m_nuclei);
 		m_pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
-		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, &StructFactDlg::DelTabItem);
+		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem(); });
 		//m_pTabContextMenuNoItem->addSeparator();
 
 
@@ -210,7 +207,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 			connect(edit, &QLineEdit::textEdited, this, [this]() { this->Calc(); });
 
 		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, &StructFactDlg::DelTabItem);
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem(); });
 		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
 		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
@@ -470,12 +467,12 @@ void StructFactDlg::Add3DItem(int row)
 }
 
 
-void StructFactDlg::DelTabItem(bool clearAll)
+void StructFactDlg::DelTabItem(int begin, int end)
 {
 	m_ignoreChanges = 1;
 
 	// if nothing is selected, clear all items
-	if(clearAll || m_nuclei->selectedItems().count() == 0)
+	if(begin == -1 || m_nuclei->selectedItems().count() == 0)
 	{
 		if(m_plot)
 		{
@@ -488,9 +485,24 @@ void StructFactDlg::DelTabItem(bool clearAll)
 		m_nuclei->clearContents();
 		m_nuclei->setRowCount(0);
 	}
-	else	// clear selected
+	else if(begin == -2)	// clear selected
 	{
 		for(int row : GetSelectedRows(true))
+		{
+			// remove 3d object
+			if(m_plot)
+			{
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				m_plot->update();
+			}
+
+			m_nuclei->removeRow(row);
+		}
+	}
+	else if(begin >= 0 && end >= 0)		// clear given range
+	{
+		for(int row=end-1; row>=begin; --row)
 		{
 			// remove 3d object
 			if(m_plot)
@@ -707,7 +719,7 @@ void StructFactDlg::Load()
 
 
 		// clear old nuclei
-		DelTabItem(true);
+		DelTabItem(-1);
 
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.a"); opt)
 		{
@@ -742,6 +754,10 @@ void StructFactDlg::Load()
 		if(auto opt = node.get_optional<int>("sfact.order"); opt)
 		{
 			m_maxBZ->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<int>("sfact.sg_idx"); opt)
+		{
+			m_comboSG->setCurrentIndex(*opt);
 		}
 
 
@@ -800,11 +816,12 @@ void StructFactDlg::Save()
 	node.put<t_real>("sfact.xtal.beta", beta);
 	node.put<t_real>("sfact.xtal.gamma", gamma);
 	node.put<int>("sfact.order", m_maxBZ->value());
+	node.put<int>("sfact.sg_idx", m_comboSG->currentIndex());
 
 	// nucleus list
 	for(int row=0; row<m_nuclei->rowCount(); ++row)
 	{
-		t_real bRe,bIm, x,y,z, scale;
+		t_real bRe{},bIm{}, x{},y{},z{}, scale{};
 		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
 		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
 		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
@@ -847,7 +864,7 @@ void StructFactDlg::ImportCIF()
 
 
 	// clear old nuclei
-	DelTabItem(true);
+	DelTabItem(-1);
 
 	// lattice
 	{
@@ -904,6 +921,40 @@ void StructFactDlg::ImportCIF()
  */
 void StructFactDlg::GenerateFromSG()
 {
+	// symops of current space group
+	auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
+	if(sgidx < 0 || sgidx >= m_SGops.size())
+	{
+		QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
+		return;
+	}
+
+	auto ops = m_SGops[sgidx];
+
+
+	// iterate nuclei
+	int orgRowCnt = m_nuclei->rowCount();
+	for(int row=0; row<orgRowCnt; ++row)
+	{
+		t_real bRe{}, bIm{}, x{},y{},z{}, scale{};
+		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
+		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
+		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
+		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
+		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
+		std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
+		std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
+
+		t_vec nucl = m::create<t_vec>({x, y, z, 1});
+		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops);
+
+		for(const auto& newnucl : newnuclei)
+			AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
+	}
+
+	// remove original nuclei
+	DelTabItem(0, orgRowCnt);
 }
 
 

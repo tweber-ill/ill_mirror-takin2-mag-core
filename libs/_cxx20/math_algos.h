@@ -2,7 +2,7 @@
  * future math library, developed from scratch to eventually replace tlibs(2)
  * container-agnostic math algorithms
  * @author Tobias Weber <tweber@ill.fr>
- * @date dec-2017 -- 2018
+ * @date dec-2017 -- 2019
  * @license GPLv3, see 'LICENSE' file
  * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
  */
@@ -3016,6 +3016,50 @@ requires is_basic_vec<t_vec>
 	return F;
 }
 
+
+
+/**
+ * create positions using the given symmetry operations
+ */
+template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
+std::vector<t_vec> apply_ops_hom(const t_vec& _atom, const std::vector<t_mat>& ops,
+	t_real eps=std::numeric_limits<t_real>::epsilon(), bool bKeepInUnitCell=true)
+requires is_vec<t_vec> && is_mat<t_mat>
+{
+	// in homogeneous coordinates
+	t_vec atom = _atom;
+	if(atom.size() == 3)
+		atom = create<t_vec>({atom[0], atom[1], atom[2], 1});
+
+	std::vector<t_vec> newatoms;
+
+	for(const auto& op : ops)
+	{
+		auto newatom = op*atom;
+		newatom.resize(3);
+
+		if(bKeepInUnitCell)
+		{
+			for(std::size_t i=0; i<newatom.size(); ++i)
+			{
+				newatom[i] = std::fmod(newatom[i], 1.);
+				while(newatom[i] < -0.5) newatom[i] += 1.;
+				while(newatom[i] >= 0.5) newatom[i] -= 1.;
+			}
+		}
+
+		// position already occupied?
+		if(std::find_if(newatoms.begin(), newatoms.end(), [&newatom, eps](const t_vec& vec)->bool
+		{
+			return m::equals<t_vec>(vec, newatom, eps);
+		}) == newatoms.end())
+		{
+			newatoms.emplace_back(std::move(newatom));
+		}
+	}
+
+	return newatoms;
+}
 
 // ----------------------------------------------------------------------------
 

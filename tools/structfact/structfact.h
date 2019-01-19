@@ -23,11 +23,17 @@
 #include <sstream>
 #include <complex>
 
-#include "../glplot/glplot.h"
+#include "tools/glplot/glplot.h"
+#include "libs/_cxx20/math_algos.h"
 
 
 using t_real = double;
 using t_cplx = std::complex<t_real>;
+using t_vec = std::vector<t_real>;
+using t_vec_cplx = std::vector<t_cplx>;
+using t_mat = m::mat<t_real, std::vector>;
+using t_mat_cplx = m::mat<t_cplx, std::vector>;
+
 
 
 template<class T = t_real>
@@ -98,6 +104,7 @@ protected:
 	QLineEdit *m_editGamma = nullptr;
 
 	QComboBox *m_comboSG = nullptr;
+	std::vector<std::vector<t_mat>> m_SGops;
 
 	QSpinBox *m_maxBZ = nullptr;
 
@@ -107,7 +114,7 @@ protected:
 protected:
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
 		t_real x=0., t_real y=0., t_real z=0., t_real scale=1., const std::string &col="#ff0000");
-	void DelTabItem(bool clearAll=false);
+	void DelTabItem(int begin=-2, int end=-2);
 	void MoveTabItemUp();
 	void MoveTabItemDown();
 
