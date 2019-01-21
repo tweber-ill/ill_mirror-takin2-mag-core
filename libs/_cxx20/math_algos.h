@@ -2082,7 +2082,7 @@ requires is_vec<t_vec>
 	}
 
 
-	// normals
+	// face normals
 	auto itervert = vertices.begin();
 	// iterate over triplets forming triangles
 	while(itervert != vertices.end())
@@ -2501,6 +2501,72 @@ requires is_vec<t_vec>
 		{ 7, 10, 6 }, { 6, 0, 2 }, { 2, 4, 9 }, { 9, 5, 3 }, { 3, 1, 7 },
 		{ 0, 10, 8 }, { 10, 1, 8 }, { 1, 5, 8 }, { 5, 4, 8 }, { 4, 0, 8 },
 		{ 3, 7, 11 }, { 7, 6, 11 }, { 6, 2, 11 }, { 2, 9, 11 }, { 9, 3, 11 },
+	};
+
+
+	t_cont<t_vec> normals;
+	normals.reserve(faces.size());
+
+	for(const auto& face : faces)
+	{
+		auto iter = face.begin();
+		const t_vec& vec1 = *(vertices.begin() + *iter); std::advance(iter,1);
+		const t_vec& vec2 = *(vertices.begin() + *iter); std::advance(iter,1);
+		const t_vec& vec3 = *(vertices.begin() + *iter);
+
+		const t_vec vec12 = vec2 - vec1;
+		const t_vec vec13 = vec3 - vec1;
+
+		t_vec n = cross<t_vec>({vec12, vec13});
+		n /= norm<t_vec>(n);
+		normals.emplace_back(std::move(n));
+	}
+
+	// TODO
+	t_cont<t_cont<t_vec>> uvs =
+	{
+	};
+
+	return std::make_tuple(vertices, faces, normals, uvs);
+}
+
+
+/**
+ * create the faces of a dodecahedron
+ * returns [vertices, face vertex indices, face normals, face uvs]
+ */
+template<class t_vec, template<class...> class t_cont = std::vector>
+std::tuple<t_cont<t_vec>, t_cont<t_cont<std::size_t>>, t_cont<t_vec>, t_cont<t_cont<t_vec>>>
+create_dodecahedron(typename t_vec::value_type l = 1)
+requires is_vec<t_vec>
+{
+	using T = typename t_vec::value_type;
+	const T g = golden<T>;
+
+	t_cont<t_vec> vertices =
+	{
+		create<t_vec>({ 1, 1, 1 }), create<t_vec>({ 1, 1, -1 }),
+		create<t_vec>({ 1, -1, 1 }), create<t_vec>({ 1, -1, -1 }),
+
+		create<t_vec>({ -1, 1, 1 }), create<t_vec>({ -1, 1, -1 }),
+		create<t_vec>({ -1, -1, 1 }), create<t_vec>({ -1, -1, -1 }),
+
+		create<t_vec>({ 0, T{1}/g, g }), create<t_vec>({ 0, T{1}/g, -g }),
+		create<t_vec>({ 0, -T{1}/g, g }), create<t_vec>({ 0, -T{1}/g, -g }),
+
+		create<t_vec>({ g, 0, T{1}/g }), create<t_vec>({ g, 0, -T{1}/g }),
+		create<t_vec>({ -g, 0, T{1}/g }), create<t_vec>({ -g, 0, -T{1}/g }),
+
+		create<t_vec>({ T{1}/g, g, 0 }), create<t_vec>({ T{1}/g, -g, 0 }),
+		create<t_vec>({ -T{1}/g, g, 0 }), create<t_vec>({ -T{1}/g, -g, 0 }),
+	};
+
+	t_cont<t_cont<std::size_t>> faces =
+	{
+		{ 0, 16, 18, 4, 8 }, { 0, 8, 10, 2, 12 }, { 0, 12, 13, 1, 16 }, 
+		{ 1, 9, 5, 18, 16 }, { 1, 13, 3, 11, 9 }, { 2, 17, 3, 13, 12 }, 
+		{ 3, 17, 19, 7, 11 }, { 2, 10, 6, 19, 17 }, { 4, 14, 6, 10, 8 },
+		{ 4, 18, 5, 15, 14 }, { 5, 9, 11, 7, 15 }, { 6, 14, 15, 7, 19 },
 	};
 
 

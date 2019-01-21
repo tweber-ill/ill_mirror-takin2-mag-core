@@ -368,7 +368,7 @@ std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_re
 	auto solid = m::create_icosahedron<t_vec3_gl>(1);
 	auto [triagverts, norms, uvs] = m::spherify<t_vec3_gl>(
 		m::subdivide_triangles<t_vec3_gl>(
-			m::create_triangles<t_vec3_gl>(solid), 2), rad);
+			m::create_triangles<t_vec3_gl>(solid), 1), rad);
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -564,7 +564,7 @@ void main()
 
 
 	// 3d objects
-	AddCoordinateCross(-2.5, 2.5);
+	AddCoordinateCross(-m_CoordMax, m_CoordMax);
 
 
 	// options
@@ -916,7 +916,7 @@ void GlPlot_impl::paintGL()
 
 			// coordinate labels
 			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,0.,1.})), "0");
-			for(t_real_gl f=-2.; f<=2.; f+=0.5)
+			for(t_real_gl f=-std::floor(m_CoordMax); f<=std::floor(m_CoordMax); f+=0.5)
 			{
 				if(m::equals<t_real_gl>(f, 0))
 					continue;
@@ -928,9 +928,9 @@ void GlPlot_impl::paintGL()
 				painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,f,1.})), ostrF.str().c_str());
 			}
 
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({3.,0.,0.,1.})), "x");
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,3.,0.,1.})), "y");
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,3.,1.})), "z");
+			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({m_CoordMax*t_real_gl(1.2), 0., 0., 1.})), "x");
+			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., m_CoordMax*t_real_gl(1.2), 0., 1.})), "y");
+			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., 0., m_CoordMax*t_real_gl(1.2), 1.})), "z");
 
 
 			// render object labels
@@ -1106,7 +1106,7 @@ GlPlot::GlPlot(QWidget *pParent) : QOpenGLWidget(pParent),
 	connect(this, &QOpenGLWidget::aboutToResize, this, &GlPlot::beforeResizing);
 	connect(this, &QOpenGLWidget::resized, this, &GlPlot::afterResizing);
 
-	setUpdateBehavior(QOpenGLWidget::PartialUpdate);
+	//setUpdateBehavior(QOpenGLWidget::PartialUpdate);
 	setMouseTracking(true);
 
 	if constexpr(m_isthreaded)

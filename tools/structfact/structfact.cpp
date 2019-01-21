@@ -224,6 +224,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("3D View");
 
 				m_plot = std::make_shared<GlPlot>(this);
+				m_plot->GetImpl()->SetCoordMax(1.);
 				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
@@ -459,7 +460,7 @@ void StructFactDlg::Add3DItem(int row)
 	col.getRgbF(&r, &g, &b);
 
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.1, 0,0,0, r,g,b,1);
+	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, r,g,b,1);
 	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
 	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 	m_plot->update();
@@ -1239,7 +1240,7 @@ void StructFactDlg::AfterGLInitialisation()
 	if(!m_plot) return;
 
 	// reference sphere for linked objects
-	m_sphere = m_plot->GetImpl()->AddSphere(0.1, 0.,0.,0., 1.,1.,1.,1.);
+	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
 
 	// add all 3d objects

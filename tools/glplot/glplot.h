@@ -148,6 +148,7 @@ protected:
 	t_vec_gl m_vecCamY = m::create<t_vec_gl>({0.,1.,0.,0.});
 	t_real_gl m_phi_saved = 0, m_theta_saved = 0;
 	t_real_gl m_zoom = 1.;
+	t_real_gl m_CoordMax = 2.5;		// extent of coordinate axes
 
 	std::atomic<bool> m_bPlatformSupported = true;
 	std::atomic<bool> m_bInitialised = false;
@@ -219,6 +220,7 @@ public:
 	void SetObjectVisible(std::size_t idx, bool visible);
 
 	void SetScreenDims(int w, int h);
+	void SetCoordMax(t_real_gl d) { m_CoordMax = d; }
 
 public /*slots*/:
 	void paintGL();
