@@ -930,7 +930,7 @@ void StructFactDlg::GenerateFromSG()
 	}
 
 	auto ops = m_SGops[sgidx];
-
+	std::vector<std::tuple<std::string, t_real, t_real, t_real, t_real, t_real, t_real, std::string>> generatednuclei;
 
 	// iterate nuclei
 	int orgRowCnt = m_nuclei->rowCount();
@@ -950,11 +950,20 @@ void StructFactDlg::GenerateFromSG()
 		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops);
 
 		for(const auto& newnucl : newnuclei)
-			AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
+		{
+			//AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
+			generatednuclei.emplace_back(std::make_tuple(name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col));
+		}
 	}
 
 	// remove original nuclei
-	DelTabItem(0, orgRowCnt);
+	//DelTabItem(0, orgRowCnt);
+	DelTabItem(-1);
+
+	// add new nuclei
+	for(const auto& nucl : generatednuclei)
+		AddTabItem(-1, std::get<0>(nucl), std::get<1>(nucl), std::get<2>(nucl), 
+		std::get<3>(nucl), std::get<4>(nucl), std::get<5>(nucl), std::get<6>(nucl), std::get<7>(nucl));
 }
 
 
