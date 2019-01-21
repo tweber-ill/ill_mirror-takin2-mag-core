@@ -21,6 +21,7 @@
 #include <fstream>
 #include <random>
 #include <chrono>
+#include <tuple>
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
@@ -915,7 +916,6 @@ void StructFactDlg::ImportCIF()
 // ----------------------------------------------------------------------------
 
 
-
 /**
  * generate symmetric nuclei from space group
  */
@@ -962,8 +962,7 @@ void StructFactDlg::GenerateFromSG()
 
 	// add new nuclei
 	for(const auto& nucl : generatednuclei)
-		AddTabItem(-1, std::get<0>(nucl), std::get<1>(nucl), std::get<2>(nucl), 
-		std::get<3>(nucl), std::get<4>(nucl), std::get<5>(nucl), std::get<6>(nucl), std::get<7>(nucl));
+		std::apply(&StructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
 }
 
 
