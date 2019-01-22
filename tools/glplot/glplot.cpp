@@ -366,7 +366,7 @@ std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_re
 	auto solid = m::create_icosahedron<t_vec3_gl>(1);
 	auto [triagverts, norms, uvs] = m::spherify<t_vec3_gl>(
 		m::subdivide_triangles<t_vec3_gl>(
-			m::create_triangles<t_vec3_gl>(solid), 2), rad);
+			m::create_triangles<t_vec3_gl>(solid), 1), rad);
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -536,14 +536,21 @@ float lighting(vec4 objVert, vec4 objNorm)
 
 	// specular lighting
 	float I_spec = 0.;
+
 	if(g_specular > 0.)
 	{
-		vec3 posCam = get_campos();
-		vec3 dirToCam = normalize(posCam-objVert.xyz);
-		vec3 dirLightRefl = reflect(objNorm.xyz) * dirLight;
+		vec3 dirToCam = normalize(get_campos() - objVert.xyz);
+		if(dot(dirToCam, objNorm.xyz) > 0.)
+		{
+			vec3 dirLightRefl = reflect(objNorm.xyz) * dirLight;
 
-		I_spec = g_specular * pow(dot(dirToCam, dirLightRefl), g_shininess);
-		if(I_spec < 0.) I_spec = 0.;
+			float val = dot(dirToCam, dirLightRefl);
+			if(val > 0.)
+			{
+				I_spec = g_specular * pow(val, g_shininess);
+				if(I_spec < 0.) I_spec = 0.;
+			}
+		}
 	}
 
 
