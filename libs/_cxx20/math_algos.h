@@ -2819,6 +2819,51 @@ requires is_mat<t_mat>
 
 
 /**
+ * orthographic projection matrix (homogeneous 4x4)
+ * see: https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluPerspective.xml
+ */
+template<class t_mat>
+t_mat hom_ortho(
+	typename t_mat::value_type n = 0.01, typename t_mat::value_type f = 100.,
+	typename t_mat::value_type l = -1., typename t_mat::value_type r = 1.,
+	typename t_mat::value_type b = -1., typename t_mat::value_type t = 1.,
+	bool bRHS = true, bool bMap05 = false)
+requires is_mat<t_mat>
+{
+	using T = typename t_mat::value_type;
+
+	// map ranges into [-0.5, 0.5] or [-1, 1] else
+	const T sc = bMap05 ? T{1} : T{2};
+	const T zs = bRHS ? T{1} : T{-1};
+
+	const T range_nf = std::abs(f-n);
+	const T range_lr = std::abs(r-l);
+	const T range_bt = std::abs(t-b);
+
+	// centring
+	const T tr_x = sc/T{2} * (l+r) / range_lr;
+	const T tr_y = sc/T{2} * (b+t) / range_bt;
+	const T tr_z = sc/T{2} * (n+f) / range_nf;
+
+	// scaling
+	const T sc_x = sc / range_lr;
+	const T sc_y = sc / range_bt;
+	const T sc_z = sc / range_nf;
+
+	//         ( sc_x*x - tr_x )
+	//         ( sc_y*y - tr_y )
+	// P * x = ( sc_z*z - tr_z )
+	//         ( 1             )
+	return create<t_mat>({
+		sc_x,		0.,		0.,			-tr_x,
+		0.,		sc_y,		0.,			-tr_x,
+		0.,			0.,		zs*sc_z,	-tr_x,
+		0.,			0.,		0.,			1.
+	});
+}
+
+
+/**
  * viewport matrix (homogeneous 4x4)
  * see: https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glViewport.xml
  */

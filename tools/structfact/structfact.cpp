@@ -225,6 +225,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 				m_plot = std::make_shared<GlPlot>(this);
 				m_plot->GetImpl()->SetCoordMax(1.);
+				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
 				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);

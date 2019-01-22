@@ -366,7 +366,7 @@ std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_re
 	auto solid = m::create_icosahedron<t_vec3_gl>(1);
 	auto [triagverts, norms, uvs] = m::spherify<t_vec3_gl>(
 		m::subdivide_triangles<t_vec3_gl>(
-			m::create_triangles<t_vec3_gl>(solid), 1), rad);
+			m::create_triangles<t_vec3_gl>(solid), 2), rad);
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -482,6 +482,7 @@ out vec4 fragcol;
 // ----------------------------------------------------------------------------
 uniform mat4 proj = mat4(1.);
 uniform mat4 cam = mat4(1.);
+uniform mat4 cam_inv = mat4(1.);
 uniform mat4 obj = mat4(1.);
 // ----------------------------------------------------------------------------
 
@@ -493,7 +494,7 @@ uniform vec4 constcol = vec4(1, 1, 1, 1);
 vec3 g_posLight = vec3(5, 5, 5);
 
 float g_diffuse = 1.;
-float g_specular = 0.;
+float g_specular = 0.25;
 float g_shininess = 1.;
 float g_ambient = 0.25;
 // ----------------------------------------------------------------------------
@@ -512,16 +513,24 @@ mat3 reflect(vec3 n)
 
 
 /**
+ * position of the camera
+ */
+vec3 get_campos()
+{
+	vec4 trans = -vec4(cam[3].xyz, 0);
+	return (cam_inv*trans).xyz;
+}
+
+
+/**
  * phong lighting model, see: https://en.wikipedia.org/wiki/Phong_reflection_model
  */
 float lighting(vec4 objVert, vec4 objNorm)
 {
 	// diffuse lighting
-	vec3 objVert3 = objVert.xyz;
-	vec3 objNorm3 = objNorm.xzy;
-	vec3 dirLight = normalize(g_posLight-objVert3);
+	vec3 dirLight = normalize(g_posLight-objVert.xyz);
 
-	float I_diff = g_diffuse * dot(objNorm3, dirLight);
+	float I_diff = g_diffuse * dot(objNorm.xyz, dirLight);
 	if(I_diff < 0.) I_diff = 0.;
 
 
@@ -529,10 +538,9 @@ float lighting(vec4 objVert, vec4 objNorm)
 	float I_spec = 0.;
 	if(g_specular > 0.)
 	{
-		vec3 posCam = -vec3(cam[3]);
-		//vec3 posCam = -vec3(cam[0][3], cam[1][3], cam[2][3]);
-		vec3 dirToCam = normalize(posCam-objVert3);
-		vec3 dirLightRefl = reflect(objNorm3) * dirLight;
+		vec3 posCam = get_campos();
+		vec3 dirToCam = normalize(posCam-objVert.xyz);
+		vec3 dirLightRefl = reflect(objNorm.xyz) * dirLight;
 
 		I_spec = g_specular * pow(dot(dirToCam, dirLightRefl), g_shininess);
 		if(I_spec < 0.) I_spec = 0.;
@@ -609,6 +617,7 @@ void main()
 			shader_err("Cannot link shaders.");
 
 		m_uniMatrixCam = m_pShaders->uniformLocation("cam");
+		m_uniMatrixCamInv = m_pShaders->uniformLocation("cam_inv");
 		m_uniMatrixProj = m_pShaders->uniformLocation("proj");
 		m_uniMatrixObj = m_pShaders->uniformLocation("obj");
 		m_uniConstCol = m_pShaders->uniformLocation("constcol");
@@ -667,13 +676,13 @@ void GlPlot_impl::resizeGL()
 	m_matViewport = m::hom_viewport<t_mat_gl>(w, h, 0., 1.);
 	std::tie(m_matViewport_inv, std::ignore) = m::inv<t_mat_gl>(m_matViewport);
 
+	m_matPerspective = m::hom_perspective<t_mat_gl>(0.01, 100., m::pi<t_real_gl>*0.5, t_real_gl(h)/t_real_gl(w));
+	//m_matPerspective = m::hom_ortho<t_mat_gl>(0.01, 100., -t_real_gl(w)*0.0025, t_real_gl(w)*0.0025, -t_real_gl(h)*0.0025, t_real_gl(h)*0.0025);
+	std::tie(m_matPerspective_inv, std::ignore) = m::inv<t_mat_gl>(m_matPerspective);
+
 	auto *pGl = GetGlFunctions();
 	pGl->glViewport(0, 0, w, h);
 	pGl->glDepthRange(0, 1);
-
-	m_matPerspective = m::hom_perspective<t_mat_gl>(0.01, 100., m::pi<t_real_gl>*0.5, t_real_gl(h)/t_real_gl(w));
-	std::tie(m_matPerspective_inv, std::ignore) = m::inv<t_mat_gl>(m_matPerspective);
-
 
 	// bind shaders
 	m_pShaders->bind();
@@ -682,6 +691,7 @@ void GlPlot_impl::resizeGL()
 
 	// set matrices
 	m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
+	m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
 	m_pShaders->setUniformValue(m_uniMatrixProj, m_matPerspective);
 	LOGGLERR(pGl);
 
@@ -691,16 +701,25 @@ void GlPlot_impl::resizeGL()
 
 void GlPlot_impl::UpdateCam()
 {
-	// zoom
-	t_mat_gl matZoom = m::unit<t_mat_gl>();
-	matZoom(0,0) = matZoom(1,1) = matZoom(2,2) = m_zoom;
-
 	m_matCam = m_matCamBase;
+	m_matCam(2,3) /= m_zoom;
 	m_matCam *= m_matCamRot;
-	m_matCam *= matZoom;
 	std::tie(m_matCam_inv, std::ignore) = m::inv<t_mat_gl>(m_matCam);
 
+	/*auto M = m_matCam_inv; M(0,3) = M(1,3) = M(2,3) = 0;
+	t_vec3_gl vecCamPos = M * m::create<t_vec3_gl>({-m_matCam(0,3), -m_matCam(1,3), -m_matCam(2,3)});
+	std::cout << vecCamPos[0] << " " << vecCamPos[1] << " " << vecCamPos[2] << std::endl;*/
+
 	m_bPickerNeedsUpdate = true;
+	RequestPlotUpdate();
+}
+
+
+/**
+ * request a plot update
+ */
+void GlPlot_impl::RequestPlotUpdate()
+{
 	QMetaObject::invokeMethod((QOpenGLWidget*)m_pPlot,
 		static_cast<void (QOpenGLWidget::*)()>(&QOpenGLWidget::update),
 		Qt::ConnectionType::QueuedConnection);
@@ -818,9 +837,15 @@ void GlPlot_impl::mouseMoveEvent(const QPointF& pos)
 
 		m_matCamRot = m::rotation<t_mat_gl, t_vec_gl>(m_vecCamX, theta/180.*M_PI, 0);
 		m_matCamRot *= m::rotation<t_mat_gl, t_vec_gl>(m_vecCamY, phi/180.*M_PI, 0);
-	}
 
-	UpdateCam();
+		UpdateCam();
+	}
+	else
+	{
+		// also automatically done in UpdateCam
+		m_bPickerNeedsUpdate = true;
+		RequestPlotUpdate();
+	}
 }
 
 
@@ -909,6 +934,7 @@ void GlPlot_impl::paintGL()
 
 			// set cam matrix
 			m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
+			m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
 
 			// render triangle geometry
 			for(const auto& obj : m_objs)
@@ -1049,8 +1075,7 @@ void GlPlot_impl::paintGL()
 			if constexpr(!m_usetimer)
 			{
 				// if the frame is not already updated by the timer, directly update it
-				QMetaObject::invokeMethod(m_pPlot, static_cast<void (QOpenGLWidget::*)()>(&QOpenGLWidget::update),
-					Qt::ConnectionType::QueuedConnection);
+				m_pPlot->GetImpl()->RequestPlotUpdate();
 			}
 		}
 		BOOST_SCOPE_EXIT_END
@@ -1083,6 +1108,7 @@ void GlPlot_impl::paintGL()
 
 		// set cam matrix
 		m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
+		m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
 
 		// render triangle geometry
 		for(const auto& obj : m_objs)

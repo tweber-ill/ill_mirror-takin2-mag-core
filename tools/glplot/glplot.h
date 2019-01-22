@@ -134,6 +134,7 @@ protected:
 	GLint m_uniConstCol = -1;
 	GLint m_uniMatrixProj = -1;
 	GLint m_uniMatrixCam = -1;
+	GLint m_uniMatrixCamInv = -1;
 	GLint m_uniMatrixObj = -1;
 
 	t_mat_gl m_matPerspective = m::unit<t_mat_gl>();
@@ -169,6 +170,7 @@ protected:
 	qgl_funcs* GetGlFunctions(QOpenGLWidget *pWidget = nullptr);
 
 	void UpdateCam();
+	void RequestPlotUpdate();
 	void UpdatePicker();
 
 	void tick(const std::chrono::milliseconds& ms);
