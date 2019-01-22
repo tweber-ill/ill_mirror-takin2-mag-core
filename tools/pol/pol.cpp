@@ -18,7 +18,7 @@
 #include <vector>
 #include <string>
 
-#include "../glplot/glplot.h"
+#include "libs/_cxx20/glplot.h"
 #include "libs/_cxx20/math_algos.h"
 #include "libs/helper.h"
 

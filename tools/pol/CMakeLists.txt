@@ -27,11 +27,11 @@ if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 	add_definitions(-DBUILD_LIB)
-	add_library(pol SHARED
-		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
+	add_library(pol SHARED pol.cpp
+		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
 else()
-	add_executable(pol
-		pol.cpp ../glplot/glplot.cpp ../glplot/glplot.h)
+	add_executable(pol pol.cpp
+		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
 endif()
 
 target_link_libraries(pol ${Boost_LIBRARIES})

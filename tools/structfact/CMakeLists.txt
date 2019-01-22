@@ -28,12 +28,12 @@ if(BUILD_LIB)
 
 	add_definitions(-DBUILD_LIB)
 	add_library(structfact SHARED
-	structfact.cpp structfact.h
-	../glplot/glplot.cpp ../glplot/glplot.h)
+		structfact.cpp structfact.h
+		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
 else()
 	add_executable(structfact
 		structfact.cpp structfact.h
-		../glplot/glplot.cpp ../glplot/glplot.h)
+		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
 endif()
 
 target_link_libraries(structfact ${Boost_LIBRARIES})

@@ -1,7 +1,7 @@
 /**
  * GL plotter
  * @author Tobias Weber <tweber@ill.fr>
- * @date Nov-2017 -- 2018
+ * @date Nov-2017 -- 2019
  * @license GPLv3, see 'LICENSE' file
  * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
  */
