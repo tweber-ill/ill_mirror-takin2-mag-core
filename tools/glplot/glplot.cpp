@@ -203,9 +203,7 @@ GlPlotObj GlPlot_impl::CreateTriangleObject(const std::vector<t_vec3_gl>& verts,
 		obj.m_pnormalsbuf->bind();
 		BOOST_SCOPE_EXIT(&obj) { obj.m_pnormalsbuf->release(); } BOOST_SCOPE_EXIT_END
 
-		auto vecNorms = bUseVertsAsNorm ?
-		to_float_array(triagverts, 1,3, true) :
-		to_float_array(norms, 3,3, false);
+		auto vecNorms = bUseVertsAsNorm ? to_float_array(triagverts, 1,3, true) : to_float_array(norms, 3,3, false);
 		obj.m_pnormalsbuf->allocate(vecNorms.data(), vecNorms.size()*sizeof(typename decltype(vecNorms)::value_type));
 		pGl->glVertexAttribPointer(attrVertexNormal, 3, GL_FLOAT, 0, 0, nullptr);
 	}
@@ -478,27 +476,85 @@ in vec4 normal;
 in vec4 vertexcol;
 out vec4 fragcol;
 
+
+// ----------------------------------------------------------------------------
+// transformations
+// ----------------------------------------------------------------------------
 uniform mat4 proj = mat4(1.);
 uniform mat4 cam = mat4(1.);
 uniform mat4 obj = mat4(1.);
+// ----------------------------------------------------------------------------
 
+
+// ----------------------------------------------------------------------------
+// lighting
+// ----------------------------------------------------------------------------
 uniform vec4 constcol = vec4(1, 1, 1, 1);
-vec3 light_dir = vec3(2, 2, -1);
+vec3 g_posLight = vec3(5, 5, 5);
+
+float g_diffuse = 1.;
+float g_specular = 0.;
+float g_shininess = 1.;
+float g_ambient = 0.25;
+// ----------------------------------------------------------------------------
 
 
-float lighting(vec3 lightdir)
+/**
+ * reflect a vector on a surface with normal n => subtract the projection vector twice: 1 - 2*|n><n|
+ */
+mat3 reflect(vec3 n)
 {
-	float I = dot(vec3(cam*normal), normalize(lightdir));
-	if(I < 0) I = 0;
-	return I;
+	mat3 refl = mat3(1.) - 2.*outerProduct(n, n);
+
+	// have both vectors point away from the surface
+	return -refl;
+}
+
+
+/**
+ * phong lighting model, see: https://en.wikipedia.org/wiki/Phong_reflection_model
+ */
+float lighting(vec4 objVert, vec4 objNorm)
+{
+	// diffuse lighting
+	vec3 objVert3 = objVert.xyz;
+	vec3 objNorm3 = objNorm.xzy;
+	vec3 dirLight = normalize(g_posLight-objVert3);
+
+	float I_diff = g_diffuse * dot(objNorm3, dirLight);
+	if(I_diff < 0.) I_diff = 0.;
+
+
+	// specular lighting
+	float I_spec = 0.;
+	if(g_specular > 0.)
+	{
+		vec3 posCam = -vec3(cam[3]);
+		//vec3 posCam = -vec3(cam[0][3], cam[1][3], cam[2][3]);
+		vec3 dirToCam = normalize(posCam-objVert3);
+		vec3 dirLightRefl = reflect(objNorm3) * dirLight;
+
+		I_spec = g_specular * pow(dot(dirToCam, dirLightRefl), g_shininess);
+		if(I_spec < 0.) I_spec = 0.;
+	}
+
+
+	// ambient lighting
+	float I_amb = g_ambient;
+
+
+	// total intensity
+	return I_diff + I_spec + I_amb;
 }
 
 
 void main()
 {
-	gl_Position = proj * cam * obj * vertex;
+	vec4 objPos = obj * vertex;
+	vec4 objNorm = obj * normal;
+	gl_Position = proj * cam * objPos;
 
-	float I = lighting(light_dir);
+	float I = lighting(objPos, objNorm);
 	fragcol = vertexcol * I;
 	fragcol *= constcol;
 	fragcol[3] = 1;
