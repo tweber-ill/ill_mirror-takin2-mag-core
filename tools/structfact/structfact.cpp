@@ -224,6 +224,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("3D View");
 
 				m_plot = std::make_shared<GlPlot>(this);
+				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetImpl()->SetCoordMax(1.);
 				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));

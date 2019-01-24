@@ -363,10 +363,12 @@ std::size_t GlPlot_impl::AddLinkedObject(std::size_t linkTo,
 std::size_t GlPlot_impl::AddSphere(t_real_gl rad, t_real_gl x, t_real_gl y, t_real_gl z,
 	t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
 {
+	constexpr int numsubdivs = 1;
+
 	auto solid = m::create_icosahedron<t_vec3_gl>(1);
 	auto [triagverts, norms, uvs] = m::spherify<t_vec3_gl>(
 		m::subdivide_triangles<t_vec3_gl>(
-			m::create_triangles<t_vec3_gl>(solid), 1), rad);
+			m::create_triangles<t_vec3_gl>(solid), numsubdivs), rad);
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -465,11 +467,11 @@ void main()
 {
 	outcol = fragcol;
 })RAW";
-// --------------------------------------------------------------------
+	// --------------------------------------------------------------------
 
 
-// --------------------------------------------------------------------
-std::string strVertexShader = R"RAW(#version ${GLSL_VERSION}
+	// --------------------------------------------------------------------
+	std::string strVertexShader = R"RAW(#version ${GLSL_VERSION}
 
 in vec4 vertex;
 in vec4 normal;
@@ -491,12 +493,13 @@ uniform mat4 obj = mat4(1.);
 // lighting
 // ----------------------------------------------------------------------------
 uniform vec4 constcol = vec4(1, 1, 1, 1);
-vec3 g_posLight = vec3(5, 5, 5);
+uniform vec3 lightpos[] = vec3[]( vec3(5, 5, 5), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0) );
+uniform int activelights = 1;	// how many lights to use?
 
 float g_diffuse = 1.;
 float g_specular = 0.25;
 float g_shininess = 1.;
-float g_ambient = 0.25;
+float g_ambient = 0.2;
 // ----------------------------------------------------------------------------
 
 
@@ -527,28 +530,43 @@ vec3 get_campos()
  */
 float lighting(vec4 objVert, vec4 objNorm)
 {
-	// diffuse lighting
-	vec3 dirLight = normalize(g_posLight-objVert.xyz);
-
-	float I_diff = g_diffuse * dot(objNorm.xyz, dirLight);
-	if(I_diff < 0.) I_diff = 0.;
-
-
-	// specular lighting
+	float I_diff = 0.;
 	float I_spec = 0.;
 
-	if(g_specular > 0.)
-	{
-		vec3 dirToCam = normalize(get_campos() - objVert.xyz);
-		if(dot(dirToCam, objNorm.xyz) > 0.)
-		{
-			vec3 dirLightRefl = reflect(objNorm.xyz) * dirLight;
 
-			float val = dot(dirToCam, dirLightRefl);
-			if(val > 0.)
+	vec3 dirToCam;
+	// only used for specular lighting
+	if(g_specular > 0.) dirToCam = normalize(get_campos() - objVert.xyz);
+
+
+	// iterate (active) light sources
+	for(int lightidx=0; lightidx<min(lightpos.length(), activelights); ++lightidx)
+	{
+		// diffuse lighting
+		vec3 dirLight = normalize(lightpos[lightidx]-objVert.xyz);
+
+		if(g_diffuse > 0.)
+		{
+			float I_diff_inc = g_diffuse * dot(objNorm.xyz, dirLight);
+			if(I_diff_inc < 0.) I_diff_inc = 0.;
+			I_diff += I_diff_inc;
+		}
+
+
+		// specular lighting
+		if(g_specular > 0.)
+		{
+			if(dot(dirToCam, objNorm.xyz) > 0.)
 			{
-				I_spec = g_specular * pow(val, g_shininess);
-				if(I_spec < 0.) I_spec = 0.;
+				vec3 dirLightRefl = reflect(objNorm.xyz) * dirLight;
+
+				float val = dot(dirToCam, dirLightRefl);
+				if(val > 0.)
+				{
+					float I_spec_inc = g_specular * pow(val, g_shininess);
+					if(I_spec_inc < 0.) I_spec_inc = 0.;
+					I_spec += I_spec_inc;
+				}
 			}
 		}
 	}
@@ -628,6 +646,8 @@ void main()
 		m_uniMatrixProj = m_pShaders->uniformLocation("proj");
 		m_uniMatrixObj = m_pShaders->uniformLocation("obj");
 		m_uniConstCol = m_pShaders->uniformLocation("constcol");
+		m_uniLightPos = m_pShaders->uniformLocation("lightpos");
+		m_uniNumActiveLights = m_pShaders->uniformLocation("activelights");
 		m_attrVertex = m_pShaders->attributeLocation("vertex");
 		m_attrVertexNorm = m_pShaders->attributeLocation("normal");
 		m_attrVertexCol = m_pShaders->attributeLocation("vertexcol");
@@ -730,6 +750,37 @@ void GlPlot_impl::RequestPlotUpdate()
 	QMetaObject::invokeMethod((QOpenGLWidget*)m_pPlot,
 		static_cast<void (QOpenGLWidget::*)()>(&QOpenGLWidget::update),
 		Qt::ConnectionType::QueuedConnection);
+}
+
+
+void GlPlot_impl::SetLight(std::size_t idx, const t_vec3_gl& pos)
+{
+	if(m_lights.size() < idx+1)
+		m_lights.resize(idx+1);
+
+	m_lights[idx] = pos;
+	m_bLightsNeedUpdate = true;
+}
+
+
+void GlPlot_impl::UpdateLights()
+{
+	constexpr int MAX_LIGHTS = 4;	// max. number allowed in shader
+
+	int num_lights = std::min(MAX_LIGHTS, static_cast<int>(m_lights.size()));
+	t_real_gl pos[num_lights * 3];
+
+	for(int i=0; i<num_lights; ++i)
+	{
+		pos[i*3 + 0] = m_lights[i][0];
+		pos[i*3 + 1] = m_lights[i][1];
+		pos[i*3 + 2] = m_lights[i][2];
+	}
+
+	m_pShaders->setUniformValueArray(m_uniLightPos, pos, num_lights, 3);
+	m_pShaders->setUniformValue(m_uniNumActiveLights, num_lights);
+
+	m_bLightsNeedUpdate = false;
 }
 
 
@@ -906,6 +957,146 @@ void GlPlot_impl::tick(const std::chrono::milliseconds& ms)
 }
 
 
+/**
+ * pure gl drawing
+ */
+void GlPlot_impl::DoPaintGL(qgl_funcs *pGl)
+{
+	// clear
+	pGl->glClearColor(1., 1., 1., 1.);
+	pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	pGl->glEnable(GL_DEPTH_TEST);
+
+
+	// bind shaders
+	m_pShaders->bind();
+	BOOST_SCOPE_EXIT(m_pShaders) { m_pShaders->release(); } BOOST_SCOPE_EXIT_END
+	LOGGLERR(pGl);
+
+	if(m_bLightsNeedUpdate) UpdateLights();
+
+	// set cam matrix
+	m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
+	m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
+
+
+	// render triangle geometry
+	for(const auto& obj : m_objs)
+	{
+		const GlPlotObj *linkedObj = &obj;
+		if(obj.linkedObj)
+		{
+			// get linked object
+			linkedObj = &m_objs[*obj.linkedObj];
+
+			// override constant color for linked object
+			m_pShaders->setUniformValue(m_uniConstCol, obj.m_color);
+		}
+		else
+		{
+			// set override color to white for non-linked objects
+			m_pShaders->setUniformValue(m_uniConstCol, m::create<t_vec_gl>({1,1,1,1}));
+		}
+
+		if(!obj.m_visible || !obj.m_valid) continue;
+
+		// main vertex array object
+		pGl->glBindVertexArray(linkedObj->m_vertexarr);
+
+		m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
+
+		pGl->glEnableVertexAttribArray(m_attrVertex);
+		if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
+			pGl->glEnableVertexAttribArray(m_attrVertexNorm);
+		pGl->glEnableVertexAttribArray(m_attrVertexCol);
+		BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol)
+		{
+			pGl->glDisableVertexAttribArray(m_attrVertexCol);
+			pGl->glDisableVertexAttribArray(m_attrVertexNorm);
+			pGl->glDisableVertexAttribArray(m_attrVertex);
+		}
+		BOOST_SCOPE_EXIT_END
+		LOGGLERR(pGl);
+
+		if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
+			pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
+		else if(linkedObj->m_type == GlPlotObjType::LINES)
+			pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
+		else
+			std::cerr << "Unknown plot object." << std::endl;
+
+		LOGGLERR(pGl);
+	}
+
+	pGl->glDisable(GL_DEPTH_TEST);
+}
+
+
+/**
+ * directly draw on a qpainter
+ */
+void GlPlot_impl::DoPaintNonGL(QPainter &painter)
+{
+	QFont fontOrig = painter.font();
+	QPen penOrig = painter.pen();
+
+	QPen penLabel(Qt::black);
+	painter.setPen(penLabel);
+
+	// coordinate labels
+	painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,0.,1.})), "0");
+	for(t_real_gl f=-std::floor(m_CoordMax); f<=std::floor(m_CoordMax); f+=0.5)
+	{
+		if(m::equals<t_real_gl>(f, 0))
+			continue;
+
+		std::ostringstream ostrF;
+		ostrF << f;
+		painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({f,0.,0.,1.})), ostrF.str().c_str());
+		painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,f,0.,1.})), ostrF.str().c_str());
+		painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,f,1.})), ostrF.str().c_str());
+	}
+
+	painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({m_CoordMax*t_real_gl(1.2), 0., 0., 1.})), "x");
+	painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., m_CoordMax*t_real_gl(1.2), 0., 1.})), "y");
+	painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., 0., m_CoordMax*t_real_gl(1.2), 1.})), "z");
+
+
+	// render object labels
+	for(const auto& obj : m_objs)
+	{
+		if(!obj.m_visible || !obj.m_valid) continue;
+
+		if(obj.m_label != "")
+		{
+			t_vec3_gl posLabel3d = obj.m_mat * obj.m_labelPos;
+			auto posLabel2d = GlToScreenCoords(m::create<t_vec_gl>({posLabel3d[0], posLabel3d[1], posLabel3d[2], 1.}));
+
+			QFont fontLabel = fontOrig;
+			QPen penLabel = penOrig;
+
+			fontLabel.setStyleStrategy(QFont::StyleStrategy(QFont::OpenGLCompatible | QFont::PreferAntialias | QFont::PreferQuality));
+			fontLabel.setWeight(QFont::Medium);
+			//penLabel.setColor(QColor(int((1.-obj.m_color[0])*255.), int((1.-obj.m_color[1])*255.), int((1.-obj.m_color[2])*255.), int(obj.m_color[3]*255.)));
+			penLabel.setColor(QColor(0,0,0,255));
+			painter.setFont(fontLabel);
+			painter.setPen(penLabel);
+			painter.drawText(posLabel2d, obj.m_label.c_str());
+
+			fontLabel.setWeight(QFont::Normal);
+			penLabel.setColor(QColor(int(obj.m_color[0]*255.), int(obj.m_color[1]*255.), int(obj.m_color[2]*255.), int(obj.m_color[3]*255.)));
+			painter.setFont(fontLabel);
+			painter.setPen(penLabel);
+			painter.drawText(posLabel2d, obj.m_label.c_str());
+		}
+	}
+
+	// restore original styles
+	painter.setFont(fontOrig);
+	painter.setPen(penOrig);
+}
+
+
 void GlPlot_impl::paintGL()
 {
 	if(!m_bPlatformSupported) return;
@@ -926,135 +1117,11 @@ void GlPlot_impl::paintGL()
 			auto *pGl = GetGlFunctions();
 			painter.beginNativePainting();
 
-
-			// clear
-			pGl->glClearColor(1., 1., 1., 1.);
-			pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			pGl->glEnable(GL_DEPTH_TEST);
-
-
-			// bind shaders
-			m_pShaders->bind();
-			BOOST_SCOPE_EXIT(m_pShaders) { m_pShaders->release(); } BOOST_SCOPE_EXIT_END
-			LOGGLERR(pGl);
-
-
-			// set cam matrix
-			m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
-			m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
-
-			// render triangle geometry
-			for(const auto& obj : m_objs)
-			{
-				const GlPlotObj *linkedObj = &obj;
-				if(obj.linkedObj)
-				{
-					// get linked object
-					linkedObj = &m_objs[*obj.linkedObj];
-
-					// override constant color for linked object
-					m_pShaders->setUniformValue(m_uniConstCol, obj.m_color);
-				}
-				else
-				{
-					// set override color to white for non-linked objects
-					m_pShaders->setUniformValue(m_uniConstCol, m::create<t_vec_gl>({1,1,1,1}));
-				}
-
-				if(!obj.m_visible || !obj.m_valid) continue;
-
-				// main vertex array object
-				pGl->glBindVertexArray(linkedObj->m_vertexarr);
-
-				m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
-
-				pGl->glEnableVertexAttribArray(m_attrVertex);
-				if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-					pGl->glEnableVertexAttribArray(m_attrVertexNorm);
-				pGl->glEnableVertexAttribArray(m_attrVertexCol);
-				BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol)
-				{
-					pGl->glDisableVertexAttribArray(m_attrVertexCol);
-					pGl->glDisableVertexAttribArray(m_attrVertexNorm);
-					pGl->glDisableVertexAttribArray(m_attrVertex);
-				}
-				BOOST_SCOPE_EXIT_END
-				LOGGLERR(pGl);
-
-				if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-					pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
-				else if(linkedObj->m_type == GlPlotObjType::LINES)
-					pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
-				else
-					std::cerr << "Unknown plot object." << std::endl;
-
-				LOGGLERR(pGl);
-			}
-
-			pGl->glDisable(GL_DEPTH_TEST);
+			DoPaintGL(pGl);
 		}
-
 
 		// qt painting
-		{
-			QFont fontOrig = painter.font();
-			QPen penOrig = painter.pen();
-
-			QPen penLabel(Qt::black);
-			painter.setPen(penLabel);
-
-			// coordinate labels
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,0.,1.})), "0");
-			for(t_real_gl f=-std::floor(m_CoordMax); f<=std::floor(m_CoordMax); f+=0.5)
-			{
-				if(m::equals<t_real_gl>(f, 0))
-					continue;
-
-				std::ostringstream ostrF;
-				ostrF << f;
-				painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({f,0.,0.,1.})), ostrF.str().c_str());
-				painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,f,0.,1.})), ostrF.str().c_str());
-				painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,f,1.})), ostrF.str().c_str());
-			}
-
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({m_CoordMax*t_real_gl(1.2), 0., 0., 1.})), "x");
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., m_CoordMax*t_real_gl(1.2), 0., 1.})), "y");
-			painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0., 0., m_CoordMax*t_real_gl(1.2), 1.})), "z");
-
-
-			// render object labels
-			for(const auto& obj : m_objs)
-			{
-				if(!obj.m_visible || !obj.m_valid) continue;
-
-				if(obj.m_label != "")
-				{
-					t_vec3_gl posLabel3d = obj.m_mat * obj.m_labelPos;
-					auto posLabel2d = GlToScreenCoords(m::create<t_vec_gl>({posLabel3d[0], posLabel3d[1], posLabel3d[2], 1.}));
-
-					QFont fontLabel = fontOrig;
-					QPen penLabel = penOrig;
-
-					fontLabel.setStyleStrategy(QFont::StyleStrategy(QFont::OpenGLCompatible | QFont::PreferAntialias | QFont::PreferQuality));
-					fontLabel.setWeight(QFont::Medium);
-					//penLabel.setColor(QColor(int((1.-obj.m_color[0])*255.), int((1.-obj.m_color[1])*255.), int((1.-obj.m_color[2])*255.), int(obj.m_color[3]*255.)));
-					penLabel.setColor(QColor(0,0,0,255));
-					painter.setFont(fontLabel);
-					painter.setPen(penLabel);
-					painter.drawText(posLabel2d, obj.m_label.c_str());
-
-					fontLabel.setWeight(QFont::Normal);
-					penLabel.setColor(QColor(int(obj.m_color[0]*255.), int(obj.m_color[1]*255.), int(obj.m_color[2]*255.), int(obj.m_color[3]*255.)));
-					painter.setFont(fontLabel);
-					painter.setPen(penLabel);
-					painter.drawText(posLabel2d, obj.m_label.c_str());
-				}
-			}
-
-			// restore original styles
-			painter.setFont(fontOrig);
-			painter.setPen(penOrig);
-		}
+		DoPaintNonGL(painter);
 	}
 	else	// threaded
 	{
@@ -1087,85 +1154,17 @@ void GlPlot_impl::paintGL()
 		}
 		BOOST_SCOPE_EXIT_END
 
-		if(!m_bInitialised)
-			initialiseGL();
+		if(!m_bInitialised) initialiseGL();
 		if(!m_bInitialised)
 		{
 			std::cerr << "Cannot initialise GL." << std::endl;
 			return;
 		}
 
-		if(m_bWantsResize)
-			resizeGL();
-		if(m_bPickerNeedsUpdate)
-			UpdatePicker();
+		if(m_bWantsResize) resizeGL();
+		if(m_bPickerNeedsUpdate) UpdatePicker();
 
-		auto *pGl = GetGlFunctions();
-
-		// clear
-		pGl->glClearColor(1., 1., 1., 1.);
-		pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		pGl->glEnable(GL_DEPTH_TEST);
-
-		// bind shaders
-		m_pShaders->bind();
-		BOOST_SCOPE_EXIT(m_pShaders) { m_pShaders->release(); } BOOST_SCOPE_EXIT_END
-		LOGGLERR(pGl);
-
-
-		// set cam matrix
-		m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
-		m_pShaders->setUniformValue(m_uniMatrixCamInv, m_matCam_inv);
-
-		// render triangle geometry
-		for(const auto& obj : m_objs)
-		{
-			const GlPlotObj *linkedObj = &obj;
-			if(obj.linkedObj)
-			{
-				// get linked object
-				linkedObj = &m_objs[*obj.linkedObj];
-
-				// override constant color for linked object
-				m_pShaders->setUniformValue(m_uniConstCol, obj.m_color);
-			}
-			else
-			{
-				// set override color to white for non-linked objects
-				m_pShaders->setUniformValue(m_uniConstCol, m::create<t_vec_gl>({1,1,1,1}));
-			}
-
-			if(!obj.m_visible || !obj.m_valid) continue;
-
-			// main vertex array object
-			pGl->glBindVertexArray(linkedObj->m_vertexarr);
-
-			m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
-
-			pGl->glEnableVertexAttribArray(m_attrVertex);
-			if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-				pGl->glEnableVertexAttribArray(m_attrVertexNorm);
-			pGl->glEnableVertexAttribArray(m_attrVertexCol);
-			BOOST_SCOPE_EXIT(pGl, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol)
-			{
-				pGl->glDisableVertexAttribArray(m_attrVertexCol);
-				pGl->glDisableVertexAttribArray(m_attrVertexNorm);
-				pGl->glDisableVertexAttribArray(m_attrVertex);
-			}
-			BOOST_SCOPE_EXIT_END
-			LOGGLERR(pGl);
-
-			if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
-				pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
-			else if(linkedObj->m_type == GlPlotObjType::LINES)
-				pGl->glDrawArrays(GL_LINES, 0, linkedObj->m_vertices.size());
-			else
-				std::cerr << "Unknown plot object." << std::endl;
-
-			LOGGLERR(pGl);
-		}
-
-		pGl->glDisable(GL_DEPTH_TEST);
+		DoPaintGL(GetGlFunctions());
 	}
 }
 // ----------------------------------------------------------------------------

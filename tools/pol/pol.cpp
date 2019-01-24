@@ -421,8 +421,12 @@ public:
 			resize(800, 600);
 
 		// have scattering plane in horizontal plane
+		m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_plot->GetImpl()->SetCoordMax(5.);
 		m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
 			m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+
 		CalcPol();
 	}
 

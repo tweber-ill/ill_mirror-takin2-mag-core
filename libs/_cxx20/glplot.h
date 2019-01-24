@@ -132,6 +132,8 @@ protected:
 	GLint m_attrVertexNorm = -1;
 	GLint m_attrVertexCol = -1;
 	GLint m_uniConstCol = -1;
+	GLint m_uniLightPos = -1;
+	GLint m_uniNumActiveLights = -1;
 	GLint m_uniMatrixProj = -1;
 	GLint m_uniMatrixCam = -1;
 	GLint m_uniMatrixCamInv = -1;
@@ -155,9 +157,11 @@ protected:
 	std::atomic<bool> m_bInitialised = false;
 	std::atomic<bool> m_bWantsResize = false;
 	std::atomic<bool> m_bPickerNeedsUpdate = false;
+	std::atomic<bool> m_bLightsNeedUpdate = false;
 	std::atomic<int> m_iScreenDims[2] = { 800, 600 };
 	t_real_gl m_pickerSphereRadius = 1;
 
+	std::vector<t_vec3_gl> m_lights;
 	std::vector<GlPlotObj> m_objs;
 
 	QPointF m_posMouse;
@@ -172,6 +176,10 @@ protected:
 	void UpdateCam();
 	void RequestPlotUpdate();
 	void UpdatePicker();
+	void UpdateLights();
+
+	void DoPaintGL(qgl_funcs *pGL);
+	void DoPaintNonGL(QPainter &painter);
 
 	void tick(const std::chrono::milliseconds& ms);
 
@@ -223,6 +231,8 @@ public:
 
 	void SetScreenDims(int w, int h);
 	void SetCoordMax(t_real_gl d) { m_CoordMax = d; }
+
+	void SetLight(std::size_t idx, const t_vec3_gl& pos);
 
 public /*slots*/:
 	void paintGL();
