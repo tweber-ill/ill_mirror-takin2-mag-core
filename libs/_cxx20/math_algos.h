@@ -213,6 +213,18 @@ public:
 	using base_type::base_type;
 	qmatNN_adapter(const base_type& mat) : base_type{mat} {}
 
+	// convert from a different matrix type
+	template<class t_matOther> qmatNN_adapter(const t_matOther& matOther)
+		requires is_basic_mat<t_matOther>
+	{
+		const std::size_t minRows = std::min(static_cast<std::size_t>(size1()), static_cast<std::size_t>(matOther.size1()));
+		const std::size_t minCols = std::min(static_cast<std::size_t>(size2()), static_cast<std::size_t>(matOther.size2()));
+
+		for(std::size_t i=0; i<minRows; ++i)
+			for(std::size_t j=0; j<minCols; ++j)
+				(*this)(i,j) = value_type{matOther(i,j)};
+	}
+
 	size_t size1() const { return ROWS; }
 	size_t size2() const { return COLS; }
 };
@@ -338,7 +350,7 @@ requires is_mat<t_mat>
  */
 template<class t_mat>
 void unit(t_mat& mat, std::size_t rows_begin, std::size_t cols_begin, std::size_t rows_end, std::size_t cols_end)
-requires is_mat<t_mat>
+requires is_basic_mat<t_mat>
 {
 	for(std::size_t i=rows_begin; i<rows_end; ++i)
 		for(std::size_t j=cols_begin; j<cols_end; ++j)
@@ -351,7 +363,7 @@ requires is_mat<t_mat>
  */
 template<class t_mat>
 t_mat unit(std::size_t N1, std::size_t N2)
-requires is_mat<t_mat>
+requires is_basic_mat<t_mat>
 {
 	t_mat mat;
 	if constexpr(is_dyn_mat<t_mat>)
@@ -367,7 +379,7 @@ requires is_mat<t_mat>
  */
 template<class t_mat>
 t_mat unit(std::size_t N=0)
-requires is_mat<t_mat>
+requires is_basic_mat<t_mat>
 {
 	return unit<t_mat>(N,N);
 }
@@ -378,7 +390,7 @@ requires is_mat<t_mat>
  */
 template<class t_mat>
 t_mat zero(std::size_t N1, std::size_t N2)
-requires is_mat<t_mat>
+requires is_basic_mat<t_mat>
 {
 	t_mat mat;
 	if constexpr(is_dyn_mat<t_mat>)
@@ -396,7 +408,7 @@ requires is_mat<t_mat>
  */
 template<class t_mat>
 t_mat zero(std::size_t N=0)
-requires is_mat<t_mat>
+requires is_basic_mat<t_mat>
 {
 	return zero<t_mat>(N, N);
 }

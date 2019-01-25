@@ -445,6 +445,7 @@ std::size_t GlPlot_impl::AddCoordinateCross(t_real_gl min, t_real_gl max)
 	QMutexLocker _locker{&m_mutexObj};
 
 	auto obj = CreateLineObject(verts, col);
+	obj.m_invariant = true;
 	m_objs.emplace_back(std::move(obj));
 
 	return m_objs.size()-1;		// object handle
@@ -479,6 +480,9 @@ in vec4 vertexcol;
 out vec4 fragcol;
 
 
+const float pi = ${PI};
+
+
 // ----------------------------------------------------------------------------
 // transformations
 // ----------------------------------------------------------------------------
@@ -486,6 +490,10 @@ uniform mat4 proj = mat4(1.);
 uniform mat4 cam = mat4(1.);
 uniform mat4 cam_inv = mat4(1.);
 uniform mat4 obj = mat4(1.);
+uniform mat4 trafoA = mat4(1.);
+uniform mat4 trafoB = mat4(1.);		// B = 2 pi / A
+
+uniform int coordsys = 0;			// 0: crystal system, 1: lab system
 // ----------------------------------------------------------------------------
 
 
@@ -583,8 +591,19 @@ float lighting(vec4 objVert, vec4 objNorm)
 
 void main()
 {
-	vec4 objPos = obj * vertex;
-	vec4 objNorm = obj * normal;
+	mat4 coordTrafo = mat4(1.);
+	mat4 coordTrafo_inv = mat4(1.);
+
+	if(coordsys == 1)
+	{
+		coordTrafo = trafoA;
+		coordTrafo_inv = trafoB / (2.*pi);
+		coordTrafo_inv[3][3] = 1.;
+	}
+
+	// coordTrafo_inv is needed so not to distort the object
+	vec4 objPos = coordTrafo * obj * coordTrafo_inv * vertex;
+	vec4 objNorm = normalize(coordTrafo * obj * coordTrafo_inv * normal);
 	gl_Position = proj * cam * objPos;
 
 	float I = lighting(objPos, objNorm);
@@ -595,10 +614,14 @@ void main()
 // --------------------------------------------------------------------
 
 
-	// set glsl version
-	std::string strGlsl = std::to_string(_GL_MAJ_VER*100 + _GL_MIN_VER*10);
+	// set glsl version and constants
+	const std::string strGlsl = std::to_string(_GL_MAJ_VER*100 + _GL_MIN_VER*10);
+	const std::string strPi = std::to_string(m::pi<t_real_gl>);
 	for(std::string* strSrc : { &strFragShader, &strVertexShader })
+	{
 		algo::replace_all(*strSrc, std::string("${GLSL_VERSION}"), strGlsl);
+		algo::replace_all(*strSrc, std::string("${PI}"), strPi);
+	}
 
 
 	// GL functions
@@ -645,6 +668,9 @@ void main()
 		m_uniMatrixCamInv = m_pShaders->uniformLocation("cam_inv");
 		m_uniMatrixProj = m_pShaders->uniformLocation("proj");
 		m_uniMatrixObj = m_pShaders->uniformLocation("obj");
+		m_uniMatrixA = m_pShaders->uniformLocation("trafoA");
+		m_uniMatrixB = m_pShaders->uniformLocation("trafoB");
+		m_uniCoordSys = m_pShaders->uniformLocation("coordsys");
 		m_uniConstCol = m_pShaders->uniformLocation("constcol");
 		m_uniLightPos = m_pShaders->uniformLocation("lightpos");
 		m_uniNumActiveLights = m_pShaders->uniformLocation("activelights");
@@ -723,6 +749,58 @@ void GlPlot_impl::resizeGL()
 	LOGGLERR(pGl);
 
 	m_bWantsResize = false;
+}
+
+
+/**
+ * set up a (crystal) B matrix
+ */
+void GlPlot_impl::SetBTrafo(const t_mat_gl& matB, const t_mat_gl* matA)
+{
+	m_matB = matB;
+
+	// if A matix is not given, calculate it
+	if(matA)
+	{
+		m_matA = *matA;
+	}
+	else
+	{
+		bool ok = true;
+		std::tie(m_matA, ok) = m::inv(m_matB);
+		if(!ok)
+		{
+			m_matA = m::unit<t_mat_gl>();
+			std::cerr << "Error: Cannot invert B matrix." << std::endl;
+		}
+		else
+		{
+			m_matA *= t_real_gl(2)*m::pi<t_real_gl>;
+			m_matA(3,3) = 1;
+		}
+	}
+
+	m_bBTrafoNeedsUpdate = true;
+	RequestPlotUpdate();
+}
+
+
+void GlPlot_impl::SetCoordSys(int iSys)
+{
+	m_iCoordSys = iSys;
+	RequestPlotUpdate();
+}
+
+
+/**
+ * update the shader's B matrix
+ */
+void GlPlot_impl::UpdateBTrafo()
+{
+	m_pShaders->setUniformValue(m_uniMatrixA, m_matA);
+	m_pShaders->setUniformValue(m_uniMatrixB, m_matB);
+
+	m_bBTrafoNeedsUpdate = false;
 }
 
 
@@ -824,10 +902,23 @@ void GlPlot_impl::UpdatePicker()
 	}
 
 
+	// crystal or lab coordinate system?
+	const t_mat_gl matUnit = m::unit<t_mat_gl>();
+	const t_mat_gl *coordTrafo = &matUnit;
+	t_mat_gl coordTrafoInv = matUnit;
+	if(m_iCoordSys == 1)
+	{
+		coordTrafo = &m_matA;
+		coordTrafoInv = m_matB / (t_real_gl(2)*m::pi<t_real_gl>);
+		coordTrafoInv(3,3) = 1;
+	}
+
+
 	// intersection with geometry
 	bool hasInters = false;
 	t_vec_gl vecClosestInters = m::create<t_vec_gl>({0,0,0,0});
 	std::size_t objInters = 0xffffffff;
+
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -841,14 +932,17 @@ void GlPlot_impl::UpdatePicker()
 		if(linkedObj->m_type != GlPlotObjType::TRIANGLES || !obj.m_visible || !obj.m_valid)
 			continue;
 
-		linkedObj->m_pcolorbuf->bind();
-		BOOST_SCOPE_EXIT(&linkedObj) { linkedObj->m_pcolorbuf->release(); } BOOST_SCOPE_EXIT_END
-
 		for(std::size_t startidx=0; startidx+2<linkedObj->m_triangles.size(); startidx+=3)
 		{
-			std::vector<t_vec3_gl> poly{{ linkedObj->m_triangles[startidx+0], linkedObj->m_triangles[startidx+1], linkedObj->m_triangles[startidx+2] }};
+			std::vector<t_vec3_gl> poly{ {
+				linkedObj->m_triangles[startidx+0], 
+				linkedObj->m_triangles[startidx+1], 
+				linkedObj->m_triangles[startidx+2] 
+			} };
+
+			// coordTrafoInv only keeps 3d objects from locally distorting
 			auto [vecInters, bInters, lamInters] =
-			m::intersect_line_poly<t_vec3_gl, t_mat_gl>(org3, dir3, poly, obj.m_mat);
+			m::intersect_line_poly<t_vec3_gl, t_mat_gl>(org3, dir3, poly, (*coordTrafo) * obj.m_mat * coordTrafoInv);
 
 			if(bInters)
 			{
@@ -974,6 +1068,7 @@ void GlPlot_impl::DoPaintGL(qgl_funcs *pGl)
 	LOGGLERR(pGl);
 
 	if(m_bLightsNeedUpdate) UpdateLights();
+	if(m_bBTrafoNeedsUpdate) UpdateBTrafo();
 
 	// set cam matrix
 	m_pShaders->setUniformValue(m_uniMatrixCam, m_matCam);
@@ -1000,10 +1095,16 @@ void GlPlot_impl::DoPaintGL(qgl_funcs *pGl)
 
 		if(!obj.m_visible || !obj.m_valid) continue;
 
+
+		m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
+	
+		// set to untransformed coordinate system if the object is invariant
+		m_pShaders->setUniformValue(m_uniCoordSys, linkedObj->m_invariant ? 0 : m_iCoordSys.load());
+	
+
 		// main vertex array object
 		pGl->glBindVertexArray(linkedObj->m_vertexarr);
 
-		m_pShaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
 
 		pGl->glEnableVertexAttribArray(m_attrVertex);
 		if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
@@ -1017,6 +1118,7 @@ void GlPlot_impl::DoPaintGL(qgl_funcs *pGl)
 		}
 		BOOST_SCOPE_EXIT_END
 		LOGGLERR(pGl);
+
 
 		if(linkedObj->m_type == GlPlotObjType::TRIANGLES)
 			pGl->glDrawArrays(GL_TRIANGLES, 0, linkedObj->m_triangles.size());
@@ -1037,11 +1139,14 @@ void GlPlot_impl::DoPaintGL(qgl_funcs *pGl)
  */
 void GlPlot_impl::DoPaintNonGL(QPainter &painter)
 {
+	const t_mat_gl matUnit = m::unit<t_mat_gl>();
+
 	QFont fontOrig = painter.font();
 	QPen penOrig = painter.pen();
 
 	QPen penLabel(Qt::black);
 	painter.setPen(penLabel);
+
 
 	// coordinate labels
 	painter.drawText(GlToScreenCoords(m::create<t_vec_gl>({0.,0.,0.,1.})), "0");
@@ -1069,7 +1174,10 @@ void GlPlot_impl::DoPaintNonGL(QPainter &painter)
 
 		if(obj.m_label != "")
 		{
-			t_vec3_gl posLabel3d = obj.m_mat * obj.m_labelPos;
+			const t_mat_gl *coordTrafo = &matUnit;
+			if(m_iCoordSys == 1 && !obj.m_invariant) coordTrafo = &m_matA;
+
+			t_vec3_gl posLabel3d = (*coordTrafo) * obj.m_mat * obj.m_labelPos;
 			auto posLabel2d = GlToScreenCoords(m::create<t_vec_gl>({posLabel3d[0], posLabel3d[1], posLabel3d[2], 1.}));
 
 			QFont fontLabel = fontOrig;

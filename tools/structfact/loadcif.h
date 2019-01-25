@@ -106,7 +106,7 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::tuple<const char*, std::vector<t_vec>, std::vector<std::vector<t_vec>>, std::vector<std::string>, Lattice<t_real>> 
-load_cif(const std::string& filename)
+load_cif(const std::string& filename, t_real eps=1e-6)
 {
 	auto ifstr = std::ifstream(filename);
 	if(!ifstr)
@@ -162,7 +162,7 @@ load_cif(const std::string& filename)
 		// make homogeneuous 4-vector
 		if(atom.size() == 3) atom.push_back(1);
 
-		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops);
+		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops, eps);
 
 		// if no ops are given, just output the raw atom position
 		if(!ops.size())

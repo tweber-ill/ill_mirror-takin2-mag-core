@@ -41,6 +41,10 @@ namespace pt = boost::property_tree;
 using namespace m_ops;
 
 
+constexpr t_real g_eps = 1e-6;
+constexpr int g_prec = 6;
+
+
 enum : int
 {
 	COL_NAME = 0,
@@ -205,7 +209,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 		// signals
 		for(auto* edit : std::vector<QLineEdit*>{{ m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma }})
-			connect(edit, &QLineEdit::textEdited, this, [this]() { this->Calc(); });
+			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
 
 		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
 		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem(); });
@@ -221,7 +225,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 			if(!m_dlgPlot)
 			{
 				m_dlgPlot = new QDialog(this);
-				m_dlgPlot->setWindowTitle("3D View");
+				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
 
 				m_plot = std::make_shared<GlPlot>(this);
 				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
@@ -229,20 +233,38 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_plot->GetImpl()->SetCoordMax(1.);
 				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+
+
+				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
+				auto comboCoordSys = new QComboBox(/*m_dlgPlot*/ this);
+				m_status3D = new QLabel(/*m_dlgPlot*/ this);
+
+				comboCoordSys->addItem("Fractional Units (rlu)");
+				comboCoordSys->addItem("Lab Units (A)");
+
+
 				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+				labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+
+				auto grid = new QGridLayout(m_dlgPlot);
+				grid->setSpacing(2);
+				grid->setContentsMargins(4,4,4,4);
+				grid->addWidget(m_plot.get(), 0,0,1,2);
+				grid->addWidget(labCoordSys, 1,0,1,1);
+				grid->addWidget(comboCoordSys, 1,1,1,1);
+				grid->addWidget(m_status3D, 2,0,1,2);
+
 
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
 				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
 				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
 				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
+				{
+					if(this->m_plot)
+						this->m_plot->GetImpl()->SetCoordSys(val);
+				});
 
-				m_status3D = new QLabel(this);
-
-				auto grid = new QGridLayout(m_dlgPlot);
-				grid->setSpacing(2);
-				grid->setContentsMargins(4,4,4,4);
-				grid->addWidget(m_plot.get(), 0,0,1,1);
-				grid->addWidget(m_status3D, 1,0,1,1);
 
 				if(m_sett && m_sett->contains("geo_3dview"))
 					m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
@@ -729,32 +751,32 @@ void StructFactDlg::Load()
 
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.a"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editA->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.b"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editB->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.c"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editC->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.alpha"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editAlpha->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.beta"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editBeta->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.gamma"); opt)
 		{
-			std::ostringstream ostr; ostr << *opt;
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
 			m_editGamma->setText(ostr.str().c_str());
 		}
 		if(auto opt = node.get_optional<int>("sfact.order"); opt)
@@ -765,6 +787,7 @@ void StructFactDlg::Load()
 		{
 			m_comboSG->setCurrentIndex(*opt);
 		}
+		CalcB(false);
 
 
 		// nuclei
@@ -861,7 +884,7 @@ void StructFactDlg::ImportCIF()
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
 
-	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString());
+	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
 	if(errstr)
 	{
 		QMessageBox::critical(this, "Structure Factors", errstr);
@@ -874,29 +897,30 @@ void StructFactDlg::ImportCIF()
 
 	// lattice
 	{
-		std::ostringstream ostr; ostr << lattice.a;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.a;
 		m_editA->setText(ostr.str().c_str());
 	}
 	{
-		std::ostringstream ostr; ostr << lattice.b;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.b;
 		m_editB->setText(ostr.str().c_str());
 	}
 	{
-		std::ostringstream ostr; ostr << lattice.c;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.c;
 		m_editC->setText(ostr.str().c_str());
 	}
 	{
-		std::ostringstream ostr; ostr << lattice.alpha;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.alpha;
 		m_editAlpha->setText(ostr.str().c_str());
 	}
 	{
-		std::ostringstream ostr; ostr << lattice.beta;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.beta;
 		m_editBeta->setText(ostr.str().c_str());
 	}
 	{
-		std::ostringstream ostr; ostr << lattice.gamma;
+		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
 		m_editGamma->setText(ostr.str().c_str());
 	}
+	CalcB(false);
 
 
 	// atoms
@@ -952,7 +976,7 @@ void StructFactDlg::GenerateFromSG()
 		std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
 
 		t_vec nucl = m::create<t_vec>({x, y, z, 1});
-		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops);
+		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
 
 		for(const auto& newnucl : newnuclei)
 		{
@@ -1012,30 +1036,64 @@ std::vector<NuclPos> StructFactDlg::GetNuclei() const
 }
 
 
+/**
+ * calculate crystal B matrix
+ */
+void StructFactDlg::CalcB(bool bFullRecalc)
+{
+	t_real a,b,c, alpha,beta,gamma;
+	std::istringstream{m_editA->text().toStdString()} >> a;
+	std::istringstream{m_editB->text().toStdString()} >> b;
+	std::istringstream{m_editC->text().toStdString()} >> c;
+	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
+	std::istringstream{m_editBeta->text().toStdString()} >> beta;
+	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
+
+	m_crystB = m::B_matrix<t_mat>(a, b, c,
+		alpha/180.*m::pi<t_real>, beta/180.*m::pi<t_real>, gamma/180.*m::pi<t_real>);
+
+	bool ok = true;
+	std::tie(m_crystA, ok) = m::inv(m_crystB);
+	if(!ok)
+	{
+		m_crystA = m::unit<t_mat>();
+		std::cerr << "Error: Cannot invert B matrix." << std::endl;
+	}
+	else
+	{
+		m_crystA *= t_real_gl(2)*m::pi<t_real_gl>;
+	}
+
+	if(m_plot)
+	{
+		t_mat_gl matA{m_crystA};
+		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
+	}
+	if(bFullRecalc)
+		Calc();
+}
+
 
 /**
  * calculate structure factors
  */
 void StructFactDlg::Calc()
 {
-	const t_real eps = 1e-6;
-	const int prec = 6;
 	const auto maxBZ = m_maxBZ->value();
-
 
 	// powder lines
 	std::vector<PowderLine> powderlines;
-	auto add_powderline = [&powderlines, eps](t_real Q, t_real I,
+	auto add_powderline = [&powderlines](t_real Q, t_real I,
 		t_real h, t_real k, t_real l)
 	{
-		std::ostringstream ostrPeak;
+		std::ostringstream ostrPeak; ostrPeak.precision(g_prec);
 		ostrPeak << "(" << h << "," << k << "," << l << "); ";
 
 		// is this Q value already in the vector?
 		bool foundQ = false;
 		for(auto& line : powderlines)
 		{
-			if(m::equals<t_real>(line.Q, Q, eps))
+			if(m::equals<t_real>(line.Q, Q, g_eps))
 			{
 				line.I += I;
 				line.peaks +=  ostrPeak.str();
@@ -1056,20 +1114,6 @@ void StructFactDlg::Calc()
 	};
 
 
-	// lattice B matrix
-	t_real a,b,c, alpha,beta,gamma;
-	std::istringstream{m_editA->text().toStdString()} >> a;
-	std::istringstream{m_editB->text().toStdString()} >> b;
-	std::istringstream{m_editC->text().toStdString()} >> c;
-	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
-	std::istringstream{m_editBeta->text().toStdString()} >> beta;
-	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
-
-	//auto crystB = m::unit<t_mat>(3);
-	auto crystB = m::B_matrix<t_mat>(a, b, c,
-		alpha/180.*m::pi<t_real>, beta/180.*m::pi<t_real>, gamma/180.*m::pi<t_real>);
-
-
 	std::vector<t_cplx> bs;
 	std::vector<t_vec> pos;
 
@@ -1081,22 +1125,22 @@ void StructFactDlg::Calc()
 
 
 	std::ostringstream ostr, ostrPowder;
-	ostr.precision(prec);
-	ostrPowder.precision(prec);
+	ostr.precision(g_prec);
+	ostrPowder.precision(g_prec);
 
 	ostr << "# Nuclear single-crystal structure factors:" << "\n";
 	ostr << "# "
-		<< std::setw(prec*1.2-2) << std::right << "h" << " "
-		<< std::setw(prec*1.2) << std::right << "k" << " "
-		<< std::setw(prec*1.2) << std::right << "l" << " "
-		<< std::setw(prec*2) << std::right << "|Q| (1/A)" << " "
-		<< std::setw(prec*2) << std::right << "|Fn|^2" << " "
-		<< std::setw(prec*5) << std::right << "Fn (fm)" << "\n";
+		<< std::setw(g_prec*1.2-2) << std::right << "h" << " "
+		<< std::setw(g_prec*1.2) << std::right << "k" << " "
+		<< std::setw(g_prec*1.2) << std::right << "l" << " "
+		<< std::setw(g_prec*2) << std::right << "|Q| (1/A)" << " "
+		<< std::setw(g_prec*2) << std::right << "|Fn|^2" << " "
+		<< std::setw(g_prec*5) << std::right << "Fn (fm)" << "\n";
 
 	ostrPowder << "# Nuclear powder lines:" << "\n";
 	ostrPowder << "# "
-		<< std::setw(prec*2-2) << std::right << "|Q| (1/A)" << " "
-		<< std::setw(prec*2) << std::right << "|F|^2" << "\n";
+		<< std::setw(g_prec*2-2) << std::right << "|Q| (1/A)" << " "
+		<< std::setw(g_prec*2) << std::right << "|F|^2" << "\n";
 
 
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
@@ -1106,25 +1150,25 @@ void StructFactDlg::Calc()
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
 				auto Q = m::create<t_vec>({h,k,l}) /*+ prop*/;
-				auto Q_invA = crystB * Q;
+				auto Q_invA = m_crystB * Q;
 				auto Qabs_invA = m::norm(Q_invA);
 
 				// nuclear structure factor
 				auto Fn = m::structure_factor<t_vec, t_cplx>(bs, pos, Q);
-				if(m::equals<t_cplx>(Fn, t_cplx(0), eps)) Fn = 0.;
-				if(m::equals<t_real>(Fn.real(), 0, eps)) Fn.real(0.);
-				if(m::equals<t_real>(Fn.imag(), 0, eps)) Fn.imag(0.);
+				if(m::equals<t_cplx>(Fn, t_cplx(0), g_eps)) Fn = 0.;
+				if(m::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
+				if(m::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
 				auto I = (std::conj(Fn)*Fn).real();
 
 				add_powderline(Qabs_invA, I, h,k,l);
 
 				ostr
-					<< std::setw(prec*1.2) << std::right << h << " "
-					<< std::setw(prec*1.2) << std::right << k << " "
-					<< std::setw(prec*1.2) << std::right << l << " "
-					<< std::setw(prec*2) << std::right << Qabs_invA << " "
-					<< std::setw(prec*2) << std::right << I << " "
-					<< std::setw(prec*5) << std::right << Fn << "\n";
+					<< std::setw(g_prec*1.2) << std::right << h << " "
+					<< std::setw(g_prec*1.2) << std::right << k << " "
+					<< std::setw(g_prec*1.2) << std::right << l << " "
+					<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
+					<< std::setw(g_prec*2) << std::right << I << " "
+					<< std::setw(g_prec*5) << std::right << Fn << "\n";
 			}
 		}
 	}
@@ -1143,8 +1187,8 @@ void StructFactDlg::Calc()
 	for(const auto& line : powderlines)
 	{
 		ostrPowder
-			<< std::setw(prec*2) << std::right << line.Q << " "
-			<< std::setw(prec*2) << std::right << line.I << " "
+			<< std::setw(g_prec*2) << std::right << line.Q << " "
+			<< std::setw(g_prec*2) << std::right << line.I << " "
 			<< line.peaks << "\n";
 	}
 
@@ -1179,13 +1223,16 @@ void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx,
 				auto *itemY = m_nuclei->item(row, COL_Y);
 				auto *itemZ = m_nuclei->item(row, COL_Z);
 
-				std::ostringstream ostr;
+				t_vec r = m::create<t_vec>({0,0,0});
+				std::istringstream{itemX->text().toStdString()} >> r[0];
+				std::istringstream{itemX->text().toStdString()} >> r[1];
+				std::istringstream{itemX->text().toStdString()} >> r[2];
+				t_vec rlab = m_crystA * r;
+
+				std::ostringstream ostr; ostr.precision(g_prec);
 				ostr << itemname->text().toStdString();
-				ostr << ", r = (";
-				ostr << itemX->text().toStdString() << ", ";
-				ostr << itemY->text().toStdString() << ", ";
-				ostr << itemZ->text().toStdString();
-				ostr << ") rlu";
+				ostr << "; r = (" << r[0] << ", " << r[1] << ", " << r[2] << ") rlu";
+				ostr << "; r = (" << rlab[0] << ", " << rlab[1] << ", " << rlab[2] << ") A";
 
 				Set3DStatusMsg(ostr.str().c_str());
 				break;
@@ -1246,6 +1293,9 @@ void StructFactDlg::AfterGLInitialisation()
 	// reference sphere for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+
+	// B matrix
+	m_plot->GetImpl()->SetBTrafo(m_crystB);
 
 	// add all 3d objects
 	Add3DItem(-1);

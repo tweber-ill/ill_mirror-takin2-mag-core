@@ -102,6 +102,7 @@ struct GlPlotObj
 
 	t_mat_gl m_mat = m::unit<t_mat_gl>();
 
+	bool m_invariant = false;	// invariant to A, B matrices
 	bool m_visible = true;		// object shown?
 	bool m_valid = true;		// object deleted?
 
@@ -138,6 +139,9 @@ protected:
 	GLint m_uniMatrixCam = -1;
 	GLint m_uniMatrixCamInv = -1;
 	GLint m_uniMatrixObj = -1;
+	GLint m_uniMatrixA = -1;
+	GLint m_uniMatrixB = -1;
+	GLint m_uniCoordSys = -1;
 
 	t_mat_gl m_matPerspective = m::unit<t_mat_gl>();
 	t_mat_gl m_matPerspective_inv = m::unit<t_mat_gl>();
@@ -147,6 +151,8 @@ protected:
 	t_mat_gl m_matCamRot = m::unit<t_mat_gl>();
 	t_mat_gl m_matCam = m::unit<t_mat_gl>();
 	t_mat_gl m_matCam_inv = m::unit<t_mat_gl>();
+	t_mat_gl m_matA = m::unit<t_mat_gl>();
+	t_mat_gl m_matB = m::unit<t_mat_gl>();
 	t_vec_gl m_vecCamX = m::create<t_vec_gl>({1.,0.,0.,0.});
 	t_vec_gl m_vecCamY = m::create<t_vec_gl>({0.,1.,0.,0.});
 	t_real_gl m_phi_saved = 0, m_theta_saved = 0;
@@ -158,6 +164,8 @@ protected:
 	std::atomic<bool> m_bWantsResize = false;
 	std::atomic<bool> m_bPickerNeedsUpdate = false;
 	std::atomic<bool> m_bLightsNeedUpdate = false;
+	std::atomic<bool> m_bBTrafoNeedsUpdate = false;
+	std::atomic<int> m_iCoordSys = 0;
 	std::atomic<int> m_iScreenDims[2] = { 800, 600 };
 	t_real_gl m_pickerSphereRadius = 1;
 
@@ -177,6 +185,7 @@ protected:
 	void RequestPlotUpdate();
 	void UpdatePicker();
 	void UpdateLights();
+	void UpdateBTrafo();
 
 	void DoPaintGL(qgl_funcs *pGL);
 	void DoPaintNonGL(QPainter &painter);
@@ -233,6 +242,9 @@ public:
 	void SetCoordMax(t_real_gl d) { m_CoordMax = d; }
 
 	void SetLight(std::size_t idx, const t_vec3_gl& pos);
+
+	void SetBTrafo(const t_mat_gl& matB, const t_mat_gl* matA = nullptr);
+	void SetCoordSys(int iSys);
 
 public /*slots*/:
 	void paintGL();

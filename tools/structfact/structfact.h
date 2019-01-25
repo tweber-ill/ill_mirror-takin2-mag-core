@@ -111,6 +111,9 @@ protected:
 	QMenu *m_pTabContextMenu = nullptr;			// menu in case a nucleus is selected
 	QMenu *m_pTabContextMenuNoItem = nullptr;	// menu if nothing is selected
 
+	t_mat m_crystA = m::unit<t_mat>(3);
+	t_mat m_crystB = m::unit<t_mat>(3);
+
 protected:
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
 		t_real x=0., t_real y=0., t_real z=0., t_real scale=1., const std::string &col="#ff0000");
@@ -132,6 +135,7 @@ protected:
 	void GenerateFromSG();
 
 	std::vector<NuclPos> GetNuclei() const;
+	void CalcB(bool bFullRecalc=true);
 	void Calc();
 
 	void PlotMouseDown(bool left, bool mid, bool right);
