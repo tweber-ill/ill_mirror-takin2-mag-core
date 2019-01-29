@@ -88,7 +88,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	if(m_plugin_dlgs.size())
 		m_pMenu->addMenu(m_pmenuPluginTools);
 	m_pMenu->addMenu(menuHelp);
-	m_pMenu->setNativeMenuBar(false);
+	m_pMenu->setNativeMenuBar(m_pSettings ? m_pSettings->value("mainwnd/native_gui", false).toBool() : false);
 	this->setMenuBar(m_pMenu);
 	// ------------------------------------------------------------------------
 

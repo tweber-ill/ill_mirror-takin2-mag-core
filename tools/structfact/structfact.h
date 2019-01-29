@@ -14,6 +14,7 @@
 #include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QComboBox>
@@ -84,6 +85,7 @@ public:
 
 protected:
 	QSettings *m_sett = nullptr;
+	QMenuBar *m_menu = nullptr;
 
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<GlPlot> m_plot;
@@ -132,6 +134,7 @@ protected:
 	void Load();
 	void Save();
 	void ImportCIF();
+	void ExportTAZ();
 	void GenerateFromSG();
 
 	std::vector<NuclPos> GetNuclei() const;

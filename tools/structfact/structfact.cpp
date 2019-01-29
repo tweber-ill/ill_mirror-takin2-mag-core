@@ -74,7 +74,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
-	
+
 	auto tabs = new QTabWidget(this);
 	{
 		m_nucleipanel = new QWidget(this);
@@ -113,10 +113,6 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnUp = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnDown = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnLoad = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnSave = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnImportCIF = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtn3DView = new QToolButton(m_nucleipanel);
 		QToolButton *pTabBtnSG = new QToolButton(m_nucleipanel);
 
 		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
@@ -124,22 +120,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnLoad->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnSave->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnImportCIF->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtn3DView->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Nucleus");
 		pTabBtnDel->setText("Delete Nuclei");
 		pTabBtnUp->setText("Move Nuclei Up");
 		pTabBtnDown->setText("Move Nuclei Down");
-		pTabBtnLoad->setText("Load...");
-		pTabBtnSave->setText("Save...");
-		pTabBtnImportCIF->setText("Import CIF...");
-		pTabBtn3DView->setText("3D View...");
 		pTabBtnSG->setText("Generate");
-
 
 		m_editA = new QLineEdit("5", m_nucleipanel);
 		m_editB = new QLineEdit("5", m_nucleipanel);
@@ -169,10 +156,6 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
 		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
-		pTabGrid->addWidget(pTabBtnLoad, ++y,0,1,1);
-		pTabGrid->addWidget(pTabBtnSave, y,1,1,1);
-		pTabGrid->addWidget(pTabBtnImportCIF, y,2,1,1);
-		pTabGrid->addWidget(pTabBtn3DView, y,3,1,1);
 
 		pTabGrid->addWidget(new QLabel("Space Groups:"), ++y,0,1,1);
 		pTabGrid->addWidget(m_comboSG, y,1,1,2);
@@ -215,67 +198,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem(); });
 		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
-		connect(pTabBtnLoad, &QToolButton::clicked, this, &StructFactDlg::Load);
-		connect(pTabBtnSave, &QToolButton::clicked, this, &StructFactDlg::Save);
-		connect(pTabBtnImportCIF, &QToolButton::clicked, this, &StructFactDlg::ImportCIF);
 		connect(pTabBtnSG, &QToolButton::clicked, this, &StructFactDlg::GenerateFromSG);
-		connect(pTabBtn3DView, &QToolButton::clicked, this, [this]()
-		{
-			// plot widget
-			if(!m_dlgPlot)
-			{
-				m_dlgPlot = new QDialog(this);
-				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
-
-				m_plot = std::make_shared<GlPlot>(this);
-				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
-				m_plot->GetImpl()->SetCoordMax(1.);
-				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
-
-
-				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
-				auto comboCoordSys = new QComboBox(/*m_dlgPlot*/ this);
-				m_status3D = new QLabel(/*m_dlgPlot*/ this);
-
-				comboCoordSys->addItem("Fractional Units (rlu)");
-				comboCoordSys->addItem("Lab Units (A)");
-
-
-				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-				labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
-
-				auto grid = new QGridLayout(m_dlgPlot);
-				grid->setSpacing(2);
-				grid->setContentsMargins(4,4,4,4);
-				grid->addWidget(m_plot.get(), 0,0,1,2);
-				grid->addWidget(labCoordSys, 1,0,1,1);
-				grid->addWidget(comboCoordSys, 1,1,1,1);
-				grid->addWidget(m_status3D, 2,0,1,2);
-
-
-				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
-				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
-				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
-				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
-				{
-					if(this->m_plot)
-						this->m_plot->GetImpl()->SetCoordSys(val);
-				});
-
-
-				if(m_sett && m_sett->contains("geo_3dview"))
-					m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
-				else
-					m_dlgPlot->resize(500,500);
-			}
-
-			m_dlgPlot->show();
-			m_dlgPlot->raise();
-			m_dlgPlot->focusWidget();
-		});
 
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &StructFactDlg::TableCurCellChanged);
 		connect(m_nuclei, &QTableWidget::entered, this, &StructFactDlg::TableCellEntered);
@@ -387,6 +310,99 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	pmainGrid->setSpacing(4);
 	pmainGrid->setContentsMargins(4,4,4,4);
 	pmainGrid->addWidget(tabs, 0,0, 1,1);
+
+
+	// menu bar
+	{
+		m_menu = new QMenuBar(this);
+		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
+
+		auto menuFile = new QMenu("File", m_menu);
+		auto menuView = new QMenu("View", m_menu);
+
+		auto acLoad = new QAction("Load...", menuFile);
+		auto acSave = new QAction("Save...", menuFile);
+		auto acImportCIF = new QAction("Import CIF...", menuFile);
+		auto acExportTAZ = new QAction("Export TAZ...", menuFile);
+		auto acExit = new QAction("Exit", menuFile);
+		auto ac3DView = new QAction("3D View...", menuFile);
+
+		menuFile->addAction(acLoad);
+		menuFile->addAction(acSave);
+		menuFile->addSeparator();
+		menuFile->addAction(acImportCIF);
+		menuFile->addAction(acExportTAZ);
+		menuFile->addSeparator();
+		menuFile->addAction(acExit);
+		menuView->addAction(ac3DView);
+
+		connect(acLoad, &QAction::triggered, this, &StructFactDlg::Load);
+		connect(acSave, &QAction::triggered, this, &StructFactDlg::Save);
+		connect(acImportCIF, &QAction::triggered, this, &StructFactDlg::ImportCIF);
+		connect(acExportTAZ, &QAction::triggered, this, &StructFactDlg::ExportTAZ);
+		connect(acExit, &QAction::triggered, this, &QDialog::close);
+		connect(ac3DView, &QAction::triggered, this, [this]()
+		{
+			// plot widget
+			if(!m_dlgPlot)
+			{
+				m_dlgPlot = new QDialog(this);
+				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
+
+				m_plot = std::make_shared<GlPlot>(this);
+				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plot->GetImpl()->SetCoordMax(1.);
+				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+
+
+				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
+				auto comboCoordSys = new QComboBox(/*m_dlgPlot*/ this);
+				m_status3D = new QLabel(/*m_dlgPlot*/ this);
+
+				comboCoordSys->addItem("Fractional Units (rlu)");
+				comboCoordSys->addItem("Lab Units (A)");
+
+
+				m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+				labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+
+				auto grid = new QGridLayout(m_dlgPlot);
+				grid->setSpacing(2);
+				grid->setContentsMargins(4,4,4,4);
+				grid->addWidget(m_plot.get(), 0,0,1,2);
+				grid->addWidget(labCoordSys, 1,0,1,1);
+				grid->addWidget(comboCoordSys, 1,1,1,1);
+				grid->addWidget(m_status3D, 2,0,1,2);
+
+
+				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
+				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
+				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
+				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
+				{
+					if(this->m_plot)
+						this->m_plot->GetImpl()->SetCoordSys(val);
+				});
+
+
+				if(m_sett && m_sett->contains("geo_3dview"))
+					m_dlgPlot->restoreGeometry(m_sett->value("geo_3dview").toByteArray());
+				else
+					m_dlgPlot->resize(500,500);
+			}
+
+			m_dlgPlot->show();
+			m_dlgPlot->raise();
+			m_dlgPlot->focusWidget();
+		});
+
+		m_menu->addMenu(menuFile);
+		m_menu->addMenu(menuView);
+		pmainGrid->setMenuBar(m_menu);
+	}
 
 
 	// restory window size and position
@@ -872,17 +888,80 @@ void StructFactDlg::Save()
 	}
 
 	std::ofstream ofstr{filename.toStdString()};
+	if(!ofstr)
+	{
+		QMessageBox::critical(this, "Structure Factors", "Cannot open file for writing.");
+		return;
+	}
+	ofstr.precision(g_prec);
 	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 }
 
 
+/**
+ * save a TAZ file
+ */
+void StructFactDlg::ExportTAZ()
+{
+	QString dirLast = m_sett->value("dir_taz", "").toString();
+	QString filename = QFileDialog::getSaveFileName(this, "Export TAZ", dirLast, "TAZ Files (*.taz *.TAZ)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+	m_sett->setValue("dir_taz", QFileInfo(filename).path());
+
+	std::ofstream ofstr{filename.toStdString()};
+	if(!ofstr)
+	{
+		QMessageBox::critical(this, "Structure Factors", "Cannot open file for writing.");
+		return;
+	}
+	ofstr.precision(g_prec);
+
+	ofstr << "<taz>\n";
+	ofstr << "\t<meta><info>Exported from IN20Tools/Structfact.</info></meta>\n";
+
+	// sample infos
+	ofstr << "\t<sample>\n";
+	ofstr << "\t\t<a>" << m_editA->text().toStdString() << "</a>\n";
+	ofstr << "\t\t<b>" << m_editB->text().toStdString() << "</b>\n";
+	ofstr << "\t\t<c>" << m_editC->text().toStdString() << "</c>\n";
+	ofstr << "\t\t<alpha>" << m_editAlpha->text().toStdString() << "</alpha>\n";
+	ofstr << "\t\t<beta>" << m_editBeta->text().toStdString() << "</beta>\n";
+	ofstr << "\t\t<gamma>" << m_editGamma->text().toStdString() << "</gamma>\n";
+
+	// P1 only has the identity trafo, so we can directly output all raw nucleus positions
+	ofstr << "\t\t<spacegroup>P1</spacegroup>\n";
+
+	// nucleus list
+	ofstr << "\t\t<atoms>\n";
+	ofstr << "\t\t\t<num>" << m_nuclei->rowCount() << "</num>\n";
+	for(int row=0; row<m_nuclei->rowCount(); ++row)
+	{
+		ofstr << "\t\t\t<" << row << ">\n";
+		ofstr << "\t\t\t\t<name>" << m_nuclei->item(row, COL_NAME)->text().toStdString() << "</name>\n";
+		ofstr << "\t\t\t\t<x>" << m_nuclei->item(row, COL_X)->text().toStdString() << "</x>\n";
+		ofstr << "\t\t\t\t<y>" << m_nuclei->item(row, COL_Y)->text().toStdString() << "</y>\n";
+		ofstr << "\t\t\t\t<z>" << m_nuclei->item(row, COL_Z)->text().toStdString() << "</z>\n";
+		ofstr << "\t\t\t</" << row << ">\n";
+	}
+
+	ofstr << "\t\t</atoms>\n";
+	ofstr << "\t</sample>\n";
+
+	ofstr << "</taz>\n";
+}
+
+
+/**
+ * load a CIF
+ */
 void StructFactDlg::ImportCIF()
 {
-	QString dirLast = m_sett->value("dir", "").toString();
+	QString dirLast = m_sett->value("dir_cif", "").toString();
 	QString filename = QFileDialog::getOpenFileName(this, "Import CIF", dirLast, "CIF Files (*.cif *.CIF)");
 	if(filename=="" || !QFile::exists(filename))
 		return;
-	m_sett->setValue("dir", QFileInfo(filename).path());
+	m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
 	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
 	if(errstr)
