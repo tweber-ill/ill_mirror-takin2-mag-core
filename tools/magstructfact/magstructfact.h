@@ -1,13 +1,13 @@
 /**
- * structure factor tool
+ * magnetic structure factor tool
  * @author Tobias Weber <tweber@ill.fr>
- * @date Dec-2018
+ * @date Jan-2019
  * @license GPLv3, see 'LICENSE' file
  * @desc The present version was forked on 28-Dec-2018 from the privately developed "misc" project (https://github.com/t-weber/misc).
  */
 
-#ifndef __SFACT_H__
-#define __SFACT_H__
+#ifndef __MAG_SFACT_H__
+#define __MAG_SFACT_H__
 
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTableWidget>
@@ -27,7 +27,7 @@
 #include "libs/_cxx20/glplot.h"
 #include "libs/_cxx20/math_algos.h"
 
-#include "numerictablewidgetitem.h"
+#include "../structfact/numerictablewidgetitem.h"
 
 
 using t_real = double;
@@ -41,16 +41,18 @@ using t_mat_cplx = m::mat<t_cplx, std::vector>;
 struct NuclPos
 {
 	std::string name;
-	t_cplx b;
+	t_cplx MAbs;
 	t_real pos[3];
+	t_real ReM[3];
+	t_real ImM[3];
 };
 
 
-class StructFactDlg : public QDialog
+class MagStructFactDlg : public QDialog
 {
 public:
-	StructFactDlg(QWidget* pParent = nullptr);
-	~StructFactDlg() = default;
+	MagStructFactDlg(QWidget* pParent = nullptr);
+	~MagStructFactDlg() = default;
 
 protected:
 	QSettings *m_sett = nullptr;
@@ -86,8 +88,11 @@ protected:
 	t_mat m_crystB = m::unit<t_mat>(3);
 
 protected:
-	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
-		t_real x=0., t_real y=0., t_real z=0., t_real scale=1., const std::string &col="#ff0000");
+	void AddTabItem(int row=-1, const std::string& name="n/a", t_real MMag=1.,
+		t_real x=0., t_real y=0., t_real z=0., 
+		t_real ReMx=0., t_real ReMy=0., t_real ReMz=1.,
+		t_real ImMx=0., t_real ImMy=0., t_real ImMz=0., 
+		t_real scale=1., const std::string &col="#ff0000");
 	void DelTabItem(int begin=-2, int end=-2);
 	void MoveTabItemUp();
 	void MoveTabItemDown();
@@ -103,7 +108,6 @@ protected:
 	void Load();
 	void Save();
 	void ImportCIF();
-	void ExportTAZ();
 	void GenerateFromSG();
 
 	std::vector<NuclPos> GetNuclei() const;

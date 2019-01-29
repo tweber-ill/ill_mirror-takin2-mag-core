@@ -1,12 +1,12 @@
 /**
- * structure factor tool
+ * magnetic structure factor tool
  * @author Tobias Weber <tweber@ill.fr>
- * @date Dec-2018
+ * @date Jan-2019
  * @license GPLv3, see 'LICENSE' file
  * @desc The present version was forked on 28-Dec-2018 from the privately developed "misc" project (https://github.com/t-weber/misc).
  */
 
-#include "structfact.h"
+#include "magstructfact.h"
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
@@ -29,10 +29,15 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/units/systems/si/codata/electron_constants.hpp>
+#include <boost/units/systems/si/codata/neutron_constants.hpp>
+#include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 namespace algo = boost::algorithm;
 namespace pt = boost::property_tree;
+namespace si = boost::units::si;
+namespace consts = si::constants;
 
-#include "loadcif.h"
+#include "../structfact/loadcif.h"
 #include "libs/algos.h"
 #include "libs/helper.h"
 
@@ -48,9 +53,10 @@ constexpr int g_prec = 6;
 enum : int
 {
 	COL_NAME = 0,
-	COL_SCATLEN_RE,
-	COL_SCATLEN_IM,
+	COL_M_MAG,
 	COL_X, COL_Y, COL_Z,
+	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,
+	COL_ImM_X, COL_ImM_Y, COL_ImM_Z,
 	COL_RAD,
 	COL_COL,
 
@@ -67,10 +73,10 @@ struct PowderLine
 
 
 // ----------------------------------------------------------------------------
-StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
-	m_sett{new QSettings{"tobis_stuff", "structfact"}}
+MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
+	m_sett{new QSettings{"tobis_stuff", "magstructfact"}}
 {
-	setWindowTitle("Nuclear Structure Factors");
+	setWindowTitle("Magnetic Structure Factors");
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
@@ -92,20 +98,30 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 		m_nuclei->setColumnCount(NUM_COLS);
 		m_nuclei->setHorizontalHeaderItem(COL_NAME, new QTableWidgetItem{"Name"});
-		m_nuclei->setHorizontalHeaderItem(COL_SCATLEN_RE, new QTableWidgetItem{"Re{b} (fm)"});
-		m_nuclei->setHorizontalHeaderItem(COL_SCATLEN_IM, new QTableWidgetItem{"Im{b} (fm)"});
+		m_nuclei->setHorizontalHeaderItem(COL_M_MAG, new QTableWidgetItem{"|M|"});
 		m_nuclei->setHorizontalHeaderItem(COL_X, new QTableWidgetItem{"x (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_X, new QTableWidgetItem{"Re{M_x}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_Y, new QTableWidgetItem{"Re{M_y}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_Z, new QTableWidgetItem{"Re{M_z}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_X, new QTableWidgetItem{"Im{M_x}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_Y, new QTableWidgetItem{"Im{M_y}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_Z, new QTableWidgetItem{"Im{M_z}"});
 		m_nuclei->setHorizontalHeaderItem(COL_RAD, new QTableWidgetItem{"Radius"});
 		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
-		m_nuclei->setColumnWidth(COL_SCATLEN_RE, 75);
-		m_nuclei->setColumnWidth(COL_SCATLEN_IM, 75);
+		m_nuclei->setColumnWidth(COL_M_MAG, 75);
 		m_nuclei->setColumnWidth(COL_X, 75);
 		m_nuclei->setColumnWidth(COL_Y, 75);
 		m_nuclei->setColumnWidth(COL_Z, 75);
+		m_nuclei->setColumnWidth(COL_ReM_X, 75);
+		m_nuclei->setColumnWidth(COL_ReM_Y, 75);
+		m_nuclei->setColumnWidth(COL_ReM_Z, 75);
+		m_nuclei->setColumnWidth(COL_ImM_X, 75);
+		m_nuclei->setColumnWidth(COL_ImM_Y, 75);
+		m_nuclei->setColumnWidth(COL_ImM_Z, 75);
 		m_nuclei->setColumnWidth(COL_RAD, 75);
 		m_nuclei->setColumnWidth(COL_COL, 75);
 
@@ -180,13 +196,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
 		m_pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
 		m_pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
-		m_pTabContextMenu->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem(); });
+		m_pTabContextMenu->addAction("Delete Nucleus", this, [this]() { MagStructFactDlg::DelTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		m_pTabContextMenuNoItem = new QMenu(m_nuclei);
 		m_pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
-		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem(); });
+		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { MagStructFactDlg::DelTabItem(); });
 		//m_pTabContextMenuNoItem->addSeparator();
 
 
@@ -195,15 +211,15 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
 
 		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem(); });
-		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp);
-		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown);
-		connect(pTabBtnSG, &QToolButton::clicked, this, &StructFactDlg::GenerateFromSG);
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { MagStructFactDlg::DelTabItem(); });
+		connect(pTabBtnUp, &QToolButton::clicked, this, &MagStructFactDlg::MoveTabItemUp);
+		connect(pTabBtnDown, &QToolButton::clicked, this, &MagStructFactDlg::MoveTabItemDown);
+		connect(pTabBtnSG, &QToolButton::clicked, this, &MagStructFactDlg::GenerateFromSG);
 
-		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &StructFactDlg::TableCurCellChanged);
-		connect(m_nuclei, &QTableWidget::entered, this, &StructFactDlg::TableCellEntered);
-		connect(m_nuclei, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged);
-		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu);
+		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &MagStructFactDlg::TableCurCellChanged);
+		connect(m_nuclei, &QTableWidget::entered, this, &MagStructFactDlg::TableCellEntered);
+		connect(m_nuclei, &QTableWidget::itemChanged, this, &MagStructFactDlg::TableItemChanged);
+		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &MagStructFactDlg::ShowTableContextMenu);
 
 		tabs->addTab(m_nucleipanel, "Nuclei");
 	}
@@ -272,7 +288,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
 
-		auto labelTitle = new QLabel("Nuclear Structure Factor Calculator", infopanel);
+		auto labelTitle = new QLabel("Magnetic Structure Factor Calculator", infopanel);
 		auto fontTitle = labelTitle->font();
 		fontTitle.setBold(true);
 		labelTitle->setFont(fontTitle);
@@ -281,7 +297,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto labelAuthor = new QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel);
 		labelAuthor->setAlignment(Qt::AlignHCenter);
 
-		auto labelDate = new QLabel("December 2018.", infopanel);
+		auto labelDate = new QLabel("January 2019.", infopanel);
 		labelDate->setAlignment(Qt::AlignHCenter);
 
 		int y = 0;
@@ -323,7 +339,6 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
-		auto acExportTAZ = new QAction("Export TAZ...", menuFile);
 		auto acExit = new QAction("Exit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
 
@@ -331,15 +346,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
 		menuFile->addAction(acImportCIF);
-		menuFile->addAction(acExportTAZ);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 		menuView->addAction(ac3DView);
 
-		connect(acLoad, &QAction::triggered, this, &StructFactDlg::Load);
-		connect(acSave, &QAction::triggered, this, &StructFactDlg::Save);
-		connect(acImportCIF, &QAction::triggered, this, &StructFactDlg::ImportCIF);
-		connect(acExportTAZ, &QAction::triggered, this, &StructFactDlg::ExportTAZ);
+		connect(acLoad, &QAction::triggered, this, &MagStructFactDlg::Load);
+		connect(acSave, &QAction::triggered, this, &MagStructFactDlg::Save);
+		connect(acImportCIF, &QAction::triggered, this, &MagStructFactDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, [this]()
 		{
@@ -377,10 +390,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				grid->addWidget(m_status3D, 2,0,1,2);
 
 
-				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
-				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
-				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisation);
+				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
+				connect(m_plot.get(), &GlPlot::MouseDown, this, &MagStructFactDlg::PlotMouseDown);
+				connect(m_plot.get(), &GlPlot::MouseUp, this, &MagStructFactDlg::PlotMouseUp);
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
@@ -418,8 +431,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 // ----------------------------------------------------------------------------
-void StructFactDlg::AddTabItem(int row, 
-	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, t_real scale, const std::string& col)
+void MagStructFactDlg::AddTabItem(int row, 
+	const std::string& name, t_real MMag, t_real x, t_real y, t_real z, 
+	t_real ReMx, t_real ReMy, t_real ReMz, t_real ImMx, t_real ImMy, t_real ImMz, 
+	t_real scale, const std::string& col)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -448,11 +463,16 @@ void StructFactDlg::AddTabItem(int row,
 	else
 	{
 		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem(name.c_str()));
-		m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(bRe));
-		m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(bIm));
+		m_nuclei->setItem(row, COL_M_MAG, new NumericTableWidgetItem<t_real>(MMag));
 		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
 		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
 		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
+		m_nuclei->setItem(row, COL_ReM_X, new NumericTableWidgetItem<t_real>(ReMx));
+		m_nuclei->setItem(row, COL_ReM_Y, new NumericTableWidgetItem<t_real>(ReMy));
+		m_nuclei->setItem(row, COL_ReM_Z, new NumericTableWidgetItem<t_real>(ReMz));
+		m_nuclei->setItem(row, COL_ImM_X, new NumericTableWidgetItem<t_real>(ImMx));
+		m_nuclei->setItem(row, COL_ImM_Y, new NumericTableWidgetItem<t_real>(ImMy));
+		m_nuclei->setItem(row, COL_ImM_Z, new NumericTableWidgetItem<t_real>(ImMz));
 		m_nuclei->setItem(row, COL_RAD, new NumericTableWidgetItem<t_real>(scale));
 		m_nuclei->setItem(row, COL_COL, new QTableWidgetItem(col.c_str()));
 	}
@@ -472,7 +492,7 @@ void StructFactDlg::AddTabItem(int row,
 /**
  * add 3d object
  */
-void StructFactDlg::Add3DItem(int row)
+void MagStructFactDlg::Add3DItem(int row)
 {
 	if(!m_plot) return;
 
@@ -511,7 +531,7 @@ void StructFactDlg::Add3DItem(int row)
 }
 
 
-void StructFactDlg::DelTabItem(int begin, int end)
+void MagStructFactDlg::DelTabItem(int begin, int end)
 {
 	m_ignoreChanges = 1;
 
@@ -565,7 +585,7 @@ void StructFactDlg::DelTabItem(int begin, int end)
 }
 
 
-void StructFactDlg::MoveTabItemUp()
+void MagStructFactDlg::MoveTabItemUp()
 {
 	m_ignoreChanges = 1;
 	m_nuclei->setSortingEnabled(false);
@@ -600,7 +620,7 @@ void StructFactDlg::MoveTabItemUp()
 }
 
 
-void StructFactDlg::MoveTabItemDown()
+void MagStructFactDlg::MoveTabItemDown()
 {
 	m_ignoreChanges = 1;
 	m_nuclei->setSortingEnabled(false);
@@ -639,7 +659,7 @@ void StructFactDlg::MoveTabItemDown()
 
 
 // ----------------------------------------------------------------------------
-std::vector<int> StructFactDlg::GetSelectedRows(bool sort_reversed) const
+std::vector<int> MagStructFactDlg::GetSelectedRows(bool sort_reversed) const
 {
 	std::vector<int> vec;
 	vec.reserve(m_nuclei->selectedItems().size());
@@ -663,7 +683,7 @@ std::vector<int> StructFactDlg::GetSelectedRows(bool sort_reversed) const
 /**
  * selected a new row
  */
-void StructFactDlg::TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld)
+void MagStructFactDlg::TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld)
 {
 }
 
@@ -671,7 +691,7 @@ void StructFactDlg::TableCurCellChanged(int rowNew, int colNew, int rowOld, int 
 /**
  * hovered over new row
  */
-void StructFactDlg::TableCellEntered(const QModelIndex& idx)
+void MagStructFactDlg::TableCellEntered(const QModelIndex& idx)
 {
 }
 
@@ -679,7 +699,7 @@ void StructFactDlg::TableCellEntered(const QModelIndex& idx)
 /**
  * item contents changed
  */
-void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
+void MagStructFactDlg::TableItemChanged(QTableWidgetItem *item)
 {
 	// update associated 3d object
 	if(item && m_plot)
@@ -716,7 +736,7 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 }
 
 
-void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
+void MagStructFactDlg::ShowTableContextMenu(const QPoint& pt)
 {
 	auto ptGlob = m_nuclei->mapToGlobal(pt);
 
@@ -738,7 +758,7 @@ void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
 
 
 // ----------------------------------------------------------------------------
-void StructFactDlg::Load()
+void MagStructFactDlg::Load()
 {
 	try
 	{
@@ -812,15 +832,22 @@ void StructFactDlg::Load()
 			for(const auto &nucl : *nuclei)
 			{
 				auto optName = nucl.second.get<std::string>("name", "n/a");
-				auto optbRe = nucl.second.get<t_real>("b_Re", 0.);
-				auto optbIm = nucl.second.get<t_real>("b_Im", 0.);
+				auto optMMag = nucl.second.get<t_real>("M_mag", 1.);
 				auto optX = nucl.second.get<t_real>("x", 0.);
 				auto optY = nucl.second.get<t_real>("y", 0.);
 				auto optZ = nucl.second.get<t_real>("z", 0.);
+				auto optReMX = nucl.second.get<t_real>("ReMx", 0.);
+				auto optReMY = nucl.second.get<t_real>("ReMy", 0.);
+				auto optReMZ = nucl.second.get<t_real>("ReMz", 0.);
+				auto optImMX = nucl.second.get<t_real>("ImMx", 0.);
+				auto optImMY = nucl.second.get<t_real>("ImMy", 0.);
+				auto optImMZ = nucl.second.get<t_real>("ImMz", 0.);
 				auto optRad = nucl.second.get<t_real>("rad", 1.);
 				auto optCol = nucl.second.get<std::string>("col", "#ff0000");
 
-				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ, optRad, optCol);
+				AddTabItem(-1, optName, optMMag, optX,  optY, optZ,
+					optReMX, optReMY, optReMZ, optImMX, optImMY, optImMZ, 
+					optRad, optCol);
 			}
 		}
 	}
@@ -831,7 +858,7 @@ void StructFactDlg::Load()
 }
 
 
-void StructFactDlg::Save()
+void MagStructFactDlg::Save()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "XML Files (*.xml *.XML)");
@@ -866,21 +893,31 @@ void StructFactDlg::Save()
 	// nucleus list
 	for(int row=0; row<m_nuclei->rowCount(); ++row)
 	{
-		t_real bRe{},bIm{}, x{},y{},z{}, scale{};
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
+		t_real MMag{}, x{},y{},z{}, ReMx{}, ReMy{}, ReMz{}, ImMx{}, ImMy{}, ImMz{}, scale{};
+		std::istringstream{m_nuclei->item(row, COL_M_MAG)->text().toStdString()} >> MMag;
 		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
 		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
 		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_nuclei->item(row, COL_ReM_X)->text().toStdString()} >> ReMx;
+		std::istringstream{m_nuclei->item(row, COL_ReM_Y)->text().toStdString()} >> ReMy;
+		std::istringstream{m_nuclei->item(row, COL_ReM_Z)->text().toStdString()} >> ReMz;
+		std::istringstream{m_nuclei->item(row, COL_ImM_X)->text().toStdString()} >> ImMx;
+		std::istringstream{m_nuclei->item(row, COL_ImM_Y)->text().toStdString()} >> ImMy;
+		std::istringstream{m_nuclei->item(row, COL_ImM_Z)->text().toStdString()} >> ImMz;
 		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("name", m_nuclei->item(row, COL_NAME)->text().toStdString());
-		itemNode.put<t_real>("b_Re", bRe);
-		itemNode.put<t_real>("b_Im", bIm);
+		itemNode.put<t_real>("M_mag", MMag);
 		itemNode.put<t_real>("x", x);
 		itemNode.put<t_real>("y", y);
 		itemNode.put<t_real>("z", z);
+		itemNode.put<t_real>("ReMx", ReMx);
+		itemNode.put<t_real>("ReMy", ReMy);
+		itemNode.put<t_real>("ReMz", ReMz);
+		itemNode.put<t_real>("ImMx", ImMx);
+		itemNode.put<t_real>("ImMy", ImMy);
+		itemNode.put<t_real>("ImMz", ImMz);
 		itemNode.put<t_real>("rad", scale);
 		itemNode.put<std::string>("col", m_nuclei->item(row, COL_COL)->text().toStdString());
 
@@ -899,64 +936,10 @@ void StructFactDlg::Save()
 
 
 /**
- * save a TAZ file
+ * load an mCIF
  */
-void StructFactDlg::ExportTAZ()
-{
-	QString dirLast = m_sett->value("dir_taz", "").toString();
-	QString filename = QFileDialog::getSaveFileName(this, "Export TAZ", dirLast, "TAZ Files (*.taz *.TAZ)");
-	if(filename=="" || !QFile::exists(filename))
-		return;
-	m_sett->setValue("dir_taz", QFileInfo(filename).path());
-
-	std::ofstream ofstr{filename.toStdString()};
-	if(!ofstr)
-	{
-		QMessageBox::critical(this, "Structure Factors", "Cannot open file for writing.");
-		return;
-	}
-	ofstr.precision(g_prec);
-
-	ofstr << "<taz>\n";
-	ofstr << "\t<meta><info>Exported from IN20Tools/Structfact.</info></meta>\n";
-
-	// sample infos
-	ofstr << "\t<sample>\n";
-	ofstr << "\t\t<a>" << m_editA->text().toStdString() << "</a>\n";
-	ofstr << "\t\t<b>" << m_editB->text().toStdString() << "</b>\n";
-	ofstr << "\t\t<c>" << m_editC->text().toStdString() << "</c>\n";
-	ofstr << "\t\t<alpha>" << m_editAlpha->text().toStdString() << "</alpha>\n";
-	ofstr << "\t\t<beta>" << m_editBeta->text().toStdString() << "</beta>\n";
-	ofstr << "\t\t<gamma>" << m_editGamma->text().toStdString() << "</gamma>\n";
-
-	// P1 only has the identity trafo, so we can directly output all raw nucleus positions
-	ofstr << "\t\t<spacegroup>P1</spacegroup>\n";
-
-	// nucleus list
-	ofstr << "\t\t<atoms>\n";
-	ofstr << "\t\t\t<num>" << m_nuclei->rowCount() << "</num>\n";
-	for(int row=0; row<m_nuclei->rowCount(); ++row)
-	{
-		ofstr << "\t\t\t<" << row << ">\n";
-		ofstr << "\t\t\t\t<name>" << m_nuclei->item(row, COL_NAME)->text().toStdString() << "</name>\n";
-		ofstr << "\t\t\t\t<x>" << m_nuclei->item(row, COL_X)->text().toStdString() << "</x>\n";
-		ofstr << "\t\t\t\t<y>" << m_nuclei->item(row, COL_Y)->text().toStdString() << "</y>\n";
-		ofstr << "\t\t\t\t<z>" << m_nuclei->item(row, COL_Z)->text().toStdString() << "</z>\n";
-		ofstr << "\t\t\t</" << row << ">\n";
-	}
-
-	ofstr << "\t\t</atoms>\n";
-	ofstr << "\t</sample>\n";
-
-	ofstr << "</taz>\n";
-}
-
-
-/**
- * load a CIF
- */
-void StructFactDlg::ImportCIF()
-{
+void MagStructFactDlg::ImportCIF()
+{/*
 	QString dirLast = m_sett->value("dir_cif", "").toString();
 	QString filename = QFileDialog::getOpenFileName(this, "Import CIF", dirLast, "CIF Files (*.cif *.CIF)");
 	if(filename=="" || !QFile::exists(filename))
@@ -1019,7 +1002,7 @@ void StructFactDlg::ImportCIF()
 				generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
 				1, ostrcol.str());
 		}
-	}
+	}*/
 }
 // ----------------------------------------------------------------------------
 
@@ -1027,7 +1010,7 @@ void StructFactDlg::ImportCIF()
 /**
  * generate symmetric nuclei from space group
  */
-void StructFactDlg::GenerateFromSG()
+void MagStructFactDlg::GenerateFromSG()
 {
 	// symops of current space group
 	auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
@@ -1038,18 +1021,26 @@ void StructFactDlg::GenerateFromSG()
 	}
 
 	auto ops = m_SGops[sgidx];
-	std::vector<std::tuple<std::string, t_real, t_real, t_real, t_real, t_real, t_real, std::string>> generatednuclei;
+	std::vector<std::tuple<std::string, t_real, 
+		t_real, t_real, t_real, 
+		t_real, t_real, t_real, t_real, t_real, t_real, 
+		t_real, std::string>> generatednuclei;
 
 	// iterate nuclei
 	int orgRowCnt = m_nuclei->rowCount();
 	for(int row=0; row<orgRowCnt; ++row)
 	{
-		t_real bRe{}, bIm{}, x{},y{},z{}, scale{};
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
+		t_real MMag{}, x{},y{},z{}, ReMx{}, ReMy{}, ReMz{}, ImMx{}, ImMy{}, ImMz{}, scale{};
+		std::istringstream{m_nuclei->item(row, COL_M_MAG)->text().toStdString()} >> MMag;
 		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
 		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
 		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_nuclei->item(row, COL_ReM_X)->text().toStdString()} >> ReMx;
+		std::istringstream{m_nuclei->item(row, COL_ReM_Y)->text().toStdString()} >> ReMy;
+		std::istringstream{m_nuclei->item(row, COL_ReM_Z)->text().toStdString()} >> ReMz;
+		std::istringstream{m_nuclei->item(row, COL_ImM_X)->text().toStdString()} >> ImMx;
+		std::istringstream{m_nuclei->item(row, COL_ImM_Y)->text().toStdString()} >> ImMy;
+		std::istringstream{m_nuclei->item(row, COL_ImM_Z)->text().toStdString()} >> ImMz;
 		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
 		std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
 		std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
@@ -1059,18 +1050,18 @@ void StructFactDlg::GenerateFromSG()
 
 		for(const auto& newnucl : newnuclei)
 		{
-			//AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
-			generatednuclei.emplace_back(std::make_tuple(name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col));
+			generatednuclei.emplace_back(std::make_tuple(name, MMag, newnucl[0], newnucl[1], newnucl[2], 
+				ReMx, ReMy, ReMz, ImMx, ImMy, ImMz,		// TODO: apply sg ops to spins
+				scale, col));
 		}
 	}
 
 	// remove original nuclei
-	//DelTabItem(0, orgRowCnt);
 	DelTabItem(-1);
 
 	// add new nuclei
 	for(const auto& nucl : generatednuclei)
-		std::apply(&StructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
+		std::apply(&MagStructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
 }
 
 
@@ -1079,34 +1070,42 @@ void StructFactDlg::GenerateFromSG()
 /**
  * reads nuclei positions from table
  */
-std::vector<NuclPos> StructFactDlg::GetNuclei() const
+std::vector<NuclPos> MagStructFactDlg::GetNuclei() const
 {
 	std::vector<NuclPos> vec;
 
 	for(int row=0; row<m_nuclei->rowCount(); ++row)
 	{
 		auto *name = m_nuclei->item(row, COL_NAME);
-		auto *bRe = m_nuclei->item(row, COL_SCATLEN_RE);
-		auto *bIm = m_nuclei->item(row, COL_SCATLEN_IM);
+		auto *MMag = m_nuclei->item(row, COL_M_MAG);
 		auto *x = m_nuclei->item(row, COL_X);
 		auto *y = m_nuclei->item(row, COL_Y);
 		auto *z = m_nuclei->item(row, COL_Z);
+		auto *ReMx = m_nuclei->item(row, COL_ReM_X);
+		auto *ReMy = m_nuclei->item(row, COL_ReM_Y);
+		auto *ReMz = m_nuclei->item(row, COL_ReM_Z);
+		auto *ImMx = m_nuclei->item(row, COL_ImM_X);
+		auto *ImMy = m_nuclei->item(row, COL_ImM_Y);
+		auto *ImMz = m_nuclei->item(row, COL_ImM_Z);
 
-		if(!name || !bRe || !bIm || !x || !y || !z)
+		if(!name || !MMag || !x || !y || !z || !ReMx || !ReMy || !ReMz || !ImMx || !ImMy || !ImMz)
 		{
 			std::cerr << "Invalid entry in row " << row << "." << std::endl;
 			continue;
 		}
 
 		NuclPos nucl;
-		t_real _bRe, _bIm;
 		nucl.name = name->text().toStdString();
-		std::istringstream{bRe->text().toStdString()} >> _bRe;
-		std::istringstream{bIm->text().toStdString()} >> _bIm;
+		std::istringstream{MMag->text().toStdString()} >> nucl.MAbs;
 		std::istringstream{x->text().toStdString()} >> nucl.pos[0];
 		std::istringstream{y->text().toStdString()} >> nucl.pos[1];
 		std::istringstream{z->text().toStdString()} >> nucl.pos[2];
-		nucl.b = t_cplx{_bRe, _bIm};
+		std::istringstream{ReMx->text().toStdString()} >> nucl.ReM[0];
+		std::istringstream{ReMy->text().toStdString()} >> nucl.ReM[1];
+		std::istringstream{ReMz->text().toStdString()} >> nucl.ReM[2];
+		std::istringstream{ImMx->text().toStdString()} >> nucl.ImM[0];
+		std::istringstream{ImMy->text().toStdString()} >> nucl.ImM[1];
+		std::istringstream{ImMz->text().toStdString()} >> nucl.ImM[2];
 
 		vec.emplace_back(std::move(nucl));
 	}
@@ -1118,7 +1117,7 @@ std::vector<NuclPos> StructFactDlg::GetNuclei() const
 /**
  * calculate crystal B matrix
  */
-void StructFactDlg::CalcB(bool bFullRecalc)
+void MagStructFactDlg::CalcB(bool bFullRecalc)
 {
 	t_real a,b,c, alpha,beta,gamma;
 	std::istringstream{m_editA->text().toStdString()} >> a;
@@ -1156,9 +1155,13 @@ void StructFactDlg::CalcB(bool bFullRecalc)
 /**
  * calculate structure factors
  */
-void StructFactDlg::Calc()
+void MagStructFactDlg::Calc()
 {
+	const t_real p = -t_real(consts::codata::mu_n/consts::codata::mu_N*consts::codata::r_e/si::meters)*0.5e15;
 	const auto maxBZ = m_maxBZ->value();
+
+	// TODO
+	auto prop = m::create<t_vec>({0,0,0});
 
 	// powder lines
 	std::vector<PowderLine> powderlines;
@@ -1195,11 +1198,15 @@ void StructFactDlg::Calc()
 
 	std::vector<t_cplx> bs;
 	std::vector<t_vec> pos;
+	std::vector<t_vec_cplx> Ms;
 
 	for(const auto& nucl : GetNuclei())
 	{
-		bs.push_back(nucl.b);
 		pos.emplace_back(m::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
+		Ms.emplace_back(nucl.MAbs * m::create<t_vec_cplx>({ 
+			t_cplx{nucl.ReM[0], nucl.ImM[0]}, 
+			t_cplx{nucl.ReM[1], nucl.ImM[1]}, 
+			t_cplx{nucl.ReM[2], nucl.ImM[2]} }));
 	}
 
 
@@ -1207,16 +1214,23 @@ void StructFactDlg::Calc()
 	ostr.precision(g_prec);
 	ostrPowder.precision(g_prec);
 
-	ostr << "# Nuclear single-crystal structure factors:" << "\n";
-	ostr << "# "
-		<< std::setw(g_prec*1.2-2) << std::right << "h" << " "
-		<< std::setw(g_prec*1.2) << std::right << "k" << " "
-		<< std::setw(g_prec*1.2) << std::right << "l" << " "
+	ostr << "# Magnetic single-crystal structure factors:" << "\n";
+	ostr << "# \n"
+		<< std::setw(g_prec*1.2) << std::right << "h (rlu)" << " "
+		<< std::setw(g_prec*1.2) << std::right << "k (rlu)" << " "
+		<< std::setw(g_prec*1.2) << std::right << "l (rlu)" << " "
 		<< std::setw(g_prec*2) << std::right << "|Q| (1/A)" << " "
-		<< std::setw(g_prec*2) << std::right << "|Fn|^2" << " "
-		<< std::setw(g_prec*5) << std::right << "Fn (fm)" << "\n";
+		<< std::setw(g_prec*2) << std::right << "|Fm|^2" << " "
+		<< std::setw(g_prec*2) << std::right << "|Fm_perp|^2" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_x (fm)" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_y (fm)" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_z (fm)" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_perp_x (fm)" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_perp_y (fm)" << " "
+		<< std::setw(g_prec*5) << std::right << "Fm_perp_z (fm)" << "\n";
 
-	ostrPowder << "# Nuclear powder lines:" << "\n";
+
+	ostrPowder << "# Magnetic powder lines:" << "\n";
 	ostrPowder << "# "
 		<< std::setw(g_prec*2-2) << std::right << "|Q| (1/A)" << " "
 		<< std::setw(g_prec*2) << std::right << "|F|^2" << "\n";
@@ -1228,26 +1242,42 @@ void StructFactDlg::Calc()
 		{
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
-				auto Q = m::create<t_vec>({h,k,l}) /*+ prop*/;
+				auto Q = m::create<t_vec>({ h,k,l }); //+ prop;
 				auto Q_invA = m_crystB * Q;
 				auto Qabs_invA = m::norm(Q_invA);
 
-				// nuclear structure factor
-				auto Fn = m::structure_factor<t_vec, t_cplx>(bs, pos, Q);
-				if(m::equals<t_cplx>(Fn, t_cplx(0), g_eps)) Fn = 0.;
-				if(m::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
-				if(m::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
-				auto I = (std::conj(Fn)*Fn).real();
+				// magnetic structure factor
+				auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
+				for(auto &comp : Fm)
+					if(m::equals<t_cplx>(comp, t_cplx(0), g_eps))
+						comp = 0.;
 
-				add_powderline(Qabs_invA, I, h,k,l);
+				// neutron scattering: orthogonal projection onto plane with normal Q.
+				auto Fm_perp = m::ortho_project<t_vec_cplx>(
+					Fm, m::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+
+				t_real I = (std::conj(Fm[0])*Fm[0] +
+					std::conj(Fm[1])*Fm[1] +
+					std::conj(Fm[2])*Fm[2]).real();
+				t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
+					std::conj(Fm_perp[1])*Fm_perp[1] +
+					std::conj(Fm_perp[2])*Fm_perp[2]).real();
+
+				add_powderline(Qabs_invA, I_perp, h,k,l);
 
 				ostr
-					<< std::setw(g_prec*1.2) << std::right << h << " "
-					<< std::setw(g_prec*1.2) << std::right << k << " "
-					<< std::setw(g_prec*1.2) << std::right << l << " "
+					<< std::setw(g_prec*1.2) << std::right << h+prop[0] << " "
+					<< std::setw(g_prec*1.2) << std::right << k+prop[1] << " "
+					<< std::setw(g_prec*1.2) << std::right << l+prop[2] << " "
 					<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
 					<< std::setw(g_prec*2) << std::right << I << " "
-					<< std::setw(g_prec*5) << std::right << Fn << "\n";
+					<< std::setw(g_prec*2) << std::right << I_perp << " "
+					<< std::setw(g_prec*5) << std::right << Fm[0] << " "
+					<< std::setw(g_prec*5) << std::right << Fm[1] << " "
+					<< std::setw(g_prec*5) << std::right << Fm[2] << " "
+					<< std::setw(g_prec*5) << std::right << Fm_perp[0] << " "
+					<< std::setw(g_prec*5) << std::right << Fm_perp[1] << " "
+					<< std::setw(g_prec*5) << std::right << Fm_perp[2] << "\n";
 			}
 		}
 	}
@@ -1282,7 +1312,7 @@ void StructFactDlg::Calc()
 /**
  * mouse hovers over 3d object
  */
-void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
+void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
 {
 	if(pos)
 		m_curPickedObj = long(objIdx);
@@ -1327,7 +1357,7 @@ void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx,
 /**
  * set status label text in 3d dialog
  */
-void StructFactDlg::Set3DStatusMsg(const std::string& msg)
+void MagStructFactDlg::Set3DStatusMsg(const std::string& msg)
 {
 	m_status3D->setText(msg.c_str());
 }
@@ -1337,7 +1367,7 @@ void StructFactDlg::Set3DStatusMsg(const std::string& msg)
 /**
  * mouse button pressed
  */
-void StructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
+void MagStructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 {
 	if(left && m_curPickedObj > 0)
 	{
@@ -1357,7 +1387,7 @@ void StructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 /**
  * mouse button released
  */
-void StructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
+void MagStructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
 {
 }
 // ----------------------------------------------------------------------------
@@ -1365,7 +1395,7 @@ void StructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
 
 
 // ----------------------------------------------------------------------------
-void StructFactDlg::AfterGLInitialisation()
+void MagStructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
 
@@ -1389,7 +1419,7 @@ void StructFactDlg::AfterGLInitialisation()
 }
 
 
-void StructFactDlg::closeEvent(QCloseEvent *evt)
+void MagStructFactDlg::closeEvent(QCloseEvent *evt)
 {
 	if(m_sett)
 	{
@@ -1413,7 +1443,7 @@ int main(int argc, char** argv)
 	tl2::set_locales();
 
 	auto app = std::make_unique<QApplication>(argc, argv);
-	auto dlg = std::make_unique<StructFactDlg>(nullptr);
+	auto dlg = std::make_unique<MagStructFactDlg>(nullptr);
 	dlg->show();
 
 	return app->exec();
@@ -1444,7 +1474,7 @@ bool init()
  */
 const char* descr()
 {
-	return "dlg;Structure Factors;Calculates nuclear structure factors.";
+	return "dlg;Magnetic Structure Factors;Calculates magnetic structure factors.";
 }
 
 
@@ -1455,8 +1485,8 @@ const char* descr()
 QDialog* create(QWidget *pParent)
 {
 	//std::cout << "In " << __FUNCTION__ << std::endl;
-	//return std::make_shared<StructFactDlg>(pParent);
-	return new StructFactDlg(pParent);
+	//return std::make_shared<MagStructFactDlg>(pParent);
+	return new MagStructFactDlg(pParent);
 }
 
 
