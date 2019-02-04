@@ -234,6 +234,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_structfacts = new QPlainTextEdit(sfactpanel);
 		m_structfacts->setReadOnly(true);
 		m_structfacts->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+		m_structfacts->setLineWrapMode(QPlainTextEdit::NoWrap);
 
 		m_maxBZ = new QSpinBox(sfactpanel);
 		m_maxBZ->setMinimum(0);
@@ -504,30 +505,79 @@ void MagStructFactDlg::Add3DItem(int row)
 		return;
 	}
 
+	auto objSphere = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, 1,1,1,1);
+	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, 1,1,1,1);
+	auto objArrow = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
+
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+0, unsigned(objSphere));
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+1, unsigned(objArrow));
+
+	Sync3DItem(row);
+}
+
+
+/**
+ * sync the properties of a 3d object
+ */
+void MagStructFactDlg::Sync3DItem(int row)
+{
+	if(!m_plot) return;
+
+	// sync all items
+	if(row < 0)
+	{
+		for(int row=0; row<m_nuclei->rowCount(); ++row)
+			Sync3DItem(row);
+		return;
+	}
+
+	std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
+	std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+	if(!objSphere || !objArrow)
+		return;
+
 	auto *itemName = m_nuclei->item(row, COL_NAME);
 	auto *itemx = m_nuclei->item(row, COL_X);
 	auto *itemy = m_nuclei->item(row, COL_Y);
 	auto *itemz = m_nuclei->item(row, COL_Z);
+	auto *itemM = m_nuclei->item(row, COL_M_MAG);
+	auto *itemReMX = m_nuclei->item(row, COL_ReM_X);
+	auto *itemReMY = m_nuclei->item(row, COL_ReM_Y);
+	auto *itemReMZ = m_nuclei->item(row, COL_ReM_Z);
 	auto *itemsc = m_nuclei->item(row, COL_RAD);
 	auto *itemCol = m_nuclei->item(row, COL_COL);
 
-	t_real_gl posx=0, posy=0, posz=0, scale=1;
+	t_real_gl posx=0, posy=0, posz=0, M=1, ReMX=0, ReMY=0, ReMZ=1, scale=1;
 	std::istringstream{itemx->text().toStdString()} >> posx;
 	std::istringstream{itemy->text().toStdString()} >> posy;
 	std::istringstream{itemz->text().toStdString()} >> posz;
+	std::istringstream{itemM->text().toStdString()} >> M;
+	std::istringstream{itemReMX->text().toStdString()} >> ReMX;
+	std::istringstream{itemReMY->text().toStdString()} >> ReMY;
+	std::istringstream{itemReMZ->text().toStdString()} >> ReMZ;
 	std::istringstream{itemsc->text().toStdString()} >> scale;
 
 	qreal r=1, g=1, b=1;
 	QColor col{itemCol->text()};
 	col.getRgbF(&r, &g, &b);
 
-	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
-	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
-	m_plot->update();
+	t_mat_gl matSphere = m::hom_translation<t_mat_gl>(posx, posy, posz) * 
+		m::hom_scaling<t_mat_gl>(M*scale, M*scale, M*scale);
+	t_mat_gl matArrow = GlPlot_impl::GetArrowMatrix(
+		m::create<t_vec_gl>({t_real_gl(ReMX), t_real_gl(ReMY), t_real_gl(ReMZ)}), 	// to
+		1, 											// post-scale
+		m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
+		m::create<t_vec_gl>({0, 0, 1}),				// from
+		M*scale, 									// pre-scale
+		m::create<t_vec_gl>({posx, posy, posz})		// pre-translate 
+	);
 
-	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
+	m_plot->GetImpl()->SetObjectMatrix(objSphere, matSphere);
+	m_plot->GetImpl()->SetObjectMatrix(objArrow, matArrow);
+	m_plot->GetImpl()->SetObjectLabel(objSphere, itemName->text().toStdString());
+	m_plot->GetImpl()->SetObjectCol(objSphere, r, g, b, 1);
+	m_plot->GetImpl()->SetObjectCol(objArrow, r, g, b, 1);
+	m_plot->update();
 }
 
 
@@ -541,8 +591,12 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 		if(m_plot)
 		{
 			for(int row=0; row<m_nuclei->rowCount(); ++row)
-				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+			{
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+			}
 			m_plot->update();
 		}
 
@@ -556,7 +610,9 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 			// remove 3d object
 			if(m_plot)
 			{
-				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
 				m_plot->update();
 			}
@@ -571,7 +627,9 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 			// remove 3d object
 			if(m_plot)
 			{
-				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
 				m_plot->update();
 			}
@@ -702,34 +760,7 @@ void MagStructFactDlg::TableCellEntered(const QModelIndex& idx)
 void MagStructFactDlg::TableItemChanged(QTableWidgetItem *item)
 {
 	// update associated 3d object
-	if(item && m_plot)
-	{
-		int row = item->row();
-		if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-		{
-			auto *itemName = m_nuclei->item(row, COL_NAME);
-			auto *itemx = m_nuclei->item(row, COL_X);
-			auto *itemy = m_nuclei->item(row, COL_Y);
-			auto *itemz = m_nuclei->item(row, COL_Z);
-			auto *itemsc = m_nuclei->item(row, COL_RAD);
-			auto *itemCol = m_nuclei->item(row, COL_COL);
-
-			t_real_gl posx=0, posy=0, posz=0, scale=1;
-			std::istringstream{itemx->text().toStdString()} >> posx;
-			std::istringstream{itemy->text().toStdString()} >> posy;
-			std::istringstream{itemz->text().toStdString()} >> posz;
-			std::istringstream{itemsc->text().toStdString()} >> scale;
-
-			qreal r=1, g=1, b=1;
-			QColor col{itemCol->text()};
-			col.getRgbF(&r, &g, &b);
-
-			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
-			m_plot->GetImpl()->SetObjectCol(obj, r, g, b, 1);
-			m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
-			m_plot->update();
-		}
-	}
+	Sync3DItem(item->row());
 
 	if(!m_ignoreChanges)
 		Calc();
@@ -785,6 +816,7 @@ void MagStructFactDlg::Load()
 		// clear old nuclei
 		DelTabItem(-1);
 
+
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.a"); opt)
 		{
 			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
@@ -824,7 +856,6 @@ void MagStructFactDlg::Load()
 			m_comboSG->setCurrentIndex(*opt);
 		}
 		CalcB(false);
-
 
 		// nuclei
 		if(auto nuclei = node.get_child_optional("sfact.nuclei"); nuclei)
@@ -1249,12 +1280,21 @@ void MagStructFactDlg::Calc()
 				// magnetic structure factor
 				auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
 				for(auto &comp : Fm)
-					if(m::equals<t_cplx>(comp, t_cplx(0), g_eps))
-						comp = 0.;
+				{
+					if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+					if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+				}
+				if(Fm.size() == 0)
+					Fm = m::zero<t_vec_cplx>(3);
 
 				// neutron scattering: orthogonal projection onto plane with normal Q.
 				auto Fm_perp = m::ortho_project<t_vec_cplx>(
 					Fm, m::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+				for(auto &comp : Fm_perp)
+				{
+					if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+					if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+				}
 
 				t_real I = (std::conj(Fm[0])*Fm[0] +
 					std::conj(Fm[1])*Fm[1] +
@@ -1325,7 +1365,10 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 		// find corresponding nucleus in table
 		for(int row=0; row<m_nuclei->rowCount(); ++row)
 		{
-			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); long(obj)==m_curPickedObj)
+			std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
+			std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+
+			if(long(objSphere)==m_curPickedObj || long(objArrow)==m_curPickedObj)
 			{
 				auto *itemname = m_nuclei->item(row, COL_NAME);
 				auto *itemX = m_nuclei->item(row, COL_X);
@@ -1374,7 +1417,10 @@ void MagStructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 		// find corresponding nucleus in table
 		for(int row=0; row<m_nuclei->rowCount(); ++row)
 		{
-			if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); long(obj)==m_curPickedObj)
+			std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
+			std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+
+			if(long(objSphere)==m_curPickedObj || long(objArrow)==m_curPickedObj)
 			{
 				m_nuclei->setCurrentCell(row, 0);
 				break;
@@ -1399,9 +1445,11 @@ void MagStructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
 
-	// reference sphere for linked objects
+	// reference sphere and arrow for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_arrow = m_plot->GetImpl()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+	m_plot->GetImpl()->SetObjectVisible(m_arrow, false);
 
 	// B matrix
 	m_plot->GetImpl()->SetBTrafo(m_crystB);

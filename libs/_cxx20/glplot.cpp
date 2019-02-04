@@ -131,12 +131,19 @@ QPointF GlPlot_impl::GlToScreenCoords(const t_vec_gl& vec4, bool *pVisible)
 }
 
 
-t_mat_gl GlPlot_impl::GetArrowMatrix(const t_vec_gl& vecTo, t_real_gl scale, const t_vec_gl& vecTrans, const t_vec_gl& vecFrom)
+t_mat_gl GlPlot_impl::GetArrowMatrix(const t_vec_gl& vecTo, t_real_gl postscale, const t_vec_gl& vecPostTrans, 
+	const t_vec_gl& vecFrom, t_real_gl prescale, const t_vec_gl& vecPreTrans)
 {
 	t_mat_gl mat = m::unit<t_mat_gl>(4);
+
+	mat *= m::hom_translation<t_mat_gl>(vecPreTrans[0], vecPreTrans[1], vecPreTrans[2]);
+	mat *= m::hom_scaling<t_mat_gl>(prescale, prescale, prescale);
+
 	mat *= m::rotation<t_mat_gl, t_vec_gl>(vecFrom, vecTo);
-	mat *= m::hom_scaling<t_mat_gl>(scale, scale, scale);
-	mat *= m::hom_translation<t_mat_gl>(vecTrans[0], vecTrans[1], vecTrans[2]);
+
+	mat *= m::hom_scaling<t_mat_gl>(postscale, postscale, postscale);
+	mat *= m::hom_translation<t_mat_gl>(vecPostTrans[0], vecPostTrans[1], vecPostTrans[2]);
+
 	return mat;
 }
 

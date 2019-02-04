@@ -61,6 +61,7 @@ protected:
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<GlPlot> m_plot;
 	std::size_t m_sphere = 0;
+	std::size_t m_arrow = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
 
@@ -98,6 +99,7 @@ protected:
 	void MoveTabItemDown();
 
 	void Add3DItem(int row=-1);
+	void Sync3DItem(int row=-1);
 	void Set3DStatusMsg(const std::string& msg);
 
 	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);

@@ -203,8 +203,10 @@ public:
 		GetGlDescr() const { return std::make_tuple(m_strGlVer, m_strGlShaderVer, m_strGlVendor, m_strGlRenderer); }
 
 	QPointF GlToScreenCoords(const t_vec_gl& vec, bool *pVisible=nullptr);
-	static t_mat_gl GetArrowMatrix(const t_vec_gl& vecTo, t_real_gl scale,
-		const t_vec_gl& vecTrans = m::create<t_vec_gl>({0,0,0.5}), const t_vec_gl& vecFrom = m::create<t_vec_gl>({0,0,1}));
+	static t_mat_gl GetArrowMatrix(const t_vec_gl& vecTo, 
+		t_real_gl postscale = 1,  const t_vec_gl& vecPostTrans = m::create<t_vec_gl>({0,0,0.5}), 
+		const t_vec_gl& vecFrom = m::create<t_vec_gl>({0,0,1}),
+		t_real_gl prescale = 1,  const t_vec_gl& vecPreTrans = m::create<t_vec_gl>({0,0,0}));
 
 	void SetCamBase(const t_mat_gl& mat, const t_vec_gl& vecX, const t_vec_gl& vecY)
 	{ m_matCamBase = mat; m_vecCamX = vecX; m_vecCamY = vecY; UpdateCam(); }

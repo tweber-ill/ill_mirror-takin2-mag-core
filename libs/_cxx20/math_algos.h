@@ -3092,7 +3092,9 @@ requires is_basic_vec<t_vec>
 	constexpr t_real twopi = pi<t_real> * t_real(2);
 	constexpr t_real expsign = -1;
 
-	T F;
+	T F{};
+	if(Rs.size() == 0)
+		return F;
 	if constexpr(is_vec<T>)
 		F = zero<T>(Rs.begin()->size());	// always 3 dims...
 	else if constexpr(is_complex<T>)
