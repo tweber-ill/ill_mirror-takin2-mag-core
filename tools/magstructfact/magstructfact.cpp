@@ -50,17 +50,28 @@ constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
 
 
+// columns of Fourier components table
 enum : int
 {
 	COL_NAME = 0,
-	COL_M_MAG,
 	COL_X, COL_Y, COL_Z,
+	COL_M_MAG,
 	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,
 	COL_ImM_X, COL_ImM_Y, COL_ImM_Z,
 	COL_RAD,
 	COL_COL,
 
 	NUM_COLS
+};
+
+
+// columns of propagation vectors table
+enum : int
+{
+	PROP_COL_NAME = 0,
+	PROP_COL_X, PROP_COL_Y, PROP_COL_Z,
+
+	PROP_NUM_COLS
 };
 
 
@@ -98,10 +109,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 		m_nuclei->setColumnCount(NUM_COLS);
 		m_nuclei->setHorizontalHeaderItem(COL_NAME, new QTableWidgetItem{"Name"});
-		m_nuclei->setHorizontalHeaderItem(COL_M_MAG, new QTableWidgetItem{"|M|"});
 		m_nuclei->setHorizontalHeaderItem(COL_X, new QTableWidgetItem{"x (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
+		m_nuclei->setHorizontalHeaderItem(COL_M_MAG, new QTableWidgetItem{"|M|"});
 		m_nuclei->setHorizontalHeaderItem(COL_ReM_X, new QTableWidgetItem{"Re{M_x}"});
 		m_nuclei->setHorizontalHeaderItem(COL_ReM_Y, new QTableWidgetItem{"Re{M_y}"});
 		m_nuclei->setHorizontalHeaderItem(COL_ReM_Z, new QTableWidgetItem{"Re{M_z}"});
@@ -112,10 +123,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
-		m_nuclei->setColumnWidth(COL_M_MAG, 75);
 		m_nuclei->setColumnWidth(COL_X, 75);
 		m_nuclei->setColumnWidth(COL_Y, 75);
 		m_nuclei->setColumnWidth(COL_Z, 75);
+		m_nuclei->setColumnWidth(COL_M_MAG, 75);
 		m_nuclei->setColumnWidth(COL_ReM_X, 75);
 		m_nuclei->setColumnWidth(COL_ReM_Y, 75);
 		m_nuclei->setColumnWidth(COL_ReM_Z, 75);
@@ -192,18 +203,18 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// table CustomContextMenu
-		m_pTabContextMenu = new QMenu(m_nuclei);
-		m_pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
-		m_pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
-		m_pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
-		m_pTabContextMenu->addAction("Delete Nucleus", this, [this]() { MagStructFactDlg::DelTabItem(); });
+		QMenu *pTabContextMenu = new QMenu(m_nuclei);
+		pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
+		pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
+		pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
+		pTabContextMenu->addAction("Delete Nucleus", this, [this]() { this->DelTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
-		m_pTabContextMenuNoItem = new QMenu(m_nuclei);
-		m_pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
-		m_pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { MagStructFactDlg::DelTabItem(); });
-		//m_pTabContextMenuNoItem->addSeparator();
+		QMenu *pTabContextMenuNoItem = new QMenu(m_nuclei);
+		pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
+		pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { this->DelTabItem(); });
+		//pTabContextMenuNoItem->addSeparator();
 
 
 		// signals
@@ -211,17 +222,103 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
 
 		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { MagStructFactDlg::DelTabItem(); });
-		connect(pTabBtnUp, &QToolButton::clicked, this, &MagStructFactDlg::MoveTabItemUp);
-		connect(pTabBtnDown, &QToolButton::clicked, this, &MagStructFactDlg::MoveTabItemDown);
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(); });
+		connect(pTabBtnUp, &QToolButton::clicked, this, [this]() { this->MoveTabItemUp(m_nuclei); });
+		connect(pTabBtnDown, &QToolButton::clicked, this, [this]() { this->MoveTabItemDown(m_nuclei); });
 		connect(pTabBtnSG, &QToolButton::clicked, this, &MagStructFactDlg::GenerateFromSG);
 
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &MagStructFactDlg::TableCurCellChanged);
 		connect(m_nuclei, &QTableWidget::entered, this, &MagStructFactDlg::TableCellEntered);
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &MagStructFactDlg::TableItemChanged);
-		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &MagStructFactDlg::ShowTableContextMenu);
+		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, 
+			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+			{ this->ShowTableContextMenu(m_nuclei, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
-		tabs->addTab(m_nucleipanel, "Nuclei");
+		tabs->addTab(m_nucleipanel, "Fourier Components");
+	}
+
+
+	{
+		m_propvecpanel = new QWidget(this);
+
+		m_propvecs = new QTableWidget(m_propvecpanel);
+		m_propvecs->setShowGrid(true);
+		m_propvecs->setSortingEnabled(true);
+		m_propvecs->setMouseTracking(true);
+		m_propvecs->setSelectionBehavior(QTableWidget::SelectRows);
+		m_propvecs->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_propvecs->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		m_propvecs->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_propvecs->verticalHeader()->setVisible(false);
+
+		m_propvecs->setColumnCount(PROP_NUM_COLS);
+		m_propvecs->setHorizontalHeaderItem(PROP_COL_NAME, new QTableWidgetItem{"Name"});
+		m_propvecs->setHorizontalHeaderItem(PROP_COL_X, new QTableWidgetItem{"x (frac.)"});
+		m_propvecs->setHorizontalHeaderItem(PROP_COL_Y, new QTableWidgetItem{"y (frac.)"});
+		m_propvecs->setHorizontalHeaderItem(PROP_COL_Z, new QTableWidgetItem{"z (frac.)"});
+
+		m_propvecs->setColumnWidth(PROP_COL_NAME, 90);
+		m_propvecs->setColumnWidth(PROP_COL_X, 90);
+		m_propvecs->setColumnWidth(PROP_COL_Y, 90);
+		m_propvecs->setColumnWidth(PROP_COL_Z, 90);
+
+		QToolButton *pTabBtnAdd = new QToolButton(m_propvecpanel);
+		QToolButton *pTabBtnDel = new QToolButton(m_propvecpanel);
+		QToolButton *pTabBtnUp = new QToolButton(m_propvecpanel);
+		QToolButton *pTabBtnDown = new QToolButton(m_propvecpanel);
+
+		m_propvecs->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		pTabBtnAdd->setText("Add Vector");
+		pTabBtnDel->setText("Delete Vector");
+		pTabBtnUp->setText("Move Vector Up");
+		pTabBtnDown->setText("Move Vector Down");
+
+
+		auto pTabGrid = new QGridLayout(m_propvecpanel);
+		pTabGrid->setSpacing(2);
+		pTabGrid->setContentsMargins(4,4,4,4);
+		int y=0;
+		pTabGrid->addWidget(m_propvecs, y,0,1,4);
+		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
+		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
+		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+
+
+		// table CustomContextMenu
+		QMenu *pPropContextMenu = new QMenu(m_propvecs);
+		pPropContextMenu->addAction("Add Vector Before", this, [this]() { this->AddPropItem(-2); });
+		pPropContextMenu->addAction("Add Vector After", this, [this]() { this->AddPropItem(-3); });
+		pPropContextMenu->addAction("Clone Vector", this, [this]() { this->AddPropItem(-4); });
+		pPropContextMenu->addAction("Delete Vector", this, [this]() { this->DelPropItem(); });
+
+
+		// table CustomContextMenu in case nothing is selected
+		QMenu *pPropContextMenuNoItem = new QMenu(m_propvecs);
+		pPropContextMenuNoItem->addAction("Add Vector", this, [this]() { this->AddPropItem(); });
+		pPropContextMenuNoItem->addAction("Delete Vector", this, [this]() { this->DelPropItem(); });
+
+
+
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddPropItem(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelPropItem(); });
+		connect(pTabBtnUp, &QToolButton::clicked, this,  [this]() { this->MoveTabItemUp(m_propvecs); });
+		connect(pTabBtnDown, &QToolButton::clicked, this,  [this]() { this->MoveTabItemUp(m_propvecs); });
+
+		//connect(m_propvecs, &QTableWidget::currentCellChanged, this, &MagStructFactDlg::PropCurCellChanged);
+		//connect(m_propvecs, &QTableWidget::entered, this, &MagStructFactDlg::PropCellEntered);
+		connect(m_propvecs, &QTableWidget::itemChanged, this, &MagStructFactDlg::PropItemChanged);
+		connect(m_propvecs, &QTableWidget::customContextMenuRequested, this, 
+			[this, pPropContextMenu, pPropContextMenuNoItem](const QPoint& pt)
+			{ this->ShowTableContextMenu(m_propvecs, pPropContextMenu, pPropContextMenuNoItem, pt); });
+
+		tabs->addTab(m_propvecpanel, "Propagation Vectors");
 	}
 
 
@@ -507,10 +604,12 @@ void MagStructFactDlg::Add3DItem(int row)
 
 	auto objSphere = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, 1,1,1,1);
 	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, 1,1,1,1);
-	auto objArrow = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
+	auto objArrowRe = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
+	auto objArrowIm = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
 
-	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+0, unsigned(objSphere));
-	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+1, unsigned(objArrow));
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+0, unsigned(objSphere));	// atomic position
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+1, unsigned(objArrowRe));	// real part of Fourier comp
+	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+2, unsigned(objArrowIm));	// imag part of Fourier comp
 
 	Sync3DItem(row);
 }
@@ -532,8 +631,9 @@ void MagStructFactDlg::Sync3DItem(int row)
 	}
 
 	std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
-	std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
-	if(!objSphere || !objArrow)
+	std::size_t objArrowRe = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+	std::size_t objArrowIm = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt();
+	if(!objSphere || !objArrowRe || !objArrowIm)
 		return;
 
 	auto *itemName = m_nuclei->item(row, COL_NAME);
@@ -544,10 +644,13 @@ void MagStructFactDlg::Sync3DItem(int row)
 	auto *itemReMX = m_nuclei->item(row, COL_ReM_X);
 	auto *itemReMY = m_nuclei->item(row, COL_ReM_Y);
 	auto *itemReMZ = m_nuclei->item(row, COL_ReM_Z);
+	auto *itemImMX = m_nuclei->item(row, COL_ImM_X);
+	auto *itemImMY = m_nuclei->item(row, COL_ImM_Y);
+	auto *itemImMZ = m_nuclei->item(row, COL_ImM_Z);
 	auto *itemsc = m_nuclei->item(row, COL_RAD);
 	auto *itemCol = m_nuclei->item(row, COL_COL);
 
-	t_real_gl posx=0, posy=0, posz=0, M=1, ReMX=0, ReMY=0, ReMZ=1, scale=1;
+	t_real_gl posx=0, posy=0, posz=0, M=1, ReMX=0, ReMY=0, ReMZ=1, ImMX=0, ImMY=0, ImMZ=1, scale=1;
 	std::istringstream{itemx->text().toStdString()} >> posx;
 	std::istringstream{itemy->text().toStdString()} >> posy;
 	std::istringstream{itemz->text().toStdString()} >> posz;
@@ -555,6 +658,9 @@ void MagStructFactDlg::Sync3DItem(int row)
 	std::istringstream{itemReMX->text().toStdString()} >> ReMX;
 	std::istringstream{itemReMY->text().toStdString()} >> ReMY;
 	std::istringstream{itemReMZ->text().toStdString()} >> ReMZ;
+	std::istringstream{itemImMX->text().toStdString()} >> ImMX;
+	std::istringstream{itemImMY->text().toStdString()} >> ImMY;
+	std::istringstream{itemImMZ->text().toStdString()} >> ImMZ;
 	std::istringstream{itemsc->text().toStdString()} >> scale;
 
 	qreal r=1, g=1, b=1;
@@ -563,8 +669,23 @@ void MagStructFactDlg::Sync3DItem(int row)
 
 	t_mat_gl matSphere = m::hom_translation<t_mat_gl>(posx, posy, posz) * 
 		m::hom_scaling<t_mat_gl>(M*scale, M*scale, M*scale);
-	t_mat_gl matArrow = GlPlot_impl::GetArrowMatrix(
-		m::create<t_vec_gl>({t_real_gl(ReMX), t_real_gl(ReMY), t_real_gl(ReMZ)}), 	// to
+
+	auto vecReM = m::create<t_vec_gl>({t_real_gl(ReMX), t_real_gl(ReMY), t_real_gl(ReMZ)});
+	auto vecImM = m::create<t_vec_gl>({t_real_gl(ImMX), t_real_gl(ImMY), t_real_gl(ImMZ)});
+	auto normReM = m::norm<t_vec_gl>(vecReM);
+	auto normImM = m::norm<t_vec_gl>(vecImM);
+
+	t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
+		vecReM, 									// to
+		1, 											// post-scale
+		m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
+		m::create<t_vec_gl>({0, 0, 1}),				// from
+		M*scale, 									// pre-scale
+		m::create<t_vec_gl>({posx, posy, posz})		// pre-translate 
+	);
+
+	t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
+		vecImM, 									// to
 		1, 											// post-scale
 		m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
 		m::create<t_vec_gl>({0, 0, 1}),				// from
@@ -573,10 +694,14 @@ void MagStructFactDlg::Sync3DItem(int row)
 	);
 
 	m_plot->GetImpl()->SetObjectMatrix(objSphere, matSphere);
-	m_plot->GetImpl()->SetObjectMatrix(objArrow, matArrow);
+	m_plot->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
+	m_plot->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
 	m_plot->GetImpl()->SetObjectLabel(objSphere, itemName->text().toStdString());
 	m_plot->GetImpl()->SetObjectCol(objSphere, r, g, b, 1);
-	m_plot->GetImpl()->SetObjectCol(objArrow, r, g, b, 1);
+	m_plot->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1);
+	m_plot->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1);
+	m_plot->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
+	m_plot->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
 	m_plot->update();
 }
 
@@ -596,6 +721,8 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 					m_plot->GetImpl()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
 			}
 			m_plot->update();
 		}
@@ -605,7 +732,7 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 	}
 	else if(begin == -2)	// clear selected
 	{
-		for(int row : GetSelectedRows(true))
+		for(int row : GetSelectedRows(m_nuclei, true))
 		{
 			// remove 3d object
 			if(m_plot)
@@ -613,6 +740,8 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
 				m_plot->update();
 			}
@@ -631,6 +760,8 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 					m_plot->GetImpl()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
 					m_plot->GetImpl()->RemoveObject(obj);
+				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
 				m_plot->update();
 			}
 
@@ -643,34 +774,34 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 }
 
 
-void MagStructFactDlg::MoveTabItemUp()
+void MagStructFactDlg::MoveTabItemUp(QTableWidget *pTab)
 {
 	m_ignoreChanges = 1;
-	m_nuclei->setSortingEnabled(false);
+	pTab->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(false);
+	auto selected = GetSelectedRows(pTab, false);
 	for(int row : selected)
 	{
 		if(row == 0)
 			continue;
 
-		auto *item = m_nuclei->item(row, 0);
+		auto *item = pTab->item(row, 0);
 		if(!item || !item->isSelected())
 			continue;
 
-		m_nuclei->insertRow(row-1);
-		for(int col=0; col<m_nuclei->columnCount(); ++col)
-			m_nuclei->setItem(row-1, col, m_nuclei->item(row+1, col)->clone());
-		m_nuclei->removeRow(row+1);
+		pTab->insertRow(row-1);
+		for(int col=0; col<pTab->columnCount(); ++col)
+			pTab->setItem(row-1, col, pTab->item(row+1, col)->clone());
+		pTab->removeRow(row+1);
 	}
 
-	for(int row=0; row<m_nuclei->rowCount(); ++row)
+	for(int row=0; row<pTab->rowCount(); ++row)
 	{
-		if(auto *item = m_nuclei->item(row, 0);
+		if(auto *item = pTab->item(row, 0);
 			item && std::find(selected.begin(), selected.end(), row+1) != selected.end())
 		{
-			for(int col=0; col<m_nuclei->columnCount(); ++col)
-				m_nuclei->item(row, col)->setSelected(true);
+			for(int col=0; col<pTab->columnCount(); ++col)
+				pTab->item(row, col)->setSelected(true);
 		}
 	}
 
@@ -678,34 +809,34 @@ void MagStructFactDlg::MoveTabItemUp()
 }
 
 
-void MagStructFactDlg::MoveTabItemDown()
+void MagStructFactDlg::MoveTabItemDown(QTableWidget *pTab)
 {
 	m_ignoreChanges = 1;
-	m_nuclei->setSortingEnabled(false);
+	pTab->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(true);
+	auto selected = GetSelectedRows(pTab, true);
 	for(int row : selected)
 	{
-		if(row == m_nuclei->rowCount()-1)
+		if(row == pTab->rowCount()-1)
 			continue;
 
-		auto *item = m_nuclei->item(row, 0);
+		auto *item = pTab->item(row, 0);
 		if(!item || !item->isSelected())
 			continue;
 
-		m_nuclei->insertRow(row+2);
-		for(int col=0; col<m_nuclei->columnCount(); ++col)
-			m_nuclei->setItem(row+2, col, m_nuclei->item(row, col)->clone());
-		m_nuclei->removeRow(row);
+		pTab->insertRow(row+2);
+		for(int col=0; col<pTab->columnCount(); ++col)
+			pTab->setItem(row+2, col, pTab->item(row, col)->clone());
+		pTab->removeRow(row);
 	}
 
-	for(int row=0; row<m_nuclei->rowCount(); ++row)
+	for(int row=0; row<pTab->rowCount(); ++row)
 	{
-		if(auto *item = m_nuclei->item(row, 0);
+		if(auto *item = pTab->item(row, 0);
 			item && std::find(selected.begin(), selected.end(), row-1) != selected.end())
 		{
-			for(int col=0; col<m_nuclei->columnCount(); ++col)
-				m_nuclei->item(row, col)->setSelected(true);
+			for(int col=0; col<pTab->columnCount(); ++col)
+				pTab->item(row, col)->setSelected(true);
 		}
 	}
 
@@ -717,14 +848,14 @@ void MagStructFactDlg::MoveTabItemDown()
 
 
 // ----------------------------------------------------------------------------
-std::vector<int> MagStructFactDlg::GetSelectedRows(bool sort_reversed) const
+std::vector<int> MagStructFactDlg::GetSelectedRows(QTableWidget *pTab, bool sort_reversed) const
 {
 	std::vector<int> vec;
-	vec.reserve(m_nuclei->selectedItems().size());
+	vec.reserve(pTab->selectedItems().size());
 
-	for(int row=0; row<m_nuclei->rowCount(); ++row)
+	for(int row=0; row<pTab->rowCount(); ++row)
 	{
-		if(auto *item = m_nuclei->item(row, 0); item && item->isSelected())
+		if(auto *item = pTab->item(row, 0); item && item->isSelected())
 			vec.push_back(row);
 	}
 
@@ -742,16 +873,14 @@ std::vector<int> MagStructFactDlg::GetSelectedRows(bool sort_reversed) const
  * selected a new row
  */
 void MagStructFactDlg::TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld)
-{
-}
+{}
 
 
 /**
  * hovered over new row
  */
 void MagStructFactDlg::TableCellEntered(const QModelIndex& idx)
-{
-}
+{}
 
 
 /**
@@ -767,21 +896,140 @@ void MagStructFactDlg::TableItemChanged(QTableWidgetItem *item)
 }
 
 
-void MagStructFactDlg::ShowTableContextMenu(const QPoint& pt)
+void MagStructFactDlg::ShowTableContextMenu(QTableWidget *pTab, QMenu *pMenu, QMenu *pMenuNoItem, const QPoint& pt)
 {
-	auto ptGlob = m_nuclei->mapToGlobal(pt);
+	auto ptGlob = pTab->mapToGlobal(pt);
 
-	if(const auto* item = m_nuclei->itemAt(pt); item)
+	if(const auto* item = pTab->itemAt(pt); item)
 	{
 		m_iCursorRow = item->row();
-		ptGlob.setY(ptGlob.y() + m_pTabContextMenu->sizeHint().height()/2);
-		m_pTabContextMenu->popup(ptGlob);
+		ptGlob.setY(ptGlob.y() + pMenu->sizeHint().height()/2);
+		pMenu->popup(ptGlob);
 	}
 	else
 	{
-		ptGlob.setY(ptGlob.y() + m_pTabContextMenuNoItem->sizeHint().height()/2);
-		m_pTabContextMenuNoItem->popup(ptGlob);
+		ptGlob.setY(ptGlob.y() + pMenuNoItem->sizeHint().height()/2);
+		pMenuNoItem->popup(ptGlob);
 	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+void MagStructFactDlg::AddPropItem(int row, 
+	const std::string& name, t_real x, t_real y, t_real z)
+{
+	bool bclone = 0;
+	m_ignoreChanges = 1;
+
+	if(row == -1)	// append to end of table
+		row = m_propvecs->rowCount();
+	else if(row == -2 && m_iCursorRow >= 0)	// use row from member variable
+		row = m_iCursorRow;
+	else if(row == -3 && m_iCursorRow >= 0)	// use row from member variable +1
+		row = m_iCursorRow + 1;
+	else if(row == -4 && m_iCursorRow >= 0)	// use row from member variable +1
+	{
+		row = m_iCursorRow + 1;
+		bclone = 1;
+	}
+
+	//bool sorting = m_propvecs->isSortingEnabled();
+	m_propvecs->setSortingEnabled(false);
+	m_propvecs->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<PROP_NUM_COLS; ++thecol)
+			m_propvecs->setItem(row, thecol, m_propvecs->item(m_iCursorRow, thecol)->clone());
+	}
+	else
+	{
+		m_propvecs->setItem(row, PROP_COL_NAME, new QTableWidgetItem(name.c_str()));
+		m_propvecs->setItem(row, PROP_COL_X, new NumericTableWidgetItem<t_real>(x));
+		m_propvecs->setItem(row, PROP_COL_Y, new NumericTableWidgetItem<t_real>(y));
+		m_propvecs->setItem(row, PROP_COL_Z, new NumericTableWidgetItem<t_real>(z));
+	}
+
+	//Add3DItem(row);	TODO
+
+	m_propvecs->scrollToItem(m_propvecs->item(row, 0));
+	m_propvecs->setCurrentCell(row, 0);
+
+	m_propvecs->setSortingEnabled(/*sorting*/ true);
+
+	m_ignoreChanges = 0;
+	Calc();
+}
+
+
+void MagStructFactDlg::DelPropItem(int begin, int end)
+{
+	m_ignoreChanges = 1;
+
+	// if nothing is selected, clear all items
+	if(begin == -1 || m_propvecs->selectedItems().count() == 0)
+	{
+		if(m_plot)
+		{
+			for(int row=0; row<m_propvecs->rowCount(); ++row)
+			{
+				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+			}
+			m_plot->update();
+		}
+
+		m_propvecs->clearContents();
+		m_propvecs->setRowCount(0);
+	}
+	else if(begin == -2)	// clear selected
+	{
+		for(int row : GetSelectedRows(m_propvecs, true))
+		{
+			// remove 3d object
+			if(m_plot)
+			{
+				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				m_plot->update();
+			}
+
+			m_propvecs->removeRow(row);
+		}
+	}
+	else if(begin >= 0 && end >= 0)		// clear given range
+	{
+		for(int row=end-1; row>=begin; --row)
+		{
+			// remove 3d object
+			if(m_plot)
+			{
+				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
+					m_plot->GetImpl()->RemoveObject(obj);
+				m_plot->update();
+			}
+
+			m_propvecs->removeRow(row);
+		}
+	}
+
+	m_ignoreChanges = 0;
+	Calc();
+}
+
+
+/**
+ * item contents changed
+ */
+void MagStructFactDlg::PropItemChanged(QTableWidgetItem *item)
+{
+	// update associated 3d object
+	//Sync3DItem(item->row());
+
+	if(!m_ignoreChanges)
+		Calc();
 }
 // ----------------------------------------------------------------------------
 
@@ -817,6 +1065,7 @@ void MagStructFactDlg::Load()
 		DelTabItem(-1);
 
 
+		// lattice
 		if(auto opt = node.get_optional<t_real>("sfact.xtal.a"); opt)
 		{
 			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
@@ -857,7 +1106,8 @@ void MagStructFactDlg::Load()
 		}
 		CalcB(false);
 
-		// nuclei
+
+		// fourier components
 		if(auto nuclei = node.get_child_optional("sfact.nuclei"); nuclei)
 		{
 			for(const auto &nucl : *nuclei)
@@ -879,6 +1129,21 @@ void MagStructFactDlg::Load()
 				AddTabItem(-1, optName, optMMag, optX,  optY, optZ,
 					optReMX, optReMY, optReMZ, optImMX, optImMY, optImMZ, 
 					optRad, optCol);
+			}
+		}
+
+
+		// propagation vectors
+		if(auto propvecs = node.get_child_optional("sfact.propvecs"); propvecs)
+		{
+			for(const auto &propvec : *propvecs)
+			{
+				auto optName = propvec.second.get<std::string>("name", "n/a");
+				auto optX = propvec.second.get<t_real>("x", 0.);
+				auto optY = propvec.second.get<t_real>("y", 0.);
+				auto optZ = propvec.second.get<t_real>("z", 0.);
+
+				AddPropItem(-1, optName, optX,  optY, optZ);
 			}
 		}
 	}
@@ -921,7 +1186,8 @@ void MagStructFactDlg::Save()
 	node.put<int>("sfact.order", m_maxBZ->value());
 	node.put<int>("sfact.sg_idx", m_comboSG->currentIndex());
 
-	// nucleus list
+
+	// fourier component list
 	for(int row=0; row<m_nuclei->rowCount(); ++row)
 	{
 		t_real MMag{}, x{},y{},z{}, ReMx{}, ReMy{}, ReMz{}, ImMx{}, ImMy{}, ImMz{}, scale{};
@@ -954,6 +1220,25 @@ void MagStructFactDlg::Save()
 
 		node.add_child("sfact.nuclei.nucleus", itemNode);
 	}
+
+
+	// propagation vectors list
+	for(int row=0; row<m_propvecs->rowCount(); ++row)
+	{
+		t_real x{},y{},z{};
+		std::istringstream{m_propvecs->item(row, PROP_COL_X)->text().toStdString()} >> x;
+		std::istringstream{m_propvecs->item(row, PROP_COL_Y)->text().toStdString()} >> y;
+		std::istringstream{m_propvecs->item(row, PROP_COL_Z)->text().toStdString()} >> z;
+
+		pt::ptree itemNode;
+		itemNode.put<std::string>("name", m_propvecs->item(row, PROP_COL_NAME)->text().toStdString());
+		itemNode.put<t_real>("x", x);
+		itemNode.put<t_real>("y", y);
+		itemNode.put<t_real>("z", z);
+
+		node.add_child("sfact.propvecs.vec", itemNode);
+	}
+
 
 	std::ofstream ofstr{filename.toStdString()};
 	if(!ofstr)
@@ -1191,8 +1476,19 @@ void MagStructFactDlg::Calc()
 	const t_real p = -t_real(consts::codata::mu_n/consts::codata::mu_N*consts::codata::r_e/si::meters)*0.5e15;
 	const auto maxBZ = m_maxBZ->value();
 
-	// TODO
-	auto prop = m::create<t_vec>({0,0,0});
+
+	// propagation vectors
+	std::vector<t_vec> propvecs;
+	for(int row=0; row<m_propvecs->rowCount(); ++row)
+	{
+		t_real x{},y{},z{};
+		std::istringstream{m_propvecs->item(row, PROP_COL_X)->text().toStdString()} >> x;
+		std::istringstream{m_propvecs->item(row, PROP_COL_Y)->text().toStdString()} >> y;
+		std::istringstream{m_propvecs->item(row, PROP_COL_Z)->text().toStdString()} >> z;
+
+		propvecs.emplace_back(m::create<t_vec>({x, y, z}));
+	}
+
 
 	// powder lines
 	std::vector<PowderLine> powderlines;
@@ -1273,51 +1569,54 @@ void MagStructFactDlg::Calc()
 		{
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
-				auto Q = m::create<t_vec>({ h,k,l }); //+ prop;
-				auto Q_invA = m_crystB * Q;
-				auto Qabs_invA = m::norm(Q_invA);
-
-				// magnetic structure factor
-				auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
-				for(auto &comp : Fm)
+				for(const auto& prop : propvecs)
 				{
-					if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-					if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+					auto Q = m::create<t_vec>({ h,k,l }) + prop;
+					auto Q_invA = m_crystB * Q;
+					auto Qabs_invA = m::norm(Q_invA);
+
+					// magnetic structure factor
+					auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
+					for(auto &comp : Fm)
+					{
+						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+					}
+					if(Fm.size() == 0)
+						Fm = m::zero<t_vec_cplx>(3);
+
+					// neutron scattering: orthogonal projection onto plane with normal Q.
+					auto Fm_perp = m::ortho_project<t_vec_cplx>(
+						Fm, m::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+					for(auto &comp : Fm_perp)
+					{
+						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+					}
+
+					t_real I = (std::conj(Fm[0])*Fm[0] +
+						std::conj(Fm[1])*Fm[1] +
+						std::conj(Fm[2])*Fm[2]).real();
+					t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
+						std::conj(Fm_perp[1])*Fm_perp[1] +
+						std::conj(Fm_perp[2])*Fm_perp[2]).real();
+
+					add_powderline(Qabs_invA, I_perp, h,k,l);
+
+					ostr
+						<< std::setw(g_prec*1.2) << std::right << h+prop[0] << " "
+						<< std::setw(g_prec*1.2) << std::right << k+prop[1] << " "
+						<< std::setw(g_prec*1.2) << std::right << l+prop[2] << " "
+						<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
+						<< std::setw(g_prec*2) << std::right << I << " "
+						<< std::setw(g_prec*2) << std::right << I_perp << " "
+						<< std::setw(g_prec*5) << std::right << Fm[0] << " "
+						<< std::setw(g_prec*5) << std::right << Fm[1] << " "
+						<< std::setw(g_prec*5) << std::right << Fm[2] << " "
+						<< std::setw(g_prec*5) << std::right << Fm_perp[0] << " "
+						<< std::setw(g_prec*5) << std::right << Fm_perp[1] << " "
+						<< std::setw(g_prec*5) << std::right << Fm_perp[2] << "\n";
 				}
-				if(Fm.size() == 0)
-					Fm = m::zero<t_vec_cplx>(3);
-
-				// neutron scattering: orthogonal projection onto plane with normal Q.
-				auto Fm_perp = m::ortho_project<t_vec_cplx>(
-					Fm, m::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
-				for(auto &comp : Fm_perp)
-				{
-					if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-					if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
-				}
-
-				t_real I = (std::conj(Fm[0])*Fm[0] +
-					std::conj(Fm[1])*Fm[1] +
-					std::conj(Fm[2])*Fm[2]).real();
-				t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
-					std::conj(Fm_perp[1])*Fm_perp[1] +
-					std::conj(Fm_perp[2])*Fm_perp[2]).real();
-
-				add_powderline(Qabs_invA, I_perp, h,k,l);
-
-				ostr
-					<< std::setw(g_prec*1.2) << std::right << h+prop[0] << " "
-					<< std::setw(g_prec*1.2) << std::right << k+prop[1] << " "
-					<< std::setw(g_prec*1.2) << std::right << l+prop[2] << " "
-					<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
-					<< std::setw(g_prec*2) << std::right << I << " "
-					<< std::setw(g_prec*2) << std::right << I_perp << " "
-					<< std::setw(g_prec*5) << std::right << Fm[0] << " "
-					<< std::setw(g_prec*5) << std::right << Fm[1] << " "
-					<< std::setw(g_prec*5) << std::right << Fm[2] << " "
-					<< std::setw(g_prec*5) << std::right << Fm_perp[0] << " "
-					<< std::setw(g_prec*5) << std::right << Fm_perp[1] << " "
-					<< std::setw(g_prec*5) << std::right << Fm_perp[2] << "\n";
 			}
 		}
 	}
@@ -1366,9 +1665,10 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 		for(int row=0; row<m_nuclei->rowCount(); ++row)
 		{
 			std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
-			std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+			std::size_t objArrowRe = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+			std::size_t objArrowIm = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt();
 
-			if(long(objSphere)==m_curPickedObj || long(objArrow)==m_curPickedObj)
+			if(long(objSphere)==m_curPickedObj || long(objArrowRe)==m_curPickedObj || long(objArrowIm)==m_curPickedObj)
 			{
 				auto *itemname = m_nuclei->item(row, COL_NAME);
 				auto *itemX = m_nuclei->item(row, COL_X);
@@ -1418,9 +1718,10 @@ void MagStructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 		for(int row=0; row<m_nuclei->rowCount(); ++row)
 		{
 			std::size_t objSphere = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt();
-			std::size_t objArrow = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+			std::size_t objArrowRe = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt();
+			std::size_t objArrowIm = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt();
 
-			if(long(objSphere)==m_curPickedObj || long(objArrow)==m_curPickedObj)
+			if(long(objSphere)==m_curPickedObj || long(objArrowRe)==m_curPickedObj || long(objArrowIm)==m_curPickedObj)
 			{
 				m_nuclei->setCurrentCell(row, 0);
 				break;
