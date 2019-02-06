@@ -77,8 +77,9 @@ enum : int
 
 struct PowderLine
 {
-	t_real Q;
-	t_real I;
+	t_real Q{};
+	t_real I{};
+	std::size_t num_peaks = 0;
 	std::string peaks;
 };
 
@@ -93,7 +94,9 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 	auto tabs = new QTabWidget(this);
-	{
+
+
+	{	// fourier components panel
 		m_nucleipanel = new QWidget(this);
 
 		m_nuclei = new QTableWidget(m_nucleipanel);
@@ -113,12 +116,12 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_Z, new QTableWidgetItem{"z (frac.)"});
 		m_nuclei->setHorizontalHeaderItem(COL_M_MAG, new QTableWidgetItem{"|M|"});
-		m_nuclei->setHorizontalHeaderItem(COL_ReM_X, new QTableWidgetItem{"Re{M_x}"});
-		m_nuclei->setHorizontalHeaderItem(COL_ReM_Y, new QTableWidgetItem{"Re{M_y}"});
-		m_nuclei->setHorizontalHeaderItem(COL_ReM_Z, new QTableWidgetItem{"Re{M_z}"});
-		m_nuclei->setHorizontalHeaderItem(COL_ImM_X, new QTableWidgetItem{"Im{M_x}"});
-		m_nuclei->setHorizontalHeaderItem(COL_ImM_Y, new QTableWidgetItem{"Im{M_y}"});
-		m_nuclei->setHorizontalHeaderItem(COL_ImM_Z, new QTableWidgetItem{"Im{M_z}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_X, new QTableWidgetItem{"Re{FC_x}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_Y, new QTableWidgetItem{"Re{FC_y}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ReM_Z, new QTableWidgetItem{"Re{FC_z}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_X, new QTableWidgetItem{"Im{FC_x}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_Y, new QTableWidgetItem{"Im{FC_y}"});
+		m_nuclei->setHorizontalHeaderItem(COL_ImM_Z, new QTableWidgetItem{"Im{FC_z}"});
 		m_nuclei->setHorizontalHeaderItem(COL_RAD, new QTableWidgetItem{"Radius"});
 		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
@@ -149,10 +152,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		pTabBtnAdd->setText("Add Nucleus");
-		pTabBtnDel->setText("Delete Nuclei");
-		pTabBtnUp->setText("Move Nuclei Up");
-		pTabBtnDown->setText("Move Nuclei Down");
+		pTabBtnAdd->setText("Add Fourier Comp.");
+		pTabBtnDel->setText("Delete Fourier Comp.");
+		pTabBtnUp->setText("Move Fourier Comp. Up");
+		pTabBtnDown->setText("Move Fourier Comp. Down");
 		pTabBtnSG->setText("Generate");
 
 		m_editA = new QLineEdit("5", m_nucleipanel);
@@ -204,16 +207,16 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_nuclei);
-		pTabContextMenu->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem(-2); });
-		pTabContextMenu->addAction("Add Nucleus After", this, [this]() { this->AddTabItem(-3); });
-		pTabContextMenu->addAction("Clone Nucleus", this, [this]() { this->AddTabItem(-4); });
-		pTabContextMenu->addAction("Delete Nucleus", this, [this]() { this->DelTabItem(); });
+		pTabContextMenu->addAction("Add Fourier Component Before", this, [this]() { this->AddTabItem(-2); });
+		pTabContextMenu->addAction("Add Fourier Component After", this, [this]() { this->AddTabItem(-3); });
+		pTabContextMenu->addAction("Clone Fourier Component", this, [this]() { this->AddTabItem(-4); });
+		pTabContextMenu->addAction("Delete Fourier Component", this, [this]() { this->DelTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_nuclei);
-		pTabContextMenuNoItem->addAction("Add Nucleus", this, [this]() { this->AddTabItem(); });
-		pTabContextMenuNoItem->addAction("Delete Nucleus", this, [this]() { this->DelTabItem(); });
+		pTabContextMenuNoItem->addAction("Add Fourier Component", this, [this]() { this->AddTabItem(); });
+		pTabContextMenuNoItem->addAction("Delete Fourier Component", this, [this]() { this->DelTabItem(); });
 		//pTabContextMenuNoItem->addSeparator();
 
 
@@ -238,7 +241,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	{
+	{	// propagation vectors panel
 		m_propvecpanel = new QWidget(this);
 
 		m_propvecs = new QTableWidget(m_propvecpanel);
@@ -338,12 +341,19 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_maxBZ->setMaximum(99);
 		m_maxBZ->setValue(4);
 
+		m_RemoveZeroes = new QCheckBox("Remove Zeroes", sfactpanel);
+		m_RemoveZeroes->setChecked(true);
+
+
 		pGrid->addWidget(m_structfacts, 0,0, 1,4);
-		pGrid->addWidget(new QLabel("Max. Order::"), 1,0,1,1);
+		pGrid->addWidget(new QLabel("Max. Order:"), 1,0,1,1);
 		pGrid->addWidget(m_maxBZ, 1,1, 1,1);
+		pGrid->addWidget(m_RemoveZeroes, 1,2, 1,2);
+
 
 		// signals
 		connect(m_maxBZ, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() { this->Calc(); });
+		connect(m_RemoveZeroes, static_cast<void (QCheckBox::*)(int)>(&QCheckBox::stateChanged), this, [this]() { this->Calc(); });
 
 		tabs->addTab(sfactpanel, "Structure Factors");
 	}
@@ -363,6 +373,34 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(m_powderlines, 0,0, 1,4);
 
 		tabs->addTab(powderpanel, "Powder Lines");
+	}
+
+
+	{	// real magnetic moments
+		auto mmpanel = new QWidget(this);
+		auto pGrid = new QGridLayout(mmpanel);
+		pGrid->setSpacing(4);
+		pGrid->setContentsMargins(4,4,4,4);
+
+		m_moments = new QPlainTextEdit(mmpanel);
+		m_moments->setReadOnly(true);
+		m_moments->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+		m_moments->setLineWrapMode(QPlainTextEdit::NoWrap);
+
+		m_maxSC = new QSpinBox(mmpanel);
+		m_maxSC->setMinimum(0);
+		m_maxSC->setMaximum(99);
+		m_maxSC->setValue(4);
+
+		pGrid->addWidget(m_moments, 0,0, 1,4);
+		pGrid->addWidget(new QLabel("Max. Supercell Order:"), 1,0,1,1);
+		pGrid->addWidget(m_maxSC, 1,1, 1,1);
+
+
+		// signals
+		connect(m_maxSC, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() { this->Calc(); });
+
+		tabs->addTab(mmpanel, "Magnetic Moments");
 	}
 
 
@@ -1039,6 +1077,8 @@ void MagStructFactDlg::PropItemChanged(QTableWidgetItem *item)
 // ----------------------------------------------------------------------------
 void MagStructFactDlg::Load()
 {
+	m_ignoreCalc = 1;
+
 	try
 	{
 		QString dirLast = m_sett->value("dir", "").toString();
@@ -1061,8 +1101,9 @@ void MagStructFactDlg::Load()
 		}
 
 
-		// clear old nuclei
+		// clear old tables
 		DelTabItem(-1);
+		DelPropItem(-1);
 
 
 		// lattice
@@ -1100,11 +1141,18 @@ void MagStructFactDlg::Load()
 		{
 			m_maxBZ->setValue(*opt);
 		}
+		if(auto opt = node.get_optional<int>("sfact.scorder"); opt)
+		{
+			m_maxSC->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<int>("sfact.removezeroes"); opt)
+		{
+			m_RemoveZeroes->setChecked(*opt != 0);
+		}
 		if(auto opt = node.get_optional<int>("sfact.sg_idx"); opt)
 		{
 			m_comboSG->setCurrentIndex(*opt);
 		}
-		CalcB(false);
 
 
 		// fourier components
@@ -1151,6 +1199,11 @@ void MagStructFactDlg::Load()
 	{
 		QMessageBox::critical(this, "Structure Factors", ex.what());
 	}
+
+
+	m_ignoreCalc = 0;
+	CalcB(false);
+	Calc();
 }
 
 
@@ -1184,6 +1237,8 @@ void MagStructFactDlg::Save()
 	node.put<t_real>("sfact.xtal.beta", beta);
 	node.put<t_real>("sfact.xtal.gamma", gamma);
 	node.put<int>("sfact.order", m_maxBZ->value());
+	node.put<int>("sfact.scorder", m_maxSC->value());
+	node.put<int>("sfact.removezeroes", m_RemoveZeroes->isChecked());
 	node.put<int>("sfact.sg_idx", m_comboSG->currentIndex());
 
 
@@ -1272,6 +1327,7 @@ void MagStructFactDlg::ImportCIF()
 
 	// clear old nuclei
 	DelTabItem(-1);
+	DelPropItem(-1);
 
 	// lattice
 	{
@@ -1328,56 +1384,68 @@ void MagStructFactDlg::ImportCIF()
  */
 void MagStructFactDlg::GenerateFromSG()
 {
-	// symops of current space group
-	auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
-	if(sgidx < 0 || sgidx >= m_SGops.size())
+	m_ignoreCalc = 1;
+
+	try
 	{
-		QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
-		return;
-	}
-
-	auto ops = m_SGops[sgidx];
-	std::vector<std::tuple<std::string, t_real, 
-		t_real, t_real, t_real, 
-		t_real, t_real, t_real, t_real, t_real, t_real, 
-		t_real, std::string>> generatednuclei;
-
-	// iterate nuclei
-	int orgRowCnt = m_nuclei->rowCount();
-	for(int row=0; row<orgRowCnt; ++row)
-	{
-		t_real MMag{}, x{},y{},z{}, ReMx{}, ReMy{}, ReMz{}, ImMx{}, ImMy{}, ImMz{}, scale{};
-		std::istringstream{m_nuclei->item(row, COL_M_MAG)->text().toStdString()} >> MMag;
-		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
-		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
-		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
-		std::istringstream{m_nuclei->item(row, COL_ReM_X)->text().toStdString()} >> ReMx;
-		std::istringstream{m_nuclei->item(row, COL_ReM_Y)->text().toStdString()} >> ReMy;
-		std::istringstream{m_nuclei->item(row, COL_ReM_Z)->text().toStdString()} >> ReMz;
-		std::istringstream{m_nuclei->item(row, COL_ImM_X)->text().toStdString()} >> ImMx;
-		std::istringstream{m_nuclei->item(row, COL_ImM_Y)->text().toStdString()} >> ImMy;
-		std::istringstream{m_nuclei->item(row, COL_ImM_Z)->text().toStdString()} >> ImMz;
-		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
-		std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
-		std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
-
-		t_vec nucl = m::create<t_vec>({x, y, z, 1});
-		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
-
-		for(const auto& newnucl : newnuclei)
+		// symops of current space group
+		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
+		if(sgidx < 0 || sgidx >= m_SGops.size())
 		{
-			generatednuclei.emplace_back(std::make_tuple(name, MMag, newnucl[0], newnucl[1], newnucl[2], 
-				ReMx, ReMy, ReMz, ImMx, ImMy, ImMz,		// TODO: apply sg ops to spins
-				scale, col));
+			QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
+			return;
 		}
+
+		auto ops = m_SGops[sgidx];
+		std::vector<std::tuple<std::string, t_real, 
+			t_real, t_real, t_real, 
+			t_real, t_real, t_real, t_real, t_real, t_real, 
+			t_real, std::string>> generatednuclei;
+
+		// iterate nuclei
+		int orgRowCnt = m_nuclei->rowCount();
+		for(int row=0; row<orgRowCnt; ++row)
+		{
+			t_real MMag{}, x{},y{},z{}, ReMx{}, ReMy{}, ReMz{}, ImMx{}, ImMy{}, ImMz{}, scale{};
+			std::istringstream{m_nuclei->item(row, COL_M_MAG)->text().toStdString()} >> MMag;
+			std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
+			std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
+			std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+			std::istringstream{m_nuclei->item(row, COL_ReM_X)->text().toStdString()} >> ReMx;
+			std::istringstream{m_nuclei->item(row, COL_ReM_Y)->text().toStdString()} >> ReMy;
+			std::istringstream{m_nuclei->item(row, COL_ReM_Z)->text().toStdString()} >> ReMz;
+			std::istringstream{m_nuclei->item(row, COL_ImM_X)->text().toStdString()} >> ImMx;
+			std::istringstream{m_nuclei->item(row, COL_ImM_Y)->text().toStdString()} >> ImMy;
+			std::istringstream{m_nuclei->item(row, COL_ImM_Z)->text().toStdString()} >> ImMz;
+			std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
+			std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
+			std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
+
+			t_vec nucl = m::create<t_vec>({x, y, z, 1});
+			auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
+
+			for(const auto& newnucl : newnuclei)
+			{
+				generatednuclei.emplace_back(std::make_tuple(name, MMag, newnucl[0], newnucl[1], newnucl[2], 
+					ReMx, ReMy, ReMz, ImMx, ImMy, ImMz,		// TODO: apply sg ops to spins
+					scale, col));
+			}
+		}
+
+		// remove original nuclei
+		DelTabItem(-1);
+
+		// add new nuclei
+		for(const auto& nucl : generatednuclei)
+			std::apply(&MagStructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Structure Factors", ex.what());
 	}
 
-	// remove original nuclei
-	DelTabItem(-1);
-
-	// add new nuclei
-	for(const auto& nucl : generatednuclei)
-		std::apply(&MagStructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
+	m_ignoreCalc = 0;
+	Calc();
 }
 
 
@@ -1435,6 +1503,9 @@ std::vector<NuclPos> MagStructFactDlg::GetNuclei() const
  */
 void MagStructFactDlg::CalcB(bool bFullRecalc)
 {
+	if(m_ignoreCalc)
+		return;
+
 	t_real a,b,c, alpha,beta,gamma;
 	std::istringstream{m_editA->text().toStdString()} >> a;
 	std::istringstream{m_editB->text().toStdString()} >> b;
@@ -1473,8 +1544,13 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
  */
 void MagStructFactDlg::Calc()
 {
+	if(m_ignoreCalc)
+		return;
+
 	const t_real p = -t_real(consts::codata::mu_n/consts::codata::mu_N*consts::codata::r_e/si::meters)*0.5e15;
 	const auto maxBZ = m_maxBZ->value();
+	const auto maxSC = m_maxSC->value();
+	const bool remove_zeroes = m_RemoveZeroes->isChecked();
 
 
 	// propagation vectors
@@ -1506,6 +1582,7 @@ void MagStructFactDlg::Calc()
 			{
 				line.I += I;
 				line.peaks +=  ostrPeak.str();
+				++line.num_peaks;
 				foundQ = true;
 				break;
 			}
@@ -1518,6 +1595,7 @@ void MagStructFactDlg::Calc()
 			line.Q = Q;
 			line.I = I;
 			line.peaks = ostrPeak.str();
+			line.num_peaks = 1;
 			powderlines.emplace_back(std::move(line));
 		}
 	};
@@ -1526,6 +1604,7 @@ void MagStructFactDlg::Calc()
 	std::vector<t_cplx> bs;
 	std::vector<t_vec> pos;
 	std::vector<t_vec_cplx> Ms;
+	std::vector<std::string> names;
 
 	for(const auto& nucl : GetNuclei())
 	{
@@ -1534,6 +1613,7 @@ void MagStructFactDlg::Calc()
 			t_cplx{nucl.ReM[0], nucl.ImM[0]}, 
 			t_cplx{nucl.ReM[1], nucl.ImM[1]}, 
 			t_cplx{nucl.ReM[2], nucl.ImM[2]} }));
+		names.emplace_back(std::move(nucl.name));
 	}
 
 
@@ -1542,10 +1622,10 @@ void MagStructFactDlg::Calc()
 	ostrPowder.precision(g_prec);
 
 	ostr << "# Magnetic single-crystal structure factors:" << "\n";
-	ostr << "# \n"
-		<< std::setw(g_prec*1.2) << std::right << "h (rlu)" << " "
-		<< std::setw(g_prec*1.2) << std::right << "k (rlu)" << " "
-		<< std::setw(g_prec*1.2) << std::right << "l (rlu)" << " "
+	ostr << "# "
+		<< std::setw(g_prec*1.2-2) << std::right << "h" << " "
+		<< std::setw(g_prec*1.2) << std::right << "k" << " "
+		<< std::setw(g_prec*1.2) << std::right << "l" << " "
 		<< std::setw(g_prec*2) << std::right << "|Q| (1/A)" << " "
 		<< std::setw(g_prec*2) << std::right << "|Fm|^2" << " "
 		<< std::setw(g_prec*2) << std::right << "|Fm_perp|^2" << " "
@@ -1560,7 +1640,8 @@ void MagStructFactDlg::Calc()
 	ostrPowder << "# Magnetic powder lines:" << "\n";
 	ostrPowder << "# "
 		<< std::setw(g_prec*2-2) << std::right << "|Q| (1/A)" << " "
-		<< std::setw(g_prec*2) << std::right << "|F|^2" << "\n";
+		<< std::setw(g_prec*2) << std::right << "|F|^2" << " "
+		<< std::setw(g_prec*2) << std::right << "Mult." << "\n";
 
 
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
@@ -1577,10 +1658,11 @@ void MagStructFactDlg::Calc()
 
 					// magnetic structure factor
 					auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
+					bool Fm_is_zero = 1;
 					for(auto &comp : Fm)
 					{
-						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.); else Fm_is_zero = 0;
+						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.); else Fm_is_zero = 0;
 					}
 					if(Fm.size() == 0)
 						Fm = m::zero<t_vec_cplx>(3);
@@ -1600,6 +1682,16 @@ void MagStructFactDlg::Calc()
 					t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
 						std::conj(Fm_perp[1])*Fm_perp[1] +
 						std::conj(Fm_perp[2])*Fm_perp[2]).real();
+
+					if(std::isnan(I_perp))
+					{
+						I_perp = 0.;
+						for(auto& comp : Fm_perp)
+							comp = t_cplx{0.,0.};
+					}
+
+					if(remove_zeroes && Fm_is_zero)
+						continue;
 
 					add_powderline(Qabs_invA, I_perp, h,k,l);
 
@@ -1637,10 +1729,86 @@ void MagStructFactDlg::Calc()
 		ostrPowder
 			<< std::setw(g_prec*2) << std::right << line.Q << " "
 			<< std::setw(g_prec*2) << std::right << line.I << " "
+			<< std::setw(g_prec*2) << std::right << line.num_peaks << " "
 			<< line.peaks << "\n";
 	}
 
 	m_powderlines->setPlainText(ostrPowder.str().c_str());
+
+
+	// ------------------------------------------------------------------------
+
+
+	// generate real magnetic moments from the fourier components
+	std::ostringstream ostrMoments;
+	ostrMoments.precision(g_prec);
+
+	ostrMoments << "# Magnetic moments:" << "\n";
+	ostrMoments << "# "
+		<< std::setw(g_prec*2-2) << std::right << "Name" << " "		// name of nucleus
+		<< std::setw(g_prec*2) << std::right << "x" << " "			// position of nucleus in supercell
+		<< std::setw(g_prec*2) << std::right << "y" << " "
+		<< std::setw(g_prec*2) << std::right << "z" << " "
+		<< std::setw(g_prec*2) << std::right << "Re{M_x}" << " "	// magnetic moment
+		<< std::setw(g_prec*2) << std::right << "Re{M_y}" << " "
+		<< std::setw(g_prec*2) << std::right << "Re{M_z}" << " "
+		<< std::setw(g_prec*2) << std::right << "Im{M_x}" << " "
+		<< std::setw(g_prec*2) << std::right << "Im{M_y}" << " "
+		<< std::setw(g_prec*2) << std::right << "Im{M_z}" << " "
+		<< std::setw(g_prec*1.2) << std::right << "sc_x" << " "		// centring of supercell origin
+		<< std::setw(g_prec*1.2) << std::right << "sc_y" << " "
+		<< std::setw(g_prec*1.2) << std::right << "sc_z" << "\n";
+
+	//std::vector<t_vec_cplx> moments;
+	auto vecCentring = m::create<t_vec>({0, 0, 0});
+
+	for(t_real sc_x=-maxBZ; sc_x<=maxSC; ++sc_x)
+	{
+		for(t_real sc_y=-maxBZ; sc_y<=maxSC; ++sc_y)
+		{
+			for(t_real sc_z=-maxBZ; sc_z<=maxSC; ++sc_z)
+			{
+				auto vecCellCentre = m::create<t_vec>({ sc_x, sc_y, sc_z }) + vecCentring;
+
+				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
+				{
+					const auto& fourier = Ms[nuclidx];
+					auto thepos = pos[nuclidx] + vecCellCentre;
+					const std::string& name = names[nuclidx];
+
+					auto moment = m::create<t_vec_cplx>({0, 0, 0});
+
+					for(const auto& propvec : propvecs)
+						moment += fourier * std::exp(t_cplx{0,1}*m::pi<t_real>*t_real{2} * m::inner<t_vec>(propvec, vecCellCentre));
+
+					for(auto &comp : moment)
+					{
+						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+					}
+
+					//moments.emplace_back(std::move(moment));
+
+					ostrMoments
+						<< std::setw(g_prec*2) << std::right << name << " "
+						<< std::setw(g_prec*2) << std::right << thepos[0] << " "
+						<< std::setw(g_prec*2) << std::right << thepos[1] << " "
+						<< std::setw(g_prec*2) << std::right << thepos[2] << " "
+						<< std::setw(g_prec*2) << std::right << moment[0].real() << " "
+						<< std::setw(g_prec*2) << std::right << moment[1].real() << " "
+						<< std::setw(g_prec*2) << std::right << moment[2].real() << " "
+						<< std::setw(g_prec*2) << std::right << moment[0].imag() << " "
+						<< std::setw(g_prec*2) << std::right << moment[1].imag() << " "
+						<< std::setw(g_prec*2) << std::right << moment[2].imag() << " "
+						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[0] << " "
+						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[1] << " "
+						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[2] << "\n";
+				}
+			}
+		}
+	}
+
+	m_moments->setPlainText(ostrMoments.str().c_str());
 }
 // ----------------------------------------------------------------------------
 

@@ -18,6 +18,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QCheckBox>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -78,6 +79,7 @@ protected:
 	std::vector<std::vector<t_mat>> m_SGops;
 
 	QSpinBox *m_maxBZ = nullptr;
+	QCheckBox *m_RemoveZeroes = nullptr;
 
 	QMenu *m_pTabContextMenu = nullptr;			// menu in case a nucleus is selected
 	QMenu *m_pTabContextMenuNoItem = nullptr;	// menu if nothing is selected
@@ -120,6 +122,7 @@ protected:
 private:
 	int m_iCursorRow = -1;
 	bool m_ignoreChanges = 1;
+	bool m_ignoreCalc = 0;
 
 	long m_curPickedObj = -1;
 

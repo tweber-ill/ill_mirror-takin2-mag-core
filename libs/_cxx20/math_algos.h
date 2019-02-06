@@ -3088,8 +3088,8 @@ T structure_factor(const t_cont<T>& Ms_or_bs, const t_cont<t_vec>& Rs, const t_v
 requires is_basic_vec<t_vec>
 {
 	using t_real = typename t_cplx::value_type;
-	constexpr t_cplx cI(0,1);
-	constexpr t_real twopi = pi<t_real> * t_real(2);
+	constexpr t_cplx cI{0,1};
+	constexpr t_real twopi = pi<t_real> * t_real{2};
 	constexpr t_real expsign = -1;
 
 	T F{};

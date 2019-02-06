@@ -60,8 +60,9 @@ enum : int
 
 struct PowderLine
 {
-	t_real Q;
-	t_real I;
+	t_real Q{};
+	t_real I{};
+	std::size_t num_peaks = 0;
 	std::string peaks;
 };
 
@@ -224,12 +225,19 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_maxBZ->setMaximum(99);
 		m_maxBZ->setValue(4);
 
+		m_RemoveZeroes = new QCheckBox("Remove Zeroes", sfactpanel);
+		m_RemoveZeroes->setChecked(true);
+
+
 		pGrid->addWidget(m_structfacts, 0,0, 1,4);
-		pGrid->addWidget(new QLabel("Max. Order::"), 1,0,1,1);
+		pGrid->addWidget(new QLabel("Max. Order:"), 1,0,1,1);
 		pGrid->addWidget(m_maxBZ, 1,1, 1,1);
+		pGrid->addWidget(m_RemoveZeroes, 1,2, 1,2);
+
 
 		// signals
 		connect(m_maxBZ, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() { this->Calc(); });
+		connect(m_RemoveZeroes, static_cast<void (QCheckBox::*)(int)>(&QCheckBox::stateChanged), this, [this]() { this->Calc(); });
 
 		tabs->addTab(sfactpanel, "Structure Factors");
 	}
@@ -740,6 +748,8 @@ void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
 // ----------------------------------------------------------------------------
 void StructFactDlg::Load()
 {
+	m_ignoreCalc = 1;
+
 	try
 	{
 		QString dirLast = m_sett->value("dir", "").toString();
@@ -799,11 +809,14 @@ void StructFactDlg::Load()
 		{
 			m_maxBZ->setValue(*opt);
 		}
+		if(auto opt = node.get_optional<int>("sfact.removezeroes"); opt)
+		{
+			m_RemoveZeroes->setChecked(*opt != 0);
+		}
 		if(auto opt = node.get_optional<int>("sfact.sg_idx"); opt)
 		{
 			m_comboSG->setCurrentIndex(*opt);
 		}
-		CalcB(false);
 
 
 		// nuclei
@@ -828,6 +841,11 @@ void StructFactDlg::Load()
 	{
 		QMessageBox::critical(this, "Structure Factors", ex.what());
 	}
+
+
+	m_ignoreCalc = 0;
+	CalcB(false);
+	Calc();
 }
 
 
@@ -861,6 +879,7 @@ void StructFactDlg::Save()
 	node.put<t_real>("sfact.xtal.beta", beta);
 	node.put<t_real>("sfact.xtal.gamma", gamma);
 	node.put<int>("sfact.order", m_maxBZ->value());
+	node.put<int>("sfact.removezeroes", m_RemoveZeroes->isChecked());
 	node.put<int>("sfact.sg_idx", m_comboSG->currentIndex());
 
 	// nucleus list
@@ -957,69 +976,82 @@ void StructFactDlg::ExportTAZ()
  */
 void StructFactDlg::ImportCIF()
 {
-	QString dirLast = m_sett->value("dir_cif", "").toString();
-	QString filename = QFileDialog::getOpenFileName(this, "Import CIF", dirLast, "CIF Files (*.cif *.CIF)");
-	if(filename=="" || !QFile::exists(filename))
-		return;
-	m_sett->setValue("dir_cif", QFileInfo(filename).path());
+	m_ignoreCalc = 1;
 
-	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
-	if(errstr)
+	try
 	{
-		QMessageBox::critical(this, "Structure Factors", errstr);
-		return;
-	}
+		QString dirLast = m_sett->value("dir_cif", "").toString();
+		QString filename = QFileDialog::getOpenFileName(this, "Import CIF", dirLast, "CIF Files (*.cif *.CIF)");
+		if(filename=="" || !QFile::exists(filename))
+			return;
+		m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
-
-	// clear old nuclei
-	DelTabItem(-1);
-
-	// lattice
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.a;
-		m_editA->setText(ostr.str().c_str());
-	}
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.b;
-		m_editB->setText(ostr.str().c_str());
-	}
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.c;
-		m_editC->setText(ostr.str().c_str());
-	}
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.alpha;
-		m_editAlpha->setText(ostr.str().c_str());
-	}
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.beta;
-		m_editBeta->setText(ostr.str().c_str());
-	}
-	{
-		std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
-		m_editGamma->setText(ostr.str().c_str());
-	}
-	CalcB(false);
-
-
-	// atoms
-	std::mt19937 gen{tl2::epoch<unsigned int>()};
-	for(std::size_t atomnum=0; atomnum<atoms.size(); ++atomnum)
-	{
-		// random colour
-		std::ostringstream ostrcol;
-		std::uniform_int_distribution<int> dist{0, 255};
-		ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen) 
-			<< std::setw(2) << std::setfill('0') << dist(gen) 
-			<< std::setw(2) << std::setfill('0') << dist(gen);
-
-		for(std::size_t symnr=0; symnr<generatedatoms[atomnum].size(); ++symnr)
+		auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
+		if(errstr)
 		{
-			AddTabItem(-1, atomnames[atomnum], 0, 0, 
-				generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
-				1, ostrcol.str());
+			QMessageBox::critical(this, "Structure Factors", errstr);
+			return;
+		}
+
+
+		// clear old nuclei
+		DelTabItem(-1);
+
+		// lattice
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.a;
+			m_editA->setText(ostr.str().c_str());
+		}
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.b;
+			m_editB->setText(ostr.str().c_str());
+		}
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.c;
+			m_editC->setText(ostr.str().c_str());
+		}
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.alpha;
+			m_editAlpha->setText(ostr.str().c_str());
+		}
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.beta;
+			m_editBeta->setText(ostr.str().c_str());
+		}
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
+			m_editGamma->setText(ostr.str().c_str());
+		}
+
+
+		// atoms
+		std::mt19937 gen{tl2::epoch<unsigned int>()};
+		for(std::size_t atomnum=0; atomnum<atoms.size(); ++atomnum)
+		{
+			// random colour
+			std::ostringstream ostrcol;
+			std::uniform_int_distribution<int> dist{0, 255};
+			ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen) 
+				<< std::setw(2) << std::setfill('0') << dist(gen) 
+				<< std::setw(2) << std::setfill('0') << dist(gen);
+
+			for(std::size_t symnr=0; symnr<generatedatoms[atomnum].size(); ++symnr)
+			{
+				AddTabItem(-1, atomnames[atomnum], 0, 0, 
+					generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
+					1, ostrcol.str());
+			}
 		}
 	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Structure Factors", ex.what());
+	}
+
+
+	m_ignoreCalc = 0;
+	CalcB(false);
+	Calc();
 }
 // ----------------------------------------------------------------------------
 
@@ -1029,48 +1061,62 @@ void StructFactDlg::ImportCIF()
  */
 void StructFactDlg::GenerateFromSG()
 {
-	// symops of current space group
-	auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
-	if(sgidx < 0 || sgidx >= m_SGops.size())
+	m_ignoreCalc = 1;
+
+	try
 	{
-		QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
-		return;
-	}
-
-	auto ops = m_SGops[sgidx];
-	std::vector<std::tuple<std::string, t_real, t_real, t_real, t_real, t_real, t_real, std::string>> generatednuclei;
-
-	// iterate nuclei
-	int orgRowCnt = m_nuclei->rowCount();
-	for(int row=0; row<orgRowCnt; ++row)
-	{
-		t_real bRe{}, bIm{}, x{},y{},z{}, scale{};
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
-		std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
-		std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
-		std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
-		std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
-		std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
-		std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
-		std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
-
-		t_vec nucl = m::create<t_vec>({x, y, z, 1});
-		auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
-
-		for(const auto& newnucl : newnuclei)
+		// symops of current space group
+		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
+		if(sgidx < 0 || sgidx >= m_SGops.size())
 		{
-			//AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
-			generatednuclei.emplace_back(std::make_tuple(name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col));
+			QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
+			return;
 		}
+
+		auto ops = m_SGops[sgidx];
+		std::vector<std::tuple<std::string, t_real, t_real, t_real, t_real, t_real, t_real, std::string>> generatednuclei;
+
+		// iterate nuclei
+		int orgRowCnt = m_nuclei->rowCount();
+		for(int row=0; row<orgRowCnt; ++row)
+		{
+			t_real bRe{}, bIm{}, x{},y{},z{}, scale{};
+			std::istringstream{m_nuclei->item(row, COL_SCATLEN_RE)->text().toStdString()} >> bRe;
+			std::istringstream{m_nuclei->item(row, COL_SCATLEN_IM)->text().toStdString()} >> bIm;
+			std::istringstream{m_nuclei->item(row, COL_X)->text().toStdString()} >> x;
+			std::istringstream{m_nuclei->item(row, COL_Y)->text().toStdString()} >> y;
+			std::istringstream{m_nuclei->item(row, COL_Z)->text().toStdString()} >> z;
+			std::istringstream{m_nuclei->item(row, COL_RAD)->text().toStdString()} >> scale;
+			std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
+			std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
+
+			t_vec nucl = m::create<t_vec>({x, y, z, 1});
+			auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
+
+			for(const auto& newnucl : newnuclei)
+			{
+				//AddTabItem(-1, name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col);
+				generatednuclei.emplace_back(std::make_tuple(name, bRe, bIm, newnucl[0], newnucl[1], newnucl[2], scale, col));
+			}
+		}
+
+		// remove original nuclei
+		//DelTabItem(0, orgRowCnt);
+		DelTabItem(-1);
+
+		// add new nuclei
+		for(const auto& nucl : generatednuclei)
+			std::apply(&StructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Structure Factors", ex.what());
 	}
 
-	// remove original nuclei
-	//DelTabItem(0, orgRowCnt);
-	DelTabItem(-1);
 
-	// add new nuclei
-	for(const auto& nucl : generatednuclei)
-		std::apply(&StructFactDlg::AddTabItem, std::tuple_cat(std::make_tuple(this, -1), nucl));
+	m_ignoreCalc = 0;
+	CalcB(false);
+	Calc();
 }
 
 
@@ -1120,6 +1166,9 @@ std::vector<NuclPos> StructFactDlg::GetNuclei() const
  */
 void StructFactDlg::CalcB(bool bFullRecalc)
 {
+	if(m_ignoreCalc)
+		return;
+
 	t_real a,b,c, alpha,beta,gamma;
 	std::istringstream{m_editA->text().toStdString()} >> a;
 	std::istringstream{m_editB->text().toStdString()} >> b;
@@ -1158,7 +1207,12 @@ void StructFactDlg::CalcB(bool bFullRecalc)
  */
 void StructFactDlg::Calc()
 {
+	if(m_ignoreCalc)
+		return;
+
 	const auto maxBZ = m_maxBZ->value();
+	const bool remove_zeroes = m_RemoveZeroes->isChecked();
+
 
 	// powder lines
 	std::vector<PowderLine> powderlines;
@@ -1176,6 +1230,7 @@ void StructFactDlg::Calc()
 			{
 				line.I += I;
 				line.peaks +=  ostrPeak.str();
+				++line.num_peaks;
 				foundQ = true;
 				break;
 			}
@@ -1188,6 +1243,7 @@ void StructFactDlg::Calc()
 			line.Q = Q;
 			line.I = I;
 			line.peaks = ostrPeak.str();
+			line.num_peaks = 1;
 			powderlines.emplace_back(std::move(line));
 		}
 	};
@@ -1219,7 +1275,8 @@ void StructFactDlg::Calc()
 	ostrPowder << "# Nuclear powder lines:" << "\n";
 	ostrPowder << "# "
 		<< std::setw(g_prec*2-2) << std::right << "|Q| (1/A)" << " "
-		<< std::setw(g_prec*2) << std::right << "|F|^2" << "\n";
+		<< std::setw(g_prec*2) << std::right << "|F|^2" << " "
+		<< std::setw(g_prec*2) << std::right << "Mult." << "\n";
 
 
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
@@ -1238,6 +1295,9 @@ void StructFactDlg::Calc()
 				if(m::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
 				if(m::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
 				auto I = (std::conj(Fn)*Fn).real();
+
+				if(remove_zeroes && m::equals<t_cplx>(Fn, t_cplx(0), g_eps))
+					continue;
 
 				add_powderline(Qabs_invA, I, h,k,l);
 
@@ -1268,6 +1328,7 @@ void StructFactDlg::Calc()
 		ostrPowder
 			<< std::setw(g_prec*2) << std::right << line.Q << " "
 			<< std::setw(g_prec*2) << std::right << line.I << " "
+			<< std::setw(g_prec*2) << std::right << line.num_peaks << " "
 			<< line.peaks << "\n";
 	}
 

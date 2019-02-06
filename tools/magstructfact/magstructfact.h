@@ -18,6 +18,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QCheckBox>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -71,6 +72,7 @@ protected:
 	QTableWidget *m_propvecs = nullptr;
 	QPlainTextEdit *m_structfacts = nullptr;
 	QPlainTextEdit *m_powderlines = nullptr;
+	QPlainTextEdit *m_moments = nullptr;
 
 	QLineEdit *m_editA = nullptr;
 	QLineEdit *m_editB = nullptr;
@@ -83,6 +85,8 @@ protected:
 	std::vector<std::vector<t_mat>> m_SGops;
 
 	QSpinBox *m_maxBZ = nullptr;
+	QCheckBox *m_RemoveZeroes = nullptr;
+	QSpinBox *m_maxSC = nullptr;
 
 	t_mat m_crystA = m::unit<t_mat>(3);
 	t_mat m_crystB = m::unit<t_mat>(3);
@@ -134,6 +138,7 @@ protected:
 private:
 	int m_iCursorRow = -1;
 	bool m_ignoreChanges = 1;
+	bool m_ignoreCalc = 0;
 
 	long m_curPickedObj = -1;
 };
