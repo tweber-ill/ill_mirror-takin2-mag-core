@@ -328,6 +328,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto menuFile = new QMenu("File", m_menu);
 		auto menuView = new QMenu("View", m_menu);
 
+		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
@@ -335,6 +336,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acExit = new QAction("Exit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
 
+		menuFile->addAction(acNew);
+		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
@@ -344,6 +347,20 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acExit);
 		menuView->addAction(ac3DView);
 
+		connect(acNew, &QAction::triggered, this,  [this]()
+		{
+			// clear old table
+			DelTabItem(-1);
+
+			// set some defaults
+			m_comboSG->setCurrentIndex(0);
+			m_editA->setText("5");
+			m_editB->setText("5");
+			m_editC->setText("5");
+			m_editAlpha->setText("90");
+			m_editBeta->setText("90");
+			m_editGamma->setText("90");
+		});
 		connect(acLoad, &QAction::triggered, this, &StructFactDlg::Load);
 		connect(acSave, &QAction::triggered, this, &StructFactDlg::Save);
 		connect(acImportCIF, &QAction::triggered, this, &StructFactDlg::ImportCIF);

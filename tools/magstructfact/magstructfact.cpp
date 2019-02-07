@@ -54,12 +54,12 @@ constexpr int g_prec = 6;
 enum : int
 {
 	COL_NAME = 0,
-	COL_X, COL_Y, COL_Z,
-	COL_M_MAG,
-	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,
+	COL_X, COL_Y, COL_Z,				// position
+	COL_M_MAG,							// scale factor of FC
+	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,	// fourier components
 	COL_ImM_X, COL_ImM_Y, COL_ImM_Z,
-	COL_RAD,
-	COL_COL,
+	COL_RAD,							// drawing radius
+	COL_COL,							// colour
 
 	NUM_COLS
 };
@@ -69,7 +69,8 @@ enum : int
 enum : int
 {
 	PROP_COL_NAME = 0,
-	PROP_COL_X, PROP_COL_Y, PROP_COL_Z,
+	PROP_COL_X, PROP_COL_Y, PROP_COL_Z,	// propagation direction
+	PROP_COL_CONJ,						// conjugate fourier component for this propagation vector?
 
 	PROP_NUM_COLS
 };
@@ -179,7 +180,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto pTabGrid = new QGridLayout(m_nucleipanel);
 		pTabGrid->setSpacing(2);
 		pTabGrid->setContentsMargins(4,4,4,4);
-		int y=0;
+		int y = 0;
 		//pTabGrid->addWidget(m_plot.get(), y,0,1,4);
 		pTabGrid->addWidget(m_nuclei, y,0,1,4);
 		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
@@ -260,11 +261,13 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_propvecs->setHorizontalHeaderItem(PROP_COL_X, new QTableWidgetItem{"x (frac.)"});
 		m_propvecs->setHorizontalHeaderItem(PROP_COL_Y, new QTableWidgetItem{"y (frac.)"});
 		m_propvecs->setHorizontalHeaderItem(PROP_COL_Z, new QTableWidgetItem{"z (frac.)"});
+		m_propvecs->setHorizontalHeaderItem(PROP_COL_CONJ, new QTableWidgetItem{"FC*"});
 
 		m_propvecs->setColumnWidth(PROP_COL_NAME, 90);
 		m_propvecs->setColumnWidth(PROP_COL_X, 90);
 		m_propvecs->setColumnWidth(PROP_COL_Y, 90);
 		m_propvecs->setColumnWidth(PROP_COL_Z, 90);
+		m_propvecs->setColumnWidth(PROP_COL_CONJ, 75);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_propvecpanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_propvecpanel);
@@ -286,7 +289,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto pTabGrid = new QGridLayout(m_propvecpanel);
 		pTabGrid->setSpacing(2);
 		pTabGrid->setContentsMargins(4,4,4,4);
-		int y=0;
+		int y = 0;
 		pTabGrid->addWidget(m_propvecs, y,0,1,4);
 		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
 		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
@@ -387,18 +390,28 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_moments->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 		m_moments->setLineWrapMode(QPlainTextEdit::NoWrap);
 
-		m_maxSC = new QSpinBox(mmpanel);
-		m_maxSC->setMinimum(0);
-		m_maxSC->setMaximum(99);
-		m_maxSC->setValue(4);
+		for(auto*& spin : m_maxSC)
+		{
+			spin = new QSpinBox(mmpanel);
+			spin->setMinimum(0);
+			spin->setMaximum(999);
+			spin->setValue(4);
+		}
+
+		m_maxSC[0]->setPrefix("x = ");
+		m_maxSC[1]->setPrefix("y = ");
+		m_maxSC[2]->setPrefix("z = ");
 
 		pGrid->addWidget(m_moments, 0,0, 1,4);
 		pGrid->addWidget(new QLabel("Max. Supercell Order:"), 1,0,1,1);
-		pGrid->addWidget(m_maxSC, 1,1, 1,1);
+		pGrid->addWidget(m_maxSC[0], 1,1, 1,1);
+		pGrid->addWidget(m_maxSC[1], 1,2, 1,1);
+		pGrid->addWidget(m_maxSC[2], 1,3, 1,1);
 
 
 		// signals
-		connect(m_maxSC, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() { this->Calc(); });
+		for(auto* spin : m_maxSC)
+			connect(spin, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this]() { this->Calc(); });
 
 		tabs->addTab(mmpanel, "Magnetic Moments");
 	}
@@ -470,14 +483,18 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
 		auto menuFile = new QMenu("File", m_menu);
-		auto menuView = new QMenu("View", m_menu);
+		auto menuView = new QMenu("3D View", m_menu);
 
+		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
 		auto acExit = new QAction("Exit", menuFile);
-		auto ac3DView = new QAction("3D View...", menuFile);
+		auto ac3DView = new QAction("Unit Cell / Fourier Components...", menuFile);
+		auto ac3DViewSC = new QAction("Super Cell / Magnetic Moments...", menuFile);
 
+		menuFile->addAction(acNew);
+		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
@@ -485,18 +502,37 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 		menuView->addAction(ac3DView);
+		menuView->addAction(ac3DViewSC);
 
+		connect(acNew, &QAction::triggered, this,  [this]()
+		{
+			// clear old tables
+			DelTabItem(-1);
+			DelPropItem(-1);
+
+			// set some defaults
+			m_comboSG->setCurrentIndex(0);
+			m_editA->setText("5");
+			m_editB->setText("5");
+			m_editC->setText("5");
+			m_editAlpha->setText("90");
+			m_editBeta->setText("90");
+			m_editGamma->setText("90");
+		});
 		connect(acLoad, &QAction::triggered, this, &MagStructFactDlg::Load);
 		connect(acSave, &QAction::triggered, this, &MagStructFactDlg::Save);
 		connect(acImportCIF, &QAction::triggered, this, &MagStructFactDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
+	
+
+		// unit cell view
 		connect(ac3DView, &QAction::triggered, this, [this]()
 		{
 			// plot widget
 			if(!m_dlgPlot)
 			{
 				m_dlgPlot = new QDialog(this);
-				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
+				m_dlgPlot->setWindowTitle("Unit Cell");
 
 				m_plot = std::make_shared<GlPlot>(this);
 				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
@@ -529,7 +565,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisation);
 				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
 				connect(m_plot.get(), &GlPlot::MouseDown, this, &MagStructFactDlg::PlotMouseDown);
-				connect(m_plot.get(), &GlPlot::MouseUp, this, &MagStructFactDlg::PlotMouseUp);
+				//connect(m_plot.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
@@ -546,6 +582,66 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 			m_dlgPlot->show();
 			m_dlgPlot->raise();
 			m_dlgPlot->focusWidget();
+		});
+
+
+		// super cell view
+		connect(ac3DViewSC, &QAction::triggered, this, [this]()
+		{
+			// plot widget
+			if(!m_dlgPlotSC)
+			{
+				m_dlgPlotSC = new QDialog(this);
+				m_dlgPlotSC->setWindowTitle("Super Cell");
+
+				m_plotSC = std::make_shared<GlPlot>(this);
+				m_plotSC->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plotSC->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plotSC->GetImpl()->SetCoordMax(1.);
+				m_plotSC->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+
+
+				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlotSC*/ this);
+				auto comboCoordSys = new QComboBox(/*m_dlgPlotSC*/ this);
+				m_status3D = new QLabel(/*m_dlgPlotSC*/ this);
+
+				comboCoordSys->addItem("Fractional Units (rlu)");
+				comboCoordSys->addItem("Lab Units (A)");
+
+
+				m_plotSC->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+				labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+
+				auto grid = new QGridLayout(m_dlgPlotSC);
+				grid->setSpacing(2);
+				grid->setContentsMargins(4,4,4,4);
+				grid->addWidget(m_plotSC.get(), 0,0,1,2);
+				grid->addWidget(labCoordSys, 1,0,1,1);
+				grid->addWidget(comboCoordSys, 1,1,1,1);
+				grid->addWidget(m_status3D, 2,0,1,2);
+
+
+				connect(m_plotSC.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisationSC);
+				//connect(m_plotSC->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
+				//connect(m_plotSC.get(), &GlPlot::MouseDown, this, [this](bool left, bool mid, bool right) {});
+				//connect(m_plotSC.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
+				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
+				{
+					if(this->m_plotSC)
+						this->m_plotSC->GetImpl()->SetCoordSys(val);
+				});
+
+
+				if(m_sett && m_sett->contains("geo_3dview_sc"))
+					m_dlgPlotSC->restoreGeometry(m_sett->value("geo_3dview_sc").toByteArray());
+				else
+					m_dlgPlotSC->resize(500,500);
+			}
+
+			m_dlgPlotSC->show();
+			m_dlgPlotSC->raise();
+			m_dlgPlotSC->focusWidget();
 		});
 
 		m_menu->addMenu(menuFile);
@@ -956,7 +1052,7 @@ void MagStructFactDlg::ShowTableContextMenu(QTableWidget *pTab, QMenu *pMenu, QM
 
 // ----------------------------------------------------------------------------
 void MagStructFactDlg::AddPropItem(int row, 
-	const std::string& name, t_real x, t_real y, t_real z)
+	const std::string& name, t_real x, t_real y, t_real z, bool bConjFC)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -988,6 +1084,7 @@ void MagStructFactDlg::AddPropItem(int row,
 		m_propvecs->setItem(row, PROP_COL_X, new NumericTableWidgetItem<t_real>(x));
 		m_propvecs->setItem(row, PROP_COL_Y, new NumericTableWidgetItem<t_real>(y));
 		m_propvecs->setItem(row, PROP_COL_Z, new NumericTableWidgetItem<t_real>(z));
+		m_propvecs->setItem(row, PROP_COL_CONJ, new NumericTableWidgetItem<int>(bConjFC));
 	}
 
 	//Add3DItem(row);	TODO
@@ -1009,48 +1106,18 @@ void MagStructFactDlg::DelPropItem(int begin, int end)
 	// if nothing is selected, clear all items
 	if(begin == -1 || m_propvecs->selectedItems().count() == 0)
 	{
-		if(m_plot)
-		{
-			for(int row=0; row<m_propvecs->rowCount(); ++row)
-			{
-				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
-			}
-			m_plot->update();
-		}
-
 		m_propvecs->clearContents();
 		m_propvecs->setRowCount(0);
 	}
 	else if(begin == -2)	// clear selected
 	{
 		for(int row : GetSelectedRows(m_propvecs, true))
-		{
-			// remove 3d object
-			if(m_plot)
-			{
-				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
-				m_plot->update();
-			}
-
 			m_propvecs->removeRow(row);
-		}
 	}
 	else if(begin >= 0 && end >= 0)		// clear given range
 	{
 		for(int row=end-1; row>=begin; --row)
-		{
-			// remove 3d object
-			if(m_plot)
-			{
-				if(std::size_t obj = m_propvecs->item(row, PROP_COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
-				m_plot->update();
-			}
-
 			m_propvecs->removeRow(row);
-		}
 	}
 
 	m_ignoreChanges = 0;
@@ -1094,10 +1161,15 @@ void MagStructFactDlg::Load()
 		pt::read_xml(ifstr, node);
 
 		// check signature
-		if(auto opt = node.get_optional<std::string>("sfact.meta.info"); !opt || *opt!=std::string{"sfact_tool"})
+		if(auto optInfo = node.get_optional<std::string>("sfact.meta.info");
+			!optInfo || !(*optInfo==std::string{"magsfact_tool"} || *optInfo==std::string{"sfact_tool"}))
 		{
 			QMessageBox::critical(this, "Structure Factors", "Unrecognised file format.");
 			return;
+		}
+		else if(*optInfo == std::string{"sfact_tool"})
+		{
+			QMessageBox::warning(this, "Structure Factors", "File only contains nuclear information. Trying to load.");
 		}
 
 
@@ -1141,9 +1213,17 @@ void MagStructFactDlg::Load()
 		{
 			m_maxBZ->setValue(*opt);
 		}
-		if(auto opt = node.get_optional<int>("sfact.scorder"); opt)
+		if(auto opt = node.get_optional<int>("sfact.scorder_x"); opt)
 		{
-			m_maxSC->setValue(*opt);
+			m_maxSC[0]->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<int>("sfact.scorder_y"); opt)
+		{
+			m_maxSC[1]->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<int>("sfact.scorder_z"); opt)
+		{
+			m_maxSC[2]->setValue(*opt);
 		}
 		if(auto opt = node.get_optional<int>("sfact.removezeroes"); opt)
 		{
@@ -1190,8 +1270,9 @@ void MagStructFactDlg::Load()
 				auto optX = propvec.second.get<t_real>("x", 0.);
 				auto optY = propvec.second.get<t_real>("y", 0.);
 				auto optZ = propvec.second.get<t_real>("z", 0.);
+				auto optConj = propvec.second.get<int>("conjFC", 0);
 
-				AddPropItem(-1, optName, optX,  optY, optZ);
+				AddPropItem(-1, optName, optX,  optY, optZ, optConj!=0);
 			}
 		}
 	}
@@ -1217,7 +1298,7 @@ void MagStructFactDlg::Save()
 
 
 	pt::ptree node;
-	node.put<std::string>("sfact.meta.info", "sfact_tool");
+	node.put<std::string>("sfact.meta.info", "magsfact_tool");
 	node.put<std::string>("sfact.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 
 
@@ -1237,7 +1318,9 @@ void MagStructFactDlg::Save()
 	node.put<t_real>("sfact.xtal.beta", beta);
 	node.put<t_real>("sfact.xtal.gamma", gamma);
 	node.put<int>("sfact.order", m_maxBZ->value());
-	node.put<int>("sfact.scorder", m_maxSC->value());
+	node.put<int>("sfact.scorder_x", m_maxSC[0]->value());
+	node.put<int>("sfact.scorder_y", m_maxSC[1]->value());
+	node.put<int>("sfact.scorder_z", m_maxSC[2]->value());
 	node.put<int>("sfact.removezeroes", m_RemoveZeroes->isChecked());
 	node.put<int>("sfact.sg_idx", m_comboSG->currentIndex());
 
@@ -1281,15 +1364,18 @@ void MagStructFactDlg::Save()
 	for(int row=0; row<m_propvecs->rowCount(); ++row)
 	{
 		t_real x{},y{},z{};
+		int iConj{0};
 		std::istringstream{m_propvecs->item(row, PROP_COL_X)->text().toStdString()} >> x;
 		std::istringstream{m_propvecs->item(row, PROP_COL_Y)->text().toStdString()} >> y;
 		std::istringstream{m_propvecs->item(row, PROP_COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_propvecs->item(row, PROP_COL_CONJ)->text().toStdString()} >> iConj;
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("name", m_propvecs->item(row, PROP_COL_NAME)->text().toStdString());
 		itemNode.put<t_real>("x", x);
 		itemNode.put<t_real>("y", y);
 		itemNode.put<t_real>("z", z);
+		itemNode.put<int>("conjFC", iConj);
 
 		node.add_child("sfact.propvecs.vec", itemNode);
 	}
@@ -1534,6 +1620,12 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
 		t_mat_gl matA{m_crystA};
 		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
 	}
+	if(m_plotSC)
+	{
+		t_mat_gl matA{m_crystA};
+		m_plotSC->GetImpl()->SetBTrafo(m_crystB, &matA);
+	}
+
 	if(bFullRecalc)
 		Calc();
 }
@@ -1549,20 +1641,26 @@ void MagStructFactDlg::Calc()
 
 	const t_real p = -t_real(consts::codata::mu_n/consts::codata::mu_N*consts::codata::r_e/si::meters)*0.5e15;
 	const auto maxBZ = m_maxBZ->value();
-	const auto maxSC = m_maxSC->value();
+	const auto maxSCx = m_maxSC[0]->value();
+	const auto maxSCy = m_maxSC[1]->value();
+	const auto maxSCz = m_maxSC[2]->value();
 	const bool remove_zeroes = m_RemoveZeroes->isChecked();
 
 
 	// propagation vectors
 	std::vector<t_vec> propvecs;
+	std::vector<bool> conjFCs;
 	for(int row=0; row<m_propvecs->rowCount(); ++row)
 	{
 		t_real x{},y{},z{};
+		int iConj{0};
 		std::istringstream{m_propvecs->item(row, PROP_COL_X)->text().toStdString()} >> x;
 		std::istringstream{m_propvecs->item(row, PROP_COL_Y)->text().toStdString()} >> y;
 		std::istringstream{m_propvecs->item(row, PROP_COL_Z)->text().toStdString()} >> z;
+		std::istringstream{m_propvecs->item(row, PROP_COL_CONJ)->text().toStdString()} >> iConj;
 
 		propvecs.emplace_back(m::create<t_vec>({x, y, z}));
+		conjFCs.push_back(iConj != 0);
 	}
 
 
@@ -1740,6 +1838,15 @@ void MagStructFactDlg::Calc()
 
 
 	// generate real magnetic moments from the fourier components
+
+	// remove old 3d objects
+	if(m_plotSC)
+	{
+		for(auto obj : m_3dobjsSC)
+			m_plotSC->GetImpl()->RemoveObject(obj);
+		m_3dobjsSC.clear();
+	}
+
 	std::ostringstream ostrMoments;
 	ostrMoments.precision(g_prec);
 
@@ -1762,24 +1869,31 @@ void MagStructFactDlg::Calc()
 	//std::vector<t_vec_cplx> moments;
 	auto vecCentring = m::create<t_vec>({0, 0, 0});
 
-	for(t_real sc_x=-maxBZ; sc_x<=maxSC; ++sc_x)
+	for(t_real sc_x=-maxSCx; sc_x<=maxSCx; ++sc_x)
 	{
-		for(t_real sc_y=-maxBZ; sc_y<=maxSC; ++sc_y)
+		for(t_real sc_y=-maxSCy; sc_y<=maxSCy; ++sc_y)
 		{
-			for(t_real sc_z=-maxBZ; sc_z<=maxSC; ++sc_z)
+			for(t_real sc_z=-maxSCz; sc_z<=maxSCz; ++sc_z)
 			{
 				auto vecCellCentre = m::create<t_vec>({ sc_x, sc_y, sc_z }) + vecCentring;
 
 				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
 				{
-					const auto& fourier = Ms[nuclidx];
+					t_vec_cplx fourier = Ms[nuclidx];
 					auto thepos = pos[nuclidx] + vecCellCentre;
+					auto posGL = m::create<t_vec_gl>({t_real_gl(thepos[0]), t_real_gl(thepos[1]), t_real_gl(thepos[2])});
+
 					const std::string& name = names[nuclidx];
 
 					auto moment = m::create<t_vec_cplx>({0, 0, 0});
 
-					for(const auto& propvec : propvecs)
+					for(std::size_t propidx=0; propidx<propvecs.size(); ++propidx)
+					{
+						const auto& propvec = propvecs[propidx];
+						if(conjFCs[propidx])
+							fourier = m::conj(fourier);
 						moment += fourier * std::exp(t_cplx{0,1}*m::pi<t_real>*t_real{2} * m::inner<t_vec>(propvec, vecCellCentre));
+					}
 
 					for(auto &comp : moment)
 					{
@@ -1788,6 +1902,49 @@ void MagStructFactDlg::Calc()
 					}
 
 					//moments.emplace_back(std::move(moment));
+
+					// add 3d objs
+					if(m_plotSC)
+					{
+						// TODO
+						t_real_gl M = 1., scale = 1.;
+
+						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+
+						auto vecReM = m::create<t_vec_gl>({t_real_gl(moment[0].real()), t_real_gl(moment[1].real()), t_real_gl(moment[2].real())});
+						auto vecImM = m::create<t_vec_gl>({t_real_gl(moment[0].imag()), t_real_gl(moment[1].imag()), t_real_gl(moment[2].imag())});
+						auto normReM = m::norm<t_vec_gl>(vecReM);
+						auto normImM = m::norm<t_vec_gl>(vecImM);
+
+						t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
+							vecReM, 									// to
+							1, 											// post-scale
+							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
+							m::create<t_vec_gl>({0, 0, 1}),				// from
+							M*scale, 									// pre-scale
+							posGL		// pre-translate 
+						);
+
+						t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
+							vecImM, 									// to
+							1, 											// post-scale
+							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
+							m::create<t_vec_gl>({0, 0, 1}),				// from
+							M*scale, 									// pre-scale
+							posGL		// pre-translate 
+						);
+
+						m_plotSC->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
+						m_plotSC->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
+						m_plotSC->GetImpl()->SetObjectCol(objArrowRe, 1., 0., 0., 1.);
+						m_plotSC->GetImpl()->SetObjectCol(objArrowIm, 0., 0., 1., 1.);
+						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
+						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
+
+						m_3dobjsSC.push_back(objArrowRe);
+						m_3dobjsSC.push_back(objArrowIm);
+					}
 
 					ostrMoments
 						<< std::setw(g_prec*2) << std::right << name << " "
@@ -1808,6 +1965,7 @@ void MagStructFactDlg::Calc()
 		}
 	}
 
+	if(m_plotSC) m_plotSC->update();
 	m_moments->setPlainText(ostrMoments.str().c_str());
 }
 // ----------------------------------------------------------------------------
@@ -1817,7 +1975,7 @@ void MagStructFactDlg::Calc()
 
 // ----------------------------------------------------------------------------
 /**
- * mouse hovers over 3d object
+ * mouse hovers over 3d object in unit cell view
  */
 void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
 {
@@ -1825,7 +1983,6 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 		m_curPickedObj = long(objIdx);
 	else
 		m_curPickedObj = -1;
-
 
 	if(m_curPickedObj > 0)
 	{
@@ -1854,25 +2011,14 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 				ostr << "; r = (" << r[0] << ", " << r[1] << ", " << r[2] << ") rlu";
 				ostr << "; r = (" << rlab[0] << ", " << rlab[1] << ", " << rlab[2] << ") A";
 
-				Set3DStatusMsg(ostr.str().c_str());
+				m_status3D->setText(ostr.str().c_str());
 				break;
 			}
 		}
 	}
 	else
-		Set3DStatusMsg("");
+		m_status3D->setText("");
 }
-
-
-
-/**
- * set status label text in 3d dialog
- */
-void MagStructFactDlg::Set3DStatusMsg(const std::string& msg)
-{
-	m_status3D->setText(msg.c_str());
-}
-
 
 
 /**
@@ -1897,19 +2043,14 @@ void MagStructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 		}
 	}
 }
+// ----------------------------------------------------------------------------
 
 
+
+// ----------------------------------------------------------------------------
 /**
- * mouse button released
+ * initialise objects for unit cell view
  */
-void MagStructFactDlg::PlotMouseUp(bool left, bool mid, bool right)
-{
-}
-// ----------------------------------------------------------------------------
-
-
-
-// ----------------------------------------------------------------------------
 void MagStructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
@@ -1927,12 +2068,32 @@ void MagStructFactDlg::AfterGLInitialisation()
 	Add3DItem(-1);
 
 	// GL device info
-	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
-		= m_plot->GetImpl()->GetGlDescr();
+	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer] = m_plot->GetImpl()->GetGlDescr();
 	m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
 	m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
 	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
 	m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
+}
+
+
+/**
+ * initialise objects for super cell view
+ */
+void MagStructFactDlg::AfterGLInitialisationSC()
+{
+	if(!m_plotSC) return;
+
+	// reference sphere and arrow for linked objects
+	m_sphereSC = m_plotSC->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_arrowSC = m_plotSC->GetImpl()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
+	m_plotSC->GetImpl()->SetObjectVisible(m_sphereSC, false);
+	m_plotSC->GetImpl()->SetObjectVisible(m_arrowSC, false);
+
+	// B matrix
+	m_plotSC->GetImpl()->SetBTrafo(m_crystB);
+
+	// add all 3d objects (generated in calc)
+	Calc();
 }
 
 
@@ -1943,6 +2104,8 @@ void MagStructFactDlg::closeEvent(QCloseEvent *evt)
 		m_sett->setValue("geo", saveGeometry());
 		if(m_dlgPlot)
 			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
+		if(m_dlgPlotSC)
+			m_sett->setValue("geo_3dview_sc", m_dlgPlotSC->saveGeometry());
 	}
 }
 // ----------------------------------------------------------------------------

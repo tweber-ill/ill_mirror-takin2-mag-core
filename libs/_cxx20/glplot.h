@@ -217,6 +217,7 @@ public:
 		const t_vec_gl& color, bool bUseVertsAsNorm=false);
 	GlPlotObj CreateLineObject(const std::vector<t_vec3_gl>& verts, const t_vec_gl& color);
 
+	std::size_t GetNumObjects() const { return m_objs.size(); }
 	void RemoveObject(std::size_t obj);
 	std::size_t AddLinkedObject(std::size_t linkTo,
 		t_real_gl x=0, t_real_gl y=0, t_real_gl z=0,

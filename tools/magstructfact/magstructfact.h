@@ -53,16 +53,24 @@ class MagStructFactDlg : public QDialog
 {
 public:
 	MagStructFactDlg(QWidget* pParent = nullptr);
-	~MagStructFactDlg() = default;
+	virtual ~MagStructFactDlg() = default;
 
 protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 
+	// unit cell view
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	std::size_t m_arrow = 0;
+
+	// super cell view
+	QDialog *m_dlgPlotSC = nullptr;
+	std::shared_ptr<GlPlot> m_plotSC;
+	std::size_t m_sphereSC = 0;
+	std::size_t m_arrowSC = 0;
+
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
 
@@ -86,7 +94,7 @@ protected:
 
 	QSpinBox *m_maxBZ = nullptr;
 	QCheckBox *m_RemoveZeroes = nullptr;
-	QSpinBox *m_maxSC = nullptr;
+	QSpinBox *m_maxSC[3] = { nullptr, nullptr, nullptr };
 
 	t_mat m_crystA = m::unit<t_mat>(3);
 	t_mat m_crystB = m::unit<t_mat>(3);
@@ -111,13 +119,12 @@ protected:
 
 	// propagation vectors table
 	void AddPropItem(int row=-1, const std::string& name="n/a", 
-		t_real x=0., t_real y=0., t_real z=0.);
+		t_real x=0., t_real y=0., t_real z=0., bool bConjFC=0);
 	void DelPropItem(int begin=-2, int end=-2);
 	void PropItemChanged(QTableWidgetItem *item);
 
 	void Add3DItem(int row=-1);
 	void Sync3DItem(int row=-1);
-	void Set3DStatusMsg(const std::string& msg);
 
 	void Load();
 	void Save();
@@ -129,18 +136,21 @@ protected:
 	void Calc();
 
 	void PlotMouseDown(bool left, bool mid, bool right);
-	void PlotMouseUp(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
+	void AfterGLInitialisationSC();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 
 private:
 	int m_iCursorRow = -1;
+
 	bool m_ignoreChanges = 1;
 	bool m_ignoreCalc = 0;
 
 	long m_curPickedObj = -1;
+
+	std::vector<std::size_t> m_3dobjsSC;
 };
 
 
