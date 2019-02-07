@@ -123,7 +123,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setHorizontalHeaderItem(COL_ImM_X, new QTableWidgetItem{"Im{FC_x}"});
 		m_nuclei->setHorizontalHeaderItem(COL_ImM_Y, new QTableWidgetItem{"Im{FC_y}"});
 		m_nuclei->setHorizontalHeaderItem(COL_ImM_Z, new QTableWidgetItem{"Im{FC_z}"});
-		m_nuclei->setHorizontalHeaderItem(COL_RAD, new QTableWidgetItem{"Radius"});
+		m_nuclei->setHorizontalHeaderItem(COL_RAD, new QTableWidgetItem{"Scale"});
 		m_nuclei->setHorizontalHeaderItem(COL_COL, new QTableWidgetItem{"Colour"});
 
 		m_nuclei->setColumnWidth(COL_NAME, 90);
@@ -1557,8 +1557,10 @@ std::vector<NuclPos> MagStructFactDlg::GetNuclei() const
 		auto *ImMx = m_nuclei->item(row, COL_ImM_X);
 		auto *ImMy = m_nuclei->item(row, COL_ImM_Y);
 		auto *ImMz = m_nuclei->item(row, COL_ImM_Z);
+		auto *scale = m_nuclei->item(row, COL_RAD);
+		auto *col = m_nuclei->item(row, COL_COL);
 
-		if(!name || !MMag || !x || !y || !z || !ReMx || !ReMy || !ReMz || !ImMx || !ImMy || !ImMz)
+		if(!name || !MMag || !x || !y || !z || !ReMx || !ReMy || !ReMz || !ImMx || !ImMy || !ImMz || !scale || !col)
 		{
 			std::cerr << "Invalid entry in row " << row << "." << std::endl;
 			continue;
@@ -1566,6 +1568,7 @@ std::vector<NuclPos> MagStructFactDlg::GetNuclei() const
 
 		NuclPos nucl;
 		nucl.name = name->text().toStdString();
+		nucl.col = col->text().toStdString();
 		std::istringstream{MMag->text().toStdString()} >> nucl.MAbs;
 		std::istringstream{x->text().toStdString()} >> nucl.pos[0];
 		std::istringstream{y->text().toStdString()} >> nucl.pos[1];
@@ -1576,6 +1579,7 @@ std::vector<NuclPos> MagStructFactDlg::GetNuclei() const
 		std::istringstream{ImMx->text().toStdString()} >> nucl.ImM[0];
 		std::istringstream{ImMy->text().toStdString()} >> nucl.ImM[1];
 		std::istringstream{ImMz->text().toStdString()} >> nucl.ImM[2];
+		std::istringstream{scale->text().toStdString()} >> nucl.scale;
 
 		vec.emplace_back(std::move(nucl));
 	}
@@ -1702,7 +1706,9 @@ void MagStructFactDlg::Calc()
 	std::vector<t_cplx> bs;
 	std::vector<t_vec> pos;
 	std::vector<t_vec_cplx> Ms;
+	std::vector<t_real> scales;
 	std::vector<std::string> names;
+	std::vector<std::string> cols;
 
 	for(const auto& nucl : GetNuclei())
 	{
@@ -1712,6 +1718,8 @@ void MagStructFactDlg::Calc()
 			t_cplx{nucl.ReM[1], nucl.ImM[1]}, 
 			t_cplx{nucl.ReM[2], nucl.ImM[2]} }));
 		names.emplace_back(std::move(nucl.name));
+		cols.emplace_back(std::move(nucl.col));
+		scales.push_back(nucl.scale);
 	}
 
 
@@ -1880,13 +1888,17 @@ void MagStructFactDlg::Calc()
 				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
 				{
 					t_vec_cplx fourier = Ms[nuclidx];
-					auto thepos = pos[nuclidx] + vecCellCentre;
-					auto posGL = m::convert<t_vec, t_vec_gl>(thepos);
-					//auto posGL = m::create<t_vec_gl>({t_real_gl(thepos[0]), t_real_gl(thepos[1]), t_real_gl(thepos[2])});
-
 					const std::string& name = names[nuclidx];
+					const std::string& colstr = cols[nuclidx];
+					auto thepos = pos[nuclidx] + vecCellCentre;
+					auto scale = scales[nuclidx];
 
+					auto posGL = m::convert<t_vec_gl>(thepos);
 					auto moment = m::create<t_vec_cplx>({0, 0, 0});
+
+					qreal r=1, g=1, b=1;
+					QColor col{colstr.c_str()};
+					col.getRgbF(&r, &g, &b);
 
 					for(std::size_t propidx=0; propidx<propvecs.size(); ++propidx)
 					{
@@ -1902,20 +1914,16 @@ void MagStructFactDlg::Calc()
 						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
 					}
 
-					//moments.emplace_back(std::move(moment));
 
-					// add 3d objs
+					// add 3d objs to super cell view
 					if(m_plotSC)
 					{
-						// TODO
-						t_real_gl M = 1., scale = 1.;
-
 						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 
 						auto [_vecReM, _vecImM] = m::split_cplx<t_cplx>(moment);
-						auto vecReM = m::convert<t_vec, t_vec_gl>(_vecReM);
-						auto vecImM = m::convert<t_vec, t_vec_gl>(_vecImM);
+						auto vecReM = m::convert<t_vec_gl>(_vecReM);
+						auto vecImM = m::convert<t_vec_gl>(_vecImM);
 					
 						auto normReM = m::norm<t_vec_gl>(vecReM);
 						auto normImM = m::norm<t_vec_gl>(vecImM);
@@ -1925,8 +1933,8 @@ void MagStructFactDlg::Calc()
 							1, 											// post-scale
 							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
 							m::create<t_vec_gl>({0, 0, 1}),				// from
-							M*scale, 									// pre-scale
-							posGL		// pre-translate 
+							normReM*scale, 								// pre-scale
+							posGL										// pre-translate 
 						);
 
 						t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
@@ -1934,14 +1942,14 @@ void MagStructFactDlg::Calc()
 							1, 											// post-scale
 							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
 							m::create<t_vec_gl>({0, 0, 1}),				// from
-							M*scale, 									// pre-scale
-							posGL		// pre-translate 
+							normImM*scale, 								// pre-scale
+							posGL										// pre-translate 
 						);
 
 						m_plotSC->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
 						m_plotSC->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
-						m_plotSC->GetImpl()->SetObjectCol(objArrowRe, 1., 0., 0., 1.);
-						m_plotSC->GetImpl()->SetObjectCol(objArrowIm, 0., 0., 1., 1.);
+						m_plotSC->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1.);
+						m_plotSC->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
 						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
 						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
 
@@ -1963,6 +1971,8 @@ void MagStructFactDlg::Calc()
 						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[0] << " "
 						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[1] << " "
 						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[2] << "\n";
+
+					//moments.emplace_back(std::move(moment));
 				}
 			}
 		}

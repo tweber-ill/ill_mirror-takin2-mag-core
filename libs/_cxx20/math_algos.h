@@ -222,7 +222,7 @@ public:
 
 		for(std::size_t i=0; i<minRows; ++i)
 			for(std::size_t j=0; j<minCols; ++j)
-				(*this)(i,j) = value_type{matOther(i,j)};
+				(*this)(i,j) = static_cast<value_type>(matOther(i,j));
 	}
 
 	size_t size1() const { return ROWS; }
@@ -589,7 +589,7 @@ requires is_mat<t_mat>
 /**
  * convert between vector types
  */
-template<class t_vecFrom, class t_vecTo>
+template<class t_vecTo, class t_vecFrom>
 t_vecTo convert(const t_vecFrom& vec)
 requires is_basic_vec<t_vecFrom> && is_basic_vec<t_vecTo>
 {
@@ -600,7 +600,7 @@ requires is_basic_vec<t_vecFrom> && is_basic_vec<t_vecTo>
 		vecRet = t_vecTo(vec.size());
 
 	for(std::size_t i=0; i<vec.size(); ++i)
-		vecRet[i] = t_ty{vec[i]};
+		vecRet[i] = static_cast<t_ty>(vec[i]);
 
 	return vecRet;
 }

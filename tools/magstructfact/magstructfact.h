@@ -41,11 +41,16 @@ using t_mat_cplx = m::mat<t_cplx, std::vector>;
 
 struct NuclPos
 {
+	// physically meaningful data
+	t_real pos[3];		// position
+	t_cplx MAbs{1};		// magnitude of Fourier components
+	t_real ReM[3];		// real part of Fourier components
+	t_real ImM[3];		// imag part of Fourier components
+
+	// cosmetic data
 	std::string name;
-	t_real pos[3];	// position
-	t_cplx MAbs;	// scaling of Fourier components
-	t_real ReM[3];	// real part of Fourier components
-	t_real ImM[3];	// imag part of Fourier components
+	std::string col{"#ff0000"};
+	t_real scale{1};	// scaling of Fourier components (only for drawing)
 };
 
 
