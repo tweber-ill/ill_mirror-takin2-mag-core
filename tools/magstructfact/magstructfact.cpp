@@ -1881,7 +1881,8 @@ void MagStructFactDlg::Calc()
 				{
 					t_vec_cplx fourier = Ms[nuclidx];
 					auto thepos = pos[nuclidx] + vecCellCentre;
-					auto posGL = m::create<t_vec_gl>({t_real_gl(thepos[0]), t_real_gl(thepos[1]), t_real_gl(thepos[2])});
+					auto posGL = m::convert<t_vec, t_vec_gl>(thepos);
+					//auto posGL = m::create<t_vec_gl>({t_real_gl(thepos[0]), t_real_gl(thepos[1]), t_real_gl(thepos[2])});
 
 					const std::string& name = names[nuclidx];
 
@@ -1912,8 +1913,10 @@ void MagStructFactDlg::Calc()
 						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 
-						auto vecReM = m::create<t_vec_gl>({t_real_gl(moment[0].real()), t_real_gl(moment[1].real()), t_real_gl(moment[2].real())});
-						auto vecImM = m::create<t_vec_gl>({t_real_gl(moment[0].imag()), t_real_gl(moment[1].imag()), t_real_gl(moment[2].imag())});
+						auto [_vecReM, _vecImM] = m::split_cplx<t_cplx>(moment);
+						auto vecReM = m::convert<t_vec, t_vec_gl>(_vecReM);
+						auto vecImM = m::convert<t_vec, t_vec_gl>(_vecImM);
+					
 						auto normReM = m::norm<t_vec_gl>(vecReM);
 						auto normImM = m::norm<t_vec_gl>(vecImM);
 

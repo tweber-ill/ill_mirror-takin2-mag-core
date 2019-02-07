@@ -265,6 +265,7 @@ private:
 // n-dim algos
 // ----------------------------------------------------------------------------
 
+
 /**
  * are two scalars equal within an epsilon range?
  */
@@ -582,6 +583,26 @@ requires is_mat<t_mat>
 	}
 
 	return mat;
+}
+
+
+/**
+ * convert between vector types
+ */
+template<class t_vecFrom, class t_vecTo>
+t_vecTo convert(const t_vecFrom& vec)
+requires is_basic_vec<t_vecFrom> && is_basic_vec<t_vecTo>
+{
+	using t_ty = typename t_vecTo::value_type;
+
+	t_vecTo vecRet;
+	if constexpr(is_dyn_vec<t_vecTo>)
+		vecRet = t_vecTo(vec.size());
+
+	for(std::size_t i=0; i<vec.size(); ++i)
+		vecRet[i] = t_ty{vec[i]};
+
+	return vecRet;
 }
 
 
@@ -2935,6 +2956,35 @@ requires is_mat<t_mat>
 // ----------------------------------------------------------------------------
 // complex algos
 // ----------------------------------------------------------------------------
+
+/**
+ * split a complex vector into two vectors with the real and imag parts
+ */
+template<class t_cplx = std::complex<double>, class t_real = typename t_cplx::value_type, template<class...> class t_vec>
+std::tuple<t_vec<t_real>, t_vec<t_real>>
+split_cplx(const t_vec<t_cplx>& vec)
+requires is_complex<t_cplx> && is_vec<t_vec<t_cplx>>
+{
+	t_vec<t_real> vecRe = zero<t_vec<t_real>>(vec.size());
+	t_vec<t_real> vecIm = zero<t_vec<t_real>>(vec.size());
+
+	auto iter = vec.begin();
+	auto iterRe = vecRe.begin();
+	auto iterIm = vecIm.begin();
+
+	for(; iter!=vec.end(); )
+	{
+		*iterRe = t_real{iter->real()};
+		*iterIm = t_real{iter->imag()};
+
+		std::advance(iter, 1);
+		std::advance(iterRe, 1);
+		std::advance(iterIm, 1);
+	}
+
+	return std::make_tuple(vecRe, vecIm);
+}
+
 
 /**
  * SU(2) generators, pauli matrices sig_i = 2*S_i
