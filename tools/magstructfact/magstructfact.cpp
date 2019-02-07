@@ -1887,7 +1887,7 @@ void MagStructFactDlg::Calc()
 
 				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
 				{
-					t_vec_cplx fourier = Ms[nuclidx];
+					const t_vec_cplx& fourier = Ms[nuclidx];
 					const std::string& name = names[nuclidx];
 					const std::string& colstr = cols[nuclidx];
 					auto thepos = pos[nuclidx] + vecCellCentre;
@@ -1895,6 +1895,7 @@ void MagStructFactDlg::Calc()
 
 					auto posGL = m::convert<t_vec_gl>(thepos);
 					auto moment = m::create<t_vec_cplx>({0, 0, 0});
+					auto fourier_conj = m::conj(fourier);
 
 					qreal r=1, g=1, b=1;
 					QColor col{colstr.c_str()};
@@ -1903,9 +1904,8 @@ void MagStructFactDlg::Calc()
 					for(std::size_t propidx=0; propidx<propvecs.size(); ++propidx)
 					{
 						const auto& propvec = propvecs[propidx];
-						if(conjFCs[propidx])
-							fourier = m::conj(fourier);
-						moment += fourier * std::exp(t_cplx{0,1}*m::pi<t_real>*t_real{2} * m::inner<t_vec>(propvec, vecCellCentre));
+						auto *pfourier = conjFCs[propidx] ? &fourier_conj : &fourier;
+						moment += *pfourier * std::exp(t_cplx{0,1}*m::pi<t_real>*t_real{2} * m::inner<t_vec>(propvec, vecCellCentre));
 					}
 
 					for(auto &comp : moment)
