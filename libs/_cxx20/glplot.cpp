@@ -336,6 +336,21 @@ void GlPlot_impl::SetObjectLabel(std::size_t idx, const std::string& label)
 }
 
 
+void GlPlot_impl::SetObjectDataString(std::size_t idx, const std::string& data)
+{
+	if(idx >= m_objs.size()) return;
+	m_objs[idx].m_datastr = data;
+}
+
+const std::string& GlPlot_impl::GetObjectDataString(std::size_t idx) const
+{
+	static const std::string empty{};
+	if(idx >= m_objs.size()) return empty;
+
+	return m_objs[idx].m_datastr;
+}
+
+
 void GlPlot_impl::SetObjectVisible(std::size_t idx, bool visible)
 {
 	if(idx >= m_objs.size()) return;

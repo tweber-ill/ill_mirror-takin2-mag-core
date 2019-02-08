@@ -65,6 +65,7 @@ extern void set_gl_format(bool bCore=true, int iMajorVer=3, int iMinorVer=3, int
 // ----------------------------------------------------------------------------
 // types
 using t_real_gl = GLfloat;
+//using t_real_gl = GLdouble;
 using t_vec3_gl = m::qvecN_adapter<int, 3, t_real_gl, QVector3D>;
 using t_vec_gl = m::qvecN_adapter<int, 4, t_real_gl, QVector4D>;
 using t_mat_gl = m::qmatNN_adapter<int, 4, 4, t_real_gl, QMatrix4x4>;
@@ -108,6 +109,7 @@ struct GlPlotObj
 
 	t_vec3_gl m_labelPos = m::create<t_vec3_gl>({0., 0., 0.});
 	std::string m_label;
+	std::string m_datastr;
 };
 // ----------------------------------------------------------------------------
 
@@ -239,7 +241,9 @@ public:
 	void SetObjectMatrix(std::size_t idx, const t_mat_gl& mat);
 	void SetObjectCol(std::size_t idx, t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a=1);
 	void SetObjectLabel(std::size_t idx, const std::string& label);
+	void SetObjectDataString(std::size_t idx, const std::string& data);
 	void SetObjectVisible(std::size_t idx, bool visible);
+	const std::string& GetObjectDataString(std::size_t idx) const;
 
 	void SetScreenDims(int w, int h);
 	void SetCoordMax(t_real_gl d) { m_CoordMax = d; }

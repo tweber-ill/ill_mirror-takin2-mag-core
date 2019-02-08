@@ -604,7 +604,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlotSC*/ this);
 				auto comboCoordSys = new QComboBox(/*m_dlgPlotSC*/ this);
-				m_status3D = new QLabel(/*m_dlgPlotSC*/ this);
+				m_status3DSC = new QLabel(/*m_dlgPlotSC*/ this);
 
 				comboCoordSys->addItem("Fractional Units (rlu)");
 				comboCoordSys->addItem("Lab Units (A)");
@@ -619,11 +619,11 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				grid->addWidget(m_plotSC.get(), 0,0,1,2);
 				grid->addWidget(labCoordSys, 1,0,1,1);
 				grid->addWidget(comboCoordSys, 1,1,1,1);
-				grid->addWidget(m_status3D, 2,0,1,2);
+				grid->addWidget(m_status3DSC, 2,0,1,2);
 
 
 				connect(m_plotSC.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisationSC);
-				//connect(m_plotSC->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
+				connect(m_plotSC->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
 				//connect(m_plotSC.get(), &GlPlot::MouseDown, this, [this](bool left, bool mid, bool right) {});
 				//connect(m_plotSC.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
@@ -1946,10 +1946,22 @@ void MagStructFactDlg::Calc()
 							posGL										// pre-translate 
 						);
 
+						// labels
+						std::ostringstream ostrMom;
+						ostrMom.precision(g_prec);
+						ostrMom 
+							<< "Re{M} = (" << moment[0].real() << " " << moment[1].real() << " " << moment[2].real() << "); "
+							<< "Im{M} = (" << moment[0].imag() << " " << moment[1].imag() << " " << moment[2].imag() << "); "
+							<< "r = (" << thepos[0] << " " << thepos[1] << " " << thepos[2] << ")";
+
 						m_plotSC->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
 						m_plotSC->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
 						m_plotSC->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1.);
 						m_plotSC->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
+						//m_plotSC->GetImpl()->SetObjectLabel(objArrowRe, name + " (real)");
+						//m_plotSC->GetImpl()->SetObjectLabel(objArrowIm, name + " (imag)");
+						m_plotSC->GetImpl()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
+						m_plotSC->GetImpl()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
 						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
 						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
 
@@ -1992,7 +2004,7 @@ void MagStructFactDlg::Calc()
  */
 void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
 {
-	if(pos)
+	if(pos && m_plot)
 		m_curPickedObj = long(objIdx);
 	else
 		m_curPickedObj = -1;
@@ -2031,6 +2043,21 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 	}
 	else
 		m_status3D->setText("");
+}
+
+
+/**
+ * mouse hovers over 3d object in super cell view
+ */
+void MagStructFactDlg::PickerIntersectionSC(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
+{
+	if(pos && m_plotSC)
+	{
+		const std::string& str = m_plotSC->GetImpl()->GetObjectDataString(objIdx);
+		m_status3DSC->setText(str.c_str());
+	}
+	else
+		m_status3DSC->setText("");
 }
 
 

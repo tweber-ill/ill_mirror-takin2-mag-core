@@ -69,15 +69,16 @@ protected:
 	std::shared_ptr<GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	std::size_t m_arrow = 0;
+	QLabel *m_status3D = nullptr;
 
 	// super cell view
 	QDialog *m_dlgPlotSC = nullptr;
 	std::shared_ptr<GlPlot> m_plotSC;
 	std::size_t m_sphereSC = 0;
 	std::size_t m_arrowSC = 0;
+	QLabel *m_status3DSC = nullptr;
 
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
-	QLabel *m_status3D = nullptr;
 
 	QWidget *m_nucleipanel = nullptr;
 	QWidget *m_propvecpanel = nullptr;
@@ -142,6 +143,7 @@ protected:
 
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
+	void PickerIntersectionSC(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 	void AfterGLInitialisationSC();
 
