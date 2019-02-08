@@ -146,6 +146,7 @@ protected:
 	void PickerIntersectionSC(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 	void AfterGLInitialisationSC();
+	void SetGLInfos();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 

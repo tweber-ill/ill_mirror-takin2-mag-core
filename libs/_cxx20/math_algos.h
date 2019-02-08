@@ -3855,6 +3855,89 @@ requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
 // ----------------------------------------------------------------------------
 }
 
+
+
+// ----------------------------------------------------------------------------
+// lapack wrappers
+// ----------------------------------------------------------------------------
+#ifdef USE_LAPACK
+
+extern "C"
+{
+	#define lapack_complex_double std::complex<double>
+	#define lapack_complex_double_real(z) (z.real())
+	#define lapack_complex_double_imag(z) (z.imag())
+
+	#define lapack_complex_float std::complex<float>
+	#define lapack_complex_float_real(z) (z.real())
+	#define lapack_complex_float_imag(z) (z.imag())
+
+	#include <lapacke.h>
+}
+
+
+namespace m_la {
+
+/**
+ * QR decomposition of a matrix mat, mat = QR
+ * http://www.math.utah.edu/software/lapack/lapack-d/dgeqrf.html
+ * return [ok, Q, R]
+ */
+template<class t_mat>
+std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	using namespace m_ops;
+
+	using T = typename t_mat::value_type;
+	using t_vec = std::vector<T>;
+
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+	const std::size_t minor = std::min(rows, cols);
+
+	const t_mat I = m::unit<t_mat>(minor);
+	t_mat Q = I, R = mat;
+
+
+	t_vec outmat(rows*cols), outvec(minor);
+
+	for(std::size_t i=0; i<rows; ++i)
+		for(std::size_t j=0; j<cols; ++j)
+			outmat[i*cols + j] = mat(i, j);
+
+	int err = -1;
+	if constexpr(std::is_same_v<T, float>)
+		err = LAPACKE_sgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+	else if constexpr(std::is_same_v<T, double>)
+		err = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+
+	for(std::size_t i=0; i<rows; ++i)
+		for(std::size_t j=0; j<cols; ++j)
+			R(i, j) = (j>=i ? outmat[i*cols + j] : T{0});
+
+
+	t_vec v = m::zero<t_vec>(minor);
+
+	for(std::size_t k=1; k<=minor; ++k)
+	{
+		for(std::size_t i=1; i<=k-1; ++i)
+			v[i-1] = T{0};
+		v[k-1] = T{1};
+
+		for(std::size_t i=k+1; i<=minor; ++i)
+			v[i-1] = outmat[(i-1)*cols + (k-1)];
+
+		Q = Q * (I - outvec[k-1]*m::outer<t_mat, t_vec>(v, v));
+	}
+
+	return std::make_tuple(err == 0, Q, R);
+}
+
+}
+#endif
+// ----------------------------------------------------------------------------
+
 #endif
 
 /**

@@ -2094,6 +2094,7 @@ void MagStructFactDlg::PlotMouseDown(bool left, bool mid, bool right)
 void MagStructFactDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
+	SetGLInfos();
 
 	// reference sphere and arrow for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
@@ -2106,13 +2107,6 @@ void MagStructFactDlg::AfterGLInitialisation()
 
 	// add all 3d objects
 	Add3DItem(-1);
-
-	// GL device info
-	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer] = m_plot->GetImpl()->GetGlDescr();
-	m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
-	m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
-	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
-	m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
 }
 
 
@@ -2122,6 +2116,7 @@ void MagStructFactDlg::AfterGLInitialisation()
 void MagStructFactDlg::AfterGLInitialisationSC()
 {
 	if(!m_plotSC) return;
+	SetGLInfos();
 
 	// reference sphere and arrow for linked objects
 	m_sphereSC = m_plotSC->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
@@ -2134,6 +2129,31 @@ void MagStructFactDlg::AfterGLInitialisationSC()
 
 	// add all 3d objects (generated in calc)
 	Calc();
+}
+
+
+/**
+ * set descriptions of the gl device in the info tab
+ */
+void MagStructFactDlg::SetGLInfos()
+{
+	static bool already_set = 0;
+	if(already_set) return;
+
+	// try whichever gl plotter is available first
+	for(auto* plot : { m_plot.get(), m_plotSC.get() })
+	{
+		if(!plot) continue;
+
+		auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer] = plot->GetImpl()->GetGlDescr();
+		m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
+		m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
+		m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
+		m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
+
+		already_set = 1;
+		break;
+	}
 }
 
 
