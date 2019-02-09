@@ -3934,6 +3934,99 @@ requires m::is_mat<t_mat>
 	return std::make_tuple(err == 0, Q, R);
 }
 
+
+/**
+ * eigenvectors and -values of a complex matrix
+ * returns [ok, evals, evecs]
+ */
+template<class t_mat_cplx, class t_vec_cplx, class t_cplx = typename t_mat_cplx::value_type>
+std::tuple<bool, std::vector<t_cplx>, std::vector<t_vec_cplx>>
+eigenvec(const t_mat_cplx& mat, bool only_evals=false, bool is_hermitian=false, bool normalise=false)
+	requires m::is_mat<t_mat_cplx> && m::is_vec<t_vec_cplx> && m::is_complex<t_cplx>
+{
+	using t_real = typename t_cplx::value_type;
+
+	std::vector<t_cplx> evals;
+	std::vector<t_vec_cplx> evecs;
+
+	if(mat.size1() != mat.size2() || mat.size1() == 0)
+		return std::make_tuple(0, evals, evecs);
+
+	const std::size_t N = mat.size1();
+	evals.resize(N);
+
+	if(!only_evals)
+	{
+		evecs.resize(N);
+		for(std::size_t i=0; i<N; ++i)
+			evecs[i] = m::zero<t_vec_cplx>(N);
+	}
+
+	std::vector<t_cplx> inmat(N*N), outevals(N), outevecs(only_evals ? 0 : N*N);
+
+	for(std::size_t i=0; i<N; ++i)
+	{
+		for(std::size_t j=0; j<N; ++j)
+		{
+			if(is_hermitian)
+				inmat[i*N + j] = (j>=i ? mat(i,j) : t_real{0});
+			else
+				inmat[i*N + j] = mat(i, j);
+		}
+	}
+
+	int err = -1;
+
+	if(is_hermitian)
+	{
+		// evals of hermitian matrix are purely real
+		std::vector<t_real> outevals_real(N);
+
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_cheev(LAPACK_ROW_MAJOR, only_evals ? 'N' : 'V', 'U', N, inmat.data(), N, outevals_real.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_zheev(LAPACK_ROW_MAJOR, only_evals ? 'N' : 'V', 'U', N, inmat.data(), N, outevals_real.data());
+
+		// copy to complex output vector
+		for(std::size_t i=0; i<N; ++i)
+			outevals[i] = outevals_real[i];
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+		{
+			err = LAPACKE_cgeev(LAPACK_ROW_MAJOR, 'N', only_evals ? 'N' : 'V', N,
+				inmat.data(), N, outevals.data(), nullptr, N, 
+				only_evals ? nullptr : outevecs.data(), N);
+		}
+		else if constexpr(std::is_same_v<t_real, double>)
+		{
+			err = LAPACKE_zgeev(LAPACK_ROW_MAJOR, 'N', only_evals ? 'N' : 'V', N,
+				inmat.data(), N, outevals.data(), nullptr, N, 
+				only_evals ? nullptr : outevecs.data(), N);
+		}
+	}
+
+
+	for(std::size_t i=0; i<N; ++i)
+	{
+		evals[i] = outevals[i];
+
+		if(!only_evals)
+		{
+			// hermitian algo overwrites original matrix!
+			for(std::size_t j=0; j<N; ++j)
+				evecs[i][j] = is_hermitian ? inmat[j*N + i] : outevecs[j*N + i];
+
+			if(normalise && (err == 0))
+				evecs[i] /= m::norm(evecs[i]);
+		}
+	}
+
+	return std::make_tuple(err == 0, evals, evecs);
+}
+
+
 }
 #endif
 // ----------------------------------------------------------------------------
