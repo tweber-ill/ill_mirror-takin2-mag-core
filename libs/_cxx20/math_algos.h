@@ -4027,6 +4027,125 @@ eigenvec(const t_mat_cplx& mat, bool only_evals=false, bool is_hermitian=false, 
 }
 
 
+/**
+ * eigenvectors and -values of a real matrix
+ * returns [ok, evals_re, evals_im, evecs_re, evecs_im]
+ */
+template<class t_mat, class t_vec, class t_real = typename t_mat::value_type>
+std::tuple<bool, std::vector<t_real>, std::vector<t_real>, std::vector<t_vec>, std::vector<t_vec>>
+eigenvec(const t_mat& mat, bool only_evals=false, bool is_symmetric=false, bool normalise=false)
+	requires m::is_mat<t_mat> && m::is_vec<t_vec> && !m::is_complex<t_real>
+{
+	std::vector<t_real> evals_re, evals_im;
+	std::vector<t_vec> evecs_re, evecs_im;
+
+	if(mat.size1() != mat.size2() || mat.size1() == 0)
+		return std::make_tuple(0, evals_re, evals_im, evecs_re, evecs_im);
+
+	const std::size_t N = mat.size1();
+	evals_re.resize(N);
+	evals_im.resize(N);
+
+	if(!only_evals)
+	{
+		evecs_re.resize(N);
+		evecs_im.resize(N);
+		for(std::size_t i=0; i<N; ++i)
+		{
+			evecs_re[i] = m::zero<t_vec>(N);
+			evecs_im[i] = m::zero<t_vec>(N);
+		}
+	}
+
+	std::vector<t_real> inmat(N*N), outevals_re(N), outevals_im(N), outevecs(only_evals ? 0 : N*N);
+
+	for(std::size_t i=0; i<N; ++i)
+	{
+		for(std::size_t j=0; j<N; ++j)
+		{
+			if(is_symmetric)
+				inmat[i*N + j] = (j>=i ? mat(i,j) : t_real{0});
+			else
+				inmat[i*N + j] = mat(i, j);
+		}
+	}
+
+	int err = -1;
+
+	if(is_symmetric)
+	{
+		// evals of symmetric matrix are purely real
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_ssyev(LAPACK_ROW_MAJOR, only_evals ? 'N' : 'V', 'U', N, inmat.data(), N, outevals_re.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_dsyev(LAPACK_ROW_MAJOR, only_evals ? 'N' : 'V', 'U', N, inmat.data(), N, outevals_re.data());
+
+		for(std::size_t i=0; i<N; ++i)
+			outevals_im[i] = t_real{0};
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+		{
+			err = LAPACKE_sgeev(LAPACK_ROW_MAJOR, 'N', only_evals ? 'N' : 'V', N,
+				inmat.data(), N, outevals_re.data(), outevals_im.data(), nullptr, N, 
+				only_evals ? nullptr : outevecs.data(), N);
+		}
+		else if constexpr(std::is_same_v<t_real, double>)
+		{
+			err = LAPACKE_dgeev(LAPACK_ROW_MAJOR, 'N', only_evals ? 'N' : 'V', N,
+				inmat.data(), N, outevals_re.data(), outevals_im.data(), nullptr, N, 
+				only_evals ? nullptr : outevecs.data(), N);
+		}
+	}
+
+
+	// evals
+	for(std::size_t i=0; i<N; ++i)
+	{
+		evals_re[i] = outevals_re[i];
+		evals_im[i] = outevals_im[i];
+	}
+
+	// evecs
+	if(!only_evals)
+	{
+		for(std::size_t i=0; i<N; ++i)
+		{
+			// symmetric algo overwrites original matrix!
+			for(std::size_t j=0; j<N; ++j)
+				evecs_re[i][j] = is_symmetric ? inmat[j*N + i] : outevecs[j*N + i];
+
+			if(!is_symmetric && !m::equals<t_real>(evals_im[i], 0))
+			{
+				for(std::size_t j=0; j<N; ++j)
+				{
+					evecs_re[i+1][j] = evecs_re[i][j];		// next eval is the same
+					evecs_im[i][j] = outevecs[j*N + i+1];	// imag part of evec follows next in array
+					evecs_im[i+1][j] = -evecs_im[i][j];		// next evec is the conjugated one
+				}
+				++i;	// already used two values in array
+			}
+		}
+
+		if(normalise && (err == 0))
+		{
+			for(std::size_t i=0; i<N; ++i)
+			{
+				t_real sum{0};
+				for(std::size_t j=0; j<N; ++j)
+					sum += std::norm(std::complex(evecs_re[i][j], evecs_im[i][j]));
+				sum = std::sqrt(sum);
+				evecs_re[i] /= sum;
+				evecs_im[i] /= sum;
+			}
+		}
+	}
+
+	return std::make_tuple(err == 0, evals_re, evals_im, evecs_re, evecs_im);
+}
+
+
 }
 #endif
 // ----------------------------------------------------------------------------
