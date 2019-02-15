@@ -224,7 +224,7 @@ with open("proposals.csv", "w") as file:
 	print("Writing results to %s ..." % file.name)
 
 	file.write("#\n")
-	file.write("# Coucil; Proposal No; Title; Main proposer; All proposers; Allocated days; Schedule; Instrument; Local contact; Environment\n")
+	file.write("# Coucil; Proposal No; Title; Main proposer; All proposers; Requested days; Allocated days; Grade; Schedule; Instrument; Local contact; Environment\n")
 	file.write("#\n")
 
 	for info in infos:
@@ -234,7 +234,7 @@ with open("proposals.csv", "w") as file:
 			if filter_instr and instr.lower() != "in20":
 				continue
 
-			row = "{council}; {id}; {title}; {mainproposer}; {allproposers_simple}; {alloc}; {sched}; {instr}; {localcontact}; {env}".format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
+			row = "{council}; {id}; {title}; {mainproposer}; {allproposers_simple}; {req}; {alloc}; {grade}; {sched}; {instr}; {localcontact}; {env}".format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
 			file.write(row)
 			file.write("\n")
 
