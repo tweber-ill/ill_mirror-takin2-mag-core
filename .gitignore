@@ -50,6 +50,8 @@ tools/structfact/build/**
 tools/magstructfact/build/**
 tools/pol/build/**
 *.pyc
+.DS_Store
+*.csv
 
 # Temporary lexer/parser files
 cliparser_impl.*
@@ -60,4 +62,3 @@ stack.hh
 *.log
 *.aux
 *.pdf
-
