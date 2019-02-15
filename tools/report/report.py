@@ -14,6 +14,8 @@ import requests_html as req
 #
 prop_search_url = "https://userclub.ill.eu/userclub/proposalSearch"
 prop_detail_url = "https://userclub.ill.eu/userclub/proposalSearch/details/%s"
+filter_instr = True
+
 
 
 #
@@ -159,11 +161,12 @@ def get_prop_details(session_no, prop_no):
 	infos["allproposers_simple"] = ""
 	for [prop, lab, country] in zip(infos["allproposers"], infos["alllabs"], infos["allcountries"]):
 		if infos["allproposers_simple"] != "":
-			infos["allproposers_simple"] += ","
+			infos["allproposers_simple"] += ", "
 		infos["allproposers_simple"] += prop
 
 	# remove ";" from title, for csv export
 	infos["title"] = infos["title"].replace(";", ",")
+	infos["title"] = infos["title"].replace("\n", " ")
 
 	return infos
 
@@ -221,15 +224,17 @@ with open("proposals.csv", "w") as file:
 	print("Writing results to %s ..." % file.name)
 
 	file.write("#\n")
-	file.write("# Column headers: Coucil; Proposal No; Title; Main proposer; All proposers; Allocated days; Schedule; Instrument; Local contact\n")
+	file.write("# Coucil; Proposal No; Title; Main proposer; All proposers; Allocated days; Schedule; Instrument; Local contact\n")
 	file.write("#\n")
 
 	for info in infos:
 		#row = "{council:>10} {id:>12} {mainproposer} {allproposers_simple}".format(**info)
 
 		for [instr, req, alloc, grade, sched] in zip(info["allinstruments"], info["allreqdays"], info["allallocdays"], info["allgrades"], info["allschedules"]):
-		
-			row = "{council};{id};{title};{mainproposer};{allproposers_simple};{alloc};{sched};{instr},{localcontact}".format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
+			if filter_instr and instr.lower() != "in20":
+				continue
+
+			row = "{council}; {id}; {title}; {mainproposer}; {allproposers_simple}; {alloc}; {sched}; {instr}; {localcontact}".format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
 			file.write(row)
 			file.write("\n")
 
