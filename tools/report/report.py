@@ -16,6 +16,9 @@ prop_search_url = "https://userclub.ill.eu/userclub/proposalSearch"
 prop_detail_url = "https://userclub.ill.eu/userclub/proposalSearch/details/%s"
 filter_instr = True
 
+sep = ";"
+sep2 = ","
+
 
 
 #
@@ -161,12 +164,15 @@ def get_prop_details(session_no, prop_no):
 	infos["allproposers_simple"] = ""
 	for [prop, lab, country] in zip(infos["allproposers"], infos["alllabs"], infos["allcountries"]):
 		if infos["allproposers_simple"] != "":
-			infos["allproposers_simple"] += ", "
+			infos["allproposers_simple"] += sep2 + " "
 		infos["allproposers_simple"] += prop
 
-	# remove ";" from title, for csv export
-	infos["title"] = infos["title"].replace(";", ",")
+	# remove separator character from fields, for csv export
+	infos["title"] = infos["title"].replace(sep, sep2)
+	infos["env"] = infos["env"].replace(sep, sep2)
+	infos["localcontact"] = infos["localcontact"].replace(sep, sep2)
 	infos["title"] = infos["title"].replace("\n", " ")
+	infos["title"] = infos["title"].replace("\r", " ")
 
 	return infos
 
@@ -224,7 +230,18 @@ with open("proposals.csv", "w") as file:
 	print("Writing results to %s ..." % file.name)
 
 	file.write("#\n")
-	file.write("# Coucil; Proposal No; Title; Main proposer; All proposers; Requested days; Allocated days; Grade; Schedule; Instrument; Local contact; Environment\n")
+	file.write("# Coucil" + sep + " " + \
+		"Proposal No" + sep + " " + \
+		"Title" + sep + " " + \
+		"Main proposer" + sep + " " + \
+		"All proposers" + sep + " " + \
+		"Requested days" + sep + " " + \
+		"Allocated days" + sep + " " + \
+		"Grade" + sep + " " + \
+		"Schedule" + sep + " " + \
+		"Instrument" + sep + " " + \
+		"Local contact" + sep + " " + \
+		"Environment\n")
 	file.write("#\n")
 
 	for info in infos:
@@ -234,7 +251,18 @@ with open("proposals.csv", "w") as file:
 			if filter_instr and instr.lower() != "in20":
 				continue
 
-			row = "{council}; {id}; {title}; {mainproposer}; {allproposers_simple}; {req}; {alloc}; {grade}; {sched}; {instr}; {localcontact}; {env}".format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
+			row = ("{council}" + sep + " " + \
+				"{id}" + sep + " " + \
+				"{title}" + sep + " " + \
+				"{mainproposer}" + sep + " " + \
+				"{allproposers_simple}" + sep + " " + \
+				"{req}" + sep + " " + \
+				"{alloc}" + sep + " " + \
+				"{grade}" + sep + " " + \
+				"{sched}" + sep + " " + \
+				"{instr}" + sep + " " + \
+				"{localcontact}" + sep + " " + \
+				"{env}").format(**info, instr=instr, req=req, alloc=alloc, grade=grade, sched=sched)
 			file.write(row)
 			file.write("\n")
 
