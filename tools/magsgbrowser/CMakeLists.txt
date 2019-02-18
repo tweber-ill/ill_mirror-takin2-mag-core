@@ -4,7 +4,7 @@
 # @license GPLv3, see 'LICENSE' file
 # @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
 #
-project(sgbrowser)
+project(magsgbrowser)
 cmake_minimum_required(VERSION 3.0)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
@@ -19,12 +19,12 @@ include_directories("${PROJECT_SOURCE_DIR}" "../..")
 
 # -----------------------------------------------------------------------------
 # main program
-add_executable(sgbrowser
+add_executable(magsgbrowser
 	main.cpp
 	browser.cpp browser.h
 )
 
-target_link_libraries(sgbrowser
+target_link_libraries(magsgbrowser
 	Qt5::Core Qt5::Gui Qt5::Widgets
 )
 # -----------------------------------------------------------------------------

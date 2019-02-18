@@ -4,6 +4,8 @@
  * @date 18-nov-17
  * @license GPLv3, see 'LICENSE' file
  * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
+ *
+ * g++-8 -std=c++17 -fconcepts -I../../ -o convmag convmag.cpp
  */
 
 #include <iostream>
@@ -384,12 +386,12 @@ void convert_spacegroup(std::istream& istr, ptree::ptree& prop, const std::strin
 }
 
 
-void convert_table(const char* pcFile)
+void convert_table(const char* pcInFile, const char* pcOutFile)
 {
-	std::ifstream istr(pcFile);
+	std::ifstream istr(pcInFile);
 	if(!istr)
 	{
-		std::cerr << "Cannot open \"" << pcFile << "\"." << std::endl;
+		std::cerr << "Cannot open \"" << pcInFile << "\"." << std::endl;
 		return;
 	}
 
@@ -421,17 +423,23 @@ void convert_table(const char* pcFile)
 	std::cout << "\n";
 
 
-	/*ptree::write_xml("magsg.xml", prop,
+	/*ptree::write_xml(pcOutFile, prop,
 		std::locale(),
 		ptree::xml_writer_make_settings('\t', 1, std::string("utf-8")));*/
-	ptree::write_info("magsg.info", prop,
+	ptree::write_info(pcOutFile, prop,
 		std::locale(),
 		ptree::info_writer_make_settings('\t', 1));
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
-	convert_table("mag.dat");
+	if(argc < 3)
+	{
+		std::cerr << "Usage: " << argv[0] << " <in.dat> <out.info>" << std::endl;
+		return -1;
+	}
+
+	convert_table(argv[1], argv[2]);
 	return 0;
 }

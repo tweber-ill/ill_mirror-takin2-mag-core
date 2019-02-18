@@ -48,6 +48,7 @@ tmp/**
 build/**
 tools/structfact/build/**
 tools/magstructfact/build/**
+tools/magsgbrowser/build/**
 tools/pol/build/**
 *.pyc
 .DS_Store

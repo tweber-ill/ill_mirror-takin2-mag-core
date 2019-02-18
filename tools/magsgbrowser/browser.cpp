@@ -68,7 +68,7 @@ SgBrowserDlg::SgBrowserDlg(QWidget* pParent, QSettings *pSett)
 void SgBrowserDlg::SetupSpaceGroups()
 {
 	std::cerr << "Loading space groups ... ";
-	m_sgs.Load("../magsg.info");
+	m_sgs.Load("magsg.info");
 	std::cerr << "Done." << std::endl;
 
 	const auto *pSgs = m_sgs.GetSpacegroups();
