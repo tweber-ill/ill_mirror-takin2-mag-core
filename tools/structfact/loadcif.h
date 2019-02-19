@@ -182,14 +182,16 @@ load_cif(const std::string& filename, t_real eps=1e-6)
  */
 template<class t_mat, class t_real = typename t_mat::value_type>
 std::vector<std::tuple<int, std::string, std::vector<t_mat>>>
-get_sgs()
+get_sgs(bool bAddNr=true, bool bAddHall=true)
 {
 	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> sgs;
 
 	for(const auto &sg : gemmi::spacegroup_tables::main)
 	{
 		std::ostringstream ostrDescr;
-		ostrDescr << "#" << sg.number << ": " << sg.hm << " (" << sg.hall << ")";
+		if(bAddNr) ostrDescr << "#" << sg.number << ": ";
+		ostrDescr << sg.hm;
+		if(bAddHall) ostrDescr << " (" << sg.hall << ")";
 
 		std::vector<t_mat> ops;
 		for(const auto &op : sg.operations().all_ops_sorted())

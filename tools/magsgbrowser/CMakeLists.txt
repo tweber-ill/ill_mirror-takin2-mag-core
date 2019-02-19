@@ -14,7 +14,8 @@ set(CMAKE_AUTOMOC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 add_definitions(-std=c++17 -fconcepts)
-include_directories("${PROJECT_SOURCE_DIR}" "../..")
+include_directories("${PROJECT_SOURCE_DIR}" "../.."
+	"../../ext/gemmi/include" "../../ext/gemmi/third_party")
 
 
 # -----------------------------------------------------------------------------

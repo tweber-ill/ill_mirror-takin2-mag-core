@@ -25,18 +25,22 @@
 using t_real_sg = double;
 using t_vec_sg = m::qvec_adapter<int, 3, t_real_sg, QGenericMatrix>;
 using t_mat_sg = m::qmat_adapter<int, 3, 3, t_real_sg, QGenericMatrix>;
+using t_mat44_sg = m::qmat_adapter<int, 4, 4, t_real_sg, QGenericMatrix>;
 
 
 class SgBrowserDlg : public QDialog, Ui::SgBrowserDlg
 {
 private:
 	QSettings *m_pSettings = nullptr;
-	Spacegroups<t_mat_sg, t_vec_sg> m_sgs;
+
+	Spacegroups<t_mat_sg, t_vec_sg> m_magsgs;
+	std::vector<std::tuple<int, std::string, std::vector<t_mat44_sg>>> m_nuclsgs;
+
 	bool m_showBNS = true;
 
 private:
-	void SetupSpaceGroup(const Spacegroup<t_mat_sg, t_vec_sg>& sg);
-	void SetupSpaceGroups();
+	void SetupMagSpaceGroups();
+	void SetupNuclSpaceGroups();
 
 protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
@@ -44,7 +48,9 @@ protected:
 	virtual void closeEvent(QCloseEvent *pEvt) override;
 
 	// slots
-	void SpaceGroupSelected(QTreeWidgetItem *pItem);
+	void MagSpaceGroupSelected(QTreeWidgetItem *pItem);
+	void NuclSpaceGroupSelected(QTreeWidgetItem *pItem);
+
 	void SwitchToBNS(bool bBNS);
 
 public:

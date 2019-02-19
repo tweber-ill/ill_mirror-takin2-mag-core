@@ -7,9 +7,9 @@
  */
 
 #include "browser.h"
-#include <sstream>
-
+#include "../structfact/loadcif.h"
 #include <QtWidgets/QMenuBar>
+#include <sstream>
 
 
 // ----------------------------------------------------------------------------
@@ -50,84 +50,87 @@ SgBrowserDlg::SgBrowserDlg(QWidget* pParent, QSettings *pSett)
 
 
 	// load data
-	SetupSpaceGroups();
+	SetupMagSpaceGroups();
+	SetupNuclSpaceGroups();
 
 
 	// ------------------------------------------------------------------------
 	// connections
-	connect(m_pTree, &QTreeWidget::currentItemChanged, this, &SgBrowserDlg::SpaceGroupSelected);
+	connect(treeMagSG, &QTreeWidget::currentItemChanged, this, &SgBrowserDlg::MagSpaceGroupSelected);
+	connect(treeNuclSG, &QTreeWidget::currentItemChanged, this, &SgBrowserDlg::NuclSpaceGroupSelected);
 	connect(pShowBNS, &QAction::toggled, this, &SgBrowserDlg::SwitchToBNS);
+
+	// synchronise symops when switching the sg tab
+	connect(tabSGs, &QTabWidget::currentChanged, this, [this](int idx) -> void
+	{
+		switch(idx)
+		{
+			case 0: MagSpaceGroupSelected(treeMagSG->currentItem()); break;
+			case 1: NuclSpaceGroupSelected(treeNuclSG->currentItem()); break;
+		}
+	});
 	// ------------------------------------------------------------------------
 }
 
 
 // ----------------------------------------------------------------------------
 /**
- * load space group list
+ * load magnetic space group list
  */
-void SgBrowserDlg::SetupSpaceGroups()
+void SgBrowserDlg::SetupMagSpaceGroups()
 {
-	std::cerr << "Loading space groups ... ";
-	m_sgs.Load("magsg.info");
+	std::cerr << "Loading magnetic space groups ... ";
+	m_magsgs.Load("magsg.info");
 	std::cerr << "Done." << std::endl;
 
-	const auto *pSgs = m_sgs.GetSpacegroups();
-	if(pSgs)
+	const auto *pSgs = m_magsgs.GetSpacegroups();
+	if(!pSgs) return;
+
+	for(const auto& sg : *pSgs)
 	{
-		for(const auto& sg : *pSgs)
-			SetupSpaceGroup(sg);
-	}
-}
+		int iNrStruct = sg.GetStructNumber();
+		int iNrMag = sg.GetMagNumber();
 
-
-/**
- * add space group to tree widget
- */
-void SgBrowserDlg::SetupSpaceGroup(const Spacegroup<t_mat_sg, t_vec_sg>& sg)
-{
-	int iNrStruct = sg.GetStructNumber();
-	int iNrMag = sg.GetMagNumber();
-
-	// find top-level item with given structural sg number
-	auto get_topsg = [](QTreeWidget *pTree, int iStructNr) -> QTreeWidgetItem*
-	{
-		for(int item=0; item<pTree->topLevelItemCount(); ++item)
+		// find top-level item with given structural sg number
+		auto get_topsg = [](QTreeWidget *pTree, int iStructNr) -> QTreeWidgetItem*
 		{
-			QTreeWidgetItem *pItem = pTree->topLevelItem(item);
-			if(!pItem) continue;
+			for(int item=0; item<pTree->topLevelItemCount(); ++item)
+			{
+				QTreeWidgetItem *pItem = pTree->topLevelItem(item);
+				if(!pItem) continue;
 
-			if(pItem->data(0, Qt::UserRole) == iStructNr)
-				return pItem;
+				if(pItem->data(0, Qt::UserRole) == iStructNr)
+					return pItem;
+			}
+
+			return nullptr;
+		};
+
+
+		// find existing top-level structural space group or insert new one
+		auto *pTopItem = get_topsg(treeMagSG, iNrStruct);
+		if(!pTopItem)
+		{
+			QString structname = ("(" + std::to_string(iNrStruct) + ") " + sg.GetName()).c_str();
+
+			pTopItem = new QTreeWidgetItem();
+			pTopItem->setText(0, structname);
+			pTopItem->setData(0, Qt::UserRole, iNrStruct);
+			pTopItem->setData(0, Qt::UserRole+1, iNrMag);
+			treeMagSG->addTopLevelItem(pTopItem);
 		}
 
-		return nullptr;
-	};
 
+		// create magnetic group and add it as sub-item for the corresponding structural group
+		QString magname = ("(" + sg.GetNumber() + ") " + sg.GetName()).c_str();
 
-	// find existing top-level structural space group or insert new one
-	auto *pTopItem = get_topsg(m_pTree, iNrStruct);
-	if(!pTopItem)
-	{
-		QString structname = ("(" + std::to_string(iNrStruct) + ") " + sg.GetName()).c_str();
-
-		pTopItem = new QTreeWidgetItem();
-		pTopItem->setText(0, structname);
-		pTopItem->setData(0, Qt::UserRole, iNrStruct);
-		pTopItem->setData(0, Qt::UserRole+1, iNrMag);
-		m_pTree->addTopLevelItem(pTopItem);
+		auto *pSubItem = new QTreeWidgetItem();
+		pSubItem->setText(0, magname);
+		pSubItem->setData(0, Qt::UserRole, iNrStruct);
+		pSubItem->setData(0, Qt::UserRole+1, iNrMag);
+		pTopItem->addChild(pSubItem);
 	}
-
-
-	// create magnetic group and add it as sub-item for the corresponding structural group
-	QString magname = ("(" + sg.GetNumber() + ") " + sg.GetName()).c_str();
-
-	auto *pSubItem = new QTreeWidgetItem();
-	pSubItem->setText(0, magname);
-	pSubItem->setData(0, Qt::UserRole, iNrStruct);
-	pSubItem->setData(0, Qt::UserRole+1, iNrMag);
-	pTopItem->addChild(pSubItem);
 }
-// ----------------------------------------------------------------------------
 
 
 /**
@@ -136,25 +139,26 @@ void SgBrowserDlg::SetupSpaceGroup(const Spacegroup<t_mat_sg, t_vec_sg>& sg)
 void SgBrowserDlg::SwitchToBNS(bool bBNS)
 {
 	m_showBNS = bBNS;
-	SpaceGroupSelected(m_pTree->currentItem());
+	MagSpaceGroupSelected(treeMagSG->currentItem());
 }
 
 
 /**
- * space group selected
+ * magnetic space group selected
  */
-void SgBrowserDlg::SpaceGroupSelected(QTreeWidgetItem *pItem)
+void SgBrowserDlg::MagSpaceGroupSelected(QTreeWidgetItem *pItem)
 {
 	if(!pItem) return;
 
 	// clean up
-	m_pSymOps->clear();
-	m_pWyc->clear();
+	listSymOps->clear();
+	listWyc->clear();
+
 
 	int iNrStruct = pItem->data(0, Qt::UserRole).toInt();
 	int iNrMag = pItem->data(0, Qt::UserRole+1).toInt();
 
-	const auto* pSg = m_sgs.GetSpacegroupByNumber(iNrStruct, iNrMag);
+	const auto* pSg = m_magsgs.GetSpacegroupByNumber(iNrStruct, iNrMag);
 	if(!pSg) return;
 
 
@@ -233,7 +237,7 @@ void SgBrowserDlg::SpaceGroupSelected(QTreeWidgetItem *pItem)
 
 			auto *pOpItem = new QListWidgetItem();
 			pOpItem->setText(print_sym(rot, trans, inv).c_str());
-			m_pSymOps->addItem(pOpItem);
+			listSymOps->addItem(pOpItem);
 		}
 	}
 
@@ -259,13 +263,136 @@ void SgBrowserDlg::SpaceGroupSelected(QTreeWidgetItem *pItem)
 				pWycItem->addChild(pSubItem);
 			}
 
-			m_pWyc->addTopLevelItem(pWycItem);
+			listWyc->addTopLevelItem(pWycItem);
 			pWycItem->setExpanded(true);
 		}
 	}
 }
+// ----------------------------------------------------------------------------
 
 
+
+
+// ----------------------------------------------------------------------------
+/**
+ * load nuclear space group list
+ */
+void SgBrowserDlg::SetupNuclSpaceGroups()
+{
+	m_nuclsgs = get_sgs<t_mat44_sg>(false, false);
+
+	for(int iSG=0; iSG<static_cast<int>(m_nuclsgs.size()); ++iSG)
+	{
+		int iNrStruct = std::get<0>(m_nuclsgs[iSG]);
+		const std::string& strName = std::get<1>(m_nuclsgs[iSG]);
+
+		// find top-level item with given structural sg number
+		auto get_topsg = [](QTreeWidget *pTree, int iStructNr) -> QTreeWidgetItem*
+		{
+			for(int item=0; item<pTree->topLevelItemCount(); ++item)
+			{
+				QTreeWidgetItem *pItem = pTree->topLevelItem(item);
+				if(!pItem) continue;
+
+				if(pItem->data(0, Qt::UserRole) == iStructNr)
+					return pItem;
+			}
+
+			return nullptr;
+		};
+
+
+		// find existing top-level structural space group or insert new one
+		auto *pTopItem = get_topsg(treeNuclSG, iNrStruct);
+		if(!pTopItem)
+		{
+			QString structname = ("(" + std::to_string(iNrStruct) + ") " + strName).c_str();
+
+			pTopItem = new QTreeWidgetItem();
+			pTopItem->setText(0, structname);
+			pTopItem->setData(0, Qt::UserRole, iNrStruct);
+			pTopItem->setData(0, Qt::UserRole+1, iSG);
+			treeNuclSG->addTopLevelItem(pTopItem);
+		}
+
+
+		// create nuclear group config and add it as sub-item for the corresponding structural group
+		QString magname = ("(" + std::to_string(iNrStruct) + 
+			"-" + std::to_string(pTopItem->childCount()+1) + ") " + strName).c_str();
+
+		auto *pSubItem = new QTreeWidgetItem();
+		pSubItem->setText(0, magname);
+		pSubItem->setData(0, Qt::UserRole, iNrStruct);
+		pSubItem->setData(0, Qt::UserRole+1, iSG);
+		pTopItem->addChild(pSubItem);
+	}
+}
+
+
+/**
+ * nuclear space group selected
+ */
+void SgBrowserDlg::NuclSpaceGroupSelected(QTreeWidgetItem *pItem)
+{
+	if(!pItem) return;
+
+	// clean up
+	listSymOps->clear();
+	listWyc->clear();
+
+
+	int iNrStruct = pItem->data(0, Qt::UserRole).toInt();
+	int iNrSG = pItem->data(0, Qt::UserRole+1).toInt();
+	if(iNrSG < 0 || iNrSG >= m_nuclsgs.size())
+		return;
+
+	const auto& sg = m_nuclsgs[iNrSG];
+	const auto& trafos = std::get<2>(sg);
+
+
+	// print a symmetry operator
+	auto print_sym = [](const t_mat44_sg& mat) -> std::string
+	{
+		std::ostringstream ostr;
+
+		for(std::size_t i=0; i<3; ++i)
+		{
+			// rotation matrix
+			ostr << "( ";
+			for(std::size_t j=0; j<3; ++j)
+				ostr << std::setw(ostr.precision()*1.5) << std::right << mat(i,j);
+			ostr << " )";
+
+			// translation vector
+			ostr << std::setw(ostr.precision()*2) << std::right << "( ";
+			ostr << std::setw(ostr.precision()*1.5) << std::right << mat(i, 3); 
+			ostr << " )";
+
+			if(i < mat.size1()-2)
+				ostr << "\n";
+		}
+
+		return ostr.str();
+	};
+
+
+	// iterate over symmetries
+	for(std::size_t iOp=0; iOp<trafos.size(); ++iOp)
+	{
+		const auto& trafo = trafos[iOp];
+
+		auto *pOpItem = new QListWidgetItem();
+		pOpItem->setText(print_sym(trafo).c_str());
+		listSymOps->addItem(pOpItem);
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
 void SgBrowserDlg::showEvent(QShowEvent *pEvt)
 {
 	QDialog::showEvent(pEvt);
@@ -288,6 +415,5 @@ void SgBrowserDlg::closeEvent(QCloseEvent *pEvt)
 
 	QDialog::closeEvent(pEvt);
 }
-
 
 // ----------------------------------------------------------------------------
