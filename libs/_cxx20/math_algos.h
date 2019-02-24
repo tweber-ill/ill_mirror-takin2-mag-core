@@ -4252,7 +4252,7 @@ eigenvec(const t_mat& mat, bool only_evals=false, bool is_symmetric=false, bool 
 
 /**
  * singular values of a real or complex matrix mat = U * diag{vals} * V^h
- * returns [ ok, U, Vt, vals ]
+ * returns [ ok, U, Vh, vals ]
  */
 template<class t_mat, class t_scalar = typename t_mat::value_type, class t_real = m::underlying_value_type<t_scalar>>
 std::tuple<bool, t_mat, t_mat, std::vector<t_real>>
@@ -4305,6 +4305,29 @@ requires m::is_mat<t_mat>
 	}
 
 	return std::make_tuple(err==0, U, Vh, vals);
+}
+
+
+template<class t_mat>
+std::tuple<t_mat, bool> pseudoinv(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	using t_scalar = typename t_mat::value_type;
+	using t_real = m::underlying_value_type<t_scalar>;
+
+	auto [ ok, U, Vh, vals ] = singval<t_mat>(mat);
+
+	auto V = m::herm(Vh);
+	auto Uh = m::herm(U);
+
+	for(t_real& d : vals)
+	{
+		if(!m::equals<t_real>(d, t_real(0)))
+			d = t_real(1)/d;
+	}
+
+	auto diag = m::diag<t_mat>(vals);
+	return std::make_tuple(m::prod<t_mat>(V, m::prod(diag, Uh)), ok);
 }
 
 }

@@ -45,6 +45,7 @@ int main()
 		for(std::size_t i=0; i<evals.size(); ++i)
 			std::cout << "eval: " << evals[i] << ", evec: " << evecs[i] << std::endl;
 
+
 		auto [ok2, U, Vh, vals] = m_la::singval<t_mat_cplx>(Z);
 		std::cout << "\nok = " << std::boolalpha << ok2 << std::endl;
 		std::cout << "singvals: ";
@@ -54,6 +55,13 @@ int main()
 		std::cout << "U = " << U << "\nVh = " << Vh << std::endl;
 
 		std::cout << "diag{vals} * UVh = " << U*m::diag<t_mat_cplx>(vals)*Vh << std::endl;
+
+
+		auto [inva, ok3a] = m_la::pseudoinv<t_mat_cplx>(Z);
+		auto [invb, ok3b] = m::inv<t_mat_cplx>(Z);
+		std::cout << "\nok = " << std::boolalpha << ok3a << ", " << ok3b << std::endl;
+		std::cout << "pseudoinv = " << inva << std::endl;
+		std::cout << "      inv  = " << invb << std::endl;
  	}
 
 	{
@@ -65,6 +73,7 @@ int main()
 			std::cout << "eval: " << evals_re[i] << " + i*" << evals_im[i] 
 				<< ", evec: " << evecs_re[i] << " +i*" << evecs_im[i] << std::endl;
 
+
 		auto [ok2, U, Vt, vals] = m_la::singval<t_mat>(Z);
 		std::cout << "\nok = " << std::boolalpha << ok2 << std::endl;
 		std::cout << "singvals: ";
@@ -74,7 +83,14 @@ int main()
 		std::cout << "U = " << U << "\nVt = " << Vt << std::endl;
 
 		std::cout << "diag{vals} * UVt = " << U*m::diag<t_mat>(vals)*Vt << std::endl;
- 	}
+
+
+		auto [inva, ok3a] = m_la::pseudoinv<t_mat>(Z);
+		auto [invb, ok3b] = m::inv<t_mat>(Z);
+		std::cout << "\nok = " << std::boolalpha << ok3a << ", " << ok3b << std::endl;
+		std::cout << "pseudoinv = " << inva << std::endl;
+		std::cout << "      inv  = " << invb << std::endl;
+	}
 
 	return 0;
 }
