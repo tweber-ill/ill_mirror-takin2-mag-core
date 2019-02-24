@@ -29,13 +29,6 @@ int main()
 	std::cout << "M = " << M << std::endl;
 
 	{
-		auto [Q, R] = m::qr<t_mat, t_vec>(M);
-		std::cout << "\nQ = " << Q << std::endl;
-		std::cout << "R = " << R << std::endl;
-		std::cout << "QR = " << Q*R << std::endl;
-	}
-
-	{
 		auto [ok, Q, R] = m_la::qr<t_mat>(M);
 		std::cout << "\nok = " << std::boolalpha << ok << std::endl;
 		std::cout << "Q = " << Q << std::endl;

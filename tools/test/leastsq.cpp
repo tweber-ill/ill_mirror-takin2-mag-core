@@ -5,6 +5,7 @@
  * @license GPLv3, see 'LICENSE' file
  *
  * g++-8 -std=c++17 -fconcepts -o leastsq leastsq.cpp
+ * g++-8 -std=c++17 -fconcepts -DUSE_LAPACK -I/usr/include/lapacke -I/usr/local/opt/lapack/include -L/usr/local/opt/lapack/lib -o leastsq leastsq.cpp -llapacke
  */
 
 #include <iostream>

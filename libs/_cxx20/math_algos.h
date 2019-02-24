@@ -32,6 +32,8 @@
 
 namespace m {
 
+
+// constants
 template<typename T> constexpr T pi = T(M_PI);
 template<typename T> T golden = T(0.5) + std::sqrt(T(5))/T(2);
 
@@ -138,6 +140,18 @@ concept bool is_complex = requires(const T& a)
 	a/a;
 };
 // ----------------------------------------------------------------------------
+
+
+
+
+// ----------------------------------------------------------------------------
+// forward declarations
+// ----------------------------------------------------------------------------
+template<class t_mat, class t_vec = std::vector<typename t_mat::value_type>>
+std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
+requires is_mat<t_mat> && is_vec<t_vec>;
+// ----------------------------------------------------------------------------
+
 
 
 
@@ -695,6 +709,41 @@ requires is_basic_vec<t_vec1> && is_basic_vec<t_vec2>
 
 
 /**
+ * matrix-matrix product
+ */
+template<class t_mat>
+t_mat prod(const t_mat& mat1, const t_mat& mat2, bool assert_sizes=true)
+requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
+{
+	// if not asserting sizes, the inner size will use the minimum of the two matrix sizes
+	if(assert_sizes)
+	{
+		if constexpr(m::is_dyn_mat<t_mat>)
+			assert((mat1.size2() == mat2.size1()));
+		else
+			static_assert(mat1.size2() == mat2.size1());
+	}
+
+
+	t_mat matRet(mat1.size1(), mat2.size2());
+	const std::size_t innersize = std::min(mat1.size2(), mat2.size1());
+
+	for(std::size_t row=0; row<matRet.size1(); ++row)
+	{
+		for(std::size_t col=0; col<matRet.size2(); ++col)
+		{
+			matRet(row, col) = 0;
+			for(std::size_t i=0; i<innersize; ++i)
+				matRet(row, col) += mat1(row, i) * mat2(i, col);
+		}
+	}
+
+	return matRet;
+}
+
+
+
+/**
  * 2-norm
  */
 template<class t_vec>
@@ -1044,24 +1093,7 @@ template<class t_mat>
 t_mat operator*(const t_mat& mat1, const t_mat& mat2)
 requires m::is_basic_mat<t_mat> && m::is_dyn_mat<t_mat>
 {
-	if constexpr(m::is_dyn_mat<t_mat>)
-		assert((mat1.size2() == mat2.size1()));
-	else
-		static_assert(mat1.size2() == mat2.size1());
-
-	t_mat matRet(mat1.size1(), mat2.size2());
-
-	for(std::size_t row=0; row<matRet.size1(); ++row)
-	{
-		for(std::size_t col=0; col<matRet.size2(); ++col)
-		{
-			matRet(row, col) = 0;
-			for(std::size_t i=0; i<mat1.size2(); ++i)
-				matRet(row, col) += mat1(row, i) * mat2(i, col);
-		}
-	}
-
-	return matRet;
+	return m::prod<t_mat>(mat1, mat2);
 }
 
 
@@ -1417,34 +1449,6 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 
 /**
- * QR decomposition of a matrix
- * returns [Q, R]
- */
-template<class t_mat, class t_vec>
-std::tuple<t_mat, t_mat> qr(const t_mat& mat)
-requires is_mat<t_mat> && is_vec<t_vec>
-{
-	using T = typename t_mat::value_type;
-	const std::size_t rows = mat.size1();
-	const std::size_t cols = mat.size2();
-	const std::size_t N = std::min(cols, rows);
-
-	t_mat R = mat;
-	t_mat Q = unit<t_mat>(N, N);
-
-	for(std::size_t icol=0; icol<N-1; ++icol)
-	{
-		t_vec vecCol = col<t_mat, t_vec>(R, icol);
-		t_mat matMirror = ortho_mirror_zero_op<t_mat, t_vec>(vecCol, icol);
-		Q = Q * matMirror;
-		R = matMirror * R;
-	}
-
-	return std::make_tuple(Q, R);
-}
-
-
-/**
  * project vector vec onto plane through the origin and perpendicular to vector vecNorm
  * (e.g. used to calculate magnetic interaction vector M_perp)
  */
@@ -1772,11 +1776,21 @@ requires is_basic_vec<t_vec>
 
 /**
  * least-squares regression, solves for parameters v
- * exact: X v = y
- * approx: X^t X v = X^t y
+ *
+ * exact equation:
+ * 		X v = y
+ *
+ * approx. equation:
+ * 		X^t X v = X^t y
+ * 		v = inv(X^t X) X^t y
+ *
+ * 		(QR)^t QR v = X^t y
+ * 		R^tQ^t QR v = X^t y
+ * 		R^tR v = X^t y
+ * 		v = inv(R^tR) X^t y
  */
 template<class t_vec, class t_mat = mat<typename t_vec::value_type, std::vector>>
-std::tuple<t_vec, bool> leastsq(const t_vec& x, const t_vec& y, std::size_t order)
+std::tuple<t_vec, bool> leastsq(const t_vec& x, const t_vec& y, std::size_t order, bool use_qr=true)
 requires is_vec<t_vec> && is_dyn_mat<t_mat>
 {
 	// check array sizes
@@ -1786,7 +1800,7 @@ requires is_vec<t_vec> && is_dyn_mat<t_mat>
 		static_assert(x.size() == y.size());
 
 
-	using namespace m_ops;	
+	using namespace m_ops;
 	using T = typename t_vec::value_type;
 
 	const std::size_t N = x.size();
@@ -1796,11 +1810,26 @@ requires is_vec<t_vec> && is_dyn_mat<t_mat>
 		for(std::size_t i=0; i<N; ++i)
 			X(i,j) = std::pow(x[i], static_cast<T>(j));
 
-	t_mat XtX = trans<t_mat>(X) * X;
-	t_vec Xtb = trans<t_mat>(X) * y;
 
+	t_mat XtX;
+
+	if(use_qr)
+	{
+		auto [ok_qr, Q, R] = qr<t_mat>(X);
+		if(!ok_qr)
+				return std::make_tuple(t_vec{}, false);
+
+		XtX = trans<t_mat>(R) * R;
+	}
+	else
+	{
+		XtX = trans<t_mat>(X) * X;
+	}
+
+	t_vec Xty = trans<t_mat>(X) * y;
 	auto [Y, ok] = inv<t_mat>(XtX);
-	t_vec v = Y * Xtb;
+	t_vec v = Y * Xty;
+
 	return std::make_tuple(v, ok);
 }
 
@@ -3921,14 +3950,12 @@ namespace m_la {
  * http://www.math.utah.edu/software/lapack/lapack-d/dgeqrf.html
  * return [ok, Q, R]
  */
-template<class t_mat>
+template<class t_mat, class t_vec = std::vector<typename t_mat::value_type>>
 std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
 requires m::is_mat<t_mat>
 {
 	using namespace m_ops;
-
 	using T = typename t_mat::value_type;
-	using t_vec = std::vector<T>;
 
 	const std::size_t rows = mat.size1();
 	const std::size_t cols = mat.size2();
@@ -4183,9 +4210,46 @@ eigenvec(const t_mat& mat, bool only_evals=false, bool is_symmetric=false, bool 
 	return std::make_tuple(err == 0, evals_re, evals_im, evecs_re, evecs_im);
 }
 
+}
+
+#endif	// USE_LAPACK
+
+
+namespace m {
+
+/**
+ * QR decomposition of a matrix
+ * returns [Q, R]
+ */
+template<class t_mat, class t_vec = std::vector<typename t_mat::value_type>>
+std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
+requires is_mat<t_mat> && is_vec<t_vec>
+{
+#ifdef USE_LAPACK
+	return m_la::qr<t_mat, t_vec>(mat);
+#else
+	using T = typename t_mat::value_type;
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+	const std::size_t N = std::min(cols, rows);
+
+	t_mat R = mat;
+	t_mat Q = unit<t_mat>(N, N);
+
+	for(std::size_t icol=0; icol<N-1; ++icol)
+	{
+		t_vec vecCol = col<t_mat, t_vec>(R, icol);
+		t_mat matMirror = ortho_mirror_zero_op<t_mat, t_vec>(vecCol, icol);
+
+		Q = prod(Q, matMirror, false);
+		R = prod(matMirror, R);
+	}
+
+	return std::make_tuple(true, Q, R);
+#endif
+}
 
 }
-#endif
 // ----------------------------------------------------------------------------
 
 #endif
