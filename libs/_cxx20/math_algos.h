@@ -42,6 +42,13 @@ template<typename T> T golden = T(0.5) + std::sqrt(T(5))/T(2);
 // concepts
 // ----------------------------------------------------------------------------
 /**
+ * requirements for having a value_type
+ */
+template<class T>
+concept bool has_value_type = requires { typename T::value_type; };
+
+
+/**
  * requirements for a scalar type
  */
 template<class T>
@@ -55,11 +62,9 @@ concept bool is_scalar =
 template<class T>
 concept bool is_basic_vec = requires(const T& a)
 {
-	typename T::value_type;		// must have a value_type
-
 	a.size();					// must have a size() member function
 	a.operator[](1);			// must have an operator[]
-};
+} && has_value_type<T>;
 
 /**
  * requirements of a vector type with a dynamic size
@@ -90,12 +95,10 @@ concept bool is_vec = requires(const T& a)
 template<class T>
 concept bool is_basic_mat = requires(const T& a)
 {
-	typename T::value_type;		// must have a value_type
-
 	a.size1();					// must have a size1() member function
 	a.size2();					// must have a size2() member function
 	a.operator()(1,1);			// must have an operator()
-};
+} && has_value_type<T>;
 
 /**
  * requirements of a matrix type with a dynamic size
@@ -128,8 +131,6 @@ concept bool is_mat = requires(const T& a)
 template<class T>
 concept bool is_complex = requires(const T& a)
 {
-	typename T::value_type;		// must have a value_type
-
 	std::conj(a);
 	a.real();			// must have a real() member function
 	a.imag();			// must have an imag() member function
@@ -138,7 +139,23 @@ concept bool is_complex = requires(const T& a)
 	a-a;
 	a*a;
 	a/a;
-};
+} && has_value_type<T>;
+// ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// type traits
+// ----------------------------------------------------------------------------
+/**
+ * if it exists, get T's underlying value_type, otherwise use the type T directly
+ */
+template<class T, bool b = has_value_type<T>> struct _underlying_value_type {};
+template<class T> struct _underlying_value_type<T, false> { using ty = T; };
+template<class T> struct _underlying_value_type<T, true> { using ty = typename T::value_type; };
+template<class T> using underlying_value_type = typename _underlying_value_type<T>::ty;
 // ----------------------------------------------------------------------------
 
 
@@ -444,6 +461,27 @@ requires is_basic_vec<t_vec>
 		vec[i] = 0;
 
 	return vec;
+}
+
+
+/**
+ * diagonal matrix
+ */
+template<class t_mat, class t_vec=std::vector<typename t_mat::value_type>>
+t_mat diag(const t_vec& vals)
+requires is_basic_mat<t_mat> && is_basic_vec<t_vec>
+{
+	const std::size_t N = vals.size();
+	t_mat mat = zero<t_mat>(N);
+
+	// static matrix does not necessarily have the required size!
+	if constexpr(!m::is_dyn_mat<t_mat>)
+		assert(mat.size1() == mat.size1() && mat.size1() == N);
+
+	for(std::size_t i=0; i<std::min(mat.size1(), N); ++i)
+		mat(i,i) = vals[i];
+
+	return mat;
 }
 
 
@@ -3946,7 +3984,7 @@ extern "C"
 namespace m_la {
 
 /**
- * QR decomposition of a matrix mat, mat = QR
+ * QR decomposition of a matrix mat = QR
  * http://www.math.utah.edu/software/lapack/lapack-d/dgeqrf.html
  * return [ok, Q, R]
  */
@@ -4208,6 +4246,65 @@ eigenvec(const t_mat& mat, bool only_evals=false, bool is_symmetric=false, bool 
 	}
 
 	return std::make_tuple(err == 0, evals_re, evals_im, evecs_re, evecs_im);
+}
+
+
+
+/**
+ * singular values of a real or complex matrix mat = U * diag{vals} * V^h
+ * returns [ ok, U, Vt, vals ]
+ */
+template<class t_mat, class t_scalar = typename t_mat::value_type, class t_real = m::underlying_value_type<t_scalar>>
+std::tuple<bool, t_mat, t_mat, std::vector<t_real>>
+singval(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+
+	const auto [Nmin, Nmax] = std::minmax(rows, cols);
+	std::vector<t_scalar> inmat(rows*cols), outU(rows*rows), outVh(cols*cols);
+	std::vector<t_real> vals(Nmin);
+	std::vector<t_real> _tmp(Nmax * Nmax * 2);
+
+	for(std::size_t i=0; i<rows; ++i)
+		for(std::size_t j=0; j<cols; ++j)
+			inmat[i*cols + j] = mat(i,j);
+
+	int err = -1;
+	if constexpr(m::is_complex<t_scalar>)
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_cgesvd(LAPACK_ROW_MAJOR, 'A', 'A', rows, cols, inmat.data(), cols,
+				vals.data(), outU.data(), rows, outVh.data(), cols, _tmp.data());
+		else
+			err = LAPACKE_zgesvd(LAPACK_ROW_MAJOR, 'A', 'A', rows, cols, inmat.data(), cols,
+				vals.data(), outU.data(), rows, outVh.data(), cols, _tmp.data());
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_sgesvd(LAPACK_ROW_MAJOR, 'A', 'A', rows, cols, inmat.data(), cols,
+				vals.data(), outU.data(), rows, outVh.data(), cols, _tmp.data());
+		else
+			err = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', rows, cols, inmat.data(), cols,
+				vals.data(), outU.data(), rows, outVh.data(), cols, _tmp.data());
+	}
+
+
+	t_mat U = m::unit<t_mat>(rows);
+	t_mat Vh = m::unit<t_mat>(cols);
+
+	for(std::size_t i=0; i<Nmax; ++i)
+	{
+		for(std::size_t j=0; j<Nmax; ++j)
+		{
+			if(i<U.size1() && j<U.size2()) U(i,j) = outU[i*cols + j];
+			if(i<Vh.size1() && j<Vh.size2()) Vh(i,j) = outVh[i*cols + j];
+		}
+	}
+
+	return std::make_tuple(err==0, U, Vh, vals);
 }
 
 }
