@@ -15,7 +15,7 @@
 
 
 \begin{document}
-Collection of useful formulas, T. Weber, July 13, 2018.
+Useful formulas, T. Weber, tweber@ill.fr, July 13, 2018.
 
 
 \section{Scattering Triangle}
@@ -30,7 +30,9 @@ Collection of useful formulas, T. Weber, July 13, 2018.
 \begin{equation} \left< Q | Q \right> = \left( \left< k_i \right| - \left< k_f \right| \right) \cdot \left( \left| k_i \right> - \left| k_f \right> \right) \end{equation}
 \begin{equation} \left< Q | Q \right> = \left< k_i | k_i \right> + \left< k_f | k_f \right> - 2 \left< k_i | k_f \right> \end{equation}
 \begin{equation} Q^2 = k_i^2 + k_f^2 - 2 k_i k_f \cos a_4 \end{equation}
-\begin{equation} \boxed{ a_4 = \arccos \left( \frac{k_i^2 + k_f^2 - Q^2}{2 k_i k_f} \right) } \end{equation}
+\begin{equation} \boxed{ a_4 = \sigma_s \cdot \arccos \left( \frac{k_i^2 + k_f^2 - Q^2}{2 k_i k_f} \right) } \end{equation}
+
+The sign of $a_4$ is given by the sample scattering sense $\sigma_s = \pm 1$.
 
 
 
@@ -38,18 +40,26 @@ Collection of useful formulas, T. Weber, July 13, 2018.
 
 \begin{equation} \boxed{ a_3 = 180^{\circ} - \left( \psi + \xi \right) } \end{equation}
 
+
+\subsubsection*{Angle $\psi$}
 Angle $\psi$ between $\left| k_i \right>$ and $\left| Q \right>$, in units of \AA{}$^{-1}$, as before:
 \begin{equation} \left| k_f \right> = \left| k_i \right> - \left| Q \right> \end{equation}
 \begin{equation} \left< k_f | k_f \right> = \left( \left< k_i \right| - \left< Q \right| \right) \cdot \left( \left| k_i \right> - \left| Q \right> \right) \end{equation}
 \begin{equation} \left< k_f | k_f \right> = \left< k_i | k_i \right> + \left< Q | Q \right> - 2 \left< k_i | Q \right> \end{equation}
 \begin{equation} k_f^2 = k_i^2 + Q^2 - 2 k_i Q \cos \psi \end{equation}
-\begin{equation} \boxed{ \psi = \arccos \left( \frac{k_i^2 + Q^2 - k_f^2}{2 k_i Q} \right) } \end{equation}
+\begin{equation} \boxed{ \psi = \sigma_s \cdot \arccos \left( \frac{k_i^2 + Q^2 - k_f^2}{2 k_i Q} \right) } \end{equation}
 
+
+\subsubsection*{Angle $\xi$}
 Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$ (i.e. $ax$, $ay$, $az$), in units of rlu; $g_{ij} = \left| b_i \left> \right< b_j \right|$ is the covariant metric of the reciprocal lattice with basis $\left| b_i \right>$:
-\begin{equation} \xi = \arccos \left( \frac{ \left< Q | a \right> }{ \sqrt{\left< Q | Q \right>} \sqrt{\left< a | a \right>} } \right) \end{equation}
-\begin{equation} \boxed{ \xi = \arccos \left( \frac{ Q^i g_{ij} a^j }{ \sqrt{Q^i g_{ij} Q^j} \sqrt{a^i g_{ij} a^j} } \right) } \end{equation}
+\begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ \left< Q | a \right> }{ \sqrt{\left< Q | Q \right>} \sqrt{\left< a | a \right>} } \right) \end{equation}
+\begin{equation} \boxed{ \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q^i g_{ij} a^j }{ \sqrt{Q^i g_{ij} Q^j} \sqrt{a^i g_{ij} a^j} } \right) } \end{equation}
 
+The sign, $\sigma_{\mathrm{side}}$, of $\xi$ depends on which side of the orientation vector $\left| a \right>$ the scattering vector $\left| Q \right>$ is located. The sign can be found by calculating the (covariant) cross product of $\left| a \right>$ and $\left| Q \right>$ to give an out-of-plane vector which can be compared with the given scattering plane up vector.
+
+
+\paragraph*{Special case}
 Special case for cubic crystals, $g_{ij} = \delta_{ij} \cdot \left( 2\pi / a \right)^2$:
-\begin{equation} \xi = \arccos \left( \frac{ Q_i a^i }{ \sqrt{Q_i Q^i} \sqrt{a_i a^i} } \right) \end{equation}
+\begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q_i a^i }{ \sqrt{Q_i Q^i} \sqrt{a_i a^i} } \right) \end{equation}
 
 \end{document}

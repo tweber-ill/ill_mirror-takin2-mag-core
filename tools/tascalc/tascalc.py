@@ -113,9 +113,9 @@ def get_Q(ki, kf, a4):
 
 # -----------------------------------------------------------------------------
 # angle enclosed by ki and Q
-def get_psi(ki, kf, Q):
+def get_psi(ki, kf, Q, sense=1.):
 	c = (ki**2. + Q**2. - kf**2.) / (2.*ki*Q)
-	return np.arccos(c)
+	return sense*np.arccos(c)
 
 
 # crystallographic A matrix converting fractional to lab coordinates
@@ -154,8 +154,9 @@ def get_UB(B, orient1_rlu, orient2_rlu, orientup_rlu):
 	UB = np.dot(U_invA, B)
 	return UB
 
+
 # a3 & a4 angles
-def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
+def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, sense_sample=1.):
 	metric = get_metric(B)
 
 	# angle xi between Q and orientation reflex
@@ -173,7 +174,7 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	dist_Q_plane = dot(Q_rlu, orient_up_rlu, metric) / up_len
 
 	# angle psi enclosed by ki and Q
-	psi = get_psi(ki, kf, Qlen)
+	psi = get_psi(ki, kf, Qlen, sense_sample)
 
 	a3 = - psi - xi + a3_offs
 	a4 = get_a4(ki, kf, Qlen)
@@ -182,11 +183,11 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B):
 	return [a3, a4, dist_Q_plane]
 
 
-def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B):
+def get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B, sense_sample=1.):
 	B_inv = la.inv(B)
 
 	# angle enclosed by ki and Q
-	psi = get_psi(ki, kf, Qlen)
+	psi = get_psi(ki, kf, Qlen, sense_sample)
 
 	# angle between Q and orientation reflex
 	xi = - a3 + a3_offs - psi

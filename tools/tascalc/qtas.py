@@ -58,6 +58,8 @@ B = np.array([[1,0,0], [0,1,0], [0,0,1]])
 orient_rlu = np.array([1,0,0])
 #orient2_rlu = np.array([0,1,0])
 orient_up_rlu = np.array([0,0,1])
+
+g_eps = 1e-4
 # -----------------------------------------------------------------------------
 
 
@@ -209,6 +211,8 @@ editA4 = qtw.QLineEdit(taspanel)
 editA5 = qtw.QLineEdit(taspanel)
 editA6 = qtw.QLineEdit(taspanel)
 
+checkA4Sense = qtw.QCheckBox(taspanel)
+
 editDm = qtw.QLineEdit(taspanel)
 editDa = qtw.QLineEdit(taspanel)
 
@@ -227,6 +231,8 @@ separatorTas = qtw.QFrame(Qpanel)
 separatorTas.setFrameStyle(qtw.QFrame.HLine)
 separatorTas2 = qtw.QFrame(Qpanel)
 separatorTas2.setFrameStyle(qtw.QFrame.HLine)
+separatorTas3 = qtw.QFrame(Qpanel)
+separatorTas3.setFrameStyle(qtw.QFrame.HLine)
 
 
 def TASChanged():
@@ -241,6 +247,10 @@ def TASChanged():
 	dmono = getfloat(editDm.text())
 	dana = getfloat(editDa.text())
 
+	sense_sample = 1.
+	if checkA4Sense.isChecked() == False:
+		sense_sample = -1.
+
 	editA2.setText("%.6g" % (a2 / np.pi * 180.))
 	editA6.setText("%.6g" % (a6 / np.pi * 180.))
 
@@ -249,7 +259,7 @@ def TASChanged():
 		kf = tas.get_monok(a5, dana)
 		E = tas.get_E(ki, kf)
 		Qlen = tas.get_Q(ki, kf, a4)
-		Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B)
+		Qvec = tas.get_hkl(ki, kf, a3, Qlen, orient_rlu, orient_up_rlu, B, sense_sample)
 
 		edith.setText("%.6g" % Qvec[0])
 		editk.setText("%.6g" % Qvec[1])
@@ -281,7 +291,7 @@ def DChanged():
 	QChanged()
 
 def QChanged():
-	global orient_rlu, orient_up_rlu
+	global orient_rlu, orient_up_rlu, g_eps
 
 	Q_rlu = np.array([getfloat(edith.text()), getfloat(editk.text()), getfloat(editl.text())])
 	ki = getfloat(editKi.text())
@@ -306,9 +316,13 @@ def QChanged():
 		editA6.setText("invalid")
 
 	try:
-		[a3, a4, dist_Q_plane] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B)
+		sense_sample = 1.
+		if checkA4Sense.isChecked() == False:
+			sense_sample = -1.
+
+		[a3, a4, dist_Q_plane] = tas.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, sense_sample)
 		Qlen = tas.get_Q(ki, kf, a4)
-		Q_in_plane = np.abs(dist_Q_plane) < 1e-4
+		Q_in_plane = np.abs(dist_Q_plane) < g_eps
 
 		editA3.setText("%.6g" % (a3 / np.pi * 180.))
 		editA4.setText("%.6g" % (a4 / np.pi * 180.))
@@ -371,6 +385,12 @@ editl.setText("%.6g" % sett.value("qtas/l", 0., type=float))
 editKi.setText("%.6g" % sett.value("qtas/ki", 2.662, type=float))
 editKf.setText("%.6g" % sett.value("qtas/kf", 2.662, type=float))
 
+
+checkA4Sense.setText("a4 sense is counter-clockwise")
+checkA4Sense.setChecked(sett.value("qtas/a4_sense", 1, type=bool))
+checkA4Sense.stateChanged.connect(QChanged)
+
+
 Qlayout.addWidget(qtw.QLabel("h (rlu):", Qpanel), 0,0, 1,1)
 Qlayout.addWidget(edith, 0,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("k (rlu):", Qpanel), 1,0, 1,1)
@@ -395,11 +415,14 @@ taslayout.addWidget(qtw.QLabel("a5, a6 (deg):", taspanel), 9,0, 1,1)
 taslayout.addWidget(editA5, 9,1, 1,1)
 taslayout.addWidget(editA6, 9,2, 1,1)
 taslayout.addWidget(separatorTas2, 10,0, 1,3)
-taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 11,0, 1,1)
-taslayout.addWidget(editDm, 11,1, 1,1)
-taslayout.addWidget(editDa, 11,2, 1,1)
-taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 12,0, 1,3)
-taslayout.addWidget(tasstatus, 13,0, 1,3)
+taslayout.addWidget(qtw.QLabel("Sense:", taspanel), 11,0, 1,1)
+taslayout.addWidget(checkA4Sense, 11,1, 1,2)
+taslayout.addWidget(separatorTas3, 12,0, 1,3)
+taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 13,0, 1,1)
+taslayout.addWidget(editDm, 13,1, 1,1)
+taslayout.addWidget(editDa, 13,2, 1,1)
+taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 14,0, 1,3)
+taslayout.addWidget(tasstatus, 15,0, 1,3)
 
 tabs.addTab(taspanel, "TAS")
 # -----------------------------------------------------------------------------
@@ -489,5 +512,6 @@ sett.setValue("qtas/l", getfloat(editl.text()))
 sett.setValue("qtas/ki", getfloat(editKi.text()))
 sett.setValue("qtas/kf", getfloat(editKf.text()))
 sett.setValue("qtas/a3_conv", comboA3.currentIndex())
+sett.setValue("qtas/a4_sense", checkA4Sense.isChecked())
 sett.setValue("qtas/geo", dlg.saveGeometry())
 # -----------------------------------------------------------------------------
