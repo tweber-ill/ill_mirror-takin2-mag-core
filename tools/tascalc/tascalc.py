@@ -36,6 +36,7 @@ def rotate(_axis, vec, phi):
 
 
 # get metric from crystal B matrix
+# basis vectors are in the columns of B, i.e. the second index
 def get_metric(B):
 	return np.einsum("ij,ik -> jk", B, B)
 
@@ -130,10 +131,12 @@ def get_A(lattice, angles):
 		(cs[0]-cs[1]*cs[2]) / s2, \
 		(np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2])
 
+	# the real-space basis vectors form the columns of the A matrix
 	return np.transpose(np.array([a, b, c]))
 
 
 # crystallographic B matrix converting rlu to 1/A
+# the reciprocal-space basis vectors form the columns of the B matrix
 def get_B(lattice, angles):
 	A = get_A(lattice, angles)
 	B = 2.*np.pi * np.transpose(la.inv(A))

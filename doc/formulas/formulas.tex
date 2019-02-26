@@ -8,6 +8,8 @@
 \documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{tensor}
+\usepackage{bm}
 \usepackage{graphicx}
 
 \usepackage[a4paper]{geometry}
@@ -51,7 +53,8 @@ Angle $\psi$ between $\left| k_i \right>$ and $\left| Q \right>$, in units of \A
 
 
 \subsubsection*{Angle $\xi$}
-Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$ (i.e. $ax$, $ay$, $az$), in units of rlu; $g_{ij} = \left| b_i \left> \right< b_j \right|$ is the covariant metric of the reciprocal lattice with basis $\left| b_i \right>$:
+% $g_{ij} = \left< \bm{b}_i | \bm{b}_j \right> = \tensor{B}{_{ik}} \tensor{B}{^{k}_{j}}$
+Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$ (i.e. $ax$, $ay$, $az$), in units of rlu; $g_{ij} = \left< \bm{b}_i | \bm{b}_j \right>$ is the covariant metric of the reciprocal lattice with basis vectors $\left| \bm{b}_i \right>$, which form the columns of the crystallographic $B$ matrix:
 \begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ \left< Q | a \right> }{ \sqrt{\left< Q | Q \right>} \sqrt{\left< a | a \right>} } \right) \end{equation}
 \begin{equation} \boxed{ \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q^i g_{ij} a^j }{ \sqrt{Q^i g_{ij} Q^j} \sqrt{a^i g_{ij} a^j} } \right) } \end{equation}
 
