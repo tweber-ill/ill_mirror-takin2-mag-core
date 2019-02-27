@@ -26,20 +26,45 @@ using t_mat_cplx = m::mat<t_cplx, std::vector>;
 int main()
 {
 	auto M = m::create<t_mat>({1, 2, 3, 3, 2, 6, 4, 2, 4});
+	auto Z = m::create<t_mat_cplx>({1, 2, 3, 3, 2, 6, 4, 2, 4});
 	std::cout << "M = " << M << std::endl;
+	std::cout << "Z = " << Z << std::endl;
 
 	{
 		auto [ok, Q, R] = m_la::qr<t_mat>(M);
+		auto [ok2, P, L, U] = m_la::lu<t_mat>(M);
+
 		std::cout << "\nok = " << std::boolalpha << ok << std::endl;
 		std::cout << "Q = " << Q << std::endl;
 		std::cout << "R = " << R << std::endl;
 		std::cout << "QR = " << Q*R << std::endl;
+
+		std::cout << "\nok2 = " << std::boolalpha << ok2 << std::endl;
+		std::cout << "P = " << P << std::endl;
+		std::cout << "L = " << L << std::endl;
+		std::cout << "U = " << U << std::endl;
+		std::cout << "PLU = " << P*L*U << std::endl;
 	}
 
 
 	{
-		auto Z = m::create<t_mat_cplx>({1, 2, 3, 3, 2, 6, 4, 2, 4});
+		auto [ok, Q, R] = m_la::qr<t_mat_cplx>(Z);
+		auto [ok2, P, L, U] = m_la::lu<t_mat_cplx>(Z);
 
+		std::cout << "\nok = " << std::boolalpha << ok << std::endl;
+		std::cout << "Q = " << Q << std::endl;
+		std::cout << "R = " << R << std::endl;
+		std::cout << "QR = " << Q*R << std::endl;
+
+		std::cout << "\nok2 = " << std::boolalpha << ok2 << std::endl;
+		std::cout << "P = " << P << std::endl;
+		std::cout << "L = " << L << std::endl;
+		std::cout << "U = " << U << std::endl;
+		std::cout << "PLU = " << P*L*U << std::endl;
+	}
+
+
+	{
 		auto [ok, evals, evecs] = m_la::eigenvec<t_mat_cplx, t_vec_cplx>(Z, 0, 0, 1);
 		std::cout << "\nok = " << std::boolalpha << ok << std::endl;
 		for(std::size_t i=0; i<evals.size(); ++i)
@@ -65,16 +90,14 @@ int main()
  	}
 
 	{
-		auto Z = m::create<t_mat>({1, 2, 3, 3, 2, 6, 4, 2, 4});
-
-		auto [ok, evals_re, evals_im, evecs_re, evecs_im] = m_la::eigenvec<t_mat, t_vec>(Z, 0, 0, 1);
+		auto [ok, evals_re, evals_im, evecs_re, evecs_im] = m_la::eigenvec<t_mat, t_vec>(M, 0, 0, 1);
 		std::cout << "\nok = " << std::boolalpha << ok << std::endl;
 		for(std::size_t i=0; i<evals_re.size(); ++i)
 			std::cout << "eval: " << evals_re[i] << " + i*" << evals_im[i] 
 				<< ", evec: " << evecs_re[i] << " +i*" << evecs_im[i] << std::endl;
 
 
-		auto [ok2, U, Vt, vals] = m_la::singval<t_mat>(Z);
+		auto [ok2, U, Vt, vals] = m_la::singval<t_mat>(M);
 		std::cout << "\nok = " << std::boolalpha << ok2 << std::endl;
 		std::cout << "singvals: ";
 		for(std::size_t i=0; i<vals.size(); ++i)
@@ -85,8 +108,8 @@ int main()
 		std::cout << "diag{vals} * UVt = " << U*m::diag<t_mat>(vals)*Vt << std::endl;
 
 
-		auto [inva, ok3a] = m_la::pseudoinv<t_mat>(Z);
-		auto [invb, ok3b] = m::inv<t_mat>(Z);
+		auto [inva, ok3a] = m_la::pseudoinv<t_mat>(M);
+		auto [invb, ok3b] = m::inv<t_mat>(M);
 		std::cout << "\nok = " << std::boolalpha << ok3a << ", " << ok3b << std::endl;
 		std::cout << "pseudoinv = " << inva << std::endl;
 		std::cout << "      inv  = " << invb << std::endl;

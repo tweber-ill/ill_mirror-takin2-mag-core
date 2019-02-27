@@ -167,6 +167,10 @@ template<class T> using underlying_value_type = typename _underlying_value_type<
 template<class t_mat, class t_vec = std::vector<typename t_mat::value_type>>
 std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
 requires is_mat<t_mat> && is_vec<t_vec>;
+
+template<class t_mat>
+std::tuple<t_mat, bool> inv(const t_mat& mat)
+requires is_mat<t_mat>;
 // ----------------------------------------------------------------------------
 
 
@@ -461,6 +465,26 @@ requires is_basic_vec<t_vec>
 		vec[i] = 0;
 
 	return vec;
+}
+
+
+/**
+ * row permutation matrix
+ */
+template<class t_mat>
+t_mat perm(std::size_t N1, std::size_t N2, std::size_t from, std::size_t to)
+requires is_basic_mat<t_mat>
+{
+	t_mat mat;
+	if constexpr(is_dyn_mat<t_mat>)
+		mat = t_mat(N1, N2);
+
+	unit<t_mat>(mat, 0,0, mat.size1(),mat.size2());
+
+	mat(from, from) = mat(to, to) = 0;
+	mat(from, to) = mat(to, from) = 1;
+
+	return mat;
 }
 
 
@@ -1696,50 +1720,6 @@ requires is_mat<t_mat>
 		_tr += mat(i,i);
 
 	return _tr;
-}
-
-
-/**
- * inverted matrix
- */
-template<class t_mat>
-std::tuple<t_mat, bool> inv(const t_mat& mat)
-requires is_mat<t_mat>
-{
-	using T = typename t_mat::value_type;
-	using t_vec = std::vector<T>;
-	const std::size_t N = mat.size1();
-
-	// fail if matrix is not square
-	if(N != mat.size2())
-		return std::make_tuple(t_mat(), false);
-
-	const t_vec matFlat = flatten<t_mat, std::vector>(mat);
-	const T fullDet = flat_det<t_vec>(matFlat, N);
-
-	// fail if determinant is zero
-	if(equals<T>(fullDet, 0))
-	{
-		//std::cerr << "det == 0" << std::endl;
-		return std::make_tuple(t_mat(), false);
-	}
-
-	t_mat matInv;
-	if constexpr(is_dyn_mat<t_mat>)
-		matInv = t_mat(N, N);
-
-	for(std::size_t i=0; i<N; ++i)
-	{
-		for(std::size_t j=0; j<N; ++j)
-		{
-			const T sgn = ((i+j) % 2) == 0 ? T(1) : T(-1);
-			const t_vec subMat = flat_submat<t_vec>(matFlat, N, N, i, j);
-			matInv(j,i) = sgn * flat_det<t_vec>(subMat, N-1);
-		}
-	}
-
-	matInv = matInv / fullDet;
-	return std::make_tuple(matInv, true);
 }
 
 
@@ -3924,8 +3904,151 @@ extern "C"
 
 namespace m_la {
 
+
 /**
- * QR decomposition of a matrix mat = QR
+ * LU decomposition of a matrix, mat = P * L * U, returning raw results
+ * http://www.math.utah.edu/software/lapack/lapack-d/dgetrf.html
+ * return [ok, LU, perm]
+ */
+template<class t_mat, template<class...> class t_vec = std::vector>
+std::tuple<bool, t_vec<typename t_mat::value_type>, t_vec<lapack_int>> _lu_raw(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	using namespace m_ops;
+	using t_scalar = typename t_mat::value_type;
+	using t_real = m::underlying_value_type<t_scalar>;
+
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+	const std::size_t minor = std::min(rows, cols);
+
+
+	t_vec<t_scalar> outmat(rows*cols);
+	t_vec<lapack_int> outpivots(minor);
+
+	for(std::size_t i=0; i<rows; ++i)
+		for(std::size_t j=0; j<cols; ++j)
+			outmat[i*cols + j] = mat(i, j);
+
+	int err = -1;
+	if constexpr(m::is_complex<t_scalar>)
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_cgetrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outpivots.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_zgetrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outpivots.data());
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_sgetrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outpivots.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outpivots.data());
+	}
+
+	return std::make_tuple(err == 0, outmat, outpivots);
+}
+
+
+/**
+ * LU decomposition of a matrix, mat = P * L * U
+ * http://www.math.utah.edu/software/lapack/lapack-d/dgetrf.html
+ * return [ok, P, L, U]
+ */
+template<class t_mat, template<class...> class t_vec = std::vector>
+std::tuple<bool, t_mat, t_mat, t_mat> lu(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	using namespace m_ops;
+	using t_scalar = typename t_mat::value_type;
+	using t_real = m::underlying_value_type<t_scalar>;
+
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+
+
+	auto [ ok, lumat, pivots ] = _lu_raw<t_mat, t_vec>(mat);
+
+	t_mat P = m::unit<t_mat>(rows, cols);
+	t_mat L = m::unit<t_mat>(rows, cols);
+	t_mat U = m::unit<t_mat>(rows, cols);
+
+	// L and U
+	for(std::size_t i=0; i<rows; ++i)
+	{
+		for(std::size_t j=0; j<cols; ++j)
+		{
+			if(j>=i)
+				U(i, j) = lumat[i*cols + j];
+			else
+				L(i, j) = lumat[i*cols + j];
+		}
+	}
+
+	// permutation matrix P
+	for(std::size_t i=0; i<pivots.size(); ++i)
+		P = m::prod<t_mat>(P, m::perm<t_mat>(rows, cols, i, pivots[i]-1));
+
+	return std::make_tuple(ok, P, L, U);
+}
+
+
+/**
+ * inverted matrix
+ */
+template<class t_mat>
+std::tuple<t_mat, bool> inv(const t_mat& mat)
+requires m::is_mat<t_mat>
+{
+	// fail if matrix is not square
+	if constexpr(m::is_dyn_mat<t_mat>)
+		assert((mat.size1() == mat.size2()));
+	else
+		static_assert(mat.size1() == mat.size2());
+
+	using t_scalar = typename t_mat::value_type;
+	using t_real = m::underlying_value_type<t_scalar>;
+
+	const std::size_t rows = mat.size1();
+	const std::size_t cols = mat.size2();
+
+	t_mat I = m::unit<t_mat>(rows, cols);
+
+
+	// lu factorisation
+	auto [ ok, lumat, pivots ] = _lu_raw<t_mat, std::vector>(mat);
+	if(!ok)
+		return std::make_tuple(I, false);
+
+
+	// inversion
+	int err = -1;
+	if constexpr(m::is_complex<t_scalar>)
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_cgetri(LAPACK_ROW_MAJOR, rows, lumat.data(), rows, pivots.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_zgetri(LAPACK_ROW_MAJOR, rows, lumat.data(), rows, pivots.data());
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_sgetri(LAPACK_ROW_MAJOR, rows, lumat.data(), rows, pivots.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_dgetri(LAPACK_ROW_MAJOR, rows, lumat.data(), rows, pivots.data());
+	}
+
+
+	for(std::size_t i=0; i<rows; ++i)
+		for(std::size_t j=0; j<cols; ++j)
+			I(i, j) = lumat[i*cols + j];
+
+	return std::make_tuple(I, err == 0);
+}
+
+
+/**
+ * QR decomposition of a matrix, mat = QR
  * http://www.math.utah.edu/software/lapack/lapack-d/dgeqrf.html
  * return [ok, Q, R]
  */
@@ -3934,7 +4057,8 @@ std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
 requires m::is_mat<t_mat>
 {
 	using namespace m_ops;
-	using T = typename t_mat::value_type;
+	using t_scalar = typename t_mat::value_type;
+	using t_real = m::underlying_value_type<t_scalar>;
 
 	const std::size_t rows = mat.size1();
 	const std::size_t cols = mat.size2();
@@ -3951,14 +4075,24 @@ requires m::is_mat<t_mat>
 			outmat[i*cols + j] = mat(i, j);
 
 	int err = -1;
-	if constexpr(std::is_same_v<T, float>)
-		err = LAPACKE_sgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
-	else if constexpr(std::is_same_v<T, double>)
-		err = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+	if constexpr(m::is_complex<t_scalar>)
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_cgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_zgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+	}
+	else
+	{
+		if constexpr(std::is_same_v<t_real, float>)
+			err = LAPACKE_sgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+		else if constexpr(std::is_same_v<t_real, double>)
+			err = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, rows, cols, outmat.data(), cols, outvec.data());
+	}
 
 	for(std::size_t i=0; i<rows; ++i)
 		for(std::size_t j=0; j<cols; ++j)
-			R(i, j) = (j>=i ? outmat[i*cols + j] : T{0});
+			R(i, j) = (j>=i ? outmat[i*cols + j] : t_real{0});
 
 
 	t_vec v = m::zero<t_vec>(minor);
@@ -3966,8 +4100,8 @@ requires m::is_mat<t_mat>
 	for(std::size_t k=1; k<=minor; ++k)
 	{
 		for(std::size_t i=1; i<=k-1; ++i)
-			v[i-1] = T{0};
-		v[k-1] = T{1};
+			v[i-1] = t_real{0};
+		v[k-1] = t_real{1};
 
 		for(std::size_t i=k+1; i<=minor; ++i)
 			v[i-1] = outmat[(i-1)*cols + (k-1)];
@@ -4280,7 +4414,7 @@ namespace m {
 
 /**
  * QR decomposition of a matrix
- * returns [Q, R]
+ * returns [ok, Q, R]
  */
 template<class t_mat, class t_vec = std::vector<typename t_mat::value_type>>
 std::tuple<bool, t_mat, t_mat> qr(const t_mat& mat)
@@ -4310,6 +4444,55 @@ requires is_mat<t_mat> && is_vec<t_vec>
 #endif
 }
 
+
+/**
+ * inverted matrix
+ */
+template<class t_mat>
+std::tuple<t_mat, bool> inv(const t_mat& mat)
+requires is_mat<t_mat>
+{
+	// fail if matrix is not square
+	if constexpr(m::is_dyn_mat<t_mat>)
+		assert((mat.size1() == mat.size2()));
+	else
+		static_assert(mat.size1() == mat.size2());
+
+#ifdef USE_LAPACK
+	return m_la::inv<t_mat>(mat);
+#else
+	using T = typename t_mat::value_type;
+	using t_vec = std::vector<T>;
+	const std::size_t N = mat.size1();
+
+	const t_vec matFlat = flatten<t_mat, std::vector>(mat);
+	const T fullDet = flat_det<t_vec>(matFlat, N);
+
+	// fail if determinant is zero
+	if(equals<T>(fullDet, 0))
+	{
+		//std::cerr << "det == 0" << std::endl;
+		return std::make_tuple(t_mat(), false);
+	}
+
+	t_mat matInv;
+	if constexpr(is_dyn_mat<t_mat>)
+		matInv = t_mat(N, N);
+
+	for(std::size_t i=0; i<N; ++i)
+	{
+		for(std::size_t j=0; j<N; ++j)
+		{
+			const T sgn = ((i+j) % 2) == 0 ? T(1) : T(-1);
+			const t_vec subMat = flat_submat<t_vec>(matFlat, N, N, i, j);
+			matInv(j,i) = sgn * flat_det<t_vec>(subMat, N-1);
+		}
+	}
+
+	matInv = matInv / fullDet;
+	return std::make_tuple(matInv, true);
+#endif
+}
 
 
 /**
