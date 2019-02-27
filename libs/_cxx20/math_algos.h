@@ -1812,65 +1812,6 @@ requires is_basic_vec<t_vec>
 }
 
 
-/**
- * least-squares regression, solves for parameters v
- *
- * exact equation:
- * 		X v = y
- *
- * approx. equation:
- * 		X^t X v = X^t y
- * 		v = inv(X^t X) X^t y
- *
- * 		(QR)^t QR v = X^t y
- * 		R^tQ^t QR v = X^t y
- * 		R^tR v = X^t y
- * 		v = inv(R^tR) X^t y
- */
-template<class t_vec, class t_mat = mat<typename t_vec::value_type, std::vector>>
-std::tuple<t_vec, bool> leastsq(const t_vec& x, const t_vec& y, std::size_t order, bool use_qr=true)
-requires is_vec<t_vec> && is_dyn_mat<t_mat>
-{
-	// check array sizes
-	if constexpr(m::is_dyn_vec<t_vec>)
-		assert((x.size() == y.size()));
-	else
-		static_assert(x.size() == y.size());
-
-
-	using namespace m_ops;
-	using T = typename t_vec::value_type;
-
-	const std::size_t N = x.size();
-	t_mat X{N, order+1};
-
-	for(std::size_t j=0; j<=order; ++j)
-		for(std::size_t i=0; i<N; ++i)
-			X(i,j) = std::pow(x[i], static_cast<T>(j));
-
-
-	t_mat XtX;
-
-	if(use_qr)
-	{
-		auto [ok_qr, Q, R] = qr<t_mat>(X);
-		if(!ok_qr)
-				return std::make_tuple(t_vec{}, false);
-
-		XtX = trans<t_mat>(R) * R;
-	}
-	else
-	{
-		XtX = trans<t_mat>(X) * X;
-	}
-
-	t_vec Xty = trans<t_mat>(X) * y;
-	auto [Y, ok] = inv<t_mat>(XtX);
-	t_vec v = Y * Xty;
-
-	return std::make_tuple(v, ok);
-}
-
 
 /**
  * intersection of plane <x|n> = d and line |org> + lam*|dir>
@@ -4368,6 +4309,86 @@ requires is_mat<t_mat> && is_vec<t_vec>
 	return std::make_tuple(true, Q, R);
 #endif
 }
+
+
+
+/**
+ * least-squares regression, solves for parameters v
+ *
+ * exact equation:
+ * 		X v = y
+ *
+ * approx. equation:
+ * 		X^t X v = X^t y
+ * 		v = inv(X^t X) X^t y
+ *
+ * 		(QR)^t QR v = X^t y
+ * 		R^tQ^t QR v = X^t y
+ * 		R^tR v = X^t y
+ * 		v = inv(R^tR) X^t y
+ */
+template<class t_vec, class t_mat = mat<typename t_vec::value_type, std::vector>>
+std::tuple<t_vec, bool> leastsq(const t_vec& x, const t_vec& y, std::size_t order,
+	bool use_qr=true, bool use_pseudoinv=false)
+requires is_vec<t_vec> && is_dyn_mat<t_mat>
+{
+	// check array sizes
+	if constexpr(m::is_dyn_vec<t_vec>)
+		assert((x.size() == y.size()));
+	else
+		static_assert(x.size() == y.size());
+
+
+	using namespace m_ops;
+	using T = typename t_vec::value_type;
+
+	const std::size_t N = x.size();
+	t_mat X{N, order+1};
+
+	for(std::size_t j=0; j<=order; ++j)
+		for(std::size_t i=0; i<N; ++i)
+			X(i,j) = std::pow(x[i], static_cast<T>(j));
+
+
+	t_mat XtX;
+
+	if(use_qr)
+	{
+		auto [ok_qr, Q, R] = qr<t_mat>(X);
+		if(!ok_qr)
+				return std::make_tuple(t_vec{}, false);
+
+		XtX = trans<t_mat>(R) * R;
+	}
+	else
+	{
+		XtX = trans<t_mat>(X) * X;
+	}
+
+	t_vec Xty = trans<t_mat>(X) * y;
+	t_mat Y;
+	bool ok = false;
+
+	if(use_pseudoinv)
+	{
+#ifdef USE_LAPACK
+		std::tie(Y, ok) = m_la::pseudoinv<t_mat>(XtX);
+#else
+		#pragma message("leastsq: Pseudo-inverse is not available, using standard inverse instead.")
+		std::tie(Y, ok) = inv<t_mat>(XtX);
+#endif
+	}
+	else
+	{
+		std::tie(Y, ok) = inv<t_mat>(XtX);
+	}
+
+	t_vec v = Y * Xty;
+
+	return std::make_tuple(v, ok);
+}
+
+
 
 }
 // ----------------------------------------------------------------------------
