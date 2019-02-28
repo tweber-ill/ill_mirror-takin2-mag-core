@@ -587,7 +587,7 @@ requires is_basic_vec<t_vec>
 template<class t_mat,
 	template<class...> class t_cont_outer = std::initializer_list,
 	template<class...> class t_cont = std::initializer_list>
-t_mat create(const t_cont_outer<t_cont<typename t_mat::value_type>>& lst)
+t_mat create_mat(const t_cont_outer<t_cont<typename t_mat::value_type>>& lst)
 requires is_mat<t_mat>
 {
 	const std::size_t iCols = lst.size();
@@ -609,6 +609,19 @@ requires is_mat<t_mat>
 	}
 
 	return mat;
+}
+
+
+/**
+ * create matrix from nested initializer_lists in columns/rows order
+ */
+template<class t_mat,
+	template<class...> class t_cont_outer = std::initializer_list,
+	template<class...> class t_cont = std::initializer_list>
+t_mat create(const t_cont_outer<t_cont<typename t_mat::value_type>>& lst)
+requires is_mat<t_mat>
+{
+	return create_mat<t_mat, t_cont_outer, t_cont>(lst);
 }
 
 
@@ -641,7 +654,7 @@ requires is_mat<t_mat> && is_basic_vec<t_vec>
  * create matrix from initializer_list in column/row order
  */
 template<class t_mat>
-t_mat create(const std::initializer_list<typename t_mat::value_type>& lst)
+t_mat create_mat(const std::initializer_list<typename t_mat::value_type>& lst)
 requires is_mat<t_mat>
 {
 	const std::size_t N = std::sqrt(lst.size());
@@ -659,6 +672,17 @@ requires is_mat<t_mat>
 	}
 
 	return mat;
+}
+
+
+/**
+ * create matrix from initializer_list in column/row order
+ */
+template<class t_mat>
+t_mat create(const std::initializer_list<typename t_mat::value_type>& lst)
+requires is_mat<t_mat>
+{
+	return create_mat<t_mat>(lst);
 }
 
 
@@ -3570,7 +3594,28 @@ requires is_mat<t_mat> && is_complex<typename t_mat::value_type>
 
 
 /**
- * crystallographic B matrix, B = 2pi * A^(-T)
+ * real crystallographic A matrix
+ * after: https://en.wikipedia.org/wiki/Fractional_coordinates
+ */
+template<class t_mat, class t_real = typename t_mat::value_type>
+t_mat A_matrix(t_real a, t_real b, t_real c, t_real _aa, t_real _bb, t_real _cc)
+requires is_mat<t_mat>
+{
+	const t_real ca = std::cos(_aa);
+	const t_real cb = std::cos(_bb);
+	const t_real cc = std::cos(_cc);
+	const t_real sc = std::sin(_cc);
+
+	return create<t_mat>({
+		a,			b*cc,		c*cb,
+		t_real{0},	b*sc,		c*(ca -cc*cb)/sc,
+		t_real{0}, 	t_real{0},	c*std::sqrt(t_real{1} - cb*cb - std::pow((ca - cc*cb)/sc, t_real{2}))
+	});
+}
+
+
+/**
+ * reciprocal crystallographic B matrix, B = 2pi * A^(-T)
  * after: https://en.wikipedia.org/wiki/Fractional_coordinates
  */
 template<class t_mat, class t_real = typename t_mat::value_type>
@@ -3583,9 +3628,9 @@ requires is_mat<t_mat>
 	const t_real cc = std::cos(_cc);
 	const t_real rr = std::sqrt(1. + 2.*ca*cb*cc - (ca*ca + cb*cb + cc*cc));
 
-	return t_real(2)*pi<t_real> * create<t_mat>({
-		1./a,				0.,				0.,
-		-1./a * cc/sc,		1./b * 1./sc,			0.,
+	return t_real{2}*pi<t_real> * create<t_mat>({
+		t_real{1}/a,				t_real{0},					t_real{0},
+		-t_real{1}/a * cc/sc,		t_real{1}/b * t_real{1}/sc,	t_real{0},
 		(cc*ca - cb)/(a*sc*rr), 	(cb*cc-ca)/(b*sc*rr),		sc/(c*rr)
 	});
 }
