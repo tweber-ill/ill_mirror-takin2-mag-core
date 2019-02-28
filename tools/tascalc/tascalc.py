@@ -131,6 +131,10 @@ def get_A(lattice, angles):
 		(cs[0]-cs[1]*cs[2]) / s2, \
 		(np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2])
 
+	# testing equality with own derivation
+	#print((np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2)
+	#print(np.sqrt(1. - cs[1]*cs[1] - ((cs[0] - cs[2]*cs[1])/s2)**2.))
+
 	# the real-space basis vectors form the columns of the A matrix
 	return np.transpose(np.array([a, b, c]))
 

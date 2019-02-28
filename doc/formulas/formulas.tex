@@ -17,7 +17,90 @@
 
 
 \begin{document}
+
 Useful formulas, T. Weber, tweber@ill.fr, July 13, 2018.
+
+
+
+% ------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+\section{Fractional Coordinates}
+
+\subsection*{Basic Properties}
+
+From the cosine theorem we get:
+\begin{equation} \left< a | b \right > = ab \cos \gamma, \label{ab} \end{equation}
+\begin{equation} \left< a | c \right > = ac \cos \beta, \label{ac} \end{equation}
+\begin{equation} \left< b | c \right > = bc \cos \alpha. \label{bc} \end{equation}
+
+
+\subsection*{Basis Vectors}
+
+We first choose $\left| a \right>$ along $x$,
+\begin{equation} \boxed{ \left| a \right> = \left( \begin{array}{c} a_1 = a \\ 0 \\ 0 \end{array} \right), } \label{avec} \end{equation}
+$\left| b \right>$ in the $xy$ plane,
+\begin{equation} \left| b \right> = \left( \begin{array}{c} b_1 \\ b_2 \\ 0 \end{array} \right), \end{equation}
+and $\left| c \right>$ in general:
+\begin{equation} \left| c \right> = \left( \begin{array}{c} c_1 \\ c_2 \\ c_3 \end{array} \right). \end{equation}
+
+
+Inserting $\left| a \right>$ and $\left| b \right>$ into Eq. \ref{ab} gives:
+
+\begin{equation} \left< a | b \right > = a_1 b_1 = ab \cos \gamma, \end{equation}
+\begin{equation} b_1 = b \cos \gamma. \end{equation}
+
+
+Using the cross product between $\left| a \right>$ and $\left| b \right>$, we get:
+\begin{equation} \left\Vert \left| a \right> \times \left| b \right> \right\Vert = 
+	\left\Vert \left( \begin{array}{c} 0 \\ 0 \\ a_1 b_2 \end{array} \right) \right\Vert = 
+	ab \sin \gamma, \label{crossab} 
+\end{equation}
+\begin{equation} b_2 = b \sin \gamma, \end{equation}
+\begin{equation} \boxed{ \left| b \right> = \left( \begin{array}{c} b \cos \gamma \\ b \sin \gamma \\ 0 \end{array} \right). } \label{bvec} \end{equation}
+
+
+Inserting $\left| a \right>$ and $\left| c \right>$ into Eq. \ref{ac} gives:
+
+\begin{equation} \left< a | c \right > = a_1 c_1 = ac \cos \beta, \end{equation}
+\begin{equation} c_1 = c \cos \beta. \end{equation}
+
+
+
+Inserting $\left| b \right>$ and $\left| c \right>$ into Eq. \ref{bc} gives:
+
+\begin{equation} \left< b | c \right > = b_1 c_1 + b_2 c_2 = bc \cos \alpha, \end{equation}
+\begin{equation} b \cos \gamma \cdot c \cos \beta + b \sin \gamma \cdot c_2 = bc \cos \alpha, \end{equation}
+\begin{equation} c_2 = \frac{c \cos \alpha - c \cos \gamma \cos \beta}{\sin \gamma}. \end{equation}
+
+
+
+The last component, $c_3$, can be obtained from the vector length normalisation, $ \left< c | c \right> = c^2 $:
+\begin{equation} \left< c | c \right > = c_1^2 + c_2^2 + c_3^2 = c^2, \end{equation}
+\begin{equation} c_3^2 = c^2 - c_1^2 - c_2^2, \end{equation}
+\begin{equation} c_3^2 = c^2 \left[1 - \cos^2 \beta - \left(\frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \right)^2 \right], \end{equation}
+\begin{equation} \boxed{ \left| c \right> = \left( \begin{array}{c} 
+	c \cdot \cos \beta \\ 
+	c \cdot \frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \\ 
+	c \cdot \sqrt{ 1 - \cos^2 \beta - \left(\frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \right)^2 } 
+\end{array} \right). } \label{avec} \end{equation}
+
+
+
+The crystallographic $A$ matrix, which transforms real-space fractional to lab coordinates (A), is formed with the basis vectors in its columns:
+\begin{equation}
+	A = \left(
+		\begin{array}{ccc}
+			\left| a \right> & \left| b \right> & \left| c \right>
+		\end{array}
+	\right).
+\end{equation}
+The $B$ matrix, which transforms reciprocal-space relative lattice units (rlu) to lab coordinates (1/A), is:
+\begin{equation} B = 2 \pi A^{-t}, \end{equation}
+where $-t$ denotes the transposed inverse.
+
+% ------------------------------------------------------------------------------------------------------------------------------------
 
 
 \section{Scattering Triangle}
