@@ -38,7 +38,8 @@ def rotate(_axis, vec, phi):
 # get metric from crystal B matrix
 # basis vectors are in the columns of B, i.e. the second index
 def get_metric(B):
-	return np.einsum("ij,ik -> jk", B, B)
+	#return np.einsum("ij,ik -> jk", B, B)
+	return np.dot(np.transpose(B), B)
 
 
 # cross product in fractional coordinates

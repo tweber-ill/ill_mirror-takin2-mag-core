@@ -103,6 +103,9 @@ The crystallographic $A$ matrix, which transforms real-space fractional to lab c
 The $B$ matrix, which transforms reciprocal-space relative lattice units (rlu) to lab coordinates (1/A), is:
 \begin{equation} B = 2 \pi A^{-t}, \end{equation}
 where $-t$ denotes the transposed inverse.
+The metric tensor corresponding to the coordinate system defined by the $B$ matrix is:
+\begin{equation} \left(g_{ij}\right) = \left<\bm{b_i} | \bm{b_j} \right> = B^T B, \end{equation}
+where the reciprocal basis vectors $\left| \bm{b_i} \right>$ form the columns of $B$.
 
 % ------------------------------------------------------------------------------------------------------------------------------------
 
@@ -148,8 +151,7 @@ Angle $\psi$ between $\left| k_i \right>$ and $\left| Q \right>$, in units of \A
 
 
 \subsubsection*{Angle $\xi$}
-% $g_{ij} = \left< \bm{b}_i | \bm{b}_j \right> = \tensor{B}{_{ik}} \tensor{B}{^{k}_{j}}$
-Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$ (i.e. $ax$, $ay$, $az$), in units of rlu; $g_{ij} = \left< \bm{b}_i | \bm{b}_j \right>$ is the covariant metric of the reciprocal lattice with basis vectors $\left| \bm{b}_i \right>$, which form the columns of the crystallographic $B$ matrix:
+Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$ (i.e. $ax$, $ay$, $az$), in units of rlu:
 \begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ \left< Q | a \right> }{ \sqrt{\left< Q | Q \right>} \sqrt{\left< a | a \right>} } \right) \end{equation}
 \begin{equation} \boxed{ \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q^i g_{ij} a^j }{ \sqrt{Q^i g_{ij} Q^j} \sqrt{a^i g_{ij} a^j} } \right) } \end{equation}
 
