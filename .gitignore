@@ -64,3 +64,4 @@ stack.hh
 *.aux
 *.pdf
 *.synctex.*
+*.toc

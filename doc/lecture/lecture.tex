@@ -1,31 +1,40 @@
 %
-% collection of useful formulas
+% preparation of the TAS lecture
 % @author Tobias Weber <tweber@ill.fr>
 % @date 13-jul-2018
 % @license see 'LICENSE' file
 %
 
-\documentclass{article}
+\documentclass[english]{book}
 
 \usepackage{amsmath}
 \usepackage{tensor}
 \usepackage{bm}
 \usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage{babel}
 
 \usepackage[a4paper]{geometry}
 \geometry{tmargin=2.5cm, bmargin=2.5cm, lmargin=2cm, rmargin=2cm}
 
 
+
 \begin{document}
 
-Useful formulas and derivations, T. Weber, tweber@ill.fr, July 13, 2018.
+\title{Notes on Triple Axis Spectroscopy}
+\author{T. Weber, tweber@ill.fr}
+\maketitle
+\tableofcontents
 
+
+
+
+
+% ====================================================================================================================================
+\chapter{Crystal Coordinates and TAS Angles}
 
 
 % ------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 \section{Fractional Coordinates}
 
 \begin{center}
@@ -57,9 +66,9 @@ Inserting $\left| a \right>$ and $\left| b \right>$ into Eq. \ref{ab} gives:
 
 
 Using the cross product between $\left| a \right>$ and $\left| b \right>$, we get:
-\begin{equation} \left\Vert \left| a \right> \times \left| b \right> \right\Vert = 
-	\left\Vert \left( \begin{array}{c} 0 \\ 0 \\ a_1 b_2 \end{array} \right) \right\Vert = 
-	ab \sin \gamma, \label{crossab} 
+\begin{equation} \left\Vert \left| a \right> \times \left| b \right> \right\Vert =
+	\left\Vert \left( \begin{array}{c} 0 \\ 0 \\ a_1 b_2 \end{array} \right) \right\Vert =
+	ab \sin \gamma, \label{crossab}
 \end{equation}
 \begin{equation} b_2 = b \sin \gamma, \end{equation}
 \begin{equation} \boxed{ \left| b \right> = \left( \begin{array}{c} b \cos \gamma \\ b \sin \gamma \\ 0 \end{array} \right). } \label{bvec} \end{equation}
@@ -84,10 +93,10 @@ The last component, $c_3$, can be obtained from the vector length normalisation,
 \begin{equation} \left< c | c \right > = c_1^2 + c_2^2 + c_3^2 = c^2, \end{equation}
 \begin{equation} c_3^2 = c^2 - c_1^2 - c_2^2, \end{equation}
 \begin{equation} c_3^2 = c^2 \left[1 - \cos^2 \beta - \left(\frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \right)^2 \right], \end{equation}
-\begin{equation} \boxed{ \left| c \right> = \left( \begin{array}{c} 
-	c \cdot \cos \beta \\ 
-	c \cdot \frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \\ 
-	c \cdot \sqrt{ 1 - \cos^2 \beta - \left(\frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \right)^2 } 
+\begin{equation} \boxed{ \left| c \right> = \left( \begin{array}{c}
+	c \cdot \cos \beta \\
+	c \cdot \frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \\
+	c \cdot \sqrt{ 1 - \cos^2 \beta - \left(\frac{\cos \alpha - \cos \gamma \cos \beta}{\sin \gamma} \right)^2 }
 \end{array} \right). } \label{avec} \end{equation}
 
 
@@ -100,26 +109,54 @@ The crystallographic $A$ matrix, which transforms real-space fractional to lab c
 		\end{array}
 	\right).
 \end{equation}
-The $B$ matrix, which transforms reciprocal-space relative lattice units (rlu) to lab coordinates (1/A), is:
+The $B$ matrix, which transforms reciprocal-space relative lattice units (rlu) to lab coordinates (1/\AA), is:
 \begin{equation} B = 2 \pi A^{-t}, \end{equation}
 where $-t$ denotes the transposed inverse.
 The metric tensor corresponding to the coordinate system defined by the $B$ matrix is:
 \begin{equation} \left(g_{ij}\right) = \left<\bm{b_i} | \bm{b_j} \right> = B^T B, \end{equation}
 where the reciprocal basis vectors $\left| \bm{b_i} \right>$ form the columns of $B$.
 
+
+\subsection*{Example: Lengths and Angles in the Reciprocal Lattice}
+Having a metric makes it straightforward to calculate lengths and angles.
+The length of a reciprocal lattice vector $\left| G \right>$ seen from the lab system is (in 1/\AA{} units):
+\begin{equation}
+	\left\Vert \left< G | G \right> \right\Vert = \sqrt{\left< G | G \right>} = \sqrt{G_i G^j} = \sqrt{g_{ij} G^i G^j}.
+\end{equation}
+The angle $\theta$ between two Bragg peaks $\left| G \right>$ and $\left| H \right>$ is given by their dot product:
+\begin{equation}
+	\frac{\left< G | H \right>}{\left\Vert \left< G | G \right> \right\Vert \cdot \left\Vert \left< H | H \right> \right\Vert} = \cos \theta,
+\end{equation}
+%\begin{equation}
+%	\frac{G_i H^j }{\left\Vert \left< G | G \right> \right\Vert \cdot \left\Vert \left< H | H \right> \right\Vert} = \cos \theta,
+%\end{equation}
+\begin{equation}
+	\frac{g_{ij} G^i H^j }{\sqrt{g_{ij} G^i G^j} \sqrt{g_{ij} H^i H^j}} = \cos \theta.
+\end{equation}
+
+
 % ------------------------------------------------------------------------------------------------------------------------------------
 
 
+
+
+% ------------------------------------------------------------------------------------------------------------------------------------
 \section{TAS Angles and Scattering Triangle}
+\begin{figure}
 \begin{center}
-	\includegraphics[width = 0.2 \textwidth]{triangle}
+	\includegraphics[width = 0.5 \textwidth]{tas}
+	\hspace{1.5cm}
+	\includegraphics[trim=0 -2cm 0 0, width=0.25\textwidth]{triangle}
 \end{center}
+\caption{Triple-axis layout and scattering triangle.}
+\end{figure}
 
 \subsection*{Monochromator Angles $a_1$, $a_2$ and Analyser Angles $a_5$, $a_6$}
 
 The monochromator (and analyser) angles follow directly from Bragg's equation:
-\begin{equation} 2 k_{i,f} \sin a_{1,5} = 2 \pi / d_{m,a}, \end{equation}
-\begin{equation} \boxed{ a_{1,5} = \arcsin \left( \frac{\pi}{d_{m,a} \cdot k_{i,f}} \right). } \end{equation}
+\begin{equation} 2 d_{m,a}\sin a_{1,5} = n \lambda_{i,f}, \end{equation}
+\begin{equation} 2 k_{i,f} \sin a_{1,5} = 2 \pi n / d_{m,a}, \end{equation}
+\begin{equation} \boxed{ a_{1,5} = \arcsin \left( \frac{\pi n}{d_{m,a} \cdot k_{i,f}} \right). } \end{equation}
 
 Fulfilling the Bragg condition, the angles $a_2$ and $a_6$ are simply: $a_{2,6} = 2 \cdot a_{1,5}.$
 
@@ -161,5 +198,27 @@ The sign, $\sigma_{\mathrm{side}}$, of $\xi$ depends on which side of the orient
 \paragraph*{Special case}
 Special case for cubic crystals, $g_{ij} = \delta_{ij} \cdot \left( 2\pi / a \right)^2$:
 \begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q_i a^i }{ \sqrt{Q_i Q^i} \sqrt{a_i a^i} } \right) \end{equation}
+% ------------------------------------------------------------------------------------------------------------------------------------
+% ====================================================================================================================================
+
+
+
+
+
+% ====================================================================================================================================
+\chapter{Neutron Scattering Cross-Sections}
+
+% ====================================================================================================================================
+
+
+
+
+% ====================================================================================================================================
+\chapter{Triple-Axis Resolution Ellipsoid}
+
+% ====================================================================================================================================
+
+
+
 
 \end{document}
