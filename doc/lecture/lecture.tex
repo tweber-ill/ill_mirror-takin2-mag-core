@@ -194,7 +194,9 @@ Angle $\xi$ between $\left| Q \right>$ and orientation vector $\left| a \right>$
 \begin{equation} \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ \left< Q | a \right> }{ \sqrt{\left< Q | Q \right>} \sqrt{\left< a | a \right>} } \right) \end{equation}
 \begin{equation} \boxed{ \xi = \sigma_{\mathrm{side}} \cdot \arccos \left( \frac{ Q^i g_{ij} a^j }{ \sqrt{Q^i g_{ij} Q^j} \sqrt{a^i g_{ij} a^j} } \right) } \end{equation}
 
-The sign, $\sigma_{\mathrm{side}}$, of $\xi$ depends on which side of the orientation vector $\left| a \right>$ the scattering vector $\left| Q \right>$ is located. The sign can be found by calculating the (covariant) cross product of $\left| a \right>$ and $\left| Q \right>$ to give an out-of-plane vector which can be compared with the given scattering plane up vector.
+The sign, $\sigma_{\mathrm{side}}$, of $\xi$ depends on which side of the orientation vector $\left| a \right>$ the scattering vector $\left| Q \right>$ 
+is located. The sign can be found by calculating the (covariant) cross product of $\left| a \right>$ and $\left| Q \right>$ to give an out-of-plane vector 
+which can be compared with the given scattering plane up vector.
 
 
 \paragraph*{Special case}
@@ -208,7 +210,80 @@ Special case for cubic crystals, $g_{ij} = \delta_{ij} \cdot \left( 2\pi / a \ri
 
 
 % ====================================================================================================================================
-\chapter{Neutron Scattering Cross-Sections}
+\chapter{Neutron Scattering}
+
+\begin{center}
+	\includegraphics[width = 0.75 \textwidth]{recip}
+\end{center}
+
+
+\section{Nuclear Scattering}
+
+The  cross-sections for neutron scattering are derived in \cite[Ch. 2]{Squires2012} of which we summarise the most important results here.
+An excellent overview can also be found in \cite[Ch. 2]{Shirane2002}.
+
+The double-differential cross-section is the number of neutrons that are scattered into a solid angle $d\Omega$ and energy range 
+$\left[ E_f, E_f + dE \right]$, normalised to time $t$, Flux $\Phi$, $d\Omega$, and $dE$ \cite[p. 10]{Squires2012},
+\begin{equation}
+\left(\frac{d^2 \sigma}{d\Omega dE_f}\right)_{i \rightarrow f} = \frac{1}{\Phi \cdot d\Omega \cdot dE_f} \cdot R_{i \rightarrow f},
+\end{equation}
+where the transition rate $R_{i \rightarrow f}$ is given by Fermi's Golden Rule \cite[p. 509]{Merzbacher1998}:
+\begin{equation}
+	R_{i \rightarrow f} = \frac{2\pi}{\hbar} \left| \left< i | V | f \right> \right|^2 \cdot N_f,
+\end{equation}
+with the number of final states, $N_f$, in the range $\left[ E_f, E_f + dE \right]$.
+
+Neutron-nuclear scattering is described using the Fermi pseudo-potential $V$ \cite[p. 15]{Squires2012}:
+\begin{equation}
+	V \left( \bm{r} \right) = \frac{2\pi \hbar^2}{m_n} \cdot b \cdot \delta \left( \bm{r} \right),
+\end{equation}
+\begin{equation}
+V \left( \bm{Q} \right) = \frac{2\pi \hbar^2}{m_n} \cdot b.
+\end{equation}
+
+Summing over all available final states $\left| f \right>$ and thermally averaging over the initial states $\left| i \right>$, 
+results in \cite[p. 20]{Squires2012}:
+\begin{equation}
+	\boxed{ \frac{d^2 \sigma}{d\Omega dE_f} = \frac{1}{2\pi \hbar} \cdot \frac{k_f}{k_i} \cdot
+		\sum_{kl}{b_k b_l \int{dt \cdot 
+			\exp{ \left( -\imath \omega t \right)} \cdot
+			\left< 
+			\exp{\left( -\imath \bm{Q} \cdot \bm{\hat{R}_k} \left(t=0 \right) \right)}
+			\exp{\left(\imath \bm{Q} \cdot \bm{\hat{R}_l} \left(t \right) \right)} 
+			\right>_{\mathrm{therm.}} }}, }
+\end{equation}
+with the Heisenberg operators $\bm{\hat{R}_l} \left(t \right)$.
+
+Averaging the scattering lengths $b_k b_l$ into an effective $b$ leads to two distinct contributions to the scattering
+cross section \cite[p. 22]{Squires2012}:
+\begin{equation} \begin{split}
+	\frac{d^2 \sigma}{d\Omega dE_f} & = 
+		\frac{1}{2\pi \hbar} \cdot \frac{k_f}{k_i} \cdot
+		\left< b \right> ^2 \cdot
+		\sum_{kl}{ \int{dt \cdot 
+			\exp{ \left( -\imath \omega t \right)} \cdot
+			\left< 
+			\exp{\left( -\imath \bm{Q} \cdot \bm{\hat{R}_k} \left(t=0 \right) \right)}
+			\exp{\left(\imath \bm{Q} \cdot \bm{\hat{R}_l} \left(t \right) \right)} 
+			\right>_{\mathrm{therm.}} }} \\
+		& + \frac{1}{2\pi \hbar} \cdot \frac{k_f}{k_i} \cdot
+		\underbrace{\left( \left< b^2 \right> - \left< b \right>^2 \right)}_{\equiv b_{inc}^2} \cdot
+		\sum_{k}{ \int{dt \cdot 
+			\exp{ \left( -\imath \omega t \right)} \cdot
+			\left< 
+			\exp{\left( -\imath \bm{Q} \cdot \bm{\hat{R}_k} \left(t=0 \right) \right)}
+			\exp{\left(\imath \bm{Q} \cdot \bm{\hat{R}_k} \left(t \right) \right)} 
+			\right>_{\mathrm{therm.}} }}.
+\end{split} \end{equation}
+The first term of the sum is the coherent contribution (i.e. collective phenomena: phonons, Bragg peaks), 
+the second one the incoherent contribution (spin- and nuclear-incoherent peaks, diffuse scattering).
+
+
+
+% ------------------------------------------------------------------------------------------------------------------------------------
+
+
+\section{Magnetic Scattering}
 
 
 % ====================================================================================================================================
@@ -224,7 +299,7 @@ Special case for cubic crystals, $g_{ij} = \delta_{ij} \cdot \left( 2\pi / a \ri
 
 
 
-\bibliographystyle{unsrtnat}
+\bibliographystyle{alpha}
 \bibliography{\jobname.bib}
 
 \end{document}
