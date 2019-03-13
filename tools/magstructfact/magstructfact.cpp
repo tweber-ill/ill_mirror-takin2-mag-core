@@ -2027,8 +2027,8 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 
 				t_vec r = m::create<t_vec>({0,0,0});
 				std::istringstream{itemX->text().toStdString()} >> r[0];
-				std::istringstream{itemX->text().toStdString()} >> r[1];
-				std::istringstream{itemX->text().toStdString()} >> r[2];
+				std::istringstream{itemY->text().toStdString()} >> r[1];
+				std::istringstream{itemZ->text().toStdString()} >> r[2];
 				t_vec rlab = m_crystA * r;
 
 				std::ostringstream ostr; ostr.precision(g_prec);
