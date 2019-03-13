@@ -32,10 +32,48 @@
 
 namespace m {
 
+// ----------------------------------------------------------------------------
+// helpers
+// ----------------------------------------------------------------------------
 
 // constants
 template<typename T> constexpr T pi = T(M_PI);
 template<typename T> T golden = T(0.5) + std::sqrt(T(5))/T(2);
+
+
+/**
+ * converts a string to a scalar value
+ */
+template<class t_scalar=double, class t_str=std::string>
+t_scalar stoval(const t_str& str)
+{
+	if constexpr(std::is_same_v<t_scalar, float>)
+		return std::stof(str);
+	else if constexpr(std::is_same_v<t_scalar, double>)
+		return std::stod(str);
+	else if constexpr(std::is_same_v<t_scalar, long double>)
+		return std::stold(str);
+	else if constexpr(std::is_same_v<t_scalar, int>)
+		return std::stoi(str);
+//	else if constexpr(std::is_same_v<t_scalar, unsigned int>)
+//		return std::stoui(str);
+	else if constexpr(std::is_same_v<t_scalar, long>)
+		return std::stol(str);
+	else if constexpr(std::is_same_v<t_scalar, unsigned long>)
+		return std::stoul(str);
+	else if constexpr(std::is_same_v<t_scalar, long long>)
+		return std::stoll(str);
+	else if constexpr(std::is_same_v<t_scalar, unsigned long long>)
+		return std::stoull(str);
+	else
+	{
+		t_scalar val{};
+		std::istringstream{str} >> val;
+		return val;
+	}
+}
+// ----------------------------------------------------------------------------
+
 
 
 // ----------------------------------------------------------------------------
@@ -1056,10 +1094,7 @@ requires m::is_basic_vec<t_vec> && m::is_dyn_vec<t_vec>
 	for(auto& tok : vecstr)
 	{
 		boost::trim(tok);
-		std::istringstream istr(tok);
-
-		typename t_vec::value_type c{};
-		istr >> c;
+		typename t_vec::value_type c = m::stoval<typename t_vec::value_type>(tok);
 		vec.emplace_back(std::move(c));
 	}
 

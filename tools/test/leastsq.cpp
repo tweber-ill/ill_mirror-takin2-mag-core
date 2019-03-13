@@ -26,6 +26,8 @@ using t_mat_cplx = m::mat<t_cplx, std::vector>;
 
 int main()
 {
+	//std::cout << m::stoval<unsigned int>("123") << std::endl;
+
 	auto x = m::create<t_vec>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 	auto y = m::create<t_vec>({5, 5, 7, 9, 9.5, 10.5, 10.5, 12, 13.5, 14});
 

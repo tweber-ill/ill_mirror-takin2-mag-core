@@ -124,12 +124,12 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 
 	// lattice
 	t_real a{}, b{}, c{}, alpha{}, beta{}, gamma{};
-	if(auto val = block.find_values("_cell_length_a"); val.length()) std::istringstream{val[0]} >> a;
-	if(auto val = block.find_values("_cell_length_b"); val.length()) std::istringstream{val[0]} >> b;
-	if(auto val = block.find_values("_cell_length_c"); val.length()) std::istringstream{val[0]} >> c;
-	if(auto val = block.find_values("_cell_angle_alpha"); val.length()) std::istringstream{val[0]} >> alpha;
-	if(auto val = block.find_values("_cell_angle_beta"); val.length()) std::istringstream{val[0]} >> beta;
-	if(auto val = block.find_values("_cell_angle_gamma"); val.length()) std::istringstream{val[0]} >> gamma;
+	if(auto val = block.find_values("_cell_length_a"); val.length()) a = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_length_b"); val.length()) b = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_length_c"); val.length()) c = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_alpha"); val.length()) alpha = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_beta"); val.length()) beta = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_gamma"); val.length()) gamma = m::stoval<t_real>(val[0]);
 
 	Lattice<t_real> latt{.a=a, .b=b, .c=c, .alpha=alpha, .beta=beta, .gamma=gamma};
 
@@ -143,10 +143,9 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 	{
 		atomnames.push_back(tabAtoms[row][0]);
 
-		t_real x{}, y{}, z{};
-		std::istringstream{tabAtoms[row][1]} >> x;
-		std::istringstream{tabAtoms[row][2]} >> y;
-		std::istringstream{tabAtoms[row][3]} >> z;
+		const t_real x = m::stoval<t_real>(tabAtoms[row][1]);
+		const t_real y = m::stoval<t_real>(tabAtoms[row][2]);
+		const t_real z = m::stoval<t_real>(tabAtoms[row][3]);
 		atoms.emplace_back(t_vec{{x, y, z}});
 	}
 
