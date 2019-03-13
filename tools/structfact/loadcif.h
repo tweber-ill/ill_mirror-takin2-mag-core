@@ -62,6 +62,7 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 
 /**
  * gets the symmetry operations from the CIF's space group
+ * (use m::equals_all to check if space group operations are the same)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)

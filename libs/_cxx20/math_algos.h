@@ -420,6 +420,38 @@ requires is_mat<t_mat>
 
 
 /**
+ * check if two collections of matrices or vectors are equal
+ */
+template<class t_obj, template<class...> class t_vec=std::vector>
+bool equals_all(const t_vec<t_obj>& vec1, const t_vec<t_obj>& _vec2,
+	typename t_obj::value_type eps = std::numeric_limits<typename t_obj::value_type>::epsilon())
+{
+	auto vec2 = _vec2;
+	if(vec1.size() != vec2.size())
+		return false;
+
+	for(const auto& obj1 : vec1)
+	{
+		// find obj1 in vec2
+		auto iter = std::find_if(vec2.crbegin(), vec2.crend(), [&obj1, eps](const t_obj& obj2) -> bool
+		{
+			return m::equals<t_obj>(obj1, obj2, eps);
+		});
+
+		// not found
+		if(iter == vec2.crend())
+			return false;
+
+		// remove already checked element
+		vec2.erase(iter.base()-1);
+	}
+
+	return true;
+}
+
+
+
+/**
  * set submatrix to unit
  */
 template<class t_mat>
@@ -3787,6 +3819,7 @@ requires is_vec<t_vec> && is_mat<t_mat>
 
 	return newatoms;
 }
+
 
 // ----------------------------------------------------------------------------
 
