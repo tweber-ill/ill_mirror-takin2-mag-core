@@ -3767,10 +3767,10 @@ requires is_vec<t_vec> && is_mat<t_mat>
 		{
 			for(std::size_t i=0; i<newatom.size(); ++i)
 			{
-				newatom[i] = std::fmod(newatom[i], 1.);
-				if(newatom[i] < -0.5)
+				newatom[i] = std::fmod(newatom[i], t_real{1});
+				if(newatom[i] < t_real{-0.5})
 					newatom[i] += std::abs(std::floor(newatom[i]));
-				if(newatom[i] >= 0.5)
+				if(newatom[i] >= t_real{0.5})
 					newatom[i] -= std::abs(std::ceil(newatom[i]));
 			}
 		}
