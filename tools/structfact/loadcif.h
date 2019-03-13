@@ -162,12 +162,14 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 		// make homogeneuous 4-vector
 		if(atom.size() == 3) atom.push_back(1);
 
-		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops, eps);
-
 		// if no ops are given, just output the raw atom position
 		if(!ops.size())
+		{
 			generatedatoms.push_back(std::vector<t_vec>{{atom}});
+			continue;
+		}
 
+		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops, eps);
 		generatedatoms.emplace_back(std::move(newatoms));
 	}
 

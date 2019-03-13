@@ -4497,11 +4497,11 @@ template<class t_mat>
 std::tuple<t_mat, bool> inv(const t_mat& mat)
 requires is_mat<t_mat>
 {
-	// fail if matrix is not square
-	if constexpr(m::is_dyn_mat<t_mat>)
+	// fail if matrix is not square, TODO: fix
+	//if constexpr(m::is_dyn_mat<t_mat>)
 		assert((mat.size1() == mat.size2()));
-	else
-		static_assert(mat.size1() == mat.size2());
+	//else
+	//	static_assert(mat.size1() == mat.size2());
 
 #ifdef USE_LAPACK
 	return m_la::inv<t_mat>(mat);
@@ -4560,11 +4560,11 @@ std::tuple<t_vec, bool> leastsq(const t_vec& x, const t_vec& y, std::size_t orde
 	bool use_qr=true, bool use_pseudoinv=false)
 requires is_vec<t_vec> && is_dyn_mat<t_mat>
 {
-	// check array sizes
-	if constexpr(m::is_dyn_vec<t_vec>)
+	// check array sizes, TODO: fix
+	//if constexpr(m::is_dyn_vec<t_vec>)
 		assert((x.size() == y.size()));
-	else
-		static_assert(x.size() == y.size());
+	//else
+	//	static_assert(x.size() == y.size());
 
 
 	using namespace m_ops;
