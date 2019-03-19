@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <string>
+//#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -33,6 +34,71 @@ struct Lattice
 
 
 /**
+ * removes quotation marks around a string
+ */
+template<class t_str = std::string>
+void remove_quotes(t_str& str)
+{
+	if(str.length() == 0)
+		return;
+
+	if(str[0] == '\'' || str[0] == '\"')
+		str.erase(str.begin());
+	if(str[str.size()-1] == '\'' || str[str.size()-1] == '\"')
+		str.erase(str.begin()+str.size()-1);
+}
+
+
+
+/**
+ * gets the atom positions from the CIF
+ */
+template<class t_vec, class t_real = typename t_vec::value_type>
+std::tuple<std::vector<t_vec>, std::vector<std::string>> 
+get_cif_atoms(gemmi::cif::Block& block)
+{
+	std::vector<t_vec> atoms;
+	std::vector<std::string> atomnames;
+
+	// possible names for atom symbol
+	const char* loopNames[] =
+	{
+		"_type_symbol",
+		"_symbol"
+		"_site_label",
+		"_label",
+	};
+
+	for(const char* loopName : loopNames)
+	{
+		atoms.clear();
+		atomnames.clear();
+
+		auto tabAtoms = block.find("_atom_site", {loopName, "_fract_x", "_fract_y", "_fract_z"});
+
+		for(std::size_t row=0; row<tabAtoms.length(); ++row)
+		{
+			auto name = boost::trim_copy(tabAtoms[row][0]);
+			remove_quotes(name);
+			atomnames.emplace_back(std::move(name));
+
+			const t_real x = m::stoval<t_real>(tabAtoms[row][1]);
+			const t_real y = m::stoval<t_real>(tabAtoms[row][2]);
+			const t_real z = m::stoval<t_real>(tabAtoms[row][3]);
+			atoms.emplace_back(t_vec{{x, y, z}});
+		}
+
+		// already found, no need to try another name
+		if(tabAtoms.length())
+			break;
+	}
+
+	return std::make_tuple(atoms, atomnames);
+}
+
+
+
+/**
  * gets the symmetry operations from the CIF
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
@@ -40,19 +106,40 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 {
 	std::vector<t_mat> ops;
 
-	auto colOps = block.find_values("_symmetry_equiv_pos_as_xyz");
-	for(std::size_t row=0; row<colOps.length(); ++row)
+	// possible names for symop loop
+	const char* loopNames[] =
 	{
-		auto op = gemmi::parse_triplet(colOps[row])/*.wrap()*/;
-		auto M = op.float_seitz();
+		"_symmetry_equiv_pos_as_xyz",
+		"_space_group_symop_operation_xyz",
+	};
 
-		t_mat mat = m::create<t_mat>({
-			std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
-			std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
-			std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
-			std::get<0>(std::get<3>(M)), std::get<1>(std::get<3>(M)), std::get<2>(std::get<3>(M)), std::get<3>(std::get<3>(M)) });
+	for(const char* loopName : loopNames)
+	{
+		ops.clear();
 
-		ops.emplace_back(std::move(mat));
+		//std::cerr << "Trying symop loop name " << loopName << std::endl;
+	 	auto colOps = block.find_values(loopName);
+
+		for(std::size_t row=0; row<colOps.length(); ++row)
+		{
+			auto therow = boost::trim_copy(colOps[row]);
+			remove_quotes(therow);
+
+			auto op = gemmi::parse_triplet(therow)/*.wrap()*/;
+			auto M = op.float_seitz();
+
+			t_mat mat = m::create<t_mat>({
+				std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
+				std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
+				std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
+				std::get<0>(std::get<3>(M)), std::get<1>(std::get<3>(M)), std::get<2>(std::get<3>(M)), std::get<3>(std::get<3>(M)) });
+
+			ops.emplace_back(std::move(mat));
+		}
+
+		// already found, no need to try another name
+		if(colOps.length())
+			break;
 	}
 
 	return ops;
@@ -72,12 +159,7 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
 	if(auto val = block.find_values("_symmetry_space_group_name_H-M"); val.length())
 	{
 		std::string sgname = boost::trim_copy(val[0]);
-
-		// remove quotation marks
-		if(sgname[0] == '\'' || sgname[0] == '\"')
-			sgname.erase(sgname.begin());
-		if(sgname[sgname.size()-1] == '\'' || sgname[sgname.size()-1] == '\"')
-			sgname.erase(sgname.begin()+sgname.size()-1);
+		remove_quotes(sgname);
 
 		if(auto sg = gemmi::find_spacegroup_by_name(sgname))
 		{
@@ -106,7 +188,7 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
  * loads the lattice parameters and the atom positions from a CIF
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
-std::tuple<const char*, std::vector<t_vec>, std::vector<std::vector<t_vec>>, std::vector<std::string>, Lattice<t_real>> 
+std::tuple<std::string, std::vector<t_vec>, std::vector<std::vector<t_vec>>, std::vector<std::string>, Lattice<t_real>> 
 load_cif(const std::string& filename, t_real eps=1e-6)
 {
 	auto ifstr = std::ifstream(filename);
@@ -136,26 +218,20 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 
 
 	// fractional atom positions
-	std::vector<t_vec> atoms;
-	auto tabAtoms = block.find("_atom_site", {"_type_symbol", "_fract_x", "_fract_y", "_fract_z"});
-
-	std::vector<std::string> atomnames;
-	for(std::size_t row=0; row<tabAtoms.length(); ++row)
-	{
-		atomnames.push_back(tabAtoms[row][0]);
-
-		const t_real x = m::stoval<t_real>(tabAtoms[row][1]);
-		const t_real y = m::stoval<t_real>(tabAtoms[row][2]);
-		const t_real z = m::stoval<t_real>(tabAtoms[row][3]);
-		atoms.emplace_back(t_vec{{x, y, z}});
-	}
+	auto [atoms, atomnames] = get_cif_atoms<t_vec>(block);
 
 
 	// generate all atoms using symmetry ops
+	std::ostringstream errstr;
 	std::vector<std::vector<t_vec>> generatedatoms;
 	auto ops = get_cif_ops<t_vec, t_mat, t_real>(block);
 	if(!ops.size()) // if ops are not directly given, use standard ops from space group
+	{
+		errstr << "Warning: Could not find CIF symops, trying to use space group defaults instead.\n";
 		ops = get_cif_sg_ops<t_vec, t_mat, t_real>(block);
+		if(!ops.size())
+			errstr << "Warning: No symops found!\n";
+	}
 
 	for(t_vec atom : atoms)
 	{
@@ -173,8 +249,7 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 		generatedatoms.emplace_back(std::move(newatoms));
 	}
 
-
-	return std::make_tuple(nullptr, atoms, generatedatoms, atomnames, latt);
+	return std::make_tuple(errstr.str(), atoms, generatedatoms, atomnames, latt);
 }
 
 

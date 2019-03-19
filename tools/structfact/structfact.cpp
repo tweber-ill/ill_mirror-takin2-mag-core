@@ -1004,9 +1004,9 @@ void StructFactDlg::ImportCIF()
 		m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
 		auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
-		if(errstr)
+		if(errstr != "")
 		{
-			QMessageBox::critical(this, "Structure Factors", errstr);
+			QMessageBox::critical(this, "Structure Factors", errstr.c_str());
 			return;
 		}
 
@@ -1039,7 +1039,7 @@ void StructFactDlg::ImportCIF()
 			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
 			m_editGamma->setText(ostr.str().c_str());
 		}
-
+	
 
 		// atoms
 		std::mt19937 gen{tl2::epoch<unsigned int>()};
