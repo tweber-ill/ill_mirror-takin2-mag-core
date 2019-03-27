@@ -887,8 +887,8 @@ t_val call_func2(const t_str& strName, t_val t1, t_val t2)
 {
 	static const std::unordered_map</*t_str*/std::string, std::function<t_val(t_val, t_val)>> s_funcs =
 	{
-		{ "pow", [t1, t2](t_val t1, t_val t2) -> t_val { return t_val(std::pow(t1, t2)); } },
-		{ "mod", [t1, t2](t_val t1, t_val t2) -> t_val { return t1%t2; } },
+		{ "pow", [](t_val t1, t_val t2) -> t_val { return t_val(std::pow(t1, t2)); } },
+		{ "mod", [](t_val t1, t_val t2) -> t_val { return t1%t2; } },
 	};
 
 	return s_funcs.at(wstr_to_str(strName))(t1, t2);
