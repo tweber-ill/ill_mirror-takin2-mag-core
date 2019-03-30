@@ -2916,49 +2916,180 @@ FileRaw<t_real>::GetAllParams() const
 template<class t_real>
 std::array<t_real,3> FileRaw<t_real>::GetSampleLattice() const
 {
-	return std::array<t_real,3>{{0.,0.,0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real a{0}, b{0}, c{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("sample_a");
+		if(iter != params.end())
+			a = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sample_b");
+		if(iter != params.end())
+			b = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sample_c");
+		if(iter != params.end())
+			c = str_to_var<t_real>(iter->second);
+	}
+
+	return std::array<t_real,3>{{a, b, c}};
 }
 
 template<class t_real>
 std::array<t_real,3> FileRaw<t_real>::GetSampleAngles() const
 {
-	return std::array<t_real,3>{{0., 0., 0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real a{0}, b{0}, c{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("sample_alpha");
+		if(iter != params.end())
+			a = d2r(str_to_var<t_real>(iter->second));
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sample_beta");
+		if(iter != params.end())
+			b = d2r(str_to_var<t_real>(iter->second));
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sample_gamma");
+		if(iter != params.end())
+			c = d2r(str_to_var<t_real>(iter->second));
+	}
+
+	return std::array<t_real,3>{{a, b, c}};
 }
 
 template<class t_real>
 std::array<t_real,2> FileRaw<t_real>::GetMonoAnaD() const
 {
-	return std::array<t_real,2>{{0., 0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real m{0}, a{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("mono_d");
+		if(iter != params.end())
+			m = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("ana_d");
+		if(iter != params.end())
+			a = str_to_var<t_real>(iter->second);
+	}
+
+	return std::array<t_real,2>{{m, a}};
 }
 
 template<class t_real>
 std::array<bool, 3> FileRaw<t_real>::GetScatterSenses() const
 {
-	return std::array<bool,3>{{0, 0, 0}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real m{0}, s{1}, a{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("sense_m");
+		if(iter != params.end())
+			m = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sense_s");
+		if(iter != params.end())
+			s = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("sense_a");
+		if(iter != params.end())
+			a = str_to_var<t_real>(iter->second);
+	}
+
+	return std::array<bool,3>{{m>0., s>0., a>0.}};
 }
 
 template<class t_real>
 std::array<t_real, 3> FileRaw<t_real>::GetScatterPlane0() const
 {
-	return std::array<t_real,3>{{0.,0.,0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real x{0}, y{0}, z{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("orient1_x");
+		if(iter != params.end())
+			x = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("orient1_y");
+		if(iter != params.end())
+			y = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("orient1_z");
+		if(iter != params.end())
+			z = str_to_var<t_real>(iter->second);
+	}
+
+	return std::array<t_real,3>{{x, y, z}};
 }
 
 template<class t_real>
 std::array<t_real, 3> FileRaw<t_real>::GetScatterPlane1() const
 {
-	return std::array<t_real,3>{{0.,0.,0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real x{0}, y{0}, z{0};
+
+	{
+		typename t_map::const_iterator iter = params.find("orient2_x");
+		if(iter != params.end())
+			x = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("orient2_y");
+		if(iter != params.end())
+			y = str_to_var<t_real>(iter->second);
+	}
+	{
+		typename t_map::const_iterator iter = params.find("orient2_z");
+		if(iter != params.end())
+			z = str_to_var<t_real>(iter->second);
+	}
+
+	return std::array<t_real,3>{{x, y, z}};
 }
 
 template<class t_real>
 t_real FileRaw<t_real>::GetKFix() const
 {
-	return 0.;
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	t_real k{0};
+
+	typename t_map::const_iterator iter = params.find("k_fix");
+	if(iter != params.end())
+		k = str_to_var<t_real>(iter->second);
+
+	return k;
 }
 
 template<class t_real>
 bool FileRaw<t_real>::IsKiFixed() const
 {
-	return 0;
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+	bool b{0};
+
+	typename t_map::const_iterator iter = params.find("is_ki_fixed");
+	if(iter != params.end())
+		b = (str_to_var<int>(iter->second) != 0);
+
+	return b;
 }
 
 template<class t_real>
@@ -2972,24 +3103,107 @@ std::size_t FileRaw<t_real>::GetScanCount() const
 template<class t_real>
 std::array<t_real, 5> FileRaw<t_real>::GetScanHKLKiKf(std::size_t i) const
 {
-	return std::array<t_real,5>{{0.,0.,0.,0.,0.}};
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+
+	std::string strColH = "1";
+	std::string strColK = "2";
+	std::string strColL = "3";
+	std::string strColE = "4";
+
+	{
+		typename t_map::const_iterator iter = params.find("col_h");
+		if(iter != params.end())
+			strColH = iter->second;
+	}
+	{
+		typename t_map::const_iterator iter = params.find("col_k");
+		if(iter != params.end())
+			strColK = iter->second;
+	}
+	{
+		typename t_map::const_iterator iter = params.find("col_l");
+		if(iter != params.end())
+			strColL = iter->second;
+	}
+	{
+		typename t_map::const_iterator iter = params.find("col_E");
+		if(iter != params.end())
+			strColE = iter->second;
+	}
+
+	return FileInstrBase<t_real>::GetScanHKLKiKf(strColH.c_str(), strColK.c_str(), strColL.c_str(), strColE.c_str(), i);
 }
+
+template<class t_real> std::vector<std::string> FileRaw<t_real>::GetScannedVars() const
+{
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+
+	std::string strColVars;
+
+	{
+		typename t_map::const_iterator iter = params.find("cols_scanned");
+		if(iter != params.end())
+			strColVars = iter->second;
+	}
+
+	std::vector<std::string> vecVars;
+	get_tokens<std::string, std::string>(strColVars, ",;", vecVars);
+
+	// if nothing is given, default to E
+	if(!vecVars.size())
+		vecVars.push_back("4");
+
+	return vecVars;
+}
+
+template<class t_real> std::string FileRaw<t_real>::GetCountVar() const
+{
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+
+	std::string strColCtr = "5";
+
+	{
+		typename t_map::const_iterator iter = params.find("col_ctr");
+		if(iter != params.end())
+			strColCtr = iter->second;
+	}
+
+	return strColCtr;
+}
+
+template<class t_real> std::string FileRaw<t_real>::GetMonVar() const
+{
+	using t_map = typename FileInstrBase<t_real>::t_mapParams;
+	const t_map& params = GetAllParams();
+
+	std::string strColCtr = "6";
+
+	{
+		typename t_map::const_iterator iter = params.find("col_mon");
+		if(iter != params.end())
+			strColCtr = iter->second;
+	}
+
+	return strColCtr;
+}
+
 
 template<class t_real>
 bool FileRaw<t_real>::MergeWith(const FileInstrBase<t_real>* pDat)
 {
-	return 0;
+	return FileInstrBase<t_real>::MergeWith(pDat);
 }
+
 
 template<class t_real> std::string FileRaw<t_real>::GetTitle() const { return ""; }
 template<class t_real> std::string FileRaw<t_real>::GetUser() const { return ""; }
 template<class t_real> std::string FileRaw<t_real>::GetLocalContact() const { return ""; }
-template<class t_real> std::string FileRaw<t_real>::GetScanNumber() const { return ""; }
+template<class t_real> std::string FileRaw<t_real>::GetScanNumber() const { return "0"; }
 template<class t_real> std::string FileRaw<t_real>::GetSampleName() const { return ""; }
 template<class t_real> std::string FileRaw<t_real>::GetSpacegroup() const { return ""; }
-template<class t_real> std::vector<std::string> FileRaw<t_real>::GetScannedVars() const { return {"1"}; }
-template<class t_real> std::string FileRaw<t_real>::GetCountVar() const { return "2"; }
-template<class t_real> std::string FileRaw<t_real>::GetMonVar() const { return ""; }
 template<class t_real> std::string FileRaw<t_real>::GetScanCommand() const { return ""; }
 template<class t_real> std::string FileRaw<t_real>::GetTimestamp() const { return ""; }
 
