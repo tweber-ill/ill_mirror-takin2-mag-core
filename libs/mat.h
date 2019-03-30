@@ -4653,7 +4653,7 @@ covariance(const std::vector<ublas::vector<T>>& vecVals, const std::vector<T>* p
 	else
 		vecMean = mean_value<t_vecvec>(vecVals);
 
-	t_mat matCov(vecVals[0].size(), vecVals[0].size());
+	t_mat matCov = zero_m<t_mat>(vecVals[0].size(), vecVals[0].size());
 	T tSum = T(0);
 	const std::size_t N = vecVals.size();
 
