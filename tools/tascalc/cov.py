@@ -5,16 +5,15 @@
 # @license see 'LICENSE' file
 #
 
-import sys
 import numpy as np
 import numpy.linalg as la
 
 
 
 use_scipy = False
-use_matplotlib = True
 verbose = True
-show_neutrons = True
+plot_results = True
+plot_neutrons = True
 ellipse_points = 128
 
 
@@ -113,7 +112,7 @@ def calc_covar(Q, E, w):
 
 	# transform events
 	Q4_Q = np.array([])
-	if show_neutrons:
+	if plot_neutrons:
 		Q4_Q = np.dot(Q4, T) - Qmean_Q
 
 
@@ -182,7 +181,7 @@ def calc_ellipses(Qres_Q):
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+def plot_ellipses(file, Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
 	import matplotlib.pyplot as plot
 
 	ellfkt = lambda rad, rot, phi : np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ]))
@@ -222,7 +221,14 @@ def plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE
 		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=0.25)
 	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black")
 	plot.tight_layout()
-	plot.show()
+
+	if file != "":
+		if verbose:
+			print("Saving plot to \"%s\"." % file)
+		plot.savefig(file)
+
+	if plot_results:
+		plot.show()
 
 
 
@@ -230,14 +236,38 @@ def plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE
 # main
 #
 if __name__ == "__main__":
-	if len(sys.argv) <= 1:
-		print("Please specify a filename.")
-		exit(-1)
+	import argparse as arg
 
-	[Q, E, w] = load_events(sys.argv[1])
+	print("")
+	args = arg.ArgumentParser(description="Calculates the covariance matrix of neutron scattering events.")
+	args.add_argument("file", type=str, help="input file")
+	args.add_argument("-s", "--save", default="", type=str, nargs="?", help="save plot to file")
+	args.add_argument("--ellipse", default=ellipse_points, type=int, nargs="?", help="number of points to draw ellipses")
+	args.add_argument("--ki", default=ki_start_idx, type=int, nargs="?", help="index of ki vector's first column in file")
+	args.add_argument("--kf", default=kf_start_idx, type=int, nargs="?", help="index of kf vector's first column in file")
+	args.add_argument("--wi", default=wi_idx, type=int, nargs="?", help="index of ki weight factor column in file")
+	args.add_argument("--wf", default=wf_idx, type=int, nargs="?", help="index of kf weight factor column in file")
+	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
+	args.add_argument("--noplot", action="store_true", help="don't show plot window")
+	args.add_argument("--noneutrons", action="store_true", help="don't show mc neutrons in plot")
+
+	argv = args.parse_args()
+	verbose = (argv.noverbose==False)
+	plot_results = (argv.noplot==False)
+	plot_neutrons = (argv.noneutrons==False)
+	infile = argv.file
+	outfile = argv.save
+	ellipse_points = argv.ellipse
+	ki_start_idx = argv.ki
+	kf_start_idx = argv.kf
+	wi_idx = argv.wi
+	wf_idx = argv.wf
+
+	[Q, E, w] = load_events(infile)
 
 	[Qres, Q4] = calc_covar(Q, E, w)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
 
-	if use_matplotlib:
-		plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
+	if plot_results or outfile!="":
+		plot_ellipses(outfile, Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
+
