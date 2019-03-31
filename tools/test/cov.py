@@ -9,7 +9,13 @@ import sys
 import numpy as np
 import numpy.linalg as la
 
+
+
+use_matplotlib = True
 use_scipy = False
+verbose = True
+ellipse_points = 128
+
 
 
 # column indices in mc file
@@ -17,6 +23,7 @@ ki_start_idx = 0
 kf_start_idx = 3
 wi_idx = 9
 wf_idx = 10
+
 
 
 # constants
@@ -61,13 +68,16 @@ def calc_covar(Q, E, w):
 	Q4 = np.insert(Q, 3, E, axis=1)
 
 	Qmean = [ np.average(Q4[:,i], weights = w) for i in range(4) ]
-	print("Mean (Q, E) vector in lab system:\n%s\n" % Qmean)
+	if verbose:
+		print("Mean (Q, E) vector in lab system:\n%s\n" % Qmean)
 
 	Qcov = np.cov(Q4, rowvar = False, aweights = w, ddof=0)
-	print("Covariance matrix in lab system:\n%s\n" % Qcov)
+	if verbose:
+		print("Covariance matrix in lab system:\n%s\n" % Qcov)
 
 	Qres = la.inv(Qcov)
-	print("Resolution matrix in lab system:\n%s\n" % Qres)
+	if verbose:
+		print("Resolution matrix in lab system:\n%s\n" % Qres)
 
 
 	# create a matrix to transform into the coordinate system with Q along x
@@ -81,16 +91,20 @@ def calc_covar(Q, E, w):
 		np.insert(Qup, 3, 0),
 		[0, 0, 0, 1] ]))
 
-	print("Transformation into (Qpara, Qperp, Qup, E) system:\n%s\n" % T)
+	if verbose:
+		print("Transformation into (Qpara, Qperp, Qup, E) system:\n%s\n" % T)
 
 	Qmean_Q = np.dot(np.transpose(T), Qmean)
-	print("Mean (Q, E) vector in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qmean_Q)
+	if verbose:
+		print("Mean (Q, E) vector in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qmean_Q)
 
 	Qcov_Q = np.dot(np.transpose(T), np.dot(Qcov, T))
-	print("Covariance matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qcov_Q)
+	if verbose:
+		print("Covariance matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qcov_Q)
 
 	Qres_Q = la.inv(Qcov_Q)
-	print("Resolution matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qres_Q)
+	if verbose:
+		print("Resolution matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qres_Q)
 
 
 	#[ evals, evecs ] = la.eig(Qcov_Q)
@@ -101,7 +115,7 @@ def calc_covar(Q, E, w):
 
 
 #
-# calculate the characteristics of a given ellipse
+# calculates the characteristics of a given ellipse
 #
 def descr_ellipse(quadric):
 	[ evals, evecs ] = la.eig(quadric)
@@ -111,33 +125,89 @@ def descr_ellipse(quadric):
 	if len(quadric) == 2:
 		angles = np.array([ np.arctan2(evecs[1][0], evecs[0][0]) ])
 
-	return [fwhms, angles/np.pi*180.]
+	return [fwhms, angles/np.pi*180., evecs]
 
 
 
 #
-# describe the ellipsoid by a principal axis trafo
+# describes the ellipsoid by a principal axis trafo
 #
 def calc_ellipses(Qres_Q):
-	[fwhms, angles] = descr_ellipse(Qres_Q)
-	print("4d resolution ellipsoid fwhm lengths:\n%s\n" % fwhms)
+	if verbose:
+		print("4d resolution ellipsoid diagonal elements fwhm (coherent-elastic scattering) lengths:\n%s\n" \
+			% (1./np.sqrt(np.diag(Qres_Q)) * sig2fwhm))
+
+	# 4d ellipsoid
+	[fwhms, angles, rot] = descr_ellipse(Qres_Q)
+	if verbose:
+		print("4d resolution ellipsoid principal axes fwhm lengths:\n%s\n" % fwhms)
 
 
 	# 2d sliced ellipses
 	Qres_QxE = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
 	Qres_QxE = np.delete(np.delete(Qres_QxE, 1, axis=0), 1, axis=1)
-	[fwhms_QxE, angles_QxE] = descr_ellipse(Qres_QxE)
-	print("Qx/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxE, angles_QxE[0]))
+	[fwhms_QxE, angles_QxE, rot_QxE] = descr_ellipse(Qres_QxE)
+	if verbose:
+		print("2d Qx/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxE, angles_QxE[0]))
 
 	Qres_QyE = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
 	Qres_QyE = np.delete(np.delete(Qres_QyE, 0, axis=0), 0, axis=1)
-	[fwhms_QyE, angles_QyE] = descr_ellipse(Qres_QyE)
-	print("Qy/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QyE, angles_QyE[0]))
+	[fwhms_QyE, angles_QyE, rot_QyE] = descr_ellipse(Qres_QyE)
+	if verbose:
+		print("2d Qy/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QyE, angles_QyE[0]))
 
 	Qres_QzE = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
 	Qres_QzE = np.delete(np.delete(Qres_QzE, 0, axis=0), 0, axis=1)
-	[fwhms_QzE, angles_QzE] = descr_ellipse(Qres_QzE)
-	print("Qz/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QzE, angles_QzE[0]))
+	[fwhms_QzE, angles_QzE, rot_QzE] = descr_ellipse(Qres_QzE)
+	if verbose:
+		print("2d Qz/E ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QzE, angles_QzE[0]))
+
+	Qres_QxQy = np.delete(np.delete(Qres_Q, 3, axis=0), 3, axis=1)
+	Qres_QxQy = np.delete(np.delete(Qres_QxQy, 2, axis=0), 2, axis=1)
+	[fwhms_QxQy, angles_QxQy, rot_QxQy] = descr_ellipse(Qres_QxQy)
+	if verbose:
+		print("2d Qx/Qy ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxQy, angles_QxQy[0]))
+
+	return [fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy]
+
+
+
+#
+# shows the 2d ellipses
+#
+def plot_ellipses(fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+	import matplotlib.pyplot as plot
+
+	ellfkt = lambda rad, rot, phi : np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ]))
+
+	phi = np.linspace(0, 2.*np.pi, ellipse_points)
+	ell_QxE = ellfkt(fwhms_QxE, rot_QxE, phi)
+	ell_QyE = ellfkt(fwhms_QyE, rot_QyE, phi)
+	ell_QzE = ellfkt(fwhms_QzE, rot_QzE, phi)
+	ell_QxQy = ellfkt(fwhms_QxQy, rot_QxQy, phi)
+
+	fig = plot.figure()
+	subplot_QxE = fig.add_subplot(221)
+	subplot_QxE.set_xlabel("Qpara (1/A)")
+	subplot_QxE.set_ylabel("E (meV")
+	subplot_QxE.plot(ell_QxE[0], ell_QxE[1])
+
+	subplot_QyE = fig.add_subplot(222)
+	subplot_QyE.set_xlabel("Qperp (1/A)")
+	subplot_QyE.set_ylabel("E (meV)")
+	subplot_QyE.plot(ell_QyE[0], ell_QyE[1])
+
+	subplot_QzE = fig.add_subplot(223)
+	subplot_QzE.set_xlabel("Qup (1/A)")
+	subplot_QzE.set_ylabel("E (meV)")
+	subplot_QzE.plot(ell_QzE[0], ell_QzE[1])
+
+	subplot_QxQy = fig.add_subplot(224)
+	subplot_QxQy.set_xlabel("Qpara (1/A)")
+	subplot_QxQy.set_ylabel("Qperp (meV)")
+	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1])
+	plot.tight_layout()
+	plot.show()
 
 
 
@@ -150,5 +220,9 @@ if __name__ == "__main__":
 		exit(-1)
 
 	[Q, E, w] = load_events(sys.argv[1])
+
 	Qres = calc_covar(Q, E, w)
-	calc_ellipses(Qres)
+	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
+
+	if use_matplotlib:
+		plot_ellipses(fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
