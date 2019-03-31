@@ -11,9 +11,10 @@ import numpy.linalg as la
 
 
 
-use_matplotlib = True
 use_scipy = False
+use_matplotlib = True
 verbose = True
+show_neutrons = True
 ellipse_points = 128
 
 
@@ -106,11 +107,17 @@ def calc_covar(Q, E, w):
 	if verbose:
 		print("Resolution matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qres_Q)
 
-
 	#[ evals, evecs ] = la.eig(Qcov_Q)
 	#print("Ellipsoid fwhm radii:\n%s\n" % (np.sqrt(evals) * sig2fwhm))
 
-	return Qres_Q
+
+	# transform events
+	Q4_Q = np.array([])
+	if show_neutrons:
+		Q4_Q = np.dot(Q4, T) - Qmean_Q
+
+
+	return [Qres_Q, Q4_Q]
 
 
 
@@ -175,7 +182,7 @@ def calc_ellipses(Qres_Q):
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+def plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
 	import matplotlib.pyplot as plot
 
 	ellfkt = lambda rad, rot, phi : np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ]))
@@ -190,22 +197,30 @@ def plot_ellipses(fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fw
 	subplot_QxE = fig.add_subplot(221)
 	subplot_QxE.set_xlabel("Qpara (1/A)")
 	subplot_QxE.set_ylabel("E (meV")
-	subplot_QxE.plot(ell_QxE[0], ell_QxE[1])
+	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=0.25)
+	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black")
 
 	subplot_QyE = fig.add_subplot(222)
 	subplot_QyE.set_xlabel("Qperp (1/A)")
 	subplot_QyE.set_ylabel("E (meV)")
-	subplot_QyE.plot(ell_QyE[0], ell_QyE[1])
+	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], s=0.25)
+	subplot_QyE.plot(ell_QyE[0], ell_QyE[1], c="black")
 
 	subplot_QzE = fig.add_subplot(223)
 	subplot_QzE.set_xlabel("Qup (1/A)")
 	subplot_QzE.set_ylabel("E (meV)")
-	subplot_QzE.plot(ell_QzE[0], ell_QzE[1])
+	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], s=0.25)
+	subplot_QzE.plot(ell_QzE[0], ell_QzE[1], c="black")
 
 	subplot_QxQy = fig.add_subplot(224)
 	subplot_QxQy.set_xlabel("Qpara (1/A)")
 	subplot_QxQy.set_ylabel("Qperp (meV)")
-	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1])
+	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=0.25)
+	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black")
 	plot.tight_layout()
 	plot.show()
 
@@ -221,8 +236,8 @@ if __name__ == "__main__":
 
 	[Q, E, w] = load_events(sys.argv[1])
 
-	Qres = calc_covar(Q, E, w)
+	[Qres, Q4] = calc_covar(Q, E, w)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
 
 	if use_matplotlib:
-		plot_ellipses(fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
+		plot_ellipses(Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
