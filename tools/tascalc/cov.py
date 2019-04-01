@@ -267,6 +267,7 @@ def check_versions():
 # main
 #
 if __name__ == "__main__":
+	print("This is a covariance matrix calculator using MC events, written by T. Weber <tweber@ill.fr>, 30 May 2019.\n")
 	check_versions()
 
 	import argparse as arg
@@ -298,7 +299,6 @@ if __name__ == "__main__":
 	wi_idx = argv.wi
 	wf_idx = argv.wf
 
-	print("")
 	[Q, E, w] = load_events(infile)
 
 	[Qres, Q4, Qmean] = calc_covar(Q, E, w)
