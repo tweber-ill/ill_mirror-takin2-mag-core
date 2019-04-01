@@ -213,7 +213,7 @@ def plot_ellipses(file, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms
 	fig = plot.figure()
 	subplot_QxE = fig.add_subplot(221)
 	subplot_QxE.set_xlabel("Qpara (1/A)")
-	subplot_QxE.set_ylabel("E (meV")
+	subplot_QxE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
 		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=0.25)
 	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black")
