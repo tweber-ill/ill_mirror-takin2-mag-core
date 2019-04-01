@@ -62,14 +62,17 @@ def calc_covar(Q, E, w):
 	# make a [Q, E] 4-vector
 	Q4 = np.insert(Q, 3, E, axis=1)
 
+	# calculate the mean Q 4-vector
 	Qmean = [ np.average(Q4[:,i], weights = w) for i in range(4) ]
 	if verbose:
 		print("Mean (Q, E) vector in lab system:\n%s\n" % Qmean)
 
-	Qcov = np.cov(Q4, rowvar = False, aweights = w, ddof=0)
+	# get the weighted covariance matrix
+	Qcov = np.cov(Q4, rowvar = False, aweights = w, ddof = 0)
 	if verbose:
 		print("Covariance matrix in lab system:\n%s\n" % Qcov)
 
+	# the resolution is the inverse of the covariance
 	Qres = la.inv(Qcov)
 	if verbose:
 		print("Resolution matrix in lab system:\n%s\n" % Qres)
@@ -80,6 +83,7 @@ def calc_covar(Q, E, w):
 	Qup = np.array([0, 1, 0])
 	Qside = np.cross(Qup, Qnorm)
 
+	# trafo matrix
 	T = np.transpose(np.array([
 		np.insert(Qnorm, 3, 0),
 		np.insert(Qside, 3, 0),
@@ -89,21 +93,23 @@ def calc_covar(Q, E, w):
 	if verbose:
 		print("Transformation into (Qpara, Qperp, Qup, E) system:\n%s\n" % T)
 
+	# transform mean Q vector
 	Qmean_Q = np.dot(np.transpose(T), Qmean)
 	if verbose:
 		print("Mean (Q, E) vector in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qmean_Q)
 
+	# transform the covariance matrix
 	Qcov_Q = np.dot(np.transpose(T), np.dot(Qcov, T))
 	if verbose:
 		print("Covariance matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qcov_Q)
 
+	# the resolution is the inverse of the covariance
 	Qres_Q = la.inv(Qcov_Q)
 	if verbose:
 		print("Resolution matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qres_Q)
 
 	#[ evals, evecs ] = la.eig(Qcov_Q)
 	#print("Ellipsoid fwhm radii:\n%s\n" % (np.sqrt(evals) * sig2fwhm))
-
 
 	# transform all neutron events
 	Q4_Q = np.array([])
@@ -185,7 +191,7 @@ def plot_ellipses(file, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms
 		np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ])) + Qmean2d
 
 
-	# centre plots on zero or average Q vector ?
+	# centre plots on zero or mean Q vector ?
 	QxE = np.array([[0], [0]])
 	QyE = np.array([[0], [0]])
 	QzE = np.array([[0], [0]])
