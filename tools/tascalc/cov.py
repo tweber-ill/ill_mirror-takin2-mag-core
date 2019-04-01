@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # calculate covariance from neutron events
 # @author Tobias Weber <tweber@ill.fr>
@@ -9,20 +10,18 @@ import numpy as np
 import numpy.linalg as la
 
 
-
-use_scipy = False
-verbose = True
-plot_results = True
-plot_neutrons = True
-ellipse_points = 128
-
+verbose = True		# console outputs
+plot_results = True	# show plot window
+plot_neutrons = True	# also plot neutron events
+centre_on_Q = False	# centre plots on Q or zero?
+ellipse_points = 128	# number of points to draw ellipses
 
 
 # column indices in mc file
-ki_start_idx = 0
-kf_start_idx = 3
-wi_idx = 9
-wf_idx = 10
+ki_start_idx = 0	# start index of ki 3-vector
+kf_start_idx = 3	# start index of kf 3-vector
+wi_idx = 9		# start index of ki weight factor
+wf_idx = 10		# start index of kf weight factor
 
 
 
@@ -30,15 +29,11 @@ wf_idx = 10
 sig2hwhm = np.sqrt(2. * np.log(2.))
 sig2fwhm = 2.*sig2hwhm
 
-if use_scipy:
-	import scipy as sp
-	import scipy.constants as co
-
-	hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
-	E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
-else:
-	E_to_k2 = 0.482596406464	# calculated with scipy, using the formula above
-k2_to_E = 1./E_to_k2
+#import scipy.constants as co
+#hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
+#E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
+E_to_k2 = 0.482596406464	# E -> k^2, calculated with scipy, using the code above
+k2_to_E = 1./E_to_k2		# k^2 -> E
 
 
 
@@ -110,13 +105,15 @@ def calc_covar(Q, E, w):
 	#print("Ellipsoid fwhm radii:\n%s\n" % (np.sqrt(evals) * sig2fwhm))
 
 
-	# transform events
+	# transform all neutron events
 	Q4_Q = np.array([])
 	if plot_neutrons:
-		Q4_Q = np.dot(Q4, T) - Qmean_Q
+		Q4_Q = np.dot(Q4, T)
+		if not centre_on_Q:
+			Q4_Q -= Qmean_Q
 
 
-	return [Qres_Q, Q4_Q]
+	return [Qres_Q, Q4_Q, Qmean_Q]
 
 
 
@@ -136,7 +133,7 @@ def descr_ellipse(quadric):
 
 
 #
-# describes the ellipsoid by a principal axis trafo
+# describes the ellipsoid by a principal axis trafo and by 2d cuts
 #
 def calc_ellipses(Qres_Q):
 	if verbose:
@@ -181,16 +178,31 @@ def calc_ellipses(Qres_Q):
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(file, Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+def plot_ellipses(file, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
 	import matplotlib.pyplot as plot
 
-	ellfkt = lambda rad, rot, phi : np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ]))
+	ellfkt = lambda rad, rot, phi, Qmean2d : \
+		np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ])) + Qmean2d
+
+
+	# centre plots on zero or average Q vector ?
+	QxE = np.array([[0], [0]])
+	QyE = np.array([[0], [0]])
+	QzE = np.array([[0], [0]])
+	QxQy = np.array([[0], [0]])
+
+	if centre_on_Q:
+		QxE = np.array([[Qmean[0]], [Qmean[3]]])
+		QyE = np.array([[Qmean[1]], [Qmean[3]]])
+		QzE = np.array([[Qmean[2]], [Qmean[3]]])
+		QxQy = np.array([[Qmean[0]], [Qmean[1]]])
+
 
 	phi = np.linspace(0, 2.*np.pi, ellipse_points)
-	ell_QxE = ellfkt(fwhms_QxE, rot_QxE, phi)
-	ell_QyE = ellfkt(fwhms_QyE, rot_QyE, phi)
-	ell_QzE = ellfkt(fwhms_QzE, rot_QzE, phi)
-	ell_QxQy = ellfkt(fwhms_QxQy, rot_QxQy, phi)
+	ell_QxE = ellfkt(fwhms_QxE, rot_QxE, phi, QxE)
+	ell_QyE = ellfkt(fwhms_QyE, rot_QyE, phi, QyE)
+	ell_QzE = ellfkt(fwhms_QzE, rot_QzE, phi, QzE)
+	ell_QxQy = ellfkt(fwhms_QxQy, rot_QxQy, phi, QxQy)
 
 	fig = plot.figure()
 	subplot_QxE = fig.add_subplot(221)
@@ -233,12 +245,26 @@ def plot_ellipses(file, Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, r
 
 
 #
+# checks versions of needed packages
+#
+def check_versions():
+	npver = np.version.version.split(".")
+	if int(npver[0]) >= 2:
+		return
+	if int(npver[0]) < 1 or int(npver[1]) < 10:
+		print("Numpy version >= 1.10 is required, but installed version is %s." % np.version.version)
+		exit(-1)
+
+
+
+#
 # main
 #
 if __name__ == "__main__":
+	check_versions()
+
 	import argparse as arg
 
-	print("")
 	args = arg.ArgumentParser(description="Calculates the covariance matrix of neutron scattering events.")
 	args.add_argument("file", type=str, help="input file")
 	args.add_argument("-s", "--save", default="", type=str, nargs="?", help="save plot to file")
@@ -247,14 +273,17 @@ if __name__ == "__main__":
 	args.add_argument("--kf", default=kf_start_idx, type=int, nargs="?", help="index of kf vector's first column in file")
 	args.add_argument("--wi", default=wi_idx, type=int, nargs="?", help="index of ki weight factor column in file")
 	args.add_argument("--wf", default=wf_idx, type=int, nargs="?", help="index of kf weight factor column in file")
+	args.add_argument("--centreonQ", action="store_true", help="centre plots on mean Q")
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
 	args.add_argument("--noplot", action="store_true", help="don't show plot window")
 	args.add_argument("--noneutrons", action="store_true", help="don't show mc neutrons in plot")
-
 	argv = args.parse_args()
+
 	verbose = (argv.noverbose==False)
 	plot_results = (argv.noplot==False)
 	plot_neutrons = (argv.noneutrons==False)
+	centre_on_Q = argv.centreonQ
+
 	infile = argv.file
 	outfile = argv.save
 	ellipse_points = argv.ellipse
@@ -263,11 +292,11 @@ if __name__ == "__main__":
 	wi_idx = argv.wi
 	wf_idx = argv.wf
 
+	print("")
 	[Q, E, w] = load_events(infile)
 
-	[Qres, Q4] = calc_covar(Q, E, w)
+	[Qres, Q4, Qmean] = calc_covar(Q, E, w)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
 
 	if plot_results or outfile!="":
-		plot_ellipses(outfile, Q4, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
-
+		plot_ellipses(outfile, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
