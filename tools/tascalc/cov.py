@@ -3,7 +3,7 @@
 # calculate covariance from neutron events
 # @author Tobias Weber <tweber@ill.fr>
 # @date 30-mar-2019
-# @license see 'LICENSE' file
+# @license GPLv3, see 'LICENSE' file
 #
 
 import numpy as np
