@@ -188,18 +188,24 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
  * loads the lattice parameters and the atom positions from a CIF
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
-std::tuple<std::string, std::vector<t_vec>, std::vector<std::vector<t_vec>>, std::vector<std::string>, Lattice<t_real>> 
+std::tuple<
+	std::string /* errors and warnings */, 
+	std::vector<t_vec> /* basic atom positions */, 
+	std::vector<std::vector<t_vec>> /* all generated atoms */, 
+	std::vector<std::string> /* atom names */, 
+	Lattice<t_real> /* lattice */ ,
+	std::vector<t_mat> /* ops */ > 
 load_cif(const std::string& filename, t_real eps=1e-6)
 {
 	auto ifstr = std::ifstream(filename);
 	if(!ifstr)
-		return std::make_tuple("Cannot open CIF.", std::vector<t_vec>{}, std::vector<std::vector<t_vec>>{}, std::vector<std::string>{}, Lattice{});
+		return std::make_tuple("Cannot open CIF.", std::vector<t_vec>{}, std::vector<std::vector<t_vec>>{}, std::vector<std::string>{}, Lattice{}, std::vector<t_mat>{});
 
 	// load CIF
 	auto cif = gemmi::cif::read_istream(ifstr, 4096, filename.c_str());
 
 	if(!cif.blocks.size())
-		return std::make_tuple("No blocks in CIF.", std::vector<t_vec>{}, std::vector<std::vector<t_vec>>{}, std::vector<std::string>{}, Lattice{});
+		return std::make_tuple("No blocks in CIF.", std::vector<t_vec>{}, std::vector<std::vector<t_vec>>{}, std::vector<std::string>{}, Lattice{}, std::vector<t_mat>{});
 
 	// get the block
 	/*const*/ auto& block = cif.sole_block();
@@ -249,7 +255,7 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 		generatedatoms.emplace_back(std::move(newatoms));
 	}
 
-	return std::make_tuple(errstr.str(), atoms, generatedatoms, atomnames, latt);
+	return std::make_tuple(errstr.str(), atoms, generatedatoms, atomnames, latt, ops);
 }
 
 

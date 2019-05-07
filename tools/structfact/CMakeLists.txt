@@ -23,6 +23,8 @@ add_definitions(${Boost_CXX_FLAGS})
 include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party")
 
+
+# main tool
 if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
@@ -38,3 +40,10 @@ endif()
 
 target_link_libraries(structfact ${Boost_LIBRARIES})
 qt5_use_modules(structfact Core Gui Widgets OpenGL)
+
+
+
+# cif2xml tool
+add_executable(cif2xml
+	cif2xml.cpp loadcif.h)
+target_link_libraries(cif2xml)

@@ -1403,7 +1403,8 @@ void MagStructFactDlg::ImportCIF()
 		return;
 	m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
-	auto [errstr, atoms, generatedatoms, atomnames, lattice] = load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
+	auto [errstr, atoms, generatedatoms, atomnames, lattice, symops] = 
+		load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
 	if(errstr)
 	{
 		QMessageBox::critical(this, "Structure Factors", errstr);
