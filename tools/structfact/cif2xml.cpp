@@ -155,7 +155,7 @@ bool convert_cif(const char* pcFileIn, const char* pcFileOut)
  */
 static void show_infos(const char* pcProg)
 {
-	std::cout << "This is a CIF to XML converter, version " << g_strVer << ".\n";
+	std::cout << "CIF to XML converter, version " << g_strVer << ".\n";
 	std::cout << "Written by Tobias Weber (tweber@ill.fr) in May 2019.\n";
 
 	std::cout << "\nUsage: " << pcProg << " <in.cif> <out.xml>\n";
