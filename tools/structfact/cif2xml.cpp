@@ -20,6 +20,9 @@ constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
 
 
+static const std::string g_strSig = "cif2xml";
+static const std::string g_strVer = "0.5";
+
 
 /**
  * print vector
@@ -83,7 +86,7 @@ bool convert_cif(const char* pcFileIn, const char* pcFileOut)
 
 
 	pOstr->precision(g_prec);
-	(*pOstr) << "<xml>\n<xtal>" << std::endl;
+	(*pOstr) << "<xtal>" << std::endl;
 
 
 	// lattice
@@ -130,9 +133,17 @@ bool convert_cif(const char* pcFileIn, const char* pcFileOut)
 	for(std::size_t i=0; i<ops.size(); ++i)
 		(*pOstr) << "\t\t<op" << i << "> " << ops[i] << " </op" << i << ">\n";
 	(*pOstr) << "\t</symops>\n";
+	(*pOstr) << "\n";
 
 
-	(*pOstr) << "</xtal>\n</xml>" << std::endl;
+	// meta infos
+	(*pOstr) << "\t<meta>\n";
+	(*pOstr) << "\t\t<origin> " << g_strSig << " </origin>\n";
+	(*pOstr) << "\t\t<version> " << g_strVer << " </version>\n";
+	(*pOstr) << "\t</meta>\n";
+
+
+	(*pOstr) << "</xtal>" << std::endl;
 
 	return true;
 }
@@ -144,7 +155,7 @@ bool convert_cif(const char* pcFileIn, const char* pcFileOut)
  */
 static void show_infos(const char* pcProg)
 {
-	std::cout << "This is a CIF to XML converter, version 0.5.\n";
+	std::cout << "This is a CIF to XML converter, version " << g_strVer << ".\n";
 	std::cout << "Written by Tobias Weber (tweber@ill.fr) in May 2019.\n";
 
 	std::cout << "\nUsage: " << pcProg << " <in.cif> <out.xml>\n";
@@ -180,6 +191,6 @@ int main(int argc, char** argv)
 
 	if(!convert_cif(pcFileIn, pcFileOut))
 		return -1;
-	
+
 	return 0;
 }
