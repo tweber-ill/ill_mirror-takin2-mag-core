@@ -8,6 +8,7 @@
 #include "loadcif.h"
 #include "libs/_cxx20/math_algos.h"
 
+#include <gemmi/version.hpp>
 #include <iostream>
 #include <memory>
 
@@ -156,7 +157,7 @@ bool convert_cif(const char* pcFileIn, const char* pcFileOut)
 static void show_infos(const char* pcProg)
 {
 	std::cout << "CIF to XML converter, version " << g_strVer << ".\n";
-	std::cout << "Written by Tobias Weber (tweber@ill.fr) in May 2019.\n";
+	std::cout << "Written by Tobias Weber <tweber@ill.fr> in May 2019.\n";
 
 	std::cout << "\nThis program is free software: you can redistribute it and/or modify "
 		"it under the terms of the GNU General Public License as published by "
@@ -166,7 +167,10 @@ static void show_infos(const char* pcProg)
 		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the "
 		"GNU General Public License for more details.\n"
 		"You should have received a copy of the GNU General Public License "
-		"along with this program. If not, see <http://www.gnu.org/licenses/>.\n";
+		"along with this program. If not, see <http://www.gnu.org/licenses/>.\n\n";
+
+	std::cout << "This program uses the Gemmi library (version " << GEMMI_VERSION << "), " 
+		<< "which is available under: https://github.com/project-gemmi/gemmi.\n";
 	std::cout << std::endl;
 
 	std::cerr << "\nUsage: " << pcProg << " <in.cif> <out.xml>\n";
