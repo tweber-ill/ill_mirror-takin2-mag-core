@@ -16,8 +16,8 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-std=c++17 -fconcepts)
+set(CMAKE_CXX_STANDARD 20)
+add_definitions(-std=c++2a -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
 
 include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
@@ -46,4 +46,6 @@ qt5_use_modules(structfact Core Gui Widgets OpenGL)
 # cif2xml tool
 add_executable(cif2xml
 	cif2xml.cpp loadcif.h)
-target_link_libraries(cif2xml)
+target_link_libraries(cif2xml 
+#	-static-libstdc++ -static-libgcc
+)
