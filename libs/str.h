@@ -47,33 +47,6 @@ std::pair<bool, t_val> eval_expr(const t_str& str) noexcept;
 
 // -----------------------------------------------------------------------------
 
-template<class t_str=std::string> const t_str& get_dir_seps();
-template<class t_str=std::string> const t_str& get_trim_chars();
-
-template<> inline const std::string& get_dir_seps()
-{
-	static const std::string strSeps("\\/");
-	return strSeps;
-}
-template<> inline const std::wstring& get_dir_seps()
-{
-	static const std::wstring strSeps(L"\\/");
-	return strSeps;
-}
-
-template<> inline const std::string& get_trim_chars()
-{
-	static const std::string strC(" \t\r");
-	return strC;
-}
-template<> inline const std::wstring& get_trim_chars()
-{
-	static const std::wstring strC(L" \t\r");
-	return strC;
-}
-
-
-// -----------------------------------------------------------------------------
 
 
 static inline std::wstring str_to_wstr(const std::string& str)
@@ -181,7 +154,13 @@ t_str get_fileext_nocomp(const t_str& str, bool bToLower=0)
 template<class t_str=std::string>
 t_str get_dir(const t_str& str, bool bToLower=0)
 {
-	std::size_t iPos = str.find_last_of(get_dir_seps<t_str>());
+	using t_ch = typename t_str::value_type;
+	std::size_t iPos = std::string::npos;
+
+	if constexpr(std::is_same_v<t_ch, char>)
+		str.find_last_of("\\/");
+	else if constexpr(std::is_same_v<t_ch, wchar_t>)
+		str.find_last_of(L"\\/");
 
 	if(iPos == t_str::npos)
 		return t_str();
@@ -196,7 +175,13 @@ t_str get_dir(const t_str& str, bool bToLower=0)
 template<class t_str=std::string>
 t_str get_file_nodir(const t_str& str, bool bToLower=0)
 {
-	std::size_t iPos = str.find_last_of(get_dir_seps<t_str>());
+	using t_ch = typename t_str::value_type;
+	std::size_t iPos = std::string::npos;
+
+	if constexpr(std::is_same_v<t_ch, char>)
+		str.find_last_of("\\/");
+	else if constexpr(std::is_same_v<t_ch, wchar_t>)
+		str.find_last_of(L"\\/");
 
 	if(iPos == t_str::npos)
 		return t_str();
@@ -253,7 +238,12 @@ void trim(t_str& str)
 
 	boost::trim_if(str, [](t_char c) -> bool
 	{
-		return get_trim_chars<t_str>().find(c) != t_str::npos;
+		if constexpr(std::is_same_v<t_char, char>)
+			return t_str(" \t\r").find(c) != t_str::npos;
+		else if constexpr(std::is_same_v<t_char, wchar_t>)
+			return t_str(L" \t\r").find(c) != t_str::npos;
+
+		return false;
 	});
 }
 
@@ -395,8 +385,6 @@ split_first(const t_str& str, const t_str& strSep, bool bTrim=0, bool bSeq=0)
 		if(ipos+iLenTok < str.length())
 			str2 = str.substr(ipos+iLenTok, t_str::npos);
 	}
-	//else
-	//	str1 = str;
 
 	if(bTrim)
 	{
@@ -404,7 +392,7 @@ split_first(const t_str& str, const t_str& strSep, bool bTrim=0, bool bSeq=0)
 		trim(str2);
 	}
 
-	return std::pair<t_str, t_str>(str1, str2);
+	return std::make_pair(str1, str2);
 }
 
 
