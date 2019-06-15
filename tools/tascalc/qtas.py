@@ -282,13 +282,16 @@ def A2Changed():
 	editA1.setText("%.6g" % (0.5*a2 / np.pi * 180.))
 	TASChanged()
 
+
 def A6Changed():
 	a6 = getfloat(editA6.text()) / 180. * np.pi
 	editA5.setText("%.6g" % (0.5*a6 / np.pi * 180.))
 	TASChanged()
 
+
 def DChanged():
 	QChanged()
+
 
 def QChanged():
 	global orient_rlu, orient_up_rlu, g_eps
@@ -330,10 +333,11 @@ def QChanged():
 		if Q_in_plane:
 			tasstatus.setText("")
 		else:
-			tasstatus.setText(u"WARNING: Q is out of the plane by %.4g / \u212b!" % dist_Q_plane)
+			tasstatus.setText(u"WARNING: Q is out of the plane by %.4g \u212b\u207b\u00b9!" % dist_Q_plane)
 	except (ArithmeticError, la.LinAlgError) as err:
 		editA3.setText("invalid")
 		editA4.setText("invalid")
+
 
 def KiKfChanged():
 	ki = getfloat(editKi.text())
@@ -346,6 +350,7 @@ def KiKfChanged():
 		QChanged()
 	except (ArithmeticError, la.LinAlgError) as err:
 		editE.setText("invalid")
+
 
 def EChanged():
 	E = getfloat(editE.text())
@@ -399,10 +404,10 @@ Qlayout.addWidget(qtw.QLabel("l (rlu):", Qpanel), 2,0, 1,1)
 Qlayout.addWidget(editl, 2,1, 1,2)
 Qlayout.addWidget(qtw.QLabel("E (meV):", Qpanel), 3,0, 1,1)
 Qlayout.addWidget(editE, 3,1, 1,2)
-Qlayout.addWidget(qtw.QLabel(u"ki, kf (1/\u212b):", Qpanel), 4,0, 1,1)
+Qlayout.addWidget(qtw.QLabel(u"ki, kf (\u212b\u207b\u00b9):", Qpanel), 4,0, 1,1)
 Qlayout.addWidget(editKi, 4,1, 1,1)
 Qlayout.addWidget(editKf, 4,2, 1,1)
-Qlayout.addWidget(qtw.QLabel(u"|Q| (1/\u212b):", Qpanel), 5,0, 1,1)
+Qlayout.addWidget(qtw.QLabel(u"|Q| (\u212b\u207b\u00b9):", Qpanel), 5,0, 1,1)
 Qlayout.addWidget(editQAbs, 5,1, 1,2)
 Qlayout.addWidget(separatorTas, 6,0,1,3)
 taslayout.addWidget(qtw.QLabel("a1, a2 (deg):", taspanel), 7,0, 1,1)
@@ -418,7 +423,7 @@ taslayout.addWidget(separatorTas2, 10,0, 1,3)
 taslayout.addWidget(qtw.QLabel("Sense:", taspanel), 11,0, 1,1)
 taslayout.addWidget(checkA4Sense, 11,1, 1,2)
 taslayout.addWidget(separatorTas3, 12,0, 1,3)
-taslayout.addWidget(qtw.QLabel("Mono., Ana. d (A):", taspanel), 13,0, 1,1)
+taslayout.addWidget(qtw.QLabel(u"Mono., Ana. d (\u212b):", taspanel), 13,0, 1,1)
 taslayout.addWidget(editDm, 13,1, 1,1)
 taslayout.addWidget(editDa, 13,2, 1,1)
 taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 14,0, 1,3)
