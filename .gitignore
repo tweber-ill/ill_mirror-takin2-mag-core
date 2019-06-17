@@ -47,6 +47,7 @@ tmp/**
 !tmp/.dir
 build/**
 tools/structfact/build/**
+tools/cif2xml/build/**
 tools/magstructfact/build/**
 tools/magsgbrowser/build/**
 tools/pol/build/**

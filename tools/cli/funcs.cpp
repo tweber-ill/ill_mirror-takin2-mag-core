@@ -6,7 +6,7 @@
  */
 
 #include "funcs.h"
-#include "tools/in20/globals.h"
+#include "tools/main/globals.h"
 #include "libs/phys.h"
 
 

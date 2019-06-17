@@ -6,7 +6,7 @@
  */
 
 #include "cliparser.h"
-#include "tools/in20/globals.h"
+#include "tools/main/globals.h"
 #include "funcs.h"
 #include "libs/algos.h"
 #include "libs/str.h"

@@ -5,7 +5,7 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#include "loadcif.h"
+#include "../structfact/loadcif.h"
 #include "libs/_cxx20/math_algos.h"
 
 #include <gemmi/version.hpp>

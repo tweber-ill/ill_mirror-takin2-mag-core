@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.0)
 project(pol)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
-set(BUILD_LIB TRUE)
+option(BUILD_LIB "build as dynamic library" FALSE)
 
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)

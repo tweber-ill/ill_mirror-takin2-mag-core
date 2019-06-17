@@ -5,10 +5,12 @@
  * @license see 'LICENSE' file
  */
 
-%define parser_class_name { CliParser }
+//%define parser_class_name { CliParser }
+%define api.parser.class { CliParser }
 %define api.value.type variant
 %define api.token.constructor
-%error-verbose
+//%error-verbose
+%define parse.error verbose
 
 %code requires { #include "cliparser_types.h" }
 %code { #include "cliparser.h" }
