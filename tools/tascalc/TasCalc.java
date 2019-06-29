@@ -90,6 +90,44 @@ public class TasCalc
 
 
     /**
+     * R_ij = A_ij * d
+     */
+    public static double[][] mul(double[][] A, double d)
+        throws Exception
+    {
+        final int dim1 = A.length;
+        final int dim2 = A[0].length;
+
+        double[][] R = new double[dim1][dim2];
+        for(int i=0; i<dim1; ++i)
+            for(int j=0; j<dim2; ++j)
+                R[i][j] = A[i][j] * d;
+
+        return R;
+    }
+
+
+    /**
+     * R_ij = d * A_ij
+     */
+    public static double[][] mul(double d, double[][] A)
+        throws Exception
+    {
+        return mul(A, d);
+    }
+
+
+    /**
+     * R_ij = A_ij / d
+     */
+    public static double[][] div(double[][] A, double d)
+        throws Exception
+    {
+        return mul(A, 1./d);
+    }
+
+
+    /**
      * d = x_i y_i
      */
     public static double dot(double[] x, double[] y)
@@ -133,7 +171,7 @@ public class TasCalc
    /**
      * length of vector x
      */
-    public static double norm2(double[] x)
+    public static double norm_2(double[] x)
         throws Exception
     {
         return Math.sqrt(dot(x, x));
@@ -314,13 +352,44 @@ public class TasCalc
 
 
     /**
+     * inverse
+     * @param M matrix
+     * @return inverse
+     * @throws Exception
+     */
+    public static double[][] inv(double[][] M)
+        throws Exception
+    {
+        final int dim1 = M.length;
+        final int dim2 = M[0].length;
+
+        if(dim1 != dim2)
+            throw new Exception("Expecting a square matrix.");
+ 
+        double d = det(M);
+        double[][] I = new double[dim2][dim1];
+
+        for(int i=0; i<dim1; ++i)
+        {
+            for(int j=0; j<dim2; ++j)
+            {
+                double sgn = ((i+j) % 2) == 0 ? 1. : -1.;
+                I[j][i] = sgn * det(submat(M, i,j)) / d;
+            }
+        }
+
+        return I;
+    }
+
+
+    /**
      * rotates a vector around an axis using Rodrigues' formula
      * see: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
      */
     public static double[] rotate(double[] _axis, double[] vec, double phi)
         throws Exception
     {
-        double[] axis = div(_axis, norm2(_axis));
+        double[] axis = div(_axis, norm_2(_axis));
 
         double s = Math.sin(phi);
         double c = Math.cos(phi);
@@ -408,8 +477,51 @@ public class TasCalc
 
         return A;
     }
+
+
+    /**
+     * crystallographic B matrix converting rlu to 1/A
+     * the reciprocal-space basis vectors form the columns of the B matrix
+     */
+    public static double[][] get_B(double[] lattice, double[] angles)
+        throws Exception
+    {
+        double[][] A = get_A(lattice, angles);
+        double[][] B = mul(2.*Math.PI, transpose(inv(A)));
+        return B;
+    }
+
+
+    /**
+     * UB orientation matrix
+     */
+    public static double[][] get_UB(double[][] B, double[] orient1_rlu, double[] orient2_rlu, double[] orientup_rlu)
+        throws Exception
+    {
+        double[] orient1_invA = dot(B, orient1_rlu);
+        double[] orient2_invA = dot(B, orient2_rlu);
+        double[] orientup_invA = dot(B, orientup_rlu);
+
+        orient1_invA = div(orient1_invA, norm_2(orient1_invA));
+        orient2_invA = div(orient2_invA, norm_2(orient2_invA));
+        orientup_invA = div(orientup_invA, norm_2(orientup_invA));
+
+        final int N = B.length;
+        double[][] U_invA = new double[N][N];
+        for(int i=0; i<N; ++i)
+        {
+            U_invA[0][i] = orient1_invA[i];
+            U_invA[1][i] = orient2_invA[i];
+            U_invA[2][i] = orientup_invA[i];
+        }
+          
+        double[][] UB = dot(U_invA, B);
+        return UB;
+    }
+
     // ------------------------------------------------------------------------
     
+
 
     // ------------------------------------------------------------------------
     /**

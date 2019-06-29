@@ -82,6 +82,45 @@ public class TestTasCalc extends TestCase
     }
 
 
+    public void testInv()
+        throws Exception
+    {
+        double[][] M2 = new double[][]
+        {
+            {1., 2.},
+            {3., 4.}
+        };
+
+        double[][] M3 = new double[][]
+        {
+            {1., -2., 3.},
+            {4., 5., -6.},
+            {7., 8., 9.}
+        };
+
+        double[][] _I2 = new double[][]
+        {
+            {-2., 1.},
+            {1.5, -0.5}
+        };
+
+        double[][] _I3 = new double[][]
+        {
+            {0.3875, 0.175, -0.0125},
+            {-0.325, -0.05, 0.075},
+            {-0.0125, -0.09166666, 0.05416666}
+        };
+
+        double[][] I2 = TasCalc.inv(M2);
+        for(int i=0; i<I2.length; ++i)
+            Assert.assertArrayEquals("Wrong inverse!", _I2[i], I2[i], 1e-6);
+ 
+        double[][] I3 = TasCalc.inv(M3);
+        for(int i=0; i<I3.length; ++i)
+            Assert.assertArrayEquals("Wrong inverse!", _I3[i], I3[i], 1e-6);
+    }
+
+
     public void testMono()
         throws Exception
     {
