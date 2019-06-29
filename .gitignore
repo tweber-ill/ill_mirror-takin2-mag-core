@@ -7,6 +7,7 @@
 *.o
 *.obj
 *.moc
+*.class
 
 # Precompiled Headers
 *.gch
@@ -70,4 +71,3 @@ stack.hh
 *.blg
 *.fls
 *.fdb_latexmk
-
