@@ -5,13 +5,13 @@
  * @license see 'LICENSE' file
  */
 
-public class tascalc
+public class TasCalc
 {
     // calculated with scipy, see tascalc.py
     protected static final double E_to_k2 = 0.482596406464;
 
 
-    public tascalc()
+    public TasCalc()
     {
     }
 
@@ -241,6 +241,79 @@ public class tascalc
 
 
     /**
+     * submatrix
+     * @param M matrix
+     * @param i row to delete
+     * @param j column to delete
+     * @return submatrix
+     */
+    public static double[][] submat(double[][] M, int i, int j)
+    {
+        final int dim1 = M.length;
+        final int dim2 = M[0].length;
+
+        double[][] R = new double[dim1-1][dim2-1];
+
+        int _i2 = 0;
+        for(int _i=0; _i<dim1; ++_i)
+        {
+            if(_i == i)
+                continue;
+
+            int _j2 = 0;
+            for(int _j=0; _j<dim2; ++_j)
+            {
+                if(_j == j)
+                    continue;
+                
+                R[_i2][_j2] = M[_i][_j];
+                ++_j2;
+            }
+            ++_i2;
+        }
+
+        return R;
+    }
+
+
+    /**
+     * determinant
+     * @param M matrix
+     * @return determinant
+     * @throws Exception
+     */
+    public static double det(double[][] M)
+        throws Exception
+    {
+        final int dim1 = M.length;
+        final int dim2 = M[0].length;
+
+        if(dim1 != dim2)
+            throw new Exception("Expecting a square matrix.");
+        
+        if(dim1 <= 0)
+            return 0.;
+        else if(dim1 == 1)
+            return M[0][0];
+        else if(dim1 == 2)
+            return M[0][0]*M[1][1] - M[0][1]*M[1][0];
+
+        double d = 0.;
+        int i = 0;
+        for(int j=0; j<dim2; ++j)
+        {
+            if(Math.abs(M[i][j]) < Double.MIN_VALUE)
+                continue;
+
+            double sgn = ((i+j % 2) == 0) ? 1. : -1.;
+            d += sgn * M[i][j] * det(submat(M, i,j));
+        }
+        
+        return d;
+    }
+
+
+    /**
      * rotates a vector around an axis using Rodrigues' formula
      * see: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
      */
@@ -425,10 +498,4 @@ public class tascalc
         return (ki*ki - kf*kf) / E_to_k2;
     }
     // ------------------------------------------------------------------------
-
-
-    public static void main(String[] args)
-    {
-        tascalc tas = new tascalc();
-    }
 }
