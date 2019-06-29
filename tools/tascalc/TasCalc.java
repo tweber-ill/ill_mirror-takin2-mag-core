@@ -343,7 +343,7 @@ public class TasCalc
             if(Math.abs(M[i][j]) < Double.MIN_VALUE)
                 continue;
 
-            double sgn = ((i+j % 2) == 0) ? 1. : -1.;
+            double sgn = (((i+j) % 2) == 0) ? 1. : -1.;
             d += sgn * M[i][j] * det(submat(M, i,j));
         }
         
@@ -520,7 +520,7 @@ public class TasCalc
     }
 
     // ------------------------------------------------------------------------
-    
+
 
 
     // ------------------------------------------------------------------------
