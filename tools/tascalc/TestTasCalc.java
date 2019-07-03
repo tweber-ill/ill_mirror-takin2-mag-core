@@ -4,7 +4,7 @@
  * @date 29-jun-19
  * @license see 'LICENSE' file
  * 
- * javac -cp .:/Users/tw/tmp/junit-4.13-beta-3.jar TasCalc.java TestTasCalc.java
+ * javac -cp .:/Users/tw/tmp/junit-4.13-beta-3.jar Calc.java TasCalc.java TestTasCalc.java
  * java -cp .:/Users/tw/tmp/junit-4.13-beta-3.jar:/Users/tw/tmp/hamcrest-core-1.3.jar org.junit.runner.JUnitCore TestTasCalc
  */
 
@@ -30,7 +30,7 @@ public class TestTasCalc extends TestCase
             double[] x = new double[]{1., 2., 3.};
             double[] y = new double[]{4., 5., 6.};
 
-            double d = TasCalc.dot(x, y);
+            double d = Calc.dot(x, y);
             assertEquals(32., d, 1e-6);
         }
         catch(Exception ex)
@@ -47,7 +47,7 @@ public class TestTasCalc extends TestCase
             double[] x = new double[]{1., 2., 3.};
             double[] y = new double[]{9., -8., 7.};
 
-            double[] r = TasCalc.cross(x, y);
+            double[] r = Calc.cross(x, y);
             double[] res = new double[]{38., 20., -26.};
             Assert.assertArrayEquals(res, r, 1e-6);
         }
@@ -74,10 +74,10 @@ public class TestTasCalc extends TestCase
             {7., 8., 9.}
         };
 
-        double d2 = TasCalc.det(M2);
+        double d2 = Calc.det(M2);
         assertEquals("Wrong determinant!", -2., d2, 1e-6);
  
-        double d3 = TasCalc.det(M3);
+        double d3 = Calc.det(M3);
         assertEquals("Wrong determinant!", 240., d3, 1e-6);
     }
 
@@ -111,11 +111,11 @@ public class TestTasCalc extends TestCase
             {-0.0125, -0.09166666, 0.05416666}
         };
 
-        double[][] I2 = TasCalc.inv(M2);
+        double[][] I2 = Calc.inv(M2);
         for(int i=0; i<I2.length; ++i)
             Assert.assertArrayEquals("Wrong inverse!", _I2[i], I2[i], 1e-6);
  
-        double[][] I3 = TasCalc.inv(M3);
+        double[][] I3 = Calc.inv(M3);
         for(int i=0; i<I3.length; ++i)
             Assert.assertArrayEquals("Wrong inverse!", _I3[i], I3[i], 1e-6);
     }
