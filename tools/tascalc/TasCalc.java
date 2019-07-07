@@ -10,6 +10,10 @@ public class TasCalc
     // calculated with scipy, see tascalc.py
     protected static final double E_to_k2 = 0.482596406464;
 
+    //protected static final double a3_offs = 0.;             // for sics: a3 is angle between ki and orient1
+    //protected static final double a3_offs = np.pi/2.;       // for takin: Q along orient1 => a3:=a4/2
+    protected static final double a3_offs = Math.PI;          // for nomad: a3 is angle between ki and orient1 + 180 deg
+
 
     public TasCalc()
     {
@@ -52,7 +56,7 @@ public class TasCalc
             }
         };
 
-        return A;
+        return Calc.transpose(A);
     }
 
 
@@ -185,6 +189,64 @@ public class TasCalc
     public static double get_E(double ki, double kf)
     {
         return (ki*ki - kf*kf) / E_to_k2;
+    }
+
+
+    /**
+     * calculate a3 & a4 angles
+     */
+    public static double[] get_a3a4(double ki, double kf, double[] Q_rlu, 
+        double[] orient_rlu, double[] orient_up_rlu, double[][] B, double sense_sample)
+        throws Exception
+    {
+        // metric
+        double[][] metric = Calc.get_metric(B);
+
+        // length of Q
+        double Qlen = Math.sqrt(Calc.dot(Q_rlu, Q_rlu, metric));
+
+        // angle xi between Q and orientation reflex
+        double xi = Calc.angle(Q_rlu, orient_rlu, metric);
+
+        // sign of xi
+        if(Calc.dot(Calc.cross(orient_rlu, Q_rlu, B), orient_up_rlu, metric) < 0.)
+            xi = -xi;
+
+        // distance to plane
+        double up_len = Math.sqrt(Calc.dot(orient_up_rlu, orient_up_rlu, metric));
+        double dist_Q_plane = Calc.dot(Q_rlu, orient_up_rlu, metric) / up_len;
+
+        // angle psi enclosed by ki and Q
+        double psi = get_psi(ki, kf, Qlen, sense_sample);
+
+        double a3 = - psi - xi + a3_offs;
+        double a4 = get_a4(ki, kf, Qlen);
+
+        //System.out.println("xi = " + xi/Math.PI*180. + ", psi = " + psi/Math.PI*180. + ", offs = " + a3_offs);
+        return new double[]{a3, a4, dist_Q_plane};
+    }
+
+
+    /**
+     * get Q position
+     */
+    public static double[] get_hkl(double ki, double kf, double a3, double Qlen, 
+        double[] orient_rlu, double[] orient_up_rlu, double[][] B, double sense_sample)
+        throws Exception
+    {
+        double[][] B_inv = Calc.inv(B);
+
+        // angle enclosed by ki and Q
+        double psi = TasCalc.get_psi(ki, kf, Qlen, sense_sample);
+
+        // angle between Q and orientation reflex
+        double xi = - a3 + a3_offs - psi;
+
+        double[] Q_lab = Calc.rotate(Calc.dot(B, orient_up_rlu), Calc.dot(B, Calc.mul(orient_rlu, Qlen)), xi);
+        Q_lab = Calc.mul(Q_lab, Qlen / Calc.norm_2(Q_lab));
+        double[] Q_rlu = Calc.dot(B_inv, Q_lab);
+
+        return Q_rlu;
     }
     // ------------------------------------------------------------------------
 }

@@ -14,12 +14,8 @@ import org.junit.Assert;
 
 public class TestTasCalc extends TestCase
 {
-    private TasCalc m_tas;
-
-
     public void setUp()
     {   
-        m_tas = new TasCalc();
     }
 
 
@@ -153,5 +149,33 @@ public class TestTasCalc extends TestCase
 
         double E_2 = TasCalc.get_E(ki, kf);
         assertEquals("Wrong E!", E, E_2, 1e-3);
+    }
+
+
+    public void testAngles()
+        throws Exception
+    {
+        double kf = 2.662;
+        double E = 2.;
+        double ki = TasCalc.get_ki(kf, E);
+        double[] Q_rlu = new double[]{1., 2., 2.};
+        double[] orient_rlu = new double[]{1., 0., 0.};
+        double[] orient_up_rlu = new double[]{-1./3., -2./3., 2./3.};
+
+        double[] lattice = new double[]{5., 5., 5.};
+        double[] angles = new double[]{90./180.*Math.PI, 90./180.*Math.PI, 60./180.*Math.PI};
+
+        double[][] B = TasCalc.get_B(lattice, angles);
+        double[] a3a4 = TasCalc.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, 1.);
+
+        assertEquals("Wrong distance to scattering plane!", 0., a3a4[2], 1e-3);
+        assertEquals("Wrong a4!", 80.457, a3a4[1]/Math.PI*180., 1e-3);
+        assertEquals("Wrong a3!", 42.389, a3a4[0]/Math.PI*180., 1e-3);
+
+
+        double[][] metric = Calc.get_metric(B);
+        double Qlen = Math.sqrt(Calc.dot(Q_rlu, Q_rlu, metric));
+        double[] Qhkl = TasCalc.get_hkl(ki, kf, a3a4[0], Qlen, orient_rlu, orient_up_rlu, B, 1.);
+        Assert.assertArrayEquals("Wrong Q position!", new double[]{1., 2., 2.}, Qhkl, 1e-4);
     }
 }

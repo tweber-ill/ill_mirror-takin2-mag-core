@@ -187,7 +187,7 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, sense_sample=1.):
 	a3 = - psi - xi + a3_offs
 	a4 = get_a4(ki, kf, Qlen)
 
-	#print("xi = " + str(xi/np.pi*180.) + ", psi = " + str(psi/np.pi*180.))
+	#print("xi = " + str(xi/np.pi*180.) + ", psi = " + str(psi/np.pi*180.) + ", offs = " + str(a3_offs/np.pi*180.))
 	return [a3, a4, dist_Q_plane]
 
 
