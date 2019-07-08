@@ -56,7 +56,7 @@ tabs = qtw.QTabWidget()
 # variables
 B = np.array([[1,0,0], [0,1,0], [0,0,1]])
 orient_rlu = np.array([1,0,0])
-#orient2_rlu = np.array([0,1,0])
+orient2_rlu = np.array([0,1,0])
 orient_up_rlu = np.array([0,0,1])
 
 g_eps = 1e-4
@@ -102,7 +102,7 @@ editBMat.setReadOnly(True)
 
 
 def xtalChanged():
-	global B, orient_rlu, orient_up_rlu
+	global B, orient_rlu, orient2_rlu, orient_up_rlu
 	lattice = np.array([getfloat(editA.text()), getfloat(editB.text()), getfloat(editC.text())])
 	angles = np.array([getfloat(editAlpha.text()), getfloat(editBeta.text()), getfloat(editGamma.text())])
 	orient_rlu = np.array([getfloat(editAx.text()), getfloat(editAy.text()), getfloat(editAz.text())])
@@ -236,7 +236,7 @@ separatorTas3.setFrameStyle(qtw.QFrame.HLine)
 
 
 def TASChanged():
-	global orient_rlu, orient_up_rlu
+	global orient_rlu, orient2_rlu, orient_up_rlu
 
 	a1 = getfloat(editA1.text()) / 180. * np.pi
 	a2 = a1 * 2.
@@ -294,7 +294,7 @@ def DChanged():
 
 
 def QChanged():
-	global orient_rlu, orient_up_rlu, g_eps
+	global orient_rlu, orient2_rlu, orient_up_rlu, g_eps
 
 	Q_rlu = np.array([getfloat(edith.text()), getfloat(editk.text()), getfloat(editl.text())])
 	ki = getfloat(editKi.text())
@@ -333,7 +333,13 @@ def QChanged():
 		if Q_in_plane:
 			tasstatus.setText("")
 		else:
-			tasstatus.setText(u"WARNING: Q is out of the plane by %.4g \u212b\u207b\u00b9!" % dist_Q_plane)
+			metric = tas.get_metric(B)
+			#ang1 = tas.angle(Q_rlu, orient_rlu, metric)
+			#ang2 = tas.angle(Q_rlu, orient2_rlu, metric)
+			ang_plane = np.pi*0.5 - tas.angle(Q_rlu, orient_up_rlu, metric)
+
+			tasstatus.setText(u"WARNING: Q is out of the plane by %.4g \u212b\u207b\u00b9, i.e. %.4g deg!" \
+				% (dist_Q_plane, ang_plane/np.pi*180.))
 	except (ArithmeticError, la.LinAlgError) as err:
 		editA3.setText("invalid")
 		editA4.setText("invalid")
