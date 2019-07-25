@@ -17,12 +17,16 @@ centre_on_Q = False	# centre plots on Q or zero?
 ellipse_points = 128	# number of points to draw ellipses
 
 
-# column indices in mc file
+# column indices in kf,kf file
 ki_start_idx = 0	# start index of ki 3-vector
 kf_start_idx = 3	# start index of kf 3-vector
 wi_idx = 9		# start index of ki weight factor
 wf_idx = 10		# start index of kf weight factor
 
+# column indices in Q,E file
+Q_start_idx = 0
+E_idx = 3
+w_idx = 4
 
 
 # constants
@@ -40,7 +44,7 @@ k2_to_E = 1./E_to_k2		# k^2 -> E
 #
 # loads a list of neutron events in the [ ki_vec, kf_vec, pos_vec, wi, wf ] format
 #
-def load_events(filename):
+def load_events_kikf(filename):
 	dat = np.loadtxt(filename)
 	ki = dat[:, ki_start_idx:ki_start_idx+3]
 	kf = dat[:, kf_start_idx:kf_start_idx+3]
@@ -50,6 +54,19 @@ def load_events(filename):
 	w = wi * wf
 	Q = ki - kf
 	E = k2_to_E * (np.multiply(ki, ki).sum(1) - np.multiply(kf, kf).sum(1))
+
+	return [Q, E, w]
+
+
+
+#
+# loads a list of neutron events in the [ h, k, l, E, w ] format
+#
+def load_events_QE(filename):
+	dat = np.loadtxt(filename)
+	Q = dat[:, Q_start_idx:Q_start_idx+3]
+	E = dat[:, E_idx]
+	w = dat[:, w_idx]
 
 	return [Q, E, w]
 
@@ -276,10 +293,14 @@ if __name__ == "__main__":
 	args.add_argument("file", type=str, help="input file")
 	args.add_argument("-s", "--save", default="", type=str, nargs="?", help="save plot to file")
 	args.add_argument("--ellipse", default=ellipse_points, type=int, nargs="?", help="number of points to draw ellipses")
-	args.add_argument("--ki", default=ki_start_idx, type=int, nargs="?", help="index of ki vector's first column in file")
-	args.add_argument("--kf", default=kf_start_idx, type=int, nargs="?", help="index of kf vector's first column in file")
-	args.add_argument("--wi", default=wi_idx, type=int, nargs="?", help="index of ki weight factor column in file")
-	args.add_argument("--wf", default=wf_idx, type=int, nargs="?", help="index of kf weight factor column in file")
+	args.add_argument("--ki", default=ki_start_idx, type=int, nargs="?", help="index of ki vector's first column in kikf file")
+	args.add_argument("--kf", default=kf_start_idx, type=int, nargs="?", help="index of kf vector's first column in kikf file")
+	args.add_argument("--wi", default=wi_idx, type=int, nargs="?", help="index of ki weight factor column in kikf file")
+	args.add_argument("--wf", default=wf_idx, type=int, nargs="?", help="index of kf weight factor column in kikf file")
+	args.add_argument("--w", default=w_idx, type=int, nargs="?", help="index of neutron weight factor column in QE file")
+	args.add_argument("--Q", default=Q_start_idx, type=int, nargs="?", help="index of Q vector's first column in QE file")
+	args.add_argument("--E", default=E_idx, type=int, nargs="?", help="index of E column in QE file")
+	args.add_argument("--kikf", action="store_true", help="use the kikf file type")
 	args.add_argument("--centreonQ", action="store_true", help="centre plots on mean Q")
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
 	args.add_argument("--noplot", action="store_true", help="don't show plot window")
@@ -290,6 +311,7 @@ if __name__ == "__main__":
 	plot_results = (argv.noplot==False)
 	plot_neutrons = (argv.noneutrons==False)
 	centre_on_Q = argv.centreonQ
+	use_kikf_file = argv.kikf
 
 	infile = argv.file
 	outfile = argv.save
@@ -299,7 +321,11 @@ if __name__ == "__main__":
 	wi_idx = argv.wi
 	wf_idx = argv.wf
 
-	[Q, E, w] = load_events(infile)
+	if use_kikf_file:
+		[Q, E, w] = load_events_kikf(infile)
+	else:
+		[Q, E, w] = load_events_QE(infile)
+
 
 	[Qres, Q4, Qmean] = calc_covar(Q, E, w)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
