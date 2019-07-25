@@ -15,7 +15,7 @@ plot_results = True	# show plot window
 plot_neutrons = True	# also plot neutron events
 centre_on_Q = False	# centre plots on Q or zero?
 ellipse_points = 128	# number of points to draw ellipses
-
+symsize = 0.25
 
 # column indices in kf,kf file
 ki_start_idx = 0	# start index of ki 3-vector
@@ -75,7 +75,7 @@ def load_events_QE(filename):
 #
 # calculates the covariance matrix of the (Q, E) 4-vectors
 #
-def calc_covar(Q, E, w):
+def calc_covar(Q, E, w, Qpara, Qperp):
 	# make a [Q, E] 4-vector
 	Q4 = np.insert(Q, 3, E, axis=1)
 
@@ -96,9 +96,15 @@ def calc_covar(Q, E, w):
 
 
 	# create a matrix to transform into the coordinate system with Q along x
-	Qnorm = Qmean[0:3] / la.norm(Qmean[0:3])
-	Qup = np.array([0, 1, 0])
-	Qside = np.cross(Qup, Qnorm)
+	# choose given coordinate system
+	if len(Qpara) == 3 and len(Qperp) == 3:
+		Qnorm = Qpara / la.norm(Qpara)
+		Qside = Qperp / la.norm(Qperp)
+		Qup = np.cross(Qnorm, Qside)
+	else:
+		Qnorm = Qmean[0:3] / la.norm(Qmean[0:3])
+		Qup = np.array([0, 1, 0])
+		Qside = np.cross(Qup, Qnorm)
 
 	# trafo matrix
 	T = np.transpose(np.array([
@@ -201,7 +207,7 @@ def calc_ellipses(Qres_Q):
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(file, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
 	import matplotlib.pyplot as plot
 
 	ellfkt = lambda rad, rot, phi, Qmean2d : \
@@ -227,33 +233,35 @@ def plot_ellipses(file, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms
 	ell_QzE = ellfkt(fwhms_QzE, rot_QzE, phi, QzE)
 	ell_QxQy = ellfkt(fwhms_QxQy, rot_QxQy, phi, QxQy)
 
+	thesymsize = symsize * w
+
 	fig = plot.figure()
 	subplot_QxE = fig.add_subplot(221)
 	subplot_QxE.set_xlabel("Qpara (1/A)")
 	subplot_QxE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=0.25)
+		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=thesymsize)
 	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black")
 
 	subplot_QyE = fig.add_subplot(222)
 	subplot_QyE.set_xlabel("Qperp (1/A)")
 	subplot_QyE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], s=0.25)
+		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], s=thesymsize)
 	subplot_QyE.plot(ell_QyE[0], ell_QyE[1], c="black")
 
 	subplot_QzE = fig.add_subplot(223)
 	subplot_QzE.set_xlabel("Qup (1/A)")
 	subplot_QzE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], s=0.25)
+		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], s=thesymsize)
 	subplot_QzE.plot(ell_QzE[0], ell_QzE[1], c="black")
 
 	subplot_QxQy = fig.add_subplot(224)
 	subplot_QxQy.set_xlabel("Qpara (1/A)")
 	subplot_QxQy.set_ylabel("Qperp (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=0.25)
+		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=thesymsize)
 	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black")
 	plot.tight_layout()
 
@@ -305,6 +313,13 @@ if __name__ == "__main__":
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
 	args.add_argument("--noplot", action="store_true", help="don't show plot window")
 	args.add_argument("--noneutrons", action="store_true", help="don't show mc neutrons in plot")
+	args.add_argument("--symsize", default=symsize, type=float, nargs="?", help="size of the mc neutron symbols")
+	args.add_argument("--ax", default=1., type=float, nargs="?", help="x component of first orientation vector")
+	args.add_argument("--ay", default=0., type=float, nargs="?", help="y component of first orientation vector")
+	args.add_argument("--az", default=0., type=float, nargs="?", help="z component of first orientation vector")
+	args.add_argument("--bx", default=0., type=float, nargs="?", help="x component of second orientation vector")
+	args.add_argument("--by", default=1., type=float, nargs="?", help="y component of second orientation vector")
+	args.add_argument("--bz", default=0., type=float, nargs="?", help="z component of second orientation vector")
 	argv = args.parse_args()
 
 	verbose = (argv.noverbose==False)
@@ -320,15 +335,24 @@ if __name__ == "__main__":
 	kf_start_idx = argv.kf
 	wi_idx = argv.wi
 	wf_idx = argv.wf
+	symsize = argv.symsize
+	ax = argv.ax
+	ay = argv.ay
+	az = argv.az
+	bx = argv.bx
+	by = argv.by
+	bz = argv.bz
 
 	if use_kikf_file:
 		[Q, E, w] = load_events_kikf(infile)
 	else:
 		[Q, E, w] = load_events_QE(infile)
 
+	Qpara = np.array([ax, ay, az])
+	Qperp = np.array([bx, by, bz])
 
-	[Qres, Q4, Qmean] = calc_covar(Q, E, w)
+	[Qres, Q4, Qmean] = calc_covar(Q, E, w, Qpara, Qperp)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
 
 	if plot_results or outfile!="":
-		plot_ellipses(outfile, Q4, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
+		plot_ellipses(outfile, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
