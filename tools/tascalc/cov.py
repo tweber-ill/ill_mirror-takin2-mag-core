@@ -191,9 +191,9 @@ def descr_ellipse(quadric):
 
 
 #
-# project along one axis of the ellipsoid
+# projects along one axis of the quadric
 #
-def proj_ellipse(_E, idx):
+def proj_quad(_E, idx):
 	E = np.delete(np.delete(_E, idx, axis=0), idx, axis=1)
 	if np.abs(_E[idx, idx]) < 1e-8:
 		return E
@@ -209,14 +209,19 @@ def proj_ellipse(_E, idx):
 # describes the ellipsoid by a principal axis trafo and by 2d cuts
 #
 def calc_ellipses(Qres_Q):
+	# 4d ellipsoid
+	[fwhms, angles, rot] = descr_ellipse(Qres_Q)
+
 	if verbose:
 		print("4d resolution ellipsoid diagonal elements fwhm (coherent-elastic scattering) lengths:\n%s\n" \
 			% (1./np.sqrt(np.diag(Qres_Q)) * sig2fwhm))
 
-	# 4d ellipsoid
-	[fwhms, angles, rot] = descr_ellipse(Qres_Q)
-	if verbose:
 		print("4d resolution ellipsoid principal axes fwhm lengths:\n%s\n" % fwhms)
+
+		Qres_proj = proj_quad(Qres_Q, 2)
+		Qres_proj = proj_quad(Qres_proj, 1)
+		Qres_proj = proj_quad(Qres_proj, 0)
+		print("Incoherent-elastic fwhm width: %s meV\n" % (1./np.sqrt(Qres_proj[0,0]) * sig2fwhm))
 
 
 	# 2d sliced ellipses
@@ -247,24 +252,24 @@ def calc_ellipses(Qres_Q):
 
 	# 2d projected ellipses
 	Qres_QxE_proj = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QxE_proj = proj_ellipse(Qres_QxE_proj, 1)
+	Qres_QxE_proj = proj_quad(Qres_QxE_proj, 1)
 	[fwhms_QxE_proj, angles_QxE_proj, rot_QxE_proj] = descr_ellipse(Qres_QxE_proj)
 	if verbose:
 		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxE_proj, angles_QxE_proj[0]))
 
 	Qres_QyE_proj = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QyE_proj = proj_ellipse(Qres_QyE_proj, 0)
+	Qres_QyE_proj = proj_quad(Qres_QyE_proj, 0)
 	[fwhms_QyE_proj, angles_QyE_proj, rot_QyE_proj] = descr_ellipse(Qres_QyE_proj)
 	if verbose:
 		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QyE_proj, angles_QyE_proj[0]))
 
 	Qres_QzE_proj = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
-	Qres_QzE_proj = proj_ellipse(Qres_QzE_proj, 0)
+	Qres_QzE_proj = proj_quad(Qres_QzE_proj, 0)
 	[fwhms_QzE_proj, angles_QzE_proj, rot_QzE_proj] = descr_ellipse(Qres_QzE_proj)
 	if verbose:
 		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QzE_proj, angles_QzE_proj[0]))
 
-	Qres_QxQy_proj = proj_ellipse(Qres_Q, 3)
+	Qres_QxQy_proj = proj_quad(Qres_Q, 3)
 	Qres_QxQy_proj = np.delete(np.delete(Qres_QxQy_proj, 2, axis=0), 2, axis=1)
 	[fwhms_QxQy_proj, angles_QxQy_proj, rot_QxQy_proj] = descr_ellipse(Qres_QxQy_proj)
 	if verbose:
@@ -310,15 +315,15 @@ def plot_ellipses(file, Q4, w, Qmean, \
 
 	phi = np.linspace(0, 2.*np.pi, ellipse_points)
 
-	ell_QxE = ellfkt(fwhms_QxE, rot_QxE, phi, QxE)
-	ell_QyE = ellfkt(fwhms_QyE, rot_QyE, phi, QyE)
-	ell_QzE = ellfkt(fwhms_QzE, rot_QzE, phi, QzE)
-	ell_QxQy = ellfkt(fwhms_QxQy, rot_QxQy, phi, QxQy)
+	ell_QxE = ellfkt(fwhms_QxE*0.5, rot_QxE, phi, QxE)
+	ell_QyE = ellfkt(fwhms_QyE*0.5, rot_QyE, phi, QyE)
+	ell_QzE = ellfkt(fwhms_QzE*0.5, rot_QzE, phi, QzE)
+	ell_QxQy = ellfkt(fwhms_QxQy*0.5, rot_QxQy, phi, QxQy)
 
-	ell_QxE_proj = ellfkt(fwhms_QxE_proj, rot_QxE_proj, phi, QxE)
-	ell_QyE_proj = ellfkt(fwhms_QyE_proj, rot_QyE_proj, phi, QyE)
-	ell_QzE_proj = ellfkt(fwhms_QzE_proj, rot_QzE_proj, phi, QzE)
-	ell_QxQy_proj = ellfkt(fwhms_QxQy_proj, rot_QxQy_proj, phi, QxQy)
+	ell_QxE_proj = ellfkt(fwhms_QxE_proj*0.5, rot_QxE_proj, phi, QxE)
+	ell_QyE_proj = ellfkt(fwhms_QyE_proj*0.5, rot_QyE_proj, phi, QyE)
+	ell_QzE_proj = ellfkt(fwhms_QzE_proj*0.5, rot_QzE_proj, phi, QzE)
+	ell_QxQy_proj = ellfkt(fwhms_QxQy_proj*0.5, rot_QxQy_proj, phi, QxQy)
 
 
 	thesymsize = symsize * w
@@ -355,7 +360,7 @@ def plot_ellipses(file, Q4, w, Qmean, \
 	# Qpara, Qperp axis
 	subplot_QxQy = fig.add_subplot(224)
 	subplot_QxQy.set_xlabel("Qpara (1/A)")
-	subplot_QxQy.set_ylabel("Qperp (meV)")
+	subplot_QxQy.set_ylabel("Qperp (1/A)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
 		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=thesymsize)
 	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black", linestyle="dashed")
