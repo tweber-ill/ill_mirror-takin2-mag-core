@@ -6,6 +6,7 @@
 # @license GPLv3, see 'LICENSE' file
 #
 
+import os
 import numpy as np
 import numpy.linalg as la
 
@@ -105,6 +106,8 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 		Qnorm = Qmean[0:3] / la.norm(Qmean[0:3])
 		Qup = np.array([0, 1, 0])
 		Qside = np.cross(Qup, Qnorm)
+
+	print("Qpara = %s\nQperp = %s\nQup = %s\n" % (Qnorm, Qside, Qup))
 
 	# trafo matrix
 	T = np.transpose(np.array([
@@ -208,6 +211,7 @@ def calc_ellipses(Qres_Q):
 # shows the 2d ellipses
 #
 def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy):
+	import mpl_toolkits.mplot3d as mplot3d
 	import matplotlib.pyplot as plot
 
 	ellfkt = lambda rad, rot, phi, Qmean2d : \
@@ -235,6 +239,8 @@ def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fw
 
 	thesymsize = symsize * w
 
+	
+	# Qpara, E axis
 	fig = plot.figure()
 	subplot_QxE = fig.add_subplot(221)
 	subplot_QxE.set_xlabel("Qpara (1/A)")
@@ -243,6 +249,7 @@ def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fw
 		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=thesymsize)
 	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black")
 
+	# Qperp, E axis
 	subplot_QyE = fig.add_subplot(222)
 	subplot_QyE.set_xlabel("Qperp (1/A)")
 	subplot_QyE.set_ylabel("E (meV)")
@@ -250,6 +257,7 @@ def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fw
 		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], s=thesymsize)
 	subplot_QyE.plot(ell_QyE[0], ell_QyE[1], c="black")
 
+	# Qup, E axis
 	subplot_QzE = fig.add_subplot(223)
 	subplot_QzE.set_xlabel("Qup (1/A)")
 	subplot_QzE.set_ylabel("E (meV)")
@@ -257,6 +265,7 @@ def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fw
 		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], s=thesymsize)
 	subplot_QzE.plot(ell_QzE[0], ell_QzE[1], c="black")
 
+	# Qpara, Qperp axis
 	subplot_QxQy = fig.add_subplot(224)
 	subplot_QxQy.set_xlabel("Qpara (1/A)")
 	subplot_QxQy.set_ylabel("Qperp (meV)")
@@ -265,10 +274,24 @@ def plot_ellipses(file, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fw
 	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black")
 	plot.tight_layout()
 
+
+	fig3d = plot.figure()
+	subplot3d = fig3d.add_subplot(111, projection="3d")
+	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], s=thesymsize)
+	subplot3d.set_xlabel("Qpara (1/A)")
+	subplot3d.set_ylabel("Qperp (1/A)")
+	subplot3d.set_zlabel("E (meV)")
+
+
 	if file != "":
+		splitext = os.path.splitext(file)
+		file3d = splitext[0] + "_3d" + splitext[1]
+
 		if verbose:
-			print("Saving plot to \"%s\"." % file)
-		plot.savefig(file)
+			print("Saving 2d plot to \"%s\"." % file)
+			print("Saving 3d plot to \"%s\"." % file3d)
+		fig.savefig(file)
+		fig3d.savefig(file3d)
 
 	if plot_results:
 		plot.show()
@@ -292,7 +315,7 @@ def check_versions():
 # main
 #
 if __name__ == "__main__":
-	print("This is a covariance matrix calculator using MC events, written by T. Weber <tweber@ill.fr>, 30 March 2019.\n")
+	print("This is a covariance matrix calculator using neutron events, written by T. Weber <tweber@ill.fr>, 30 March 2019.\n")
 	check_versions()
 
 	import argparse as arg
@@ -311,15 +334,15 @@ if __name__ == "__main__":
 	args.add_argument("--kikf", action="store_true", help="use the kikf file type")
 	args.add_argument("--centreonQ", action="store_true", help="centre plots on mean Q")
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
-	args.add_argument("--noplot", action="store_true", help="don't show plot window")
-	args.add_argument("--noneutrons", action="store_true", help="don't show mc neutrons in plot")
-	args.add_argument("--symsize", default=symsize, type=float, nargs="?", help="size of the mc neutron symbols")
-	args.add_argument("--ax", default=1., type=float, nargs="?", help="x component of first orientation vector")
-	args.add_argument("--ay", default=0., type=float, nargs="?", help="y component of first orientation vector")
-	args.add_argument("--az", default=0., type=float, nargs="?", help="z component of first orientation vector")
-	args.add_argument("--bx", default=0., type=float, nargs="?", help="x component of second orientation vector")
-	args.add_argument("--by", default=1., type=float, nargs="?", help="y component of second orientation vector")
-	args.add_argument("--bz", default=0., type=float, nargs="?", help="z component of second orientation vector")
+	args.add_argument("--noplot", action="store_true", help="don't show any plot windows")
+	args.add_argument("--noneutrons", action="store_true", help="don't show neutron events in plots")
+	args.add_argument("--symsize", default=symsize, type=float, nargs="?", help="size of the symbols in plots")
+	args.add_argument("--ax", default=None, type=float, nargs="?", help="x component of first orientation vector")
+	args.add_argument("--ay", default=None, type=float, nargs="?", help="y component of first orientation vector")
+	args.add_argument("--az", default=None, type=float, nargs="?", help="z component of first orientation vector")
+	args.add_argument("--bx", default=None, type=float, nargs="?", help="x component of second orientation vector")
+	args.add_argument("--by", default=None, type=float, nargs="?", help="y component of second orientation vector")
+	args.add_argument("--bz", default=None, type=float, nargs="?", help="z component of second orientation vector")
 	argv = args.parse_args()
 
 	verbose = (argv.noverbose==False)
@@ -336,23 +359,24 @@ if __name__ == "__main__":
 	wi_idx = argv.wi
 	wf_idx = argv.wf
 	symsize = argv.symsize
-	ax = argv.ax
-	ay = argv.ay
-	az = argv.az
-	bx = argv.bx
-	by = argv.by
-	bz = argv.bz
+	avec = [ argv.az, argv.ay, argv.az ]
+	bvec = [ argv.bx, argv.by, argv.bz ]
 
 	if use_kikf_file:
 		[Q, E, w] = load_events_kikf(infile)
 	else:
 		[Q, E, w] = load_events_QE(infile)
 
-	Qpara = np.array([ax, ay, az])
-	Qperp = np.array([bx, by, bz])
+	if avec[0]!=None and avec[1]!=None and avec[2]!=None and bvec[0]!=None and bvec[1]!=None and bvec[2]!=None:
+		Qpara = np.array(avec)
+		Qperp = np.array(bvec)
+	else:
+		Qpara = np.array([])
+		Qperp = np.array([])
 
 	[Qres, Q4, Qmean] = calc_covar(Q, E, w, Qpara, Qperp)
 	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy] = calc_ellipses(Qres)
 
 	if plot_results or outfile!="":
 		plot_ellipses(outfile, Q4, w, Qmean, fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy)
+
