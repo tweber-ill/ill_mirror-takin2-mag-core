@@ -368,12 +368,24 @@ def plot_ellipses(file, Q4, w, Qmean, \
 	plot.tight_layout()
 
 
+	# 3d plot
 	fig3d = plot.figure()
 	subplot3d = fig3d.add_subplot(111, projection="3d")
-	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], s=thesymsize)
+
 	subplot3d.set_xlabel("Qpara (1/A)")
 	subplot3d.set_ylabel("Qperp (1/A)")
 	subplot3d.set_zlabel("E (meV)")
+
+	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], s=thesymsize)
+	# xE
+	subplot3d.plot(ell_QxE[0], ell_QxE[1], zs=0., zdir="y", c="black", linestyle="dashed")
+	subplot3d.plot(ell_QxE_proj[0], ell_QxE_proj[1], zs=0., zdir="y", c="black")
+	# yE
+	subplot3d.plot(ell_QyE[0], ell_QyE[1], zs=0., zdir="x", c="black", linestyle="dashed")
+	subplot3d.plot(ell_QyE_proj[0], ell_QyE_proj[1], zs=0., zdir="x", c="black")
+	# xy
+	subplot3d.plot(ell_QxQy[0], ell_QxQy[1], zs=0., zdir="z", c="black", linestyle="dashed")
+	subplot3d.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], zs=0., zdir="z", c="black")
 
 
 	if file != "":
