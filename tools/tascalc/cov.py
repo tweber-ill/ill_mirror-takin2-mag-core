@@ -43,6 +43,28 @@ k2_to_E = 1./E_to_k2		# k^2 -> E
 
 
 #
+# normalises events and filters out too low probabilities
+#
+def filter_events(Q, E, w):
+	# normalise intensity/probability
+	w /= np.max(w)
+
+
+	# filter out too low probabilities
+	eps = 1e-4
+	beloweps = lambda d: np.abs(d) <= eps
+	nonzero_idx = [i for i in range(len(w)) if not beloweps(w[i])]
+
+	Q = Q[nonzero_idx]
+	E = E[nonzero_idx]
+	w = w[nonzero_idx]
+
+
+	return [Q, E, w]	
+
+
+
+#
 # loads a list of neutron events in the [ ki_vec, kf_vec, pos_vec, wi, wf ] format
 #
 def load_events_kikf(filename):
@@ -56,7 +78,7 @@ def load_events_kikf(filename):
 	Q = ki - kf
 	E = k2_to_E * (np.multiply(ki, ki).sum(1) - np.multiply(kf, kf).sum(1))
 
-	return [Q, E, w]
+	return filter_events(Q, E, w)
 
 
 
@@ -65,11 +87,12 @@ def load_events_kikf(filename):
 #
 def load_events_QE(filename):
 	dat = np.loadtxt(filename)
+
 	Q = dat[:, Q_start_idx:Q_start_idx+3]
 	E = dat[:, E_idx]
 	w = dat[:, w_idx]
 
-	return [Q, E, w]
+	return filter_events(Q, E, w)
 
 
 
