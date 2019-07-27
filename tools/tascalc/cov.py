@@ -60,7 +60,7 @@ def filter_events(Q, E, w):
 	w = w[nonzero_idx]
 
 
-	return [Q, E, w]	
+	return [Q, E, w]
 
 
 
@@ -214,14 +214,14 @@ def calc_ellipses(Qres_Q):
 
 	if verbose:
 		print("4d resolution ellipsoid diagonal elements fwhm (coherent-elastic scattering) lengths:\n%s\n" \
-			% (1./np.sqrt(np.diag(Qres_Q)) * sig2fwhm))
+			% (1./np.sqrt(np.abs(np.diag(Qres_Q))) * sig2fwhm))
 
 		print("4d resolution ellipsoid principal axes fwhm lengths:\n%s\n" % fwhms)
 
 		Qres_proj = proj_quad(Qres_Q, 2)
 		Qres_proj = proj_quad(Qres_proj, 1)
 		Qres_proj = proj_quad(Qres_proj, 0)
-		print("Incoherent-elastic fwhm width: %s meV\n" % (1./np.sqrt(Qres_proj[0,0]) * sig2fwhm))
+		print("Incoherent-elastic fwhm width: %s meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
 
 
 	# 2d sliced ellipses
@@ -274,7 +274,7 @@ def calc_ellipses(Qres_Q):
 	[fwhms_QxQy_proj, angles_QxQy_proj, rot_QxQy_proj] = descr_ellipse(Qres_QxQy_proj)
 	if verbose:
 		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxQy_proj, angles_QxQy_proj[0]))
-	
+
 
 
 	return [fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, \
