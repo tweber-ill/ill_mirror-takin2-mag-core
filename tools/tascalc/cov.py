@@ -11,6 +11,10 @@ import numpy as np
 import numpy.linalg as la
 
 
+np.set_printoptions(
+	floatmode = "fixed", 
+	precision = 4)
+
 verbose = True		# console outputs
 plot_results = True	# show plot window
 plot_neutrons = True	# also plot neutron events
@@ -230,25 +234,25 @@ def calc_ellipses(Qres_Q):
 	Qres_QxE = np.delete(np.delete(Qres_QxE, 1, axis=0), 1, axis=1)
 	[fwhms_QxE, angles_QxE, rot_QxE] = descr_ellipse(Qres_QxE)
 	if verbose:
-		print("2d Qx,E sliced ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxE, angles_QxE[0]))
+		print("2d Qx,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxE, angles_QxE[0]))
 
 	Qres_QyE = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
 	Qres_QyE = np.delete(np.delete(Qres_QyE, 0, axis=0), 0, axis=1)
 	[fwhms_QyE, angles_QyE, rot_QyE] = descr_ellipse(Qres_QyE)
 	if verbose:
-		print("2d Qy,E sliced ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QyE, angles_QyE[0]))
+		print("2d Qy,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QyE, angles_QyE[0]))
 
 	Qres_QzE = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
 	Qres_QzE = np.delete(np.delete(Qres_QzE, 0, axis=0), 0, axis=1)
 	[fwhms_QzE, angles_QzE, rot_QzE] = descr_ellipse(Qres_QzE)
 	if verbose:
-		print("2d Qz,E sliced ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QzE, angles_QzE[0]))
+		print("2d Qz,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QzE, angles_QzE[0]))
 
 	Qres_QxQy = np.delete(np.delete(Qres_Q, 3, axis=0), 3, axis=1)
 	Qres_QxQy = np.delete(np.delete(Qres_QxQy, 2, axis=0), 2, axis=1)
 	[fwhms_QxQy, angles_QxQy, rot_QxQy] = descr_ellipse(Qres_QxQy)
 	if verbose:
-		print("2d Qx,Qy sliced ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxQy, angles_QxQy[0]))
+		print("2d Qx,Qy sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxQy, angles_QxQy[0]))
 
 
 	# 2d projected ellipses
@@ -256,25 +260,25 @@ def calc_ellipses(Qres_Q):
 	Qres_QxE_proj = proj_quad(Qres_QxE_proj, 1)
 	[fwhms_QxE_proj, angles_QxE_proj, rot_QxE_proj] = descr_ellipse(Qres_QxE_proj)
 	if verbose:
-		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxE_proj, angles_QxE_proj[0]))
+		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxE_proj, angles_QxE_proj[0]))
 
 	Qres_QyE_proj = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
 	Qres_QyE_proj = proj_quad(Qres_QyE_proj, 0)
 	[fwhms_QyE_proj, angles_QyE_proj, rot_QyE_proj] = descr_ellipse(Qres_QyE_proj)
 	if verbose:
-		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QyE_proj, angles_QyE_proj[0]))
+		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QyE_proj, angles_QyE_proj[0]))
 
 	Qres_QzE_proj = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
 	Qres_QzE_proj = proj_quad(Qres_QzE_proj, 0)
 	[fwhms_QzE_proj, angles_QzE_proj, rot_QzE_proj] = descr_ellipse(Qres_QzE_proj)
 	if verbose:
-		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QzE_proj, angles_QzE_proj[0]))
+		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QzE_proj, angles_QzE_proj[0]))
 
 	Qres_QxQy_proj = proj_quad(Qres_Q, 3)
 	Qres_QxQy_proj = np.delete(np.delete(Qres_QxQy_proj, 2, axis=0), 2, axis=1)
 	[fwhms_QxQy_proj, angles_QxQy_proj, rot_QxQy_proj] = descr_ellipse(Qres_QxQy_proj)
 	if verbose:
-		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %f\n" % (fwhms_QxQy_proj, angles_QxQy_proj[0]))
+		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxQy_proj, angles_QxQy_proj[0]))
 
 
 
