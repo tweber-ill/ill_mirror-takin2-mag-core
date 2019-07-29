@@ -226,7 +226,7 @@ def calc_ellipses(Qres_Q):
 		Qres_proj = proj_quad(Qres_Q, 2)
 		Qres_proj = proj_quad(Qres_proj, 1)
 		Qres_proj = proj_quad(Qres_proj, 0)
-		print("Incoherent-elastic fwhm width: %s meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
+		print("Incoherent-elastic fwhm width: %.4f meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
 
 
 	# 2d sliced ellipses
