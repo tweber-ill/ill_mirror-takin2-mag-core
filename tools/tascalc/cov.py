@@ -17,6 +17,7 @@ plot_neutrons = True	# also plot neutron events
 centre_on_Q = False	# centre plots on Q or zero?
 ellipse_points = 128	# number of points to draw ellipses
 symsize = 0.25
+dpi = 600
 
 # column indices in kf,kf file
 ki_start_idx = 0	# start index of ki 3-vector
@@ -395,8 +396,8 @@ def plot_ellipses(file, Q4, w, Qmean, \
 		if verbose:
 			print("Saving 2d plot to \"%s\"." % file)
 			print("Saving 3d plot to \"%s\"." % file3d)
-		fig.savefig(file)
-		fig3d.savefig(file3d)
+		fig.savefig(file, dpi=dpi)
+		fig3d.savefig(file3d, dpi=dpi)
 
 	if plot_results:
 		plot.show()
@@ -448,6 +449,7 @@ if __name__ == "__main__":
 	args.add_argument("--bx", default=None, type=float, nargs="?", help="x component of second orientation vector")
 	args.add_argument("--by", default=None, type=float, nargs="?", help="y component of second orientation vector")
 	args.add_argument("--bz", default=None, type=float, nargs="?", help="z component of second orientation vector")
+	args.add_argument("--dpi", default=dpi, type=int, nargs="?", help="DPI of output plot file")
 	argv = args.parse_args()
 
 	verbose = (argv.noverbose==False)
@@ -455,6 +457,7 @@ if __name__ == "__main__":
 	plot_neutrons = (argv.noneutrons==False)
 	centre_on_Q = argv.centreonQ
 	use_kikf_file = argv.kikf
+	dpi = argv.dpi
 
 	infile = argv.file
 	outfile = argv.save
