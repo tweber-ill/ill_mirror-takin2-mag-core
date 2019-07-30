@@ -499,7 +499,7 @@ if __name__ == "__main__":
 
 		# convert rlu to 1/A 
 		if len(B) != 0:
-			Q = np.dot(Q, B)
+			Q = np.dot(Q, np.transpose(B))
 
 	if avec[0]!=None and avec[1]!=None and avec[2]!=None and bvec[0]!=None and bvec[1]!=None and bvec[2]!=None:
 		Qpara = np.array(avec)
