@@ -453,6 +453,12 @@ if __name__ == "__main__":
 	args.add_argument("--bx", default=None, type=float, nargs="?", help="x component of second orientation vector")
 	args.add_argument("--by", default=None, type=float, nargs="?", help="y component of second orientation vector")
 	args.add_argument("--bz", default=None, type=float, nargs="?", help="z component of second orientation vector")
+	args.add_argument("--a", "--as", "-a", default=None, type=float, nargs="?", help="lattice constant a (only needed in case data is in rlu)")
+	args.add_argument("--b", "--bs", "-b", default=None, type=float, nargs="?", help="lattice constant b (only needed in case data is in rlu)")
+	args.add_argument("--c", "--cs", "-c", default=None, type=float, nargs="?", help="lattice constant c (only needed in case data is in rlu)")
+	args.add_argument("--aa", "--alpha", default=90., type=float, nargs="?", help="lattice angle alpha (only needed in case data is in rlu)")
+	args.add_argument("--bb", "--beta", default=90., type=float, nargs="?", help="lattice angle beta (only needed in case data is in rlu)")
+	args.add_argument("--cc", "--gamma", default=90., type=float, nargs="?", help="lattice angle gamma (only needed in case data is in rlu)")
 	args.add_argument("--dpi", default=dpi, type=int, nargs="?", help="DPI of output plot file")
 	argv = args.parse_args()
 
@@ -462,6 +468,18 @@ if __name__ == "__main__":
 	centre_on_Q = argv.centreonQ
 	use_kikf_file = argv.kikf
 	dpi = argv.dpi
+
+	B = []
+	if argv.a!=None and argv.b!=None and argv.c!=None and argv.aa!=None and argv.bb!=None and argv.cc!=None:
+		lattice = np.array([ argv.a, argv.b, argv.c,  ])
+		angles = np.array([ argv.aa, argv.bb, argv.cc ]) / 180.*np.pi
+
+		import tascalc as tas
+		B = tas.get_B(lattice, angles)
+
+		if verbose:
+			print("Crystal B matrix:\n%s\n" % B)
+
 
 	infile = argv.file
 	outfile = argv.save
@@ -479,9 +497,18 @@ if __name__ == "__main__":
 	else:
 		[Q, E, w] = load_events_QE(infile)
 
+		# convert rlu to 1/A 
+		if len(B) != 0:
+			Q = np.dot(Q, B)
+
 	if avec[0]!=None and avec[1]!=None and avec[2]!=None and bvec[0]!=None and bvec[1]!=None and bvec[2]!=None:
 		Qpara = np.array(avec)
 		Qperp = np.array(bvec)
+
+		# convert rlu to 1/A 
+		if len(B) != 0:
+			Qpara = np.dot(B, Qpara)
+			Qperp = np.dot(B, Qperp)
 	else:
 		Qpara = np.array([])
 		Qperp = np.array([])
