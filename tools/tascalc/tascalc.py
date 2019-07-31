@@ -79,7 +79,7 @@ if use_scipy:
 else:
 	E_to_k2 = 0.482596406464	# calculated with scipy, using the formula above
 
-#print(1./E_to_k2)
+k2_to_E = 1./E_to_k2
 # -----------------------------------------------------------------------------
 
 

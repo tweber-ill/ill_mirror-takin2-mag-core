@@ -9,25 +9,26 @@
 import os
 import numpy as np
 import numpy.linalg as la
+import tascalc as tas
 
 
 np.set_printoptions(
 	floatmode = "fixed", 
 	precision = 4)
 
-verbose = True		# console outputs
-plot_results = True	# show plot window
+verbose = True			# console outputs
+plot_results = True		# show plot window
 plot_neutrons = True	# also plot neutron events
-centre_on_Q = False	# centre plots on Q or zero?
+centre_on_Q = False		# centre plots on Q or zero?
 ellipse_points = 128	# number of points to draw ellipses
-symsize = 0.25
+symsize = 32.
 dpi = 600
 
 # column indices in kf,kf file
 ki_start_idx = 0	# start index of ki 3-vector
 kf_start_idx = 3	# start index of kf 3-vector
-wi_idx = 9		# start index of ki weight factor
-wf_idx = 10		# start index of kf weight factor
+wi_idx = 9			# start index of ki weight factor
+wf_idx = 10			# start index of kf weight factor
 
 # column indices in Q,E file
 Q_start_idx = 0
@@ -38,13 +39,6 @@ w_idx = 4
 # constants
 sig2hwhm = np.sqrt(2. * np.log(2.))
 sig2fwhm = 2.*sig2hwhm
-
-#import scipy.constants as co
-#hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
-#E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
-E_to_k2 = 0.482596406464	# E -> k^2, calculated with scipy, using the code above
-k2_to_E = 1./E_to_k2		# k^2 -> E
-
 
 
 #
@@ -81,7 +75,7 @@ def load_events_kikf(filename):
 
 	w = wi * wf
 	Q = ki - kf
-	E = k2_to_E * (np.multiply(ki, ki).sum(1) - np.multiply(kf, kf).sum(1))
+	E = tas.k2_to_E * (np.multiply(ki, ki).sum(1) - np.multiply(kf, kf).sum(1))
 
 	return filter_events(Q, E, w)
 
@@ -332,6 +326,7 @@ def plot_ellipses(file, Q4, w, Qmean, \
 
 
 	thesymsize = symsize * w
+	themarker = "."
 
 
 	# Qpara, E axis
@@ -340,36 +335,36 @@ def plot_ellipses(file, Q4, w, Qmean, \
 	subplot_QxE.set_xlabel("Qpara (1/A)")
 	subplot_QxE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], s=thesymsize)
+		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], marker=themarker, s=thesymsize)
 	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black", linestyle="dashed")
-	subplot_QxE.plot(ell_QxE_proj[0], ell_QxE_proj[1], c="black")
+	subplot_QxE.plot(ell_QxE_proj[0], ell_QxE_proj[1], c="black", linestyle="solid")
 
 	# Qperp, E axis
 	subplot_QyE = fig.add_subplot(222)
 	subplot_QyE.set_xlabel("Qperp (1/A)")
 	subplot_QyE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], s=thesymsize)
+		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], marker=themarker, s=thesymsize)
 	subplot_QyE.plot(ell_QyE[0], ell_QyE[1], c="black", linestyle="dashed")
-	subplot_QyE.plot(ell_QyE_proj[0], ell_QyE_proj[1], c="black")
+	subplot_QyE.plot(ell_QyE_proj[0], ell_QyE_proj[1], c="black", linestyle="solid")
 
 	# Qup, E axis
 	subplot_QzE = fig.add_subplot(223)
 	subplot_QzE.set_xlabel("Qup (1/A)")
 	subplot_QzE.set_ylabel("E (meV)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], s=thesymsize)
+		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], marker=themarker, s=thesymsize)
 	subplot_QzE.plot(ell_QzE[0], ell_QzE[1], c="black", linestyle="dashed")
-	subplot_QzE.plot(ell_QzE_proj[0], ell_QzE_proj[1], c="black")
+	subplot_QzE.plot(ell_QzE_proj[0], ell_QzE_proj[1], c="black", linestyle="solid")
 
 	# Qpara, Qperp axis
 	subplot_QxQy = fig.add_subplot(224)
 	subplot_QxQy.set_xlabel("Qpara (1/A)")
 	subplot_QxQy.set_ylabel("Qperp (1/A)")
 	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], s=thesymsize)
+		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], marker=themarker, s=thesymsize)
 	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black", linestyle="dashed")
-	subplot_QxQy.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], c="black")
+	subplot_QxQy.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], c="black", linestyle="solid")
 	plot.tight_layout()
 
 
@@ -381,16 +376,16 @@ def plot_ellipses(file, Q4, w, Qmean, \
 	subplot3d.set_ylabel("Qperp (1/A)")
 	subplot3d.set_zlabel("E (meV)")
 
-	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], s=thesymsize)
+	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], marker=themarker, s=thesymsize)
 	# xE
 	subplot3d.plot(ell_QxE[0], ell_QxE[1], zs=0., zdir="y", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QxE_proj[0], ell_QxE_proj[1], zs=0., zdir="y", c="black")
+	subplot3d.plot(ell_QxE_proj[0], ell_QxE_proj[1], zs=0., zdir="y", c="black", linestyle="solid")
 	# yE
 	subplot3d.plot(ell_QyE[0], ell_QyE[1], zs=0., zdir="x", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QyE_proj[0], ell_QyE_proj[1], zs=0., zdir="x", c="black")
+	subplot3d.plot(ell_QyE_proj[0], ell_QyE_proj[1], zs=0., zdir="x", c="black", linestyle="solid")
 	# xy
 	subplot3d.plot(ell_QxQy[0], ell_QxQy[1], zs=0., zdir="z", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], zs=0., zdir="z", c="black")
+	subplot3d.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], zs=0., zdir="z", c="black", linestyle="solid")
 
 
 	if file != "":
@@ -474,7 +469,6 @@ if __name__ == "__main__":
 		lattice = np.array([ argv.a, argv.b, argv.c,  ])
 		angles = np.array([ argv.aa, argv.bb, argv.cc ]) / 180.*np.pi
 
-		import tascalc as tas
 		B = tas.get_B(lattice, angles)
 
 		if verbose:
