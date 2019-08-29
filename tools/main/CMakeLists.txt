@@ -73,7 +73,7 @@ include_directories(
 )
 
 
-add_executable(maintool
+add_executable(magtool
 	main.cpp mainwnd.cpp mainwnd.h
 	filebrowser.cpp filebrowser.h
 	workspace.cpp workspace.h
@@ -94,7 +94,7 @@ add_executable(maintool
 )
 
 
-target_link_libraries(maintool
+target_link_libraries(magtool
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	-ldl

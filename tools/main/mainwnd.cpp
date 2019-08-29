@@ -35,7 +35,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// the command line widget has to be accessible globally for error output
 	g_pCLI = m_pCLI;
 
-	this->setObjectName("in20");
+	this->setObjectName("magtool");
 	SetCurrentFile("");
 	LoadPlugins();
 
@@ -217,7 +217,7 @@ void MainWnd::OpenFile()
 {
 	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open File", dirLast, "IN20 Files (*.in20 *.IN20)");
+	QString filename = QFileDialog::getOpenFileName(this, "Open File", dirLast, "Magtool Files (*.mag *.MAG)");
 	if(filename=="" || !QFile::exists(filename))
 		return;
 
@@ -245,7 +245,7 @@ void MainWnd::SaveFileAs()
 {
 	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
-	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "IN20 Files (*.in20 *.IN20)");
+	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Magtool Files (*.mag *.MAG)");
 	if(filename=="")
 		return;
 
@@ -259,7 +259,7 @@ void MainWnd::SaveFileAs()
  */
 bool MainWnd::OpenFile(const QString &file)
 {
-	static const std::string basename = "in20/";
+	static const std::string basename = "mag/";
 
 	if(file=="" || !QFile::exists(file))
 		return false;
@@ -302,7 +302,7 @@ bool MainWnd::OpenFile(const QString &file)
  */
 bool MainWnd::SaveFile(const QString &file)
 {
-	static const std::string basename = "in20/";
+	static const std::string basename = "mag/";
 
 	if(file=="")
 		return false;
@@ -389,7 +389,7 @@ void MainWnd::RebuildRecentFiles()
  */
 void MainWnd::SetCurrentFile(const QString &file)
 {
-	static const QString title("IN20 Tool");
+	static const QString title("Magtool");
 	m_curFile = file;
 
 	if(m_curFile == "")
