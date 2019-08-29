@@ -6,19 +6,30 @@
  */
 
 #include "plot.h"
+
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
 
 
 using t_real = t_real_dat;
 
 
-Plotter::Plotter(QWidget *parent) : QWidget(parent)
+Plotter::Plotter(QWidget *parent, QSettings* pSettings) : QWidget(parent), m_pSettings(pSettings)
 {
 	auto *pGrid = new QGridLayout(this);
 	pGrid->setHorizontalSpacing(4);
 	pGrid->setVerticalSpacing(4);
 	pGrid->setContentsMargins(0,0,0,0);
 	pGrid->addWidget(m_pPlotter, 0, 0, 1, 1);
+
+	m_pPlotContextMenu->setTitle("Plot");
+	m_pPlotContextMenu->addAction("Export to Gnuplot...", this, &Plotter::SaveGpl);
+	m_pPlotContextMenu->addAction("Save as PDF...", this, &Plotter::SavePDF);
+
+	m_pPlotter->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(m_pPlotter, &QCustomPlot::customContextMenuRequested, this, &Plotter::ShowPlotContextMenu);
+
 }
 
 
@@ -28,9 +39,75 @@ Plotter::~Plotter()
 }
 
 
+/**
+ * show the context menu for the plotter
+ */
+void Plotter::ShowPlotContextMenu(const QPoint& pt)
+{
+	auto ptGlob = m_pPlotter->mapToGlobal(pt);
+	ptGlob.setY(ptGlob.y() + 8);
+	m_pPlotContextMenu->popup(ptGlob);
+}
+
+
+/**
+ * save plot as PDF file
+ */
+void Plotter::SavePDF()
+{
+	QString dirLast = "";
+	if(m_pSettings)
+		m_pSettings->value("dir_pdf", "").toString();
+
+	QString file = QFileDialog::getSaveFileName(this, "Save as PDF", dirLast, "PDF Files (*.pdf *.PDF)");
+	if(file=="")
+		return;
+
+	if(!m_pPlotter->savePdf(file))
+	{
+		QMessageBox::critical(this, "PDF Export", "Could not save PDF file.");
+		return;
+	}
+
+	if(m_pSettings)
+		m_pSettings->setValue("dir_pdf", QFileInfo(file).path());
+}
+
+
+/**
+ * export plot to Gnuplot
+ */
+void Plotter::SaveGpl()
+{
+	if(!m_pdataset)
+	{
+		QMessageBox::critical(this, "Gnuplot Export", "No dataset associated to plot.");
+		return;
+	}
+
+	QString dirLast = "";
+	if(m_pSettings)
+		m_pSettings->value("dir_gpl", "").toString();
+
+	QString file = QFileDialog::getSaveFileName(this, "Export to Gnuplot", dirLast, "Gnuplot Files (*.gpl *.GPL)");
+	if(file=="")
+		return;
+
+	if(!m_pdataset->SaveGpl(file.toStdString()))
+	{
+		QMessageBox::critical(this, "Gnuplot Export", "Could not save Gnuplot file.");
+		return;
+	}
+
+	if(m_pSettings)
+		m_pSettings->setValue("dir_gpl", QFileInfo(file).path());
+}
+
+
 void Plotter::Clear()
 {
 	m_pPlotter->clearGraphs();
+	m_pdataset = nullptr;
 }
 
 
@@ -44,6 +121,7 @@ void Plotter::Plot(const Dataset &dataset)
 	};
 
 	Clear();
+	m_pdataset = &dataset;
 
 	t_real xmin = std::numeric_limits<t_real>::max();
 	t_real xmax = -xmin;
@@ -127,8 +205,8 @@ void Plotter::Plot(const Dataset &dataset)
 // ----------------------------------------------------------------------------
 // dock
 
-PlotterDock::PlotterDock(QWidget* pParent)
-	: QDockWidget(pParent), m_pPlot(std::make_unique<Plotter>(this))
+PlotterDock::PlotterDock(QWidget* pParent, QSettings* pSettings)
+	: QDockWidget(pParent), m_pPlot(std::make_unique<Plotter>(this, pSettings))
 {
 	this->setObjectName("plotter");
 	this->setWindowTitle("Current Plot");

@@ -142,6 +142,9 @@ public:
 public:
 	Dataset norm(std::size_t mon = 0) const;
 
+	// export to gnuplot
+	bool SaveGpl(const std::string& file) const;
+
 
 	// binary operators
 	friend Dataset operator +(const Dataset& dat1, const Dataset& dat2);

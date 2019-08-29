@@ -30,7 +30,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	m_pBrowser(new FileBrowser(this, pSettings)),
 	m_pWS(new WorkSpace(this, pSettings)),
 	m_pCLI(new CommandLine(this, pSettings)),
-	m_pCurPlot(new PlotterDock(this))
+	m_pCurPlot(new PlotterDock(this, pSettings))
 {
 	// the command line widget has to be accessible globally for error output
 	g_pCLI = m_pCLI;

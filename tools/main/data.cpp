@@ -603,4 +603,76 @@ Dataset Dataset::norm(std::size_t mon) const
 
 	return dataset;
 }
+
+
+
+/**
+ * export data to gnuplot
+ */
+bool Dataset::SaveGpl(const std::string& file) const
+{
+	std::ofstream ofstr(file);
+	if(!ofstr)
+		return false;
+	ofstr.precision(8);
+
+	std::size_t N = GetNumChannels();
+	for(std::size_t ch=0; ch<N; ++ch)
+	{
+		const Data& dat = GetChannel(ch);
+		std::size_t Nx = dat.GetNumAxes();
+		std::size_t Nc = dat.GetNumCounters();
+		std::size_t Nm = dat.GetNumMonitors();
+
+		// channel empty ?
+		if(Nx == 0) continue;
+
+
+		// has to be the same for all columns
+		std::size_t rows = dat.GetCounter(0).size();
+
+		ofstr << "$dat_" << ch << " << ENDDATA\n";
+
+		for(std::size_t iRow = 0; iRow < rows; ++iRow)
+		{
+			// iterate all x axes
+			for(std::size_t iX = 0; iX < Nx; ++iX)
+			{
+				const auto& vec = dat.GetAxis(iX);
+
+				for(auto d : vec)
+					ofstr << d << "\t";
+			}
+
+
+			// iterate all counters
+			for(std::size_t iC = 0; iC < Nc; ++iC)
+			{
+				const auto& vec = dat.GetCounter(iC);
+				const auto& vecErr = dat.GetCounterErrors(iC);
+
+				for(std::size_t iVec = 0; iVec<vec.size(); ++iVec)
+					ofstr << vec[iVec] << "\t" << vecErr[iVec] << "\t";
+			}
+
+
+			// iterate all monitors
+			for(std::size_t iM = 0; iM < Nm; ++iM)
+			{
+				const auto& vec = dat.GetMonitor(iM);
+				const auto& vecErr = dat.GetMonitorErrors(iM);
+
+				for(std::size_t iVec = 0; iVec<vec.size(); ++iVec)
+					ofstr << vec[iVec] << "\t" << vecErr[iVec] << "\t";
+			}
+
+
+			ofstr << "\n";
+		}
+
+		ofstr << "ENDDATA\n";
+	}
+
+	return true;
+}
 // ----------------------------------------------------------------------------

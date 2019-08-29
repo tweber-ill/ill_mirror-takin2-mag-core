@@ -5,7 +5,7 @@
 #
 
 cmake_minimum_required(VERSION 3.0)
-project(in20tools)
+project(maintool)
 
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
@@ -73,13 +73,14 @@ include_directories(
 )
 
 
-add_executable(in20
+add_executable(maintool
 	main.cpp mainwnd.cpp mainwnd.h
 	filebrowser.cpp filebrowser.h
 	workspace.cpp workspace.h
 	data.cpp data.h plot.cpp plot.h
 	command.cpp command.h
 	globals.cpp globals.h
+	hacks.cpp hacks.h
 
 	${BISON_cliparser_OUTPUT_SOURCE} ${BISON_cliparser_OUTPUT_HEADER}
 	${FLEX_clilexer_OUTPUTS} ${FLEX_clilexer_OUTPUT_HEADER}
@@ -93,7 +94,7 @@ add_executable(in20
 )
 
 
-target_link_libraries(in20
+target_link_libraries(maintool
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	-ldl
