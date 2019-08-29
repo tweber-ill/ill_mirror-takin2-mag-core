@@ -4,6 +4,7 @@
 # @license see 'LICENSE' file
 #
 
+project(magtools)
 cmake_minimum_required(VERSION 3.0)
 
 
@@ -23,4 +24,4 @@ add_subdirectory(tools/pol)
 
 
 # (former) main tool
-# add_subdirectory(tools/main)
+#add_subdirectory(tools/main)

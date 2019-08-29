@@ -22,6 +22,7 @@ add_definitions(-std=c++17)
 
 # -----------------------------------------------------------------------------
 # Boost
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
 find_package(Boost REQUIRED COMPONENTS system filesystem iostreams REQUIRED)
 add_definitions(${Boost_CXX_FLAGS})
 
