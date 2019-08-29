@@ -141,6 +141,7 @@ public:
 
 public:
 	Dataset norm(std::size_t mon = 0) const;
+	void clear();
 
 	// export to gnuplot
 	bool SaveGpl(const std::string& file) const;

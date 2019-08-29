@@ -79,12 +79,6 @@ void Plotter::SavePDF()
  */
 void Plotter::SaveGpl()
 {
-	if(!m_pdataset)
-	{
-		QMessageBox::critical(this, "Gnuplot Export", "No dataset associated to plot.");
-		return;
-	}
-
 	QString dirLast = "";
 	if(m_pSettings)
 		m_pSettings->value("dir_gpl", "").toString();
@@ -93,7 +87,7 @@ void Plotter::SaveGpl()
 	if(file=="")
 		return;
 
-	if(!m_pdataset->SaveGpl(file.toStdString()))
+	if(!m_dataset.SaveGpl(file.toStdString()))
 	{
 		QMessageBox::critical(this, "Gnuplot Export", "Could not save Gnuplot file.");
 		return;
@@ -107,7 +101,7 @@ void Plotter::SaveGpl()
 void Plotter::Clear()
 {
 	m_pPlotter->clearGraphs();
-	m_pdataset = nullptr;
+	m_dataset.clear();
 }
 
 
@@ -121,7 +115,7 @@ void Plotter::Plot(const Dataset &dataset)
 	};
 
 	Clear();
-	m_pdataset = &dataset;
+	m_dataset = dataset;
 
 	t_real xmin = std::numeric_limits<t_real>::max();
 	t_real xmax = -xmin;

@@ -23,5 +23,5 @@ add_subdirectory(tools/cif2xml)
 add_subdirectory(tools/pol)
 
 
-# (former) main tool
+# main GUI tool
 add_subdirectory(tools/main)

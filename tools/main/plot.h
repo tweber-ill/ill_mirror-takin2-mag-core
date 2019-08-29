@@ -26,8 +26,8 @@ private:
 	QCustomPlot *m_pPlotter = new QCustomPlot(this);
 	QMenu *m_pPlotContextMenu = new QMenu(m_pPlotter);
 
-	// current dataset
-	const Dataset* m_pdataset = nullptr;
+	// copy of current dataset
+	Dataset m_dataset;
 
 public:
 	Plotter(QWidget *parent, QSettings* = nullptr);

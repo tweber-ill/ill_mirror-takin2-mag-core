@@ -606,6 +606,12 @@ Dataset Dataset::norm(std::size_t mon) const
 
 
 
+void Dataset::clear()
+{
+	m_data.clear();
+}
+
+
 /**
  * export data to gnuplot
  */
@@ -614,15 +620,33 @@ bool Dataset::SaveGpl(const std::string& file) const
 	std::ofstream ofstr(file);
 	if(!ofstr)
 		return false;
-	ofstr.precision(8);
+
+	std::size_t iPrec = 8;
+	ofstr.precision(iPrec);
+
+
+	// colors
+	ofstr << "col_0 = \"#ff0000\"\n";
+	ofstr << "col_1 = \"#0000ff\"\n";
+	ofstr << "col_2 = \"#009900\"\n";
+	ofstr << "col_3 = \"#000000\"\n\n\n";
+
+	const std::string cols[] = { "col_0", "col_1", "col_2", "col_3" };
+	const std::size_t iNumCols = sizeof(cols) / sizeof(*cols);
+	
+	const int pts[] = {7, 5, 9, 11, 13};
+	const std::size_t iNumPts = sizeof(pts) / sizeof(*pts);
+
+
+	std::string xlabel = "x";
 
 	std::size_t N = GetNumChannels();
 	for(std::size_t ch=0; ch<N; ++ch)
 	{
 		const Data& dat = GetChannel(ch);
-		std::size_t Nx = dat.GetNumAxes();
-		std::size_t Nc = dat.GetNumCounters();
-		std::size_t Nm = dat.GetNumMonitors();
+		const std::size_t Nx = dat.GetNumAxes();
+		const std::size_t Nc = dat.GetNumCounters();
+		const std::size_t Nm = dat.GetNumMonitors();
 
 		// channel empty ?
 		if(Nx == 0) continue;
@@ -631,17 +655,38 @@ bool Dataset::SaveGpl(const std::string& file) const
 		// has to be the same for all columns
 		std::size_t rows = dat.GetCounter(0).size();
 
+		// take overall x label from first channel
+		if(xlabel == "" && Nx >= 1)
+			xlabel = dat.GetAxisName(0);
+
 		ofstr << "$dat_" << ch << " << ENDDATA\n";
 
+		// iterate all x axis names
+		ofstr << "# ";
+		for(std::size_t iX = 0; iX < Nx; ++iX)
+			ofstr << std::setw(iX==0 ? iPrec*1.5 - 2 : iPrec*1.5) << std::left << dat.GetAxisName(iX) << " ";
+
+		// iterate all counter names
+		for(std::size_t iC = 0; iC < Nc; ++iC)
+			ofstr << std::setw(iPrec*1.5) << std::left << "counter " << " "
+				<< std::setw(iPrec*1.5) << std::left << "error" << " ";
+
+		// iterate all monitors names
+		for(std::size_t iM = 0; iM < Nm; ++iM)
+			ofstr << std::setw(iPrec*1.5) << std::left << "monitor " << " "
+				<< std::setw(iPrec*1.5) << std::left << "error" << " ";
+
+		ofstr << "\n";
+
+
+		// iterate data rows
 		for(std::size_t iRow = 0; iRow < rows; ++iRow)
 		{
 			// iterate all x axes
 			for(std::size_t iX = 0; iX < Nx; ++iX)
 			{
 				const auto& vec = dat.GetAxis(iX);
-
-				for(auto d : vec)
-					ofstr << d << "\t";
+				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " ";
 			}
 
 
@@ -651,8 +696,8 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetCounter(iC);
 				const auto& vecErr = dat.GetCounterErrors(iC);
 
-				for(std::size_t iVec = 0; iVec<vec.size(); ++iVec)
-					ofstr << vec[iVec] << "\t" << vecErr[iVec] << "\t";
+				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " " 
+					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow] << " ";
 			}
 
 
@@ -662,15 +707,35 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetMonitor(iM);
 				const auto& vecErr = dat.GetMonitorErrors(iM);
 
-				for(std::size_t iVec = 0; iVec<vec.size(); ++iVec)
-					ofstr << vec[iVec] << "\t" << vecErr[iVec] << "\t";
+				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " " 
+					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow];
 			}
 
 
 			ofstr << "\n";
 		}
 
-		ofstr << "ENDDATA\n";
+		ofstr << "ENDDATA\n\n";
+	}
+
+
+	ofstr << "\nset xlabel \"" << xlabel << "\"\n";
+	ofstr << "set ylabel \"Counts\"\n\n";
+
+	ofstr << "\nplot \\\n";
+	for(std::size_t ch=0; ch<N; ++ch)
+	{
+		const Data& dat = GetChannel(ch);
+		const std::size_t Nx = dat.GetNumAxes();
+		const std::size_t idx_x = 1;
+		const std::size_t idx_y = Nx+1;
+		const std::size_t idx_yerr = idx_y+1;
+
+		ofstr << "\t$dat_" << ch << " u ($" << idx_x << "):($" << idx_y << "):($" << idx_yerr << ")"
+			<< " w yerrorbars pt " << pts[ch % iNumPts] 
+			<< " ps 1 lw 1.5 lc rgb " << cols[ch % iNumCols]
+			<< " title \"Channel " << (ch+1) << "\""
+			<< (ch == N-1 ? "\n" : ", \\\n");
 	}
 
 	return true;
