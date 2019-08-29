@@ -638,7 +638,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 	const std::size_t iNumPts = sizeof(pts) / sizeof(*pts);
 
 
-	std::string xlabel = "x";
+	std::string xlabel = "";
 
 	std::size_t N = GetNumChannels();
 	for(std::size_t ch=0; ch<N; ++ch)
