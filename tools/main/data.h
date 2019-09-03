@@ -86,7 +86,7 @@ public:
 
 		if(name != "")
 			m_x_names.push_back(name);
-		else
+		else if(m_x_names.size() < m_x.size())
 			m_x_names.push_back("ax" + std::to_string(GetNumAxes()));
 	}
 	void AddAxis(std::vector<t_real_dat> &&dat, const std::string &name="")
@@ -95,7 +95,7 @@ public:
 
 		if(name != "")
 			m_x_names.push_back(name);
-		else
+		else if(m_x_names.size() < m_x.size())
 			m_x_names.push_back("ax" + std::to_string(GetNumAxes()));
 	}
 
@@ -165,6 +165,7 @@ public:
 	// different ways of uniting data sets
 	static Dataset add_pointwise(const Dataset& dat1, const Dataset& dat2);
 	static Dataset append(const Dataset& dat1, const Dataset& dat2);
+	static Dataset append_channels(const Dataset& dat1, const Dataset& dat2);
 
 	static std::tuple<bool, Dataset> convert_instr_file(const char* pcFile);
 };

@@ -508,6 +508,47 @@ std::shared_ptr<Symbol> func_append(CliParserContext & ctx, const std::vector<st
 
 
 /**
+ * append datasets as the channels of a new dataset
+ */
+std::shared_ptr<Symbol> func_append_channels(CliParserContext & ctx, const std::vector<std::shared_ptr<Symbol>>& args)
+{
+	if(args.size() == 0)
+	{
+		ctx.PrintError("No arguments given.");
+		return nullptr;
+	}
+
+
+	// append datasets
+	if(args[0]->GetType() == SymbolType::DATASET)
+	{
+		// first dataset
+		Dataset datret = dynamic_cast<const SymbolDataset&>(*args[0]).GetValue();
+
+		for(std::size_t idx=1; idx<args.size(); ++idx)
+		{
+			if(args[idx]->GetType() != SymbolType::DATASET)
+			{
+				ctx.PrintError("Mismatching argument types. Expected data sets.");
+				return nullptr;
+			}
+
+			const auto& dat = dynamic_cast<const SymbolDataset&>(*args[idx]).GetValue();
+			datret = Dataset::append_channels(datret, dat);
+		}
+
+		return std::make_shared<SymbolDataset>(datret);
+	}
+
+
+	// otherwise fail
+	ctx.PrintError("Invalid argument type for append operation: ", Symbol::get_type_name(*args[0]), ".");
+	return nullptr;
+}
+
+
+
+/**
  * point-wise addition of arrays or datasets
  */
 std::shared_ptr<Symbol> func_add_pointwise(CliParserContext & ctx, const std::vector<std::shared_ptr<Symbol>>& args)
@@ -703,6 +744,7 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 	(CliParserContext&, const std::vector<std::shared_ptr<Symbol>>&), std::string>> g_funcs_gen_vararg = 
 {
 	std::make_pair("append", std::make_tuple(&func_append, "appends two or more data sets")),
+	std::make_pair("append_channels", std::make_tuple(&func_append_channels, "appends two or more data set as individual channels")),
 	std::make_pair("add_pointwise", std::make_tuple(&func_add_pointwise, "pointwise addition of two or more data sets")),
 };
 

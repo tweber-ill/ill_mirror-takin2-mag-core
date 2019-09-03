@@ -31,7 +31,7 @@ real 	(([0-9]+\.?[0-9]*)|(\.[0-9]+))
 	return yy::CliParser::make_TOK_STRING(str);
 }
 
-[A-Za-z_]+[A-Za-z0-9]* {
+[A-Za-z_]+[A-Za-z0-9_]* {
 	return yy::CliParser::make_TOK_IDENT(yytext);
 }
 

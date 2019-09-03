@@ -228,21 +228,22 @@ Data Data::append(const Data& dat1, const Data& dat2)
 	Data datret = dat1;
 
 	// append x axes
-	for(std::size_t xidx=0; xidx<dat1.m_x_names.size(); ++xidx)
+	for(std::size_t xidx=0; xidx<std::min(dat1.m_x_names.size(), dat1.m_x.size()); ++xidx)
 	{
+		//std::cout << "Appending column " << dat1.m_x_names[xidx] << std::endl;
+
 		// find matching axis
-		auto iter = std::find(dat2.m_x_names.begin(), dat2.m_x_names.end(), dat1.m_x_names[xidx]);
-		if(iter == dat2.m_x_names.end())
+		auto iter2 = std::find(dat2.m_x_names.begin(), dat2.m_x_names.end(), dat1.m_x_names[xidx]);
+		if(iter2 == dat2.m_x_names.end())
 		{
 			print_err("Column \"", dat1.m_x_names[xidx], "\" was not found in all data sets. Ignoring.");
 			continue;
 		}
 
 		// insert data
-		std::size_t xidx2 = iter - dat2.m_x_names.begin();
+		std::size_t xidx2 = iter2 - dat2.m_x_names.begin();
 		datret.m_x[xidx].insert(datret.m_x[xidx].end(), dat2.m_x[xidx2].begin(), dat2.m_x[xidx2].end());
 	}
-
 
 	// append counters, monitors, and their errors
 	for(std::size_t yidx=0; yidx<dat1.m_counts.size(); ++yidx)
@@ -253,7 +254,6 @@ Data Data::append(const Data& dat1, const Data& dat2)
 		datret.m_monitors[yidx].insert(datret.m_monitors[yidx].end(), dat2.m_monitors[yidx].begin(), dat2.m_monitors[yidx].end());
 	for(std::size_t yidx=0; yidx<dat1.m_counts_err.size(); ++yidx)
 		datret.m_monitors_err[yidx].insert(datret.m_monitors_err[yidx].end(), dat2.m_monitors_err[yidx].begin(), dat2.m_monitors_err[yidx].end());
-
 
 	return datret;
 }
@@ -492,6 +492,20 @@ Dataset Dataset::append(const Dataset& dat1, const Dataset& dat2)
 	{
 		Data dat = Data::append(dat1.GetChannel(ch), dat2.GetChannel(ch));
 		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+Dataset Dataset::append_channels(const Dataset& dat1, const Dataset& dat2)
+{
+	Dataset dataset = dat1;
+
+	for(std::size_t ch2=0; ch2<dat2.GetNumChannels(); ++ch2)
+	{
+		const Data& thechannel= dat2.GetChannel(ch2);
+		dataset.AddChannel(thechannel);
 	}
 
 	return dataset;
