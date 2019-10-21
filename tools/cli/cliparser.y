@@ -43,6 +43,7 @@
 %right PREC_UNARY_PLUSMINUS
 %nonassoc TOK_POW
 %nonassoc TOK_MEMBER_ACCESS
+%left TOK_SQBRACKET_OPEN
 
 
 %%
