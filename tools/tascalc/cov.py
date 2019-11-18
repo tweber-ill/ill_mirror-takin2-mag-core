@@ -13,27 +13,30 @@ import tascalc as tas
 
 
 np.set_printoptions(
-	floatmode = "fixed", 
+	floatmode = "fixed",
 	precision = 4)
 
-verbose = True			# console outputs
-plot_results = True		# show plot window
-plot_neutrons = True	# also plot neutron events
-centre_on_Q = False		# centre plots on Q or zero?
-ellipse_points = 128	# number of points to draw ellipses
-symsize = 32.
-dpi = 600
 
-# column indices in kf,kf file
-ki_start_idx = 0	# start index of ki 3-vector
-kf_start_idx = 3	# start index of kf 3-vector
-wi_idx = 9			# start index of ki weight factor
-wf_idx = 10			# start index of kf weight factor
+options = {
+	"verbose" : True,		# console outputs
+	"plot_results" : True,		# show plot window
+	"plot_neutrons" : True,		# also plot neutron events
+	"centre_on_Q" : False,		# centre plots on Q or zero?
+	"ellipse_points" : 128,		# number of points to draw ellipses
+	"symsize" : 32.,
+	"dpi" : 600,
 
-# column indices in Q,E file
-Q_start_idx = 0
-E_idx = 3
-w_idx = 4
+	# column indices in ki,kf files
+	"ki_start_idx" : 0,		# start index of ki 3-vector
+	"kf_start_idx" : 3,		# start index of kf 3-vector
+	"wi_idx" : 9,			# start index of ki weight factor
+	"wf_idx" : 10,			# start index of kf weight factor
+
+	# column indices in Q,E files
+	"Q_start_idx" : 0,
+	"E_idx" : 3,
+	"w_idx" : 4,
+}
 
 
 # constants
@@ -68,10 +71,10 @@ def filter_events(Q, E, w):
 #
 def load_events_kikf(filename):
 	dat = np.loadtxt(filename)
-	ki = dat[:, ki_start_idx:ki_start_idx+3]
-	kf = dat[:, kf_start_idx:kf_start_idx+3]
-	wi = dat[:, wi_idx]
-	wf = dat[:, wf_idx]
+	ki = dat[:, options["ki_start_idx"]:options["ki_start_idx"]+3]
+	kf = dat[:, options["kf_start_idx"]:options["kf_start_idx"]+3]
+	wi = dat[:, options["wi_idx"]]
+	wf = dat[:, options["wf_idx"]]
 
 	w = wi * wf
 	Q = ki - kf
@@ -87,9 +90,9 @@ def load_events_kikf(filename):
 def load_events_QE(filename):
 	dat = np.loadtxt(filename)
 
-	Q = dat[:, Q_start_idx:Q_start_idx+3]
-	E = dat[:, E_idx]
-	w = dat[:, w_idx]
+	Q = dat[:, options["Q_start_idx"]:options["Q_start_idx"]+3]
+	E = dat[:, options["E_idx"]]
+	w = dat[:, options["w_idx"]]
 
 	return filter_events(Q, E, w)
 
@@ -104,17 +107,17 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 
 	# calculate the mean Q 4-vector
 	Qmean = [ np.average(Q4[:,i], weights = w) for i in range(4) ]
-	if verbose:
+	if options["verbose"]:
 		print("Mean (Q, E) vector in lab system:\n%s\n" % Qmean)
 
 	# get the weighted covariance matrix
-	Qcov = np.cov(Q4, rowvar = False, aweights = w, ddof = 0)
-	if verbose:
+	Qcov = np.cov(Q4, rowvar = False, aweights = np.abs(w), ddof = 0)
+	if options["verbose"]:
 		print("Covariance matrix in lab system:\n%s\n" % Qcov)
 
 	# the resolution is the inverse of the covariance
 	Qres = la.inv(Qcov)
-	if verbose:
+	if options["verbose"]:
 		print("Resolution matrix in lab system:\n%s\n" % Qres)
 
 
@@ -129,7 +132,7 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 		Qup = np.array([0, 1, 0])
 		Qside = np.cross(Qup, Qnorm)
 
-	if verbose:
+	if options["verbose"]:
 		print("Qpara = %s\nQperp = %s\nQup = %s\n" % (Qnorm, Qside, Qup))
 
 	# trafo matrix
@@ -139,22 +142,22 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 		np.insert(Qup, 3, 0),
 		[0, 0, 0, 1] ]))
 
-	if verbose:
+	if options["verbose"]:
 		print("Transformation into (Qpara, Qperp, Qup, E) system:\n%s\n" % T)
 
 	# transform mean Q vector
 	Qmean_Q = np.dot(np.transpose(T), Qmean)
-	if verbose:
+	if options["verbose"]:
 		print("Mean (Q, E) vector in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qmean_Q)
 
 	# transform the covariance matrix
 	Qcov_Q = np.dot(np.transpose(T), np.dot(Qcov, T))
-	if verbose:
+	if options["verbose"]:
 		print("Covariance matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qcov_Q)
 
 	# the resolution is the inverse of the covariance
 	Qres_Q = la.inv(Qcov_Q)
-	if verbose:
+	if options["verbose"]:
 		print("Resolution matrix in (Qpara, Qperp, Qup, E) system:\n%s\n" % Qres_Q)
 
 	#[ evals, evecs ] = la.eig(Qcov_Q)
@@ -162,9 +165,9 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 
 	# transform all neutron events
 	Q4_Q = np.array([])
-	if plot_neutrons:
+	if options["plot_neutrons"]:
 		Q4_Q = np.dot(Q4, T)
-		if not centre_on_Q:
+		if not options["centre_on_Q"]:
 			Q4_Q -= Qmean_Q
 
 
@@ -211,160 +214,101 @@ def calc_ellipses(Qres_Q):
 	# 4d ellipsoid
 	[fwhms, angles, rot] = descr_ellipse(Qres_Q)
 
-	if verbose:
+	axes_to_delete = [ [2, 1], [2, 0], [1,0], [3,2] ]
+	slice_first = [ True, True, True, False ]
+	results = []
+
+	for ellidx in range(len(axes_to_delete)):
+		# sliced 2d ellipse
+		Qres = np.delete(np.delete(Qres_Q, axes_to_delete[ellidx][0], axis=0), axes_to_delete[ellidx][0], axis=1)
+		Qres = np.delete(np.delete(Qres, axes_to_delete[ellidx][1], axis=0), axes_to_delete[ellidx][1], axis=1)
+		[fwhms, angles, rot] = descr_ellipse(Qres)
+
+		# projected 2d ellipse
+		if slice_first[ellidx]:
+			Qres_proj = np.delete(np.delete(Qres_Q, axes_to_delete[ellidx][0], axis=0), axes_to_delete[ellidx][0], axis=1)
+			Qres_proj = proj_quad(Qres_proj, axes_to_delete[ellidx][1])
+		else:
+			Qres_proj = proj_quad(Qres_Q, axes_to_delete[ellidx][0])
+			Qres_proj = np.delete(np.delete(Qres_proj, axes_to_delete[ellidx][1], axis=0), axes_to_delete[ellidx][1], axis=1)
+		[fwhms_proj, angles_proj, rot_proj] = descr_ellipse(Qres_proj)
+
+		results.append({ "fwhms" : fwhms, "angles" : angles, "rot" : rot,
+			"fwhms_proj" : fwhms_proj, "angles_proj" : angles_proj, "rot_proj" : rot_proj })
+
+
+	if options["verbose"]:
 		print("4d resolution ellipsoid diagonal elements fwhm (coherent-elastic scattering) lengths:\n%s\n" \
 			% (1./np.sqrt(np.abs(np.diag(Qres_Q))) * sig2fwhm))
 
 		print("4d resolution ellipsoid principal axes fwhm lengths:\n%s\n" % fwhms)
 
-		Qres_proj = proj_quad(Qres_Q, 2)
-		Qres_proj = proj_quad(Qres_proj, 1)
-		Qres_proj = proj_quad(Qres_proj, 0)
+		Qres_proj = proj_quad(proj_quad(proj_quad(Qres_Q, 2), 1), 0)
 		print("Incoherent-elastic fwhm width: %.4f meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
 
+		print("2d Qx,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[0]["fwhms"], results[0]["angles"][0]))
+		print("2d Qy,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[1]["fwhms"], results[1]["angles"][0]))
+		print("2d Qz,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[2]["fwhms"], results[2]["angles"][0]))
+		print("2d Qx,Qy sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[3]["fwhms"], results[3]["angles"][0]))
 
-	# 2d sliced ellipses
-	Qres_QxE = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QxE = np.delete(np.delete(Qres_QxE, 1, axis=0), 1, axis=1)
-	[fwhms_QxE, angles_QxE, rot_QxE] = descr_ellipse(Qres_QxE)
-	if verbose:
-		print("2d Qx,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxE, angles_QxE[0]))
-
-	Qres_QyE = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QyE = np.delete(np.delete(Qres_QyE, 0, axis=0), 0, axis=1)
-	[fwhms_QyE, angles_QyE, rot_QyE] = descr_ellipse(Qres_QyE)
-	if verbose:
-		print("2d Qy,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QyE, angles_QyE[0]))
-
-	Qres_QzE = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
-	Qres_QzE = np.delete(np.delete(Qres_QzE, 0, axis=0), 0, axis=1)
-	[fwhms_QzE, angles_QzE, rot_QzE] = descr_ellipse(Qres_QzE)
-	if verbose:
-		print("2d Qz,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QzE, angles_QzE[0]))
-
-	Qres_QxQy = np.delete(np.delete(Qres_Q, 3, axis=0), 3, axis=1)
-	Qres_QxQy = np.delete(np.delete(Qres_QxQy, 2, axis=0), 2, axis=1)
-	[fwhms_QxQy, angles_QxQy, rot_QxQy] = descr_ellipse(Qres_QxQy)
-	if verbose:
-		print("2d Qx,Qy sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxQy, angles_QxQy[0]))
+		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[0]["fwhms_proj"], results[0]["angles_proj"][0]))
+		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[1]["fwhms_proj"], results[1]["angles_proj"][0]))
+		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[2]["fwhms_proj"], results[2]["angles_proj"][0]))
+		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[3]["fwhms_proj"], results[3]["angles_proj"][0]))
 
 
-	# 2d projected ellipses
-	Qres_QxE_proj = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QxE_proj = proj_quad(Qres_QxE_proj, 1)
-	[fwhms_QxE_proj, angles_QxE_proj, rot_QxE_proj] = descr_ellipse(Qres_QxE_proj)
-	if verbose:
-		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxE_proj, angles_QxE_proj[0]))
+	return results
 
-	Qres_QyE_proj = np.delete(np.delete(Qres_Q, 2, axis=0), 2, axis=1)
-	Qres_QyE_proj = proj_quad(Qres_QyE_proj, 0)
-	[fwhms_QyE_proj, angles_QyE_proj, rot_QyE_proj] = descr_ellipse(Qres_QyE_proj)
-	if verbose:
-		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QyE_proj, angles_QyE_proj[0]))
-
-	Qres_QzE_proj = np.delete(np.delete(Qres_Q, 1, axis=0), 1, axis=1)
-	Qres_QzE_proj = proj_quad(Qres_QzE_proj, 0)
-	[fwhms_QzE_proj, angles_QzE_proj, rot_QzE_proj] = descr_ellipse(Qres_QzE_proj)
-	if verbose:
-		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QzE_proj, angles_QzE_proj[0]))
-
-	Qres_QxQy_proj = proj_quad(Qres_Q, 3)
-	Qres_QxQy_proj = np.delete(np.delete(Qres_QxQy_proj, 2, axis=0), 2, axis=1)
-	[fwhms_QxQy_proj, angles_QxQy_proj, rot_QxQy_proj] = descr_ellipse(Qres_QxQy_proj)
-	if verbose:
-		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (fwhms_QxQy_proj, angles_QxQy_proj[0]))
-
-
-
-	return [fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, \
-		fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy, \
-		fwhms_QxE_proj, rot_QxE_proj, fwhms_QyE_proj, rot_QyE_proj, \
-		fwhms_QzE_proj, rot_QzE_proj, fwhms_QxQy_proj, rot_QxQy_proj]
 
 
 
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(file, Q4, w, Qmean, \
-	fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, \
-	fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy, \
-	fwhms_QxE_proj, rot_QxE_proj, fwhms_QyE_proj, rot_QyE_proj, \
-	fwhms_QzE_proj, rot_QzE_proj, fwhms_QxQy_proj, rot_QxQy_proj):
-
+def plot_ellipses(file, Q4, w, Qmean, ellis):
 	import mpl_toolkits.mplot3d as mplot3d
 	import matplotlib.pyplot as plot
+
+
+	thesymsize = options["symsize"] * w
+	themarker = "."
+
 
 	ellfkt = lambda rad, rot, phi, Qmean2d : \
 		np.dot(rot, np.array([ rad[0]*np.cos(phi), rad[1]*np.sin(phi) ])) + Qmean2d
 
 
-	# centre plots on zero or mean Q vector ?
-	QxE = np.array([[0], [0]])
-	QyE = np.array([[0], [0]])
-	QzE = np.array([[0], [0]])
-	QxQy = np.array([[0], [0]])
-
-	if centre_on_Q:
-		QxE = np.array([[Qmean[0]], [Qmean[3]]])
-		QyE = np.array([[Qmean[1]], [Qmean[3]]])
-		QzE = np.array([[Qmean[2]], [Qmean[3]]])
-		QxQy = np.array([[Qmean[0]], [Qmean[1]]])
-
-
-	phi = np.linspace(0, 2.*np.pi, ellipse_points)
-
-	ell_QxE = ellfkt(fwhms_QxE*0.5, rot_QxE, phi, QxE)
-	ell_QyE = ellfkt(fwhms_QyE*0.5, rot_QyE, phi, QyE)
-	ell_QzE = ellfkt(fwhms_QzE*0.5, rot_QzE, phi, QzE)
-	ell_QxQy = ellfkt(fwhms_QxQy*0.5, rot_QxQy, phi, QxQy)
-
-	ell_QxE_proj = ellfkt(fwhms_QxE_proj*0.5, rot_QxE_proj, phi, QxE)
-	ell_QyE_proj = ellfkt(fwhms_QyE_proj*0.5, rot_QyE_proj, phi, QyE)
-	ell_QzE_proj = ellfkt(fwhms_QzE_proj*0.5, rot_QzE_proj, phi, QzE)
-	ell_QxQy_proj = ellfkt(fwhms_QxQy_proj*0.5, rot_QxQy_proj, phi, QxQy)
-
-
-	thesymsize = symsize * w
-	themarker = "."
-
-
-	# Qpara, E axis
+	# 2d plots
 	fig = plot.figure()
-	subplot_QxE = fig.add_subplot(221)
-	subplot_QxE.set_xlabel("Qpara (1/A)")
-	subplot_QxE.set_ylabel("E (meV)")
-	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxE.scatter(Q4[:, 0], Q4[:, 3], marker=themarker, s=thesymsize)
-	subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black", linestyle="dashed")
-	subplot_QxE.plot(ell_QxE_proj[0], ell_QxE_proj[1], c="black", linestyle="solid")
 
-	# Qperp, E axis
-	subplot_QyE = fig.add_subplot(222)
-	subplot_QyE.set_xlabel("Qperp (1/A)")
-	subplot_QyE.set_ylabel("E (meV)")
-	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QyE.scatter(Q4[:, 1], Q4[:, 3], marker=themarker, s=thesymsize)
-	subplot_QyE.plot(ell_QyE[0], ell_QyE[1], c="black", linestyle="dashed")
-	subplot_QyE.plot(ell_QyE_proj[0], ell_QyE_proj[1], c="black", linestyle="solid")
+	num_ellis = len(ellis)
+	coord_axes = [[0,3], [1,3], [2,3], [0,1]]
+	coord_names = ["Qpara (1/A)", "Qperp (1/A)", "Qup (1/A)", "E (meV)"]
 
-	# Qup, E axis
-	subplot_QzE = fig.add_subplot(223)
-	subplot_QzE.set_xlabel("Qup (1/A)")
-	subplot_QzE.set_ylabel("E (meV)")
-	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QzE.scatter(Q4[:, 2], Q4[:, 3], marker=themarker, s=thesymsize)
-	subplot_QzE.plot(ell_QzE[0], ell_QzE[1], c="black", linestyle="dashed")
-	subplot_QzE.plot(ell_QzE_proj[0], ell_QzE_proj[1], c="black", linestyle="solid")
+	ellplots = []
+	for ellidx in range(num_ellis):
+		# centre plots on zero or mean Q vector ?
+		QxE = np.array([[0], [0]])
 
-	# Qpara, Qperp axis
-	subplot_QxQy = fig.add_subplot(224)
-	subplot_QxQy.set_xlabel("Qpara (1/A)")
-	subplot_QxQy.set_ylabel("Qperp (1/A)")
-	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
-		subplot_QxQy.scatter(Q4[:, 0], Q4[:, 1], marker=themarker, s=thesymsize)
-	subplot_QxQy.plot(ell_QxQy[0], ell_QxQy[1], c="black", linestyle="dashed")
-	subplot_QxQy.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], c="black", linestyle="solid")
+		if options["centre_on_Q"]:
+			QxE = np.array([[Qmean[coord_axes[ellidx][0]]], [Qmean[coord_axes[ellidx][0]]]])
+
+
+		phi = np.linspace(0, 2.*np.pi, options["ellipse_points"])
+
+		ell_QxE = ellfkt(ellis[ellidx]["fwhms"]*0.5, ellis[ellidx]["rot"], phi, QxE)
+		ell_QxE_proj = ellfkt(ellis[ellidx]["fwhms_proj"]*0.5, ellis[ellidx]["rot_proj"], phi, QxE)
+		ellplots.append({"sliced":ell_QxE, "proj":ell_QxE_proj})
+
+
+		subplot_QxE = fig.add_subplot(221 + ellidx)
+		subplot_QxE.set_xlabel(coord_names[coord_axes[ellidx][0]])
+		subplot_QxE.set_ylabel(coord_names[coord_axes[ellidx][1]])
+		if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+			subplot_QxE.scatter(Q4[:, coord_axes[ellidx][0]], Q4[:, coord_axes[ellidx][1]], marker=themarker, s=thesymsize)
+		subplot_QxE.plot(ell_QxE[0], ell_QxE[1], c="black", linestyle="dashed")
+		subplot_QxE.plot(ell_QxE_proj[0], ell_QxE_proj[1], c="black", linestyle="solid")
+
 	plot.tight_layout()
 
 
@@ -372,33 +316,33 @@ def plot_ellipses(file, Q4, w, Qmean, \
 	fig3d = plot.figure()
 	subplot3d = fig3d.add_subplot(111, projection="3d")
 
-	subplot3d.set_xlabel("Qpara (1/A)")
-	subplot3d.set_ylabel("Qperp (1/A)")
-	subplot3d.set_zlabel("E (meV)")
+	subplot3d.set_xlabel(coord_names[0])
+	subplot3d.set_ylabel(coord_names[1])
+	subplot3d.set_zlabel(coord_names[3])
 
 	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], marker=themarker, s=thesymsize)
 	# xE
-	subplot3d.plot(ell_QxE[0], ell_QxE[1], zs=0., zdir="y", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QxE_proj[0], ell_QxE_proj[1], zs=0., zdir="y", c="black", linestyle="solid")
+	subplot3d.plot(ellplots[0]["sliced"][0], ellplots[0]["sliced"][1], zs=0., zdir="y", c="black", linestyle="dashed")
+	subplot3d.plot(ellplots[0]["proj"][0], ellplots[0]["proj"][1], zs=0., zdir="y", c="black", linestyle="solid")
 	# yE
-	subplot3d.plot(ell_QyE[0], ell_QyE[1], zs=0., zdir="x", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QyE_proj[0], ell_QyE_proj[1], zs=0., zdir="x", c="black", linestyle="solid")
+	subplot3d.plot(ellplots[1]["sliced"][0], ellplots[1]["sliced"][1], zs=0., zdir="x", c="black", linestyle="dashed")
+	subplot3d.plot(ellplots[1]["proj"][0], ellplots[1]["proj"][1], zs=0., zdir="x", c="black", linestyle="solid")
 	# xy
-	subplot3d.plot(ell_QxQy[0], ell_QxQy[1], zs=0., zdir="z", c="black", linestyle="dashed")
-	subplot3d.plot(ell_QxQy_proj[0], ell_QxQy_proj[1], zs=0., zdir="z", c="black", linestyle="solid")
+	subplot3d.plot(ellplots[3]["sliced"][0], ellplots[3]["sliced"][1], zs=0., zdir="z", c="black", linestyle="dashed")
+	subplot3d.plot(ellplots[3]["proj"][0], ellplots[3]["proj"][1], zs=0., zdir="z", c="black", linestyle="solid")
 
 
 	if file != "":
 		splitext = os.path.splitext(file)
 		file3d = splitext[0] + "_3d" + splitext[1]
 
-		if verbose:
+		if options["verbose"]:
 			print("Saving 2d plot to \"%s\"." % file)
 			print("Saving 3d plot to \"%s\"." % file3d)
-		fig.savefig(file, dpi=dpi)
-		fig3d.savefig(file3d, dpi=dpi)
+		fig.savefig(file, dpi=options["dpi"])
+		fig3d.savefig(file3d, dpi=options["dpi"])
 
-	if plot_results:
+	if options["plot_results"]:
 		plot.show()
 
 
@@ -428,20 +372,20 @@ if __name__ == "__main__":
 	args = arg.ArgumentParser(description="Calculates the covariance matrix of neutron scattering events.")
 	args.add_argument("file", type=str, help="input file")
 	args.add_argument("-s", "--save", default="", type=str, nargs="?", help="save plot to file")
-	args.add_argument("--ellipse", default=ellipse_points, type=int, nargs="?", help="number of points to draw ellipses")
-	args.add_argument("--ki", default=ki_start_idx, type=int, nargs="?", help="index of ki vector's first column in kikf file")
-	args.add_argument("--kf", default=kf_start_idx, type=int, nargs="?", help="index of kf vector's first column in kikf file")
-	args.add_argument("--wi", default=wi_idx, type=int, nargs="?", help="index of ki weight factor column in kikf file")
-	args.add_argument("--wf", default=wf_idx, type=int, nargs="?", help="index of kf weight factor column in kikf file")
-	args.add_argument("--w", default=w_idx, type=int, nargs="?", help="index of neutron weight factor column in QE file")
-	args.add_argument("--Q", default=Q_start_idx, type=int, nargs="?", help="index of Q vector's first column in QE file")
-	args.add_argument("--E", default=E_idx, type=int, nargs="?", help="index of E column in QE file")
+	args.add_argument("--ellipse", default=options["ellipse_points"], type=int, nargs="?", help="number of points to draw ellipses")
+	args.add_argument("--ki", default=options["ki_start_idx"], type=int, nargs="?", help="index of ki vector's first column in kikf file")
+	args.add_argument("--kf", default=options["kf_start_idx"], type=int, nargs="?", help="index of kf vector's first column in kikf file")
+	args.add_argument("--wi", default=options["wi_idx"], type=int, nargs="?", help="index of ki weight factor column in kikf file")
+	args.add_argument("--wf", default=options["wf_idx"], type=int, nargs="?", help="index of kf weight factor column in kikf file")
+	args.add_argument("--w", default=options["w_idx"], type=int, nargs="?", help="index of neutron weight factor column in QE file")
+	args.add_argument("--Q", default=options["Q_start_idx"], type=int, nargs="?", help="index of Q vector's first column in QE file")
+	args.add_argument("--E", default=options["E_idx"], type=int, nargs="?", help="index of E column in QE file")
 	args.add_argument("--kikf", action="store_true", help="use the kikf file type")
 	args.add_argument("--centreonQ", action="store_true", help="centre plots on mean Q")
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
 	args.add_argument("--noplot", action="store_true", help="don't show any plot windows")
 	args.add_argument("--noneutrons", action="store_true", help="don't show neutron events in plots")
-	args.add_argument("--symsize", default=symsize, type=float, nargs="?", help="size of the symbols in plots")
+	args.add_argument("--symsize", default=options["symsize"], type=float, nargs="?", help="size of the symbols in plots")
 	args.add_argument("--ax", default=None, type=float, nargs="?", help="x component of first orientation vector")
 	args.add_argument("--ay", default=None, type=float, nargs="?", help="y component of first orientation vector")
 	args.add_argument("--az", default=None, type=float, nargs="?", help="z component of first orientation vector")
@@ -454,15 +398,15 @@ if __name__ == "__main__":
 	args.add_argument("--aa", "--alpha", default=90., type=float, nargs="?", help="lattice angle alpha (only needed in case data is in rlu)")
 	args.add_argument("--bb", "--beta", default=90., type=float, nargs="?", help="lattice angle beta (only needed in case data is in rlu)")
 	args.add_argument("--cc", "--gamma", default=90., type=float, nargs="?", help="lattice angle gamma (only needed in case data is in rlu)")
-	args.add_argument("--dpi", default=dpi, type=int, nargs="?", help="DPI of output plot file")
+	args.add_argument("--dpi", default=options["dpi"], type=int, nargs="?", help="DPI of output plot file")
 	argv = args.parse_args()
 
-	verbose = (argv.noverbose==False)
-	plot_results = (argv.noplot==False)
-	plot_neutrons = (argv.noneutrons==False)
-	centre_on_Q = argv.centreonQ
+	options["verbose"] = (argv.noverbose==False)
+	options["plot_results"] = (argv.noplot==False)
+	options["plot_neutrons"] = (argv.noneutrons==False)
+	options["centre_on_Q"] = argv.centreonQ
 	use_kikf_file = argv.kikf
-	dpi = argv.dpi
+	options["dpi"] = argv.dpi
 
 	B = []
 	if argv.a!=None and argv.b!=None and argv.c!=None and argv.aa!=None and argv.bb!=None and argv.cc!=None:
@@ -471,18 +415,18 @@ if __name__ == "__main__":
 
 		B = tas.get_B(lattice, angles)
 
-		if verbose:
+		if options["verbose"]:
 			print("Crystal B matrix:\n%s\n" % B)
 
 
 	infile = argv.file
 	outfile = argv.save
-	ellipse_points = argv.ellipse
-	ki_start_idx = argv.ki
-	kf_start_idx = argv.kf
-	wi_idx = argv.wi
-	wf_idx = argv.wf
-	symsize = argv.symsize
+	options["ellipse_points"] = argv.ellipse
+	options["ki_start_idx"] = argv.ki
+	options["kf_start_idx"] = argv.kf
+	options["wi_idx"] = argv.wi
+	options["wf_idx"] = argv.wf
+	options["symsize"] = argv.symsize
 	avec = [ argv.az, argv.ay, argv.az ]
 	bvec = [ argv.bx, argv.by, argv.bz ]
 
@@ -491,7 +435,7 @@ if __name__ == "__main__":
 	else:
 		[Q, E, w] = load_events_QE(infile)
 
-		# convert rlu to 1/A 
+		# convert rlu to 1/A
 		if len(B) != 0:
 			Q = np.dot(Q, np.transpose(B))
 
@@ -499,7 +443,7 @@ if __name__ == "__main__":
 		Qpara = np.array(avec)
 		Qperp = np.array(bvec)
 
-		# convert rlu to 1/A 
+		# convert rlu to 1/A
 		if len(B) != 0:
 			Qpara = np.dot(B, Qpara)
 			Qperp = np.dot(B, Qperp)
@@ -508,15 +452,8 @@ if __name__ == "__main__":
 		Qperp = np.array([])
 
 	[Qres, Q4, Qmean] = calc_covar(Q, E, w, Qpara, Qperp)
-	[fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, \
-	fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy, \
-	fwhms_QxE_proj, rot_QxE_proj, fwhms_QyE_proj, rot_QyE_proj, \
-	fwhms_QzE_proj, rot_QzE_proj, fwhms_QxQy_proj, rot_QxQy_proj] \
-		= calc_ellipses(Qres)
+	calcedellis = calc_ellipses(Qres)
 
-	if plot_results or outfile!="":
-		plot_ellipses(outfile, Q4, w, Qmean, \
-			fwhms_QxE, rot_QxE, fwhms_QyE, rot_QyE, \
-			fwhms_QzE, rot_QzE, fwhms_QxQy, rot_QxQy, \
-			fwhms_QxE_proj, rot_QxE_proj, fwhms_QyE_proj, rot_QyE_proj, \
-			fwhms_QzE_proj, rot_QzE_proj, fwhms_QxQy_proj, rot_QxQy_proj)
+	if options["plot_results"] or outfile!="":
+		plot_ellipses(outfile, Q4, w, Qmean, calcedellis)
+
