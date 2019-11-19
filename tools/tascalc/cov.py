@@ -7,9 +7,14 @@
 #
 
 import os
-import numpy as np
-import numpy.linalg as la
 import tascalc as tas
+
+try:
+	import numpy as np
+	import numpy.linalg as la
+except ImportError:
+	print("Numpy could not be imported!")
+	exit(-1)
 
 
 np.set_printoptions(
@@ -241,20 +246,20 @@ def calc_ellipses(Qres_Q):
 		print("4d resolution ellipsoid diagonal elements fwhm (coherent-elastic scattering) lengths:\n%s\n" \
 			% (1./np.sqrt(np.abs(np.diag(Qres_Q))) * sig2fwhm))
 
-		print("4d resolution ellipsoid principal axes fwhm lengths:\n%s\n" % fwhms)
+		print("4d resolution ellipsoid principal axes fwhm: %s" % fwhms)
 
 		Qres_proj = proj_quad(proj_quad(proj_quad(Qres_Q, 2), 1), 0)
-		print("Incoherent-elastic fwhm width: %.4f meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
+		print("Incoherent-elastic fwhm: %.4f meV\n" % (1./np.sqrt(np.abs(Qres_proj[0,0])) * sig2fwhm))
 
-		print("2d Qx,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[0]["fwhms"], results[0]["angles"][0]))
-		print("2d Qy,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[1]["fwhms"], results[1]["angles"][0]))
-		print("2d Qz,E sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[2]["fwhms"], results[2]["angles"][0]))
-		print("2d Qx,Qy sliced ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[3]["fwhms"], results[3]["angles"][0]))
-
-		print("2d Qx,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[0]["fwhms_proj"], results[0]["angles_proj"][0]))
-		print("2d Qy,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[1]["fwhms_proj"], results[1]["angles_proj"][0]))
-		print("2d Qz,E projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[2]["fwhms_proj"], results[2]["angles_proj"][0]))
-		print("2d Qx,Qy projected ellipse fwhm lengths and slope angle:\n%s, %.4f\n" % (results[3]["fwhms_proj"], results[3]["angles_proj"][0]))
+		print("Qx,E sliced ellipse fwhm and slope angle: %s, %.4f" % (results[0]["fwhms"], results[0]["angles"][0]))
+		print("Qy,E sliced ellipse fwhm and slope angle: %s, %.4f" % (results[1]["fwhms"], results[1]["angles"][0]))
+		print("Qz,E sliced ellipse fwhm and slope angle: %s, %.4f" % (results[2]["fwhms"], results[2]["angles"][0]))
+		print("Qx,Qy sliced ellipse fwhm and slope angle: %s, %.4f" % (results[3]["fwhms"], results[3]["angles"][0]))
+		print()
+		print("Qx,E projected ellipse fwhm and slope angle: %s, %.4f" % (results[0]["fwhms_proj"], results[0]["angles_proj"][0]))
+		print("Qy,E projected ellipse fwhm and slope angle: %s, %.4f" % (results[1]["fwhms_proj"], results[1]["angles_proj"][0]))
+		print("Qz,E projected ellipse fwhm and slope angle: %s, %.4f" % (results[2]["fwhms_proj"], results[2]["angles_proj"][0]))
+		print("Qx,Qy projected ellipse fwhm and slope angle: %s, %.4f" % (results[3]["fwhms_proj"], results[3]["angles_proj"][0]))
 
 
 	return results
@@ -266,8 +271,12 @@ def calc_ellipses(Qres_Q):
 # shows the 2d ellipses
 #
 def plot_ellipses(file, Q4, w, Qmean, ellis):
-	import mpl_toolkits.mplot3d as mplot3d
-	import matplotlib.pyplot as plot
+	try:
+		import mpl_toolkits.mplot3d as mplot3d
+		import matplotlib.pyplot as plot
+	except ImportError:
+		print("Matplotlib could not be imported!")
+		exit(-1)
 
 
 	thesymsize = options["symsize"] * w
@@ -367,7 +376,11 @@ if __name__ == "__main__":
 	print("This is a covariance matrix calculator using neutron events, written by T. Weber <tweber@ill.fr>, 30 March 2019.\n")
 	check_versions()
 
-	import argparse as arg
+	try:
+		import argparse as arg
+	except ImportError:
+		print("Argparse could not be imported!")
+		exit(-1)
 
 	args = arg.ArgumentParser(description="Calculates the covariance matrix of neutron scattering events.")
 	args.add_argument("file", type=str, help="input file")
@@ -380,7 +393,7 @@ if __name__ == "__main__":
 	args.add_argument("--w", default=options["w_idx"], type=int, nargs="?", help="index of neutron weight factor column in QE file")
 	args.add_argument("--Q", default=options["Q_start_idx"], type=int, nargs="?", help="index of Q vector's first column in QE file")
 	args.add_argument("--E", default=options["E_idx"], type=int, nargs="?", help="index of E column in QE file")
-	args.add_argument("--kikf", action="store_true", help="use the kikf file type")
+	args.add_argument("--QEfile", action="store_true", help="use the QE file type")
 	args.add_argument("--centreonQ", action="store_true", help="centre plots on mean Q")
 	args.add_argument("--noverbose", action="store_true", help="don't show console logs")
 	args.add_argument("--noplot", action="store_true", help="don't show any plot windows")
@@ -405,7 +418,6 @@ if __name__ == "__main__":
 	options["plot_results"] = (argv.noplot==False)
 	options["plot_neutrons"] = (argv.noneutrons==False)
 	options["centre_on_Q"] = argv.centreonQ
-	use_kikf_file = argv.kikf
 	options["dpi"] = argv.dpi
 
 	B = []
@@ -430,14 +442,24 @@ if __name__ == "__main__":
 	avec = [ argv.az, argv.ay, argv.az ]
 	bvec = [ argv.bx, argv.by, argv.bz ]
 
-	if use_kikf_file:
-		[Q, E, w] = load_events_kikf(infile)
-	else:
-		[Q, E, w] = load_events_QE(infile)
 
-		# convert rlu to 1/A
-		if len(B) != 0:
-			Q = np.dot(Q, np.transpose(B))
+	try:
+		# input file is in h k l E w format?
+		if argv.QEfile:
+			[Q, E, w] = load_events_QE(infile)
+			# convert rlu to 1/A
+			if len(B) != 0:
+				Q = np.dot(Q, np.transpose(B))
+		# input file is in the kix kiy kiz kfx kfy kfz wi wf format?
+		else:
+			[Q, E, w] = load_events_kikf(infile)
+	except OSError:
+		print("Could not load input file %s." % infile)
+		exit(-1)
+	except NameError:
+		print("Error processing input file %s." % infile)
+		exit(-1)
+
 
 	if avec[0]!=None and avec[1]!=None and avec[2]!=None and bvec[0]!=None and bvec[1]!=None and bvec[2]!=None:
 		Qpara = np.array(avec)
