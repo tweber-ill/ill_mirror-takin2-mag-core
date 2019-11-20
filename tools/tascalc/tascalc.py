@@ -399,6 +399,12 @@ class GUI:
 
 				self.tasstatus.setText(u"WARNING: Q is out of the plane by %.4g \u212b\u207b\u00b9, i.e. %.4g deg!" \
 					% (dist_Q_plane, ang_plane/np.pi*180.))
+
+			if np.isnan(a4) or np.isnan(Qlen):
+				self.tasstatus.setText(u"WARNING: Scattering triangle cannot be closed.")
+				self.editA3.setText("invalid")
+				self.editA4.setText("invalid")
+				self.editQAbs.setText("invalid")
 		except (ArithmeticError, la.LinAlgError) as err:
 			self.editA3.setText("invalid")
 			self.editA4.setText("invalid")
