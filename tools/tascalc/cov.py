@@ -7,7 +7,7 @@
 #
 
 import os
-import tascalc as tas
+import tas
 
 try:
 	import numpy as np
@@ -370,10 +370,10 @@ def check_versions():
 
 
 #
-# main
+# entry point
 #
-if __name__ == "__main__":
-	print("This is a covariance matrix calculator using neutron events, written by T. Weber <tweber@ill.fr>, 30 March 2019.\n")
+def run_cov():
+	print("This is a covariance matrix calculator using neutron events,\n\twritten by T. Weber <tweber@ill.fr>, 30 March 2019.\n")
 	check_versions()
 
 	try:
@@ -479,3 +479,10 @@ if __name__ == "__main__":
 	if options["plot_results"] or outfile!="":
 		plot_ellipses(outfile, Q4, w, Qmean, calcedellis)
 
+
+
+#
+# main
+#
+if __name__ == "__main__":
+	run_cov()

@@ -5,7 +5,7 @@
 # @license see 'LICENSE' file
 #
 
-import tascalc as tas
+import tas
 import numpy as np
 import numpy.linalg as la
 
