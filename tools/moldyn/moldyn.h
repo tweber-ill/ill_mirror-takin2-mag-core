@@ -9,18 +9,17 @@
 #define __MOLDYN_GUI_H__
 
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QDialog>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
-#include <QtWidgets/QMenu>
-#include <QtWidgets/QLabel>
 #include <QtCore/QSettings>
 
 #include <vector>
-#include <sstream>
 
 #include "libs/_cxx20/glplot.h"
 #include "libs/_cxx20/math_algos.h"
+
+#include "moldyn-loader.h"
 
 
 using t_real = double;
@@ -35,6 +34,8 @@ public:
 	~MolDynDlg() = default;
 
 protected:
+	MolDyn<t_real, t_vec> m_mol;
+
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 	QStatusBar *m_status = nullptr;
@@ -44,8 +45,8 @@ protected:
 
 
 protected:
-	void Add3DItem(int row=-1);
-	void Set3DStatusMsg(const std::string& msg);
+	void Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label);
+	void SetStatusMsg(const std::string& msg);
 
 	void New();
 	void Load();
@@ -61,6 +62,7 @@ protected:
 private:
 	long m_curPickedObj = -1;
 	bool m_ignoreChanges = 1;
+	bool m_ignoreCalc = 1;
 };
 
 

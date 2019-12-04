@@ -37,6 +37,17 @@ class MolFrame
 			m_config.push_back(config);
 		}
 
+
+		std::size_t GetNumAtoms() const
+		{
+			return m_config.size();
+		}
+
+		const std::vector<t_vec>& GetCoords(std::size_t atomidx) const
+		{
+			return m_config[atomidx];
+		}
+
 	private:
 		// atoms -> coordinates
 		std::vector<std::vector<t_vec>> m_config;
@@ -104,6 +115,10 @@ class MolDyn
 				std::cerr << "Cannot open \"" << filename << "\".";
 				return 0;
 			}
+
+			// clear old data
+			Clear();
+
 
 			std::string strSys;
 			std::getline(ifstr, strSys);
@@ -228,6 +243,31 @@ class MolDyn
 
 			std::cout << "\rRead " << iNumConfigs << " configurations." << "                " << std::endl;
 			return 1;
+		}
+
+
+		void Clear()
+		{
+			m_vecAtoms.clear();
+			m_vecAtomNums.clear();
+			m_frames.clear();
+		}
+
+
+		std::size_t GetFrameCount() const
+		{
+			return m_frames.size();
+		}
+
+		const MolFrame<t_real, t_vec>& GetFrame(std::size_t frame) const
+		{
+			return m_frames[frame];
+		}
+
+
+		const std::string& GetAtomName(std::size_t idx) const
+		{
+			return m_vecAtoms[idx];
 		}
 
 

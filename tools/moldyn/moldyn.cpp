@@ -8,8 +8,6 @@
 #include "moldyn.h"
 
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -45,19 +43,19 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
-		auto acSave = new QAction("Save...", menuFile);
+		//auto acSave = new QAction("Save...", menuFile);
 		auto acExit = new QAction("Exit", menuFile);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
-		menuFile->addAction(acSave);
+		//menuFile->addAction(acSave);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 
 		connect(acNew, &QAction::triggered, this, &MolDynDlg::New);
 		connect(acLoad, &QAction::triggered, this, &MolDynDlg::Load);
-		connect(acSave, &QAction::triggered, this, &MolDynDlg::Save);
+		//connect(acSave, &QAction::triggered, this, &MolDynDlg::Save);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
 		m_menu->addMenu(menuFile);
@@ -70,6 +68,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_plot = new GlPlot(this);
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
+		m_plot->GetImpl()->EnablePicker(1);
 		m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetImpl()->SetCoordMax(1.);
@@ -100,27 +99,15 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 /**
  * add 3d object
  */
-void MolDynDlg::Add3DItem(int row)
+void MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label)
 {
 	if(!m_plot) return;
 
-	// add all items
-	if(row < 0)
-	{
-		//for(int row=0; row<m_nuclei->rowCount(); ++row)
-		//	Add3DItem(row);
-		return;
-	}
-
-	qreal r=1, g=1, b=1;
-	QColor col;
-	col.getRgbF(&r, &g, &b);
-
-	//auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	//m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
-	//m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
-	//m_plot->update();
+	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
+	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, col[0],col[1],col[2],1);
+	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(vec[0], vec[1], vec[2])*m::hom_scaling<t_mat_gl>(scale,scale,scale));
+	m_plot->GetImpl()->SetObjectLabel(obj, label);
+	m_plot->update();
 }
 // ----------------------------------------------------------------------------
 
@@ -130,11 +117,56 @@ void MolDynDlg::Add3DItem(int row)
 // ----------------------------------------------------------------------------
 void MolDynDlg::New()
 {
+	m_mol.Clear();
 }
 
 
 void MolDynDlg::Load()
 {
+	m_ignoreCalc = 1;
+
+	try
+	{
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "Molecular Dynamics File (*)");
+		if(filename=="" || !QFile::exists(filename))
+			return;
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+		if(!m_mol.LoadFile(filename.toStdString(), 100))
+		{
+			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
+		}
+
+
+		std::vector<t_vec> cols =
+		{
+			m::create<t_vec>({1, 0, 0}),
+			m::create<t_vec>({0, 0, 1}),
+			m::create<t_vec>({0, 0.5, 0}),
+			m::create<t_vec>({0, 0.5, 0.5}),
+			m::create<t_vec>({0.5, 0.5, 0}),
+			m::create<t_vec>({0, 0, 0}),
+		};
+
+		if(m_mol.GetFrameCount())
+		{
+			const auto& frame = m_mol.GetFrame(0);
+
+			for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
+			{
+				const auto& coords = frame.GetCoords(atomidx);
+				for(const t_vec& vec : coords)
+					Add3DItem(vec, cols[atomidx % cols.size()], 0.5, m_mol.GetAtomName(atomidx));
+			}
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", ex.what());
+	}
+
+	m_ignoreCalc = 0;
 }
 
 
@@ -159,10 +191,12 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 
 	if(m_curPickedObj > 0)
 	{
+		// TODO
+		std::cout << m_curPickedObj << std::endl;
 	}
 	else
 	{
-		Set3DStatusMsg("");
+		SetStatusMsg("");
 	}
 }
 
@@ -171,7 +205,7 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 /**
  * set status label text in 3d dialog
  */
-void MolDynDlg::Set3DStatusMsg(const std::string& msg)
+void MolDynDlg::SetStatusMsg(const std::string& msg)
 {
 	if(!m_status) return;
 
@@ -209,9 +243,6 @@ void MolDynDlg::AfterGLInitialisation()
 	// reference sphere for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
-
-	// add all 3d objects
-	Add3DItem(-1);
 
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]

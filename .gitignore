@@ -52,6 +52,7 @@ tools/cif2xml/build/**
 tools/magstructfact/build/**
 tools/magsgbrowser/build/**
 tools/pol/build/**
+tools/moldyn/build/**
 *.pyc
 .DS_Store
 *.csv
