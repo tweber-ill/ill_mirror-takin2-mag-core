@@ -430,7 +430,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	// restory window size and position
+	// restore window size and position
 	if(m_sett && m_sett->contains("geo"))
 		restoreGeometry(m_sett->value("geo").toByteArray());
 	else
