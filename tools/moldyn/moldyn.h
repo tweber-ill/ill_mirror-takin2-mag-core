@@ -35,19 +35,7 @@ public:
 	~MolDynDlg() = default;
 
 protected:
-	MolDyn<t_real, t_vec> m_mol;
-
-	QSettings *m_sett = nullptr;
-	QMenuBar *m_menu = nullptr;
-	QStatusBar *m_status = nullptr;
-	QSlider *m_slider = nullptr;
-
-	GlPlot *m_plot = nullptr;
-	std::size_t m_sphere = 0;
-
-
-protected:
-	void Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label);
+	std::size_t Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label);
 	void SetStatusMsg(const std::string& msg);
 
 	void New();
@@ -62,6 +50,20 @@ protected:
 	void SliderValueChanged(int val);
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+
+
+protected:
+	MolDyn<t_real, t_vec> m_mol;
+
+	QSettings *m_sett = nullptr;
+	QMenuBar *m_menu = nullptr;
+	QStatusBar *m_status = nullptr;
+	QSlider *m_slider = nullptr;
+
+	GlPlot *m_plot = nullptr;
+	std::size_t m_sphere = 0;
+	std::vector<std::size_t> m_sphereHandles;
+
 
 private:
 	long m_curPickedObj = -1;

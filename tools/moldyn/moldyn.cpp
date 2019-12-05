@@ -121,15 +121,16 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 /**
  * add 3d object
  */
-void MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label)
+std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label)
 {
-	if(!m_plot) return;
-
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
 	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, col[0],col[1],col[2],1);
 	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(vec[0], vec[1], vec[2])*m::hom_scaling<t_mat_gl>(scale,scale,scale));
 	m_plot->GetImpl()->SetObjectLabel(obj, label);
+	m_plot->GetImpl()->SetObjectDataString(obj, label);
 	m_plot->update();
+
+	return obj;
 }
 // ----------------------------------------------------------------------------
 
@@ -140,11 +141,15 @@ void MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, cons
 void MolDynDlg::New()
 {
 	m_mol.Clear();
+	m_sphereHandles.clear();
+	// TODO: clear 3d objects
 }
 
 
 void MolDynDlg::Load()
 {
+	if(!m_plot) return;
+
 	m_ignoreCalc = 1;
 
 	try
@@ -155,7 +160,8 @@ void MolDynDlg::Load()
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
-		if(!m_mol.LoadFile(filename.toStdString(), 100))
+		unsigned int frameskip = 10;
+		if(!m_mol.LoadFile(filename.toStdString(), frameskip))
 		{
 			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
 			return;
@@ -179,12 +185,16 @@ void MolDynDlg::Load()
 		if(m_mol.GetFrameCount())
 		{
 			const auto& frame = m_mol.GetFrame(0);
+			m_sphereHandles.reserve(frame.GetNumAtoms());
 
 			for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
 			{
 				const auto& coords = frame.GetCoords(atomidx);
 				for(const t_vec& vec : coords)
-					Add3DItem(vec, cols[atomidx % cols.size()], 0.5, m_mol.GetAtomName(atomidx));
+				{
+					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], 0.5, m_mol.GetAtomName(atomidx));
+					m_sphereHandles.push_back(handle);
+				}
 			}
 		}
 	}
@@ -210,6 +220,8 @@ void MolDynDlg::Save()
  */
 void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
 {
+	if(!m_plot) return;
+
 	if(pos)
 		m_curPickedObj = long(objIdx);
 	else
@@ -218,8 +230,8 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 
 	if(m_curPickedObj > 0)
 	{
-		// TODO
-		std::cout << m_curPickedObj << std::endl;
+		const std::string& label = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+		SetStatusMsg(label);
 	}
 	else
 	{
@@ -264,6 +276,30 @@ void MolDynDlg::PlotMouseUp(bool left, bool mid, bool right)
 
 void MolDynDlg::SliderValueChanged(int val)
 {
+	if(!m_plot) return;
+
+	if(val < 0 || val >= m_mol.GetFrameCount())
+		return;
+
+
+	// update atom position with selected frame
+	const auto& frame = m_mol.GetFrame(val);
+
+	std::size_t counter = 0;
+	for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
+	{
+		const auto& coords = frame.GetCoords(atomidx);
+		for(const t_vec& vec : coords)
+		{
+			std::size_t obj = m_sphereHandles[counter];
+			t_real scale = 0.5;
+			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(vec[0], vec[1], vec[2])*m::hom_scaling<t_mat_gl>(scale,scale,scale));
+
+			++counter;
+		}
+	}
+
+	m_plot->update();
 }
 
 
