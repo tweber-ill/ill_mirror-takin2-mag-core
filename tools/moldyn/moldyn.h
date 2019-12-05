@@ -12,6 +12,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
+#include <QtWidgets/QSlider>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -39,6 +40,7 @@ protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 	QStatusBar *m_status = nullptr;
+	QSlider *m_slider = nullptr;
 
 	GlPlot *m_plot = nullptr;
 	std::size_t m_sphere = 0;
@@ -56,6 +58,8 @@ protected:
 	void PlotMouseUp(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
+
+	void SliderValueChanged(int val);
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 

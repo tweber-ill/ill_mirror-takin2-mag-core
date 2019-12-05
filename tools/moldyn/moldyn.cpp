@@ -8,6 +8,7 @@
 #include "moldyn.h"
 
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -32,6 +33,13 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 	m_status = new QStatusBar(this);
 	this->setStatusBar(m_status);
+
+
+	QWidget *pMainPanel = new QWidget();
+	auto pMainGrid = new QGridLayout(pMainPanel);
+	pMainGrid->setSpacing(2);
+	pMainGrid->setContentsMargins(4,4,4,4);
+	this->setCentralWidget(pMainPanel);
 
 
 	// menu bar
@@ -80,7 +88,21 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		connect(m_plot, &GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
 		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
 
-		this->setCentralWidget(m_plot);
+		//this->setCentralWidget(m_plot);
+		pMainGrid->addWidget(m_plot, 0,0,1,1);
+	}
+
+
+	// controls
+	{
+		m_slider = new QSlider(Qt::Horizontal, this);
+		m_slider->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Minimum});
+		m_slider->setMinimum(0);
+		m_slider->setTracking(1);
+
+		connect(m_slider, &QSlider::valueChanged, this, &MolDynDlg::SliderValueChanged);
+
+		pMainGrid->addWidget(m_slider, 1,0,1,1);
 	}
 
 
@@ -136,9 +158,13 @@ void MolDynDlg::Load()
 		if(!m_mol.LoadFile(filename.toStdString(), 100))
 		{
 			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
+			return;
 		}
 
+		m_slider->setMaximum(m_mol.GetFrameCount());
 
+
+		// atom colors
 		std::vector<t_vec> cols =
 		{
 			m::create<t_vec>({1, 0, 0}),
@@ -149,6 +175,7 @@ void MolDynDlg::Load()
 			m::create<t_vec>({0, 0, 0}),
 		};
 
+		// add atoms to 3d view
 		if(m_mol.GetFrameCount())
 		{
 			const auto& frame = m_mol.GetFrame(0);
@@ -232,6 +259,12 @@ void MolDynDlg::PlotMouseUp(bool left, bool mid, bool right)
 {
 }
 // ----------------------------------------------------------------------------
+
+
+
+void MolDynDlg::SliderValueChanged(int val)
+{
+}
 
 
 
