@@ -36,6 +36,8 @@ public:
 
 protected:
 	std::size_t Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label);
+	void Change3DItem(std::size_t obj, const t_vec* vec, const t_vec* col=nullptr, const t_real *scale=nullptr, const std::string *label=nullptr);
+
 	void SetStatusMsg(const std::string& msg);
 
 	void New();
@@ -68,7 +70,9 @@ protected:
 private:
 	long m_curPickedObj = -1;
 	bool m_ignoreChanges = 1;
-	bool m_ignoreCalc = 1;
+
+	t_real m_atomscale = 0.4;
+	unsigned int m_frameskip = 10;
 };
 
 

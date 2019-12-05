@@ -119,18 +119,28 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 // ----------------------------------------------------------------------------
 /**
- * add 3d object
+ * add an atom
  */
 std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label)
 {
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, col[0],col[1],col[2],1);
-	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(vec[0], vec[1], vec[2])*m::hom_scaling<t_mat_gl>(scale,scale,scale));
-	m_plot->GetImpl()->SetObjectLabel(obj, label);
-	m_plot->GetImpl()->SetObjectDataString(obj, label);
-	m_plot->update();
-
+	Change3DItem(obj, &vec, &col, &scale, &label);
 	return obj;
+}
+
+
+/**
+ * change an atom
+ */
+void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale, const std::string *label)
+{
+	t_mat_gl mat = m::hom_translation<t_mat_gl>((*vec)[0], (*vec)[1], (*vec)[2]);
+	if(scale) mat *= m::hom_scaling<t_mat_gl>(*scale, *scale, *scale);
+
+	m_plot->GetImpl()->SetObjectMatrix(obj, mat);
+	if(col) m_plot->GetImpl()->SetObjectCol(obj, (*col)[0], (*col)[1], (*col)[2], 1);
+	if(label) m_plot->GetImpl()->SetObjectLabel(obj, *label);
+	if(label) m_plot->GetImpl()->SetObjectDataString(obj, *label);
 }
 // ----------------------------------------------------------------------------
 
@@ -150,8 +160,6 @@ void MolDynDlg::Load()
 {
 	if(!m_plot) return;
 
-	m_ignoreCalc = 1;
-
 	try
 	{
 		QString dirLast = m_sett->value("dir", "").toString();
@@ -160,8 +168,7 @@ void MolDynDlg::Load()
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
-		unsigned int frameskip = 10;
-		if(!m_mol.LoadFile(filename.toStdString(), frameskip))
+		if(!m_mol.LoadFile(filename.toStdString(), m_frameskip))
 		{
 			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
 			return;
@@ -192,7 +199,7 @@ void MolDynDlg::Load()
 				const auto& coords = frame.GetCoords(atomidx);
 				for(const t_vec& vec : coords)
 				{
-					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], 0.5, m_mol.GetAtomName(atomidx));
+					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], m_atomscale, m_mol.GetAtomName(atomidx));
 					m_sphereHandles.push_back(handle);
 				}
 			}
@@ -203,7 +210,7 @@ void MolDynDlg::Load()
 		QMessageBox::critical(this, "Molecular Dynamics", ex.what());
 	}
 
-	m_ignoreCalc = 0;
+	m_plot->update();
 }
 
 
@@ -292,8 +299,7 @@ void MolDynDlg::SliderValueChanged(int val)
 		for(const t_vec& vec : coords)
 		{
 			std::size_t obj = m_sphereHandles[counter];
-			t_real scale = 0.5;
-			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(vec[0], vec[1], vec[2])*m::hom_scaling<t_mat_gl>(scale,scale,scale));
+			Change3DItem(obj, &vec, nullptr, &m_atomscale);
 
 			++counter;
 		}
