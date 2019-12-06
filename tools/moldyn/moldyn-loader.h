@@ -216,6 +216,11 @@ class MolDyn
 							return 0;
 						}
 
+						// center cell (in rlu)
+						vecCoords[0] -= 0.5;
+						vecCoords[1] -= 0.5;
+						vecCoords[2] -= 0.5;
+
 						atomconf.emplace_back(std::move(vecCoords));
 					}
 

@@ -52,6 +52,7 @@ protected:
 	void SliderValueChanged(int val);
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+	virtual void keyPressEvent(QKeyEvent *evt) override;
 
 
 protected:
@@ -72,7 +73,6 @@ private:
 	bool m_ignoreChanges = 1;
 
 	t_real m_atomscale = 0.4;
-	unsigned int m_frameskip = 10;
 };
 
 

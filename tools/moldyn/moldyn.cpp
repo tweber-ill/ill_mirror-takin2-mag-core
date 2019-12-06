@@ -10,10 +10,13 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QMessageBox>
 
 #include <iostream>
 #include <tuple>
+#include <memory>
 
 #include "libs/algos.h"
 #include "libs/helper.h"
@@ -22,6 +25,56 @@ using namespace m_ops;
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
+
+
+
+// ----------------------------------------------------------------------------
+/**
+ * File dialog with options
+ */
+
+class MolDynFileDlg : public QFileDialog
+{
+	public:
+		MolDynFileDlg(QWidget *parent, const QString& title, const QString& dir, const QString& filter)
+			: QFileDialog(parent, title, dir, filter)
+		{
+			// options panel with frame skip
+			QLabel *labelFrameSkip = new QLabel("Frame Skip: ", this);
+			m_spinFrameSkip = new QSpinBox(this);
+			m_spinFrameSkip->setValue(10);
+			m_spinFrameSkip->setMinimum(0);
+			m_spinFrameSkip->setMaximum(9999999);
+
+			labelFrameSkip->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+			m_spinFrameSkip->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+			QWidget *pPanel = new QWidget();
+			auto pPanelGrid = new QGridLayout(pPanel);
+			pPanelGrid->setSpacing(2);
+			pPanelGrid->setContentsMargins(4,4,4,4);
+
+			pPanelGrid->addWidget(labelFrameSkip, 0,0,1,1);
+			pPanelGrid->addWidget(m_spinFrameSkip, 0,1,1,1);
+
+			// add the options panel to the layout
+			setOptions(QFileDialog::DontUseNativeDialog);
+			QGridLayout *pGrid = reinterpret_cast<QGridLayout*>(layout());
+			if(pGrid)
+				pGrid->addWidget(pPanel, pGrid->rowCount(), 0, 1, pGrid->columnCount());
+		}
+
+
+		int GetFrameSkip() const
+		{
+			return m_spinFrameSkip->value();
+		}
+
+
+	private:
+		QSpinBox *m_spinFrameSkip = nullptr;
+};
+
 
 
 // ----------------------------------------------------------------------------
@@ -98,6 +151,8 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_slider = new QSlider(Qt::Horizontal, this);
 		m_slider->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Minimum});
 		m_slider->setMinimum(0);
+		m_slider->setSingleStep(1);
+		m_slider->setPageStep(10);
 		m_slider->setTracking(1);
 
 		connect(m_slider, &QSlider::valueChanged, this, &MolDynDlg::SliderValueChanged);
@@ -151,8 +206,14 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
 void MolDynDlg::New()
 {
 	m_mol.Clear();
+
+	for(const auto& obj : m_sphereHandles)
+		m_plot->GetImpl()->RemoveObject(obj);
+
 	m_sphereHandles.clear();
-	// TODO: clear 3d objects
+	m_slider->setValue(0);
+
+	m_plot->update();
 }
 
 
@@ -163,18 +224,26 @@ void MolDynDlg::Load()
 	try
 	{
 		QString dirLast = m_sett->value("dir", "").toString();
-		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "Molecular Dynamics File (*)");
+		auto filedlg = std::make_shared<MolDynFileDlg>(this, "Load File", dirLast, "Molecular Dynamics File (*)");
+		if(!filedlg->exec())
+			return;
+		auto files = filedlg->selectedFiles();
+		if(!files.size())
+			return;
+		
+		QString filename = files[0];
 		if(filename=="" || !QFile::exists(filename))
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
-		if(!m_mol.LoadFile(filename.toStdString(), m_frameskip))
+		New();
+		if(!m_mol.LoadFile(filename.toStdString(), filedlg->GetFrameSkip()))
 		{
 			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
 			return;
 		}
 
-		m_slider->setMaximum(m_mol.GetFrameCount());
+		m_slider->setMaximum(m_mol.GetFrameCount() - 1);
 
 
 		// atom colors
@@ -265,8 +334,12 @@ void MolDynDlg::SetStatusMsg(const std::string& msg)
  */
 void MolDynDlg::PlotMouseDown(bool left, bool mid, bool right)
 {
+	if(!m_plot) return;
+
 	if(left && m_curPickedObj > 0)
 	{
+		m_plot->GetImpl()->ToggleObjectHighlight(m_curPickedObj);
+		m_plot->update();
 	}
 }
 
@@ -333,6 +406,25 @@ void MolDynDlg::closeEvent(QCloseEvent *evt)
 	{
 		m_sett->setValue("geo", saveGeometry());
 	}
+}
+
+
+void MolDynDlg::keyPressEvent(QKeyEvent *evt)
+{
+	if(evt->key()==Qt::Key_Left || evt->key()==Qt::Key_Down)
+		m_slider->setValue(m_slider->value() - m_slider->singleStep());
+	else if(evt->key()==Qt::Key_Right || evt->key()==Qt::Key_Up)
+		m_slider->setValue(m_slider->value() + m_slider->singleStep());
+	else if(evt->key()==Qt::Key_PageUp)
+		m_slider->setValue(m_slider->value() + m_slider->pageStep());
+	else if(evt->key()==Qt::Key_PageDown)
+		m_slider->setValue(m_slider->value() - m_slider->pageStep());
+	else if(evt->key()==Qt::Key_Home)
+		m_slider->setValue(m_slider->minimum());
+	else if(evt->key()==Qt::Key_End)
+		m_slider->setValue(m_slider->maximum());
+
+	QMainWindow::keyPressEvent(evt);
 }
 // ----------------------------------------------------------------------------
 
