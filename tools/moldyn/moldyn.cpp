@@ -14,6 +14,7 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QProgressDialog>
 
 #include <iostream>
 #include <tuple>
@@ -278,9 +279,23 @@ void MolDynDlg::Load()
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
 		New();
+
+		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
+			"Loading \"" + QFileInfo(filename).fileName() + "\"...", "Cancel", 0, 1000, this);
+		bool bCancelled = 0;
+		m_mol.SubscribeToLoadProgress([dlgProgress, &bCancelled](t_real percentage) -> bool
+		{
+			dlgProgress->setValue(int(percentage*10));
+			bCancelled = dlgProgress->wasCanceled();
+			return !bCancelled;
+		});
+		dlgProgress->setWindowModality(Qt::WindowModal);
+
 		if(!m_mol.LoadFile(filename.toStdString(), filedlg->GetFrameSkip()))
 		{
-			QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
+			// only show error if not explicitely cancelled
+			if(!bCancelled)
+				QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
 			return;
 		}
 

@@ -14,6 +14,9 @@
 #include <vector>
 #include <string>
 
+// for progress callback
+#include <boost/signals2/signal.hpp>
+
 #include "libs/file.h"
 #include "libs/str.h"
 
@@ -132,9 +135,6 @@ class MolDyn
 				std::cerr << "Cannot open \"" << filename << "\".";
 				return 0;
 			}
-
-			// clear old data
-			Clear();
 
 
 			std::size_t filesize = tl2::get_file_size(ifstr);
@@ -270,10 +270,21 @@ class MolDyn
 
 				std::size_t filepos = tl2::get_file_pos(ifstr);
 				percentage = t_real{filepos*100} / t_real{filesize};
+				if(!*m_sigLoadProgress(percentage))
+				{
+					std::cerr << "\nLoading cancelled." << std::endl;
+					return 0;
+				}
 			}
 	
 			std::cout << "\rRead " << iNumConfigs << " configurations. " << "                        " << std::endl;
 			return 1;
+		}
+
+
+		template<class subscriber> void SubscribeToLoadProgress(const subscriber& subs)
+		{
+			m_sigLoadProgress.connect(subs);
 		}
 
 
@@ -282,6 +293,7 @@ class MolDyn
 			m_vecAtoms.clear();
 			m_vecAtomNums.clear();
 			m_frames.clear();
+			m_sigLoadProgress.disconnect_all_slots();
 		}
 
 
@@ -294,6 +306,8 @@ class MolDyn
 		std::vector<unsigned int> m_vecAtomNums;
 
 		std::vector<MolFrame<t_real, t_vec>> m_frames;
+
+		boost::signals2::signal<bool (t_real)> m_sigLoadProgress;
 };
 
 
