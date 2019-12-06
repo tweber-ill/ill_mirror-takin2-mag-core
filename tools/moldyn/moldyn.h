@@ -13,6 +13,7 @@
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QSlider>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -57,11 +58,14 @@ protected:
 
 protected:
 	MolDyn<t_real, t_vec> m_mol;
+	t_mat m_crystA = m::unit<t_mat>(3);
+	t_mat m_crystB = m::unit<t_mat>(3);
 
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 	QStatusBar *m_status = nullptr;
 	QSlider *m_slider = nullptr;
+	QDoubleSpinBox *m_spinScale = nullptr;
 
 	GlPlot *m_plot = nullptr;
 	std::size_t m_sphere = 0;
@@ -71,8 +75,6 @@ protected:
 private:
 	long m_curPickedObj = -1;
 	bool m_ignoreChanges = 1;
-
-	t_real m_atomscale = 0.4;
 };
 
 

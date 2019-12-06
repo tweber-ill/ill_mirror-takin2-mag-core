@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 
+#include "libs/file.h"
 #include "libs/str.h"
 
 
@@ -86,6 +87,22 @@ class MolDyn
 		}
 
 
+		const t_vec& GetBaseA() const { return m_baseA; }
+		const t_vec& GetBaseB() const { return m_baseB; }
+		const t_vec& GetBaseC() const { return m_baseC; }
+
+
+		std::size_t GetFrameCount() const
+		{ return m_frames.size(); }
+	
+		const MolFrame<t_real, t_vec>& GetFrame(std::size_t frame) const
+		{ return m_frames[frame]; }
+
+
+		const std::string& GetAtomName(std::size_t idx) const
+		{ return m_vecAtoms[idx]; }
+
+
 		void AddAtomType(const std::string& name, unsigned int number)
 		{
 			m_vecAtoms.push_back(name);
@@ -119,6 +136,9 @@ class MolDyn
 			// clear old data
 			Clear();
 
+
+			std::size_t filesize = tl2::get_file_size(ifstr);
+			std::cout << "File size: " << filesize / 1024 / 1024 << " MB." << std::endl;
 
 			std::string strSys;
 			std::getline(ifstr, strSys);
@@ -179,6 +199,7 @@ class MolDyn
 
 
 			std::size_t iNumConfigs = 0;
+			t_real percentage = 0;
 			while(true)
 			{
 				std::string strConfig;
@@ -190,7 +211,8 @@ class MolDyn
 
 				if(frameskip || iNumConfigs % 100)
 				{
-					std::cout << "\rReading " << strConfig << "..." << "        ";
+					std::cout << "\rReading " << strConfig << ". "
+						<< unsigned{percentage} << " %.                ";
 					std::cout.flush();
 				}
 
@@ -244,9 +266,13 @@ class MolDyn
 							std::getline(ifstr, strTmp);
 					}
 				}
-			}
 
-			std::cout << "\rRead " << iNumConfigs << " configurations." << "                " << std::endl;
+
+				std::size_t filepos = tl2::get_file_pos(ifstr);
+				percentage = t_real{filepos*100} / t_real{filesize};
+			}
+	
+			std::cout << "\rRead " << iNumConfigs << " configurations. " << "                        " << std::endl;
 			return 1;
 		}
 
@@ -256,23 +282,6 @@ class MolDyn
 			m_vecAtoms.clear();
 			m_vecAtomNums.clear();
 			m_frames.clear();
-		}
-
-
-		std::size_t GetFrameCount() const
-		{
-			return m_frames.size();
-		}
-
-		const MolFrame<t_real, t_vec>& GetFrame(std::size_t frame) const
-		{
-			return m_frames[frame];
-		}
-
-
-		const std::string& GetAtomName(std::size_t idx) const
-		{
-			return m_vecAtoms[idx];
 		}
 
 

@@ -12,6 +12,7 @@
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QMessageBox>
 
 #include <iostream>
@@ -43,8 +44,8 @@ class MolDynFileDlg : public QFileDialog
 			QLabel *labelFrameSkip = new QLabel("Frame Skip: ", this);
 			m_spinFrameSkip = new QSpinBox(this);
 			m_spinFrameSkip->setValue(10);
-			m_spinFrameSkip->setMinimum(0);
-			m_spinFrameSkip->setMaximum(9999999);
+			m_spinFrameSkip->setSingleStep(1);
+			m_spinFrameSkip->setRange(0, 9999999);
 
 			labelFrameSkip->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 			m_spinFrameSkip->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -142,22 +143,59 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
 
 		//this->setCentralWidget(m_plot);
-		pMainGrid->addWidget(m_plot, 0,0,1,1);
+		pMainGrid->addWidget(m_plot, 0,0,1,9);
 	}
 
 
 	// controls
 	{
+		auto labCoordSys = new QLabel("Coordinates:", this);
+		auto labFrames = new QLabel("Frames:", this);
+		auto labScale = new QLabel("Scale:", this);
+		labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+		labFrames->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+		labScale->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+
+		auto comboCoordSys = new QComboBox(this);
+		comboCoordSys->addItem("Fractional Units (rlu)");
+		comboCoordSys->addItem("Lab Units (A)");
+		comboCoordSys->setFocusPolicy(Qt::StrongFocus);
+
+		m_spinScale = new QDoubleSpinBox(this);
+		m_spinScale->setDecimals(4);
+		m_spinScale->setRange(1e-4, 1e4);
+		m_spinScale->setSingleStep(0.1);
+		m_spinScale->setValue(0.4);
+		m_spinScale->setFocusPolicy(Qt::StrongFocus);
+
 		m_slider = new QSlider(Qt::Horizontal, this);
 		m_slider->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Minimum});
 		m_slider->setMinimum(0);
 		m_slider->setSingleStep(1);
 		m_slider->setPageStep(10);
 		m_slider->setTracking(1);
+		m_slider->setFocusPolicy(Qt::StrongFocus);
 
 		connect(m_slider, &QSlider::valueChanged, this, &MolDynDlg::SliderValueChanged);
+		connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
+		{
+			if(this->m_plot)
+				this->m_plot->GetImpl()->SetCoordSys(val);
+		});
+		connect(m_spinScale, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, [this](double val)
+		{
+			if(!this->m_plot) return;
 
-		pMainGrid->addWidget(m_slider, 1,0,1,1);
+			// hack to trigger update
+			SliderValueChanged(m_slider->value());
+		});
+
+		pMainGrid->addWidget(labCoordSys, 1,0,1,1);
+		pMainGrid->addWidget(comboCoordSys, 1,1,1,1);
+		pMainGrid->addWidget(labScale, 1,2,1,1);
+		pMainGrid->addWidget(m_spinScale, 1,3,1,1);
+		pMainGrid->addWidget(labFrames, 1,4,1,1);
+		pMainGrid->addWidget(m_slider, 1,5,1,4);
 	}
 
 
@@ -189,10 +227,13 @@ std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scal
  */
 void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale, const std::string *label)
 {
-	t_mat_gl mat = m::hom_translation<t_mat_gl>((*vec)[0], (*vec)[1], (*vec)[2]);
-	if(scale) mat *= m::hom_scaling<t_mat_gl>(*scale, *scale, *scale);
+	if(vec)
+	{
+		t_mat_gl mat = m::hom_translation<t_mat_gl>((*vec)[0], (*vec)[1], (*vec)[2]);
+		if(scale) mat *= m::hom_scaling<t_mat_gl>(*scale, *scale, *scale);
+		m_plot->GetImpl()->SetObjectMatrix(obj, mat);
+	}
 
-	m_plot->GetImpl()->SetObjectMatrix(obj, mat);
 	if(col) m_plot->GetImpl()->SetObjectCol(obj, (*col)[0], (*col)[1], (*col)[2], 1);
 	if(label) m_plot->GetImpl()->SetObjectLabel(obj, *label);
 	if(label) m_plot->GetImpl()->SetObjectDataString(obj, *label);
@@ -246,6 +287,32 @@ void MolDynDlg::Load()
 		m_slider->setMaximum(m_mol.GetFrameCount() - 1);
 
 
+		// crystal A and B matrices
+		const t_vec& _a = m_mol.GetBaseA();
+		const t_vec& _b = m_mol.GetBaseB();
+		const t_vec& _c = m_mol.GetBaseC();
+
+		m_crystA = m::create<t_mat>({
+			_a[0],	_b[0],	_c[0],
+			_a[1],	_b[1],	_c[1],
+			_a[2], 	_b[2],	_c[2] });
+
+		bool ok = true;
+		std::tie(m_crystB, ok) = m::inv(m_crystA);
+		if(!ok)
+		{
+			m_crystB = m::unit<t_mat>();
+			QMessageBox::critical(this, "Molecular Dynamics", "Error: Cannot invert A matrix.");
+		}
+
+		m_crystB /= t_real_gl(2)*m::pi<t_real_gl>;
+		t_mat_gl matA{m_crystA};
+		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
+
+		std::cout << "A matrix: " << m_crystA << ", \n"
+			<< "B matrix: " << m_crystB << "." << std::endl;
+
+
 		// atom colors
 		std::vector<t_vec> cols =
 		{
@@ -268,7 +335,8 @@ void MolDynDlg::Load()
 				const auto& coords = frame.GetCoords(atomidx);
 				for(const t_vec& vec : coords)
 				{
-					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], m_atomscale, m_mol.GetAtomName(atomidx));
+					t_real atomscale = m_spinScale->value();
+					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], atomscale, m_mol.GetAtomName(atomidx));
 					m_sphereHandles.push_back(handle);
 				}
 			}
@@ -364,6 +432,7 @@ void MolDynDlg::SliderValueChanged(int val)
 
 	// update atom position with selected frame
 	const auto& frame = m_mol.GetFrame(val);
+	t_real atomscale = m_spinScale->value();
 
 	std::size_t counter = 0;
 	for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
@@ -372,7 +441,7 @@ void MolDynDlg::SliderValueChanged(int val)
 		for(const t_vec& vec : coords)
 		{
 			std::size_t obj = m_sphereHandles[counter];
-			Change3DItem(obj, &vec, nullptr, &m_atomscale);
+			Change3DItem(obj, &vec, nullptr, &atomscale);
 
 			++counter;
 		}
@@ -391,6 +460,9 @@ void MolDynDlg::AfterGLInitialisation()
 	// reference sphere for linked objects
 	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
 	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+
+	// B matrix
+	m_plot->GetImpl()->SetBTrafo(m_crystB);
 
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
