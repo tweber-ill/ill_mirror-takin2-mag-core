@@ -45,6 +45,15 @@ class MolFrame
 		{ return m_config[atomidx]; }
 
 
+		/**
+		 * removes all atoms at index idx
+		 */
+		void RemoveAtoms(std::size_t idx)
+		{
+			m_config.erase(m_config.begin()+idx);
+		}
+
+
 	private:
 		// atoms -> coordinates
 		std::vector<std::vector<t_vec>> m_config;
@@ -95,8 +104,14 @@ class MolDyn
 		{ return m_frames[frame]; }
 
 
+		std::size_t GetAtomCount() const
+		{ return m_vecAtoms.size(); }
+
 		const std::string& GetAtomName(std::size_t idx) const
 		{ return m_vecAtoms[idx]; }
+
+		unsigned int GetAtomNum(std::size_t idx) const
+		{ return m_vecAtomNums[idx]; }
 
 
 		void AddAtomType(const std::string& name, unsigned int number)
@@ -116,6 +131,18 @@ class MolDyn
 			m_frames.push_back(frame);
 		}
 
+
+		/**
+		 * removes all atoms at index idx
+		 */
+		void RemoveAtoms(std::size_t idx)
+		{
+			m_vecAtoms.erase(m_vecAtoms.begin() + idx);
+			m_vecAtomNums.erase(m_vecAtomNums.begin() + idx);
+
+			for(MolFrame<t_real, t_vec>& frame : m_frames)
+				frame.RemoveAtoms(idx);
+		}
 
 
 		void Clear()

@@ -125,12 +125,22 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 
 		// Edit
-		auto menuEdit = new QMenu("Edit", m_menu);
+		//auto menuEdit = new QMenu("Edit", m_menu);
 
 
 		m_menu->addMenu(menuFile);
-		m_menu->addMenu(menuEdit);
+		//m_menu->addMenu(menuEdit);
 		this->setMenuBar(m_menu);
+	}
+
+
+	// context menus
+	{
+		m_atomContextMenu = new QMenu(this);
+		m_atomContextMenu->setTitle("Atoms");
+		m_atomContextMenu->addAction("Delete Atom", this, &MolDynDlg::DeleteAtomUnderCursor);
+		m_atomContextMenu->addAction("Delete All Atoms Of Selected Type", this, &MolDynDlg::DeleteAllAtomsOfSameType);
+		m_atomContextMenu->addAction("Only Keep Atoms Of Selected Type", this, &MolDynDlg::KeepAtomsOfSameType);
 	}
 
 
@@ -150,6 +160,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MolDynDlg::PickerIntersection);
 		connect(m_plot, &GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
 		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
+		connect(m_plot, &GlPlot::MouseClick, this, &MolDynDlg::PlotMouseClick);
 
 		//this->setCentralWidget(m_plot);
 		pMainGrid->addWidget(m_plot, 0,0,1,9);
@@ -480,6 +491,26 @@ void MolDynDlg::PlotMouseDown(bool left, bool mid, bool right)
 void MolDynDlg::PlotMouseUp(bool left, bool mid, bool right)
 {
 }
+
+
+/**
+ * mouse button clicked
+ */
+void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
+{
+	// show context menu
+	if(right && m_curPickedObj > 0)
+	{
+		QString atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj).c_str();
+		m_atomContextMenu->actions()[0]->setText("Delete This \"" + atomLabel + "\" Atom");
+		m_atomContextMenu->actions()[1]->setText("Delete All \"" + atomLabel + "\" Atoms");
+		m_atomContextMenu->actions()[2]->setText("Delete All But \"" + atomLabel + "\" Atoms");
+
+		auto ptGlob = QCursor::pos();
+		ptGlob.setY(ptGlob.y() + 8);
+		m_atomContextMenu->popup(ptGlob);
+	}
+}
 // ----------------------------------------------------------------------------
 
 
@@ -509,6 +540,103 @@ void MolDynDlg::SliderValueChanged(int val)
 		}
 	}
 
+	m_plot->update();
+}
+
+
+
+void MolDynDlg::DeleteAtomUnderCursor()
+{
+
+}
+
+
+/**
+ * delete all atoms of the type under the cursor
+ */
+void MolDynDlg::DeleteAllAtomsOfSameType()
+{
+	// nothing under cursor
+	if(m_curPickedObj <= 0)
+		return;
+
+	// atom type to be deleted
+	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+
+	std::size_t startIdx = 0;
+	std::size_t totalRemoved = 0;
+	for(std::size_t atomIdx=0; atomIdx<m_mol.GetAtomCount();)
+	{
+		std::size_t numAtoms = m_mol.GetAtomNum(atomIdx);
+
+		if(m_mol.GetAtomName(atomIdx) == atomLabel)
+		{
+			// remove 3d objects
+			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
+			{
+				const auto& obj = m_sphereHandles[sphereIdx];
+				m_plot->GetImpl()->RemoveObject(obj);
+			}
+			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
+
+			// remove atoms
+			m_mol.RemoveAtoms(atomIdx);
+
+			totalRemoved += numAtoms;
+		}
+		else
+		{
+			startIdx += numAtoms;
+			++atomIdx;
+		}
+	}
+
+	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+	m_plot->update();
+}
+
+
+/**
+ * delete all atoms NOT of the type under the cursor
+ */
+void MolDynDlg::KeepAtomsOfSameType()
+{
+	// nothing under cursor
+	if(m_curPickedObj <= 0)
+		return;
+
+	// atom type to be deleted
+	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+
+	std::size_t startIdx = 0;
+	std::size_t totalRemoved = 0;
+	for(std::size_t atomIdx=0; atomIdx<m_mol.GetAtomCount();)
+	{
+		std::size_t numAtoms = m_mol.GetAtomNum(atomIdx);
+
+		if(m_mol.GetAtomName(atomIdx) != atomLabel)
+		{
+			// remove 3d objects
+			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
+			{
+				const auto& obj = m_sphereHandles[sphereIdx];
+				m_plot->GetImpl()->RemoveObject(obj);
+			}
+			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
+
+			// remove atoms
+			m_mol.RemoveAtoms(atomIdx);
+
+			totalRemoved += numAtoms;
+		}
+		else
+		{
+			startIdx += numAtoms;
+			++atomIdx;
+		}
+	}
+
+	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
 	m_plot->update();
 }
 

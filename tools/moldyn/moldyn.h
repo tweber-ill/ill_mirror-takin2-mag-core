@@ -47,10 +47,15 @@ protected:
 
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PlotMouseUp(bool left, bool mid, bool right);
+	void PlotMouseClick(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 
 	void SliderValueChanged(int val);
+
+	void DeleteAtomUnderCursor();
+	void DeleteAllAtomsOfSameType();
+	void KeepAtomsOfSameType();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 	virtual void keyPressEvent(QKeyEvent *evt) override;
@@ -66,6 +71,7 @@ protected:
 	QStatusBar *m_status = nullptr;
 	QSlider *m_slider = nullptr;
 	QDoubleSpinBox *m_spinScale = nullptr;
+	QMenu *m_atomContextMenu = nullptr;
 
 	GlPlot *m_plot = nullptr;
 	std::size_t m_sphere = 0;
