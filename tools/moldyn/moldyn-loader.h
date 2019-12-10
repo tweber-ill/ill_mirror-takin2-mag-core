@@ -32,25 +32,18 @@ class MolFrame
 
 
 		void AddAtomConfig(std::vector<t_vec>&& config)
-		{
-			m_config.emplace_back(std::move(config));
-		}
+		{ m_config.emplace_back(std::move(config)); }
 
 		void AddAtomConfig(const std::vector<t_vec>& config)
-		{
-			m_config.push_back(config);
-		}
+		{ m_config.push_back(config); }
 
 
 		std::size_t GetNumAtoms() const
-		{
-			return m_config.size();
-		}
+		{ return m_config.size(); }
 
 		const std::vector<t_vec>& GetCoords(std::size_t atomidx) const
-		{
-			return m_config[atomidx];
-		}
+		{ return m_config[atomidx]; }
+
 
 	private:
 		// atoms -> coordinates
@@ -125,6 +118,21 @@ class MolDyn
 
 
 
+		void Clear()
+		{
+			m_vecAtoms.clear();
+			m_vecAtomNums.clear();
+			m_frames.clear();
+
+			m_sigLoadProgress.disconnect_all_slots();
+			m_sigSaveProgress.disconnect_all_slots();
+		}
+
+
+
+		/**
+		 * loading of files
+		 */
 		bool LoadFile(const std::string& filename, unsigned int frameskip = 0)
 		{
 			const std::string strDelim{" \t"};
@@ -132,7 +140,7 @@ class MolDyn
 			std::ifstream ifstr{filename};
 			if(!ifstr)
 			{
-				std::cerr << "Cannot open \"" << filename << "\".";
+				std::cerr << "Cannot open \"" << filename << "\" for loading.";
 				return 0;
 			}
 
@@ -140,10 +148,9 @@ class MolDyn
 			std::size_t filesize = tl2::get_file_size(ifstr);
 			std::cout << "File size: " << filesize / 1024 / 1024 << " MB." << std::endl;
 
-			std::string strSys;
-			std::getline(ifstr, strSys);
-			tl2::trim(strSys);
-			std::cout << "System: " << strSys << std::endl;
+			std::getline(ifstr, m_strSys);
+			tl2::trim(m_strSys);
+			std::cout << "System: " << m_strSys << std::endl;
 
 
 
@@ -270,7 +277,7 @@ class MolDyn
 
 				std::size_t filepos = tl2::get_file_pos(ifstr);
 				percentage = t_real{filepos*100} / t_real{filesize};
-				if(!*m_sigLoadProgress(percentage))
+				if(m_sigLoadProgress.num_slots() && !*m_sigLoadProgress(percentage))
 				{
 					std::cerr << "\nLoading cancelled." << std::endl;
 					return 0;
@@ -282,22 +289,104 @@ class MolDyn
 		}
 
 
-		template<class subscriber> void SubscribeToLoadProgress(const subscriber& subs)
+
+		/**
+		 * saving of files
+		 */
+		bool SaveFile(const std::string& filename)
 		{
-			m_sigLoadProgress.connect(subs);
+			std::cout << m_sigSaveProgress.num_slots() << std::endl;
+			std::ofstream ofstr{filename};
+			if(!ofstr)
+			{
+				std::cerr << "Cannot open \"" << filename << "\" for saving.";
+				return 0;
+			}
+
+			ofstr.precision(8);
+
+			if(m_baseA.size() != 3)
+				return 0;
+
+			ofstr << m_strSys << "\n" << "1" << std::endl;
+			for(int i=0; i<m_baseA.size(); ++i)
+				ofstr << m_baseA[i] << " " << m_baseB[i] << " " << m_baseC[i] << std::endl;
+			
+			for(const std::string& strAtom : m_vecAtoms)
+				ofstr << strAtom << " ";
+			ofstr << std::endl;
+
+			for(unsigned int numAtom : m_vecAtomNums)
+				ofstr << numAtom << " ";
+			ofstr << std::endl;
+
+			// iterate frames
+			t_real percentage = 0;
+			for(std::size_t frame=0; frame<m_frames.size(); ++frame)
+			{
+				ofstr << "Config " << (frame+1) << "\n";
+				const MolFrame<t_real, t_vec>& config = m_frames[frame];
+
+				// iterate atom types
+				for(std::size_t atomidx=0; atomidx<config.GetNumAtoms(); ++atomidx)
+				{
+					const auto& coords = config.GetCoords(atomidx);
+					// iterate coordinates
+					for(const auto& vec : coords)
+					{
+						if(vec.size() != 3)
+							return 0;
+						ofstr << vec[0]+0.5 << " " << vec[1]+0.5 << " " << vec[2]+0.5 << "\n";
+					}
+				}
+
+				percentage = t_real{(frame+1)*100}/t_real{m_frames.size()};
+				if(m_sigSaveProgress.num_slots() && !*m_sigSaveProgress(percentage))
+				{
+					std::cerr << "\nSaving cancelled." << std::endl;
+					return 0;
+				}
+
+				if(frame % 100)
+				{
+					std::cout << "\rSaving configuration " << (frame+1) << " of " << m_frames.size() << ". "
+						<< unsigned{percentage} << " %.                ";
+					std::cout.flush();
+				}
+			}
+
+			std::cout << "\rSaved " << m_frames.size() << " configurations. " << "                        " << std::endl;
+			ofstr.flush();
+			return 1;
 		}
 
 
-		void Clear()
+
+		template<class subscriber> void SubscribeToLoadProgress(const subscriber& subs)
+		{ m_sigLoadProgress.connect(subs); }
+
+		template<class subscriber> void SubscribeToSaveProgress(const subscriber& subs)
+		{ m_sigSaveProgress.connect(subs); }
+
+
+		template<class subscriber> void UnsubscribeFromLoadProgress(const subscriber* subs=nullptr)
 		{
-			m_vecAtoms.clear();
-			m_vecAtomNums.clear();
-			m_frames.clear();
-			m_sigLoadProgress.disconnect_all_slots();
+			// TODO
+			//if(!subs)
+				m_sigLoadProgress.disconnect_all_slots();
+		}
+
+		template<class subscriber> void UnsubscribeFromSaveProgress(const subscriber* subs=nullptr)
+		{
+			// TODO
+			//if(!subs)
+				m_sigSaveProgress.disconnect_all_slots();
 		}
 
 
 	private:
+		std::string m_strSys;
+
 		t_vec m_baseA;
 		t_vec m_baseB;
 		t_vec m_baseC;
@@ -308,6 +397,7 @@ class MolDyn
 		std::vector<MolFrame<t_real, t_vec>> m_frames;
 
 		boost::signals2::signal<bool (t_real)> m_sigLoadProgress;
+		boost::signals2::signal<bool (t_real)> m_sigSaveProgress;
 };
 
 

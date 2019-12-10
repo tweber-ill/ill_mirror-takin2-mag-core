@@ -43,7 +43,7 @@ protected:
 
 	void New();
 	void Load();
-	void Save();
+	void SaveAs();
 
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PlotMouseUp(bool left, bool mid, bool right);

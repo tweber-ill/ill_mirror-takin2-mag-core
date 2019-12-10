@@ -76,6 +76,7 @@ class MolDynFileDlg : public QFileDialog
 	private:
 		QSpinBox *m_spinFrameSkip = nullptr;
 };
+// ----------------------------------------------------------------------------
 
 
 
@@ -102,26 +103,33 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_menu = new QMenuBar(this);
 		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
+		// File
 		auto menuFile = new QMenu("File", m_menu);
 
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
-		//auto acSave = new QAction("Save...", menuFile);
+		auto acSaveAs = new QAction("Save As...", menuFile);
 		auto acExit = new QAction("Exit", menuFile);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
-		//menuFile->addAction(acSave);
+		menuFile->addAction(acSaveAs);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 
 		connect(acNew, &QAction::triggered, this, &MolDynDlg::New);
 		connect(acLoad, &QAction::triggered, this, &MolDynDlg::Load);
-		//connect(acSave, &QAction::triggered, this, &MolDynDlg::Save);
+		connect(acSaveAs, &QAction::triggered, this, &MolDynDlg::SaveAs);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
+
+		// Edit
+		auto menuEdit = new QMenu("Edit", m_menu);
+
+
 		m_menu->addMenu(menuFile);
+		m_menu->addMenu(menuEdit);
 		this->setMenuBar(m_menu);
 	}
 
@@ -274,22 +282,25 @@ void MolDynDlg::Load()
 			return;
 		
 		QString filename = files[0];
-		if(filename=="" || !QFile::exists(filename))
+		if(filename == "" || !QFile::exists(filename))
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
 		New();
 
+
 		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
 			"Loading \"" + QFileInfo(filename).fileName() + "\"...", "Cancel", 0, 1000, this);
 		bool bCancelled = 0;
-		m_mol.SubscribeToLoadProgress([dlgProgress, &bCancelled](t_real percentage) -> bool
+		auto progressHandler = [dlgProgress, &bCancelled](t_real percentage) -> bool
 		{
 			dlgProgress->setValue(int(percentage*10));
 			bCancelled = dlgProgress->wasCanceled();
 			return !bCancelled;
-		});
+		};
+		m_mol.SubscribeToLoadProgress(progressHandler);
 		dlgProgress->setWindowModality(Qt::WindowModal);
+
 
 		if(!m_mol.LoadFile(filename.toStdString(), filedlg->GetFrameSkip()))
 		{
@@ -299,6 +310,8 @@ void MolDynDlg::Load()
 			return;
 		}
 
+
+		m_mol.UnsubscribeFromLoadProgress(&progressHandler);
 		m_slider->setMaximum(m_mol.GetFrameCount() - 1);
 
 
@@ -366,8 +379,42 @@ void MolDynDlg::Load()
 }
 
 
-void MolDynDlg::Save()
+void MolDynDlg::SaveAs()
 {
+	try
+	{
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Molecular Dynamics File (*)");
+		if(filename == "")
+			return;
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
+			"Saving \"" + QFileInfo(filename).fileName() + "\"...", "Cancel", 0, 1000, this);
+		bool bCancelled = 0;
+		auto progressHandler = [dlgProgress, &bCancelled](t_real percentage) -> bool
+		{
+			dlgProgress->setValue(int(percentage*10));
+			bCancelled = dlgProgress->wasCanceled();
+			return !bCancelled;
+		};
+		m_mol.SubscribeToSaveProgress(progressHandler);
+		dlgProgress->setWindowModality(Qt::WindowModal);
+
+
+		if(!m_mol.SaveFile(filename.toStdString()))
+		{
+			QMessageBox::critical(this, "Molecular Dynamics", "Error saving file.");
+		}
+
+
+		m_mol.UnsubscribeFromSaveProgress(&progressHandler);
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", ex.what());
+	}
 }
 // ----------------------------------------------------------------------------
 
