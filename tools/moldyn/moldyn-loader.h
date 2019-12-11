@@ -46,6 +46,15 @@ class MolFrame
 
 
 		/**
+		 * removes one atoms of type idxType and index idxSubType
+		 */
+		void RemoveAtom(std::size_t idxType, std::size_t idxSubType)
+		{
+			m_config[idxType].erase(m_config[idxType].begin() + idxSubType);
+		}
+
+
+		/**
 		 * removes all atoms at index idx
 		 */
 		void RemoveAtoms(std::size_t idx)
@@ -129,6 +138,21 @@ class MolDyn
 		void AddFrame(const MolFrame<t_real, t_vec>& frame)
 		{
 			m_frames.push_back(frame);
+		}
+
+
+		/**
+		 * removes one atoms of type idxType and index idxSubType
+		 */
+		void RemoveAtom(std::size_t idxType, std::size_t idxSubType)
+		{
+			if(!m_vecAtomNums[idxType])
+				return;
+
+			for(MolFrame<t_real, t_vec>& frame : m_frames)
+				frame.RemoveAtom(idxType, idxSubType);
+
+			--m_vecAtomNums[idxType];
 		}
 
 

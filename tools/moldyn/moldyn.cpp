@@ -34,7 +34,6 @@ constexpr int g_prec = 6;
 /**
  * File dialog with options
  */
-
 class MolDynFileDlg : public QFileDialog
 {
 	public:
@@ -544,10 +543,55 @@ void MolDynDlg::SliderValueChanged(int val)
 }
 
 
-
+/**
+ * delete one atom
+ */
 void MolDynDlg::DeleteAtomUnderCursor()
 {
+	// nothing under cursor
+	if(m_curPickedObj <= 0)
+		return;
 
+	// atom type to be deleted
+	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+
+	// find handle in sphere handle vector
+	auto iter = std::find(m_sphereHandles.begin(), m_sphereHandles.end(), m_curPickedObj);
+	if(iter == m_sphereHandles.end())
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
+		return;
+	}
+
+	std::size_t sphereIdx = iter - m_sphereHandles.begin();
+
+	std::size_t atomCountsSoFar = 0;
+	std::size_t atomTypeIdx = 0;
+	for(atomTypeIdx=0; atomTypeIdx<m_mol.GetAtomCount(); ++atomTypeIdx)
+	{
+		std::size_t numAtoms = m_mol.GetAtomNum(atomTypeIdx);
+		if(atomCountsSoFar + numAtoms > sphereIdx)
+			break;
+
+		atomCountsSoFar += numAtoms;
+	}
+
+	if(m_mol.GetAtomName(atomTypeIdx) != atomLabel)
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", "Mismatch in atom type, data is corrupted.");
+		return;
+	}
+
+	// remove 3d objects
+	m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
+	m_sphereHandles.erase(m_sphereHandles.begin()+sphereIdx);
+
+	// remove atom
+	std::size_t atomSubTypeIdx = sphereIdx-atomCountsSoFar;
+	m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
+
+	SetStatusMsg("1 atom removed.");
+	m_plot->update();
 }
 
 
@@ -573,10 +617,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 		{
 			// remove 3d objects
 			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
-			{
-				const auto& obj = m_sphereHandles[sphereIdx];
-				m_plot->GetImpl()->RemoveObject(obj);
-			}
+				m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
 			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
 
 			// remove atoms
@@ -618,10 +659,7 @@ void MolDynDlg::KeepAtomsOfSameType()
 		{
 			// remove 3d objects
 			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
-			{
-				const auto& obj = m_sphereHandles[sphereIdx];
-				m_plot->GetImpl()->RemoveObject(obj);
-			}
+				m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
 			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
 
 			// remove atoms
