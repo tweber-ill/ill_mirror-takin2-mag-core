@@ -46,6 +46,15 @@ class MolFrame
 
 
 		/**
+		 * get the atom coordinates
+		 */
+		const t_vec& GetAtomCoords(std::size_t idxType, std::size_t idxSubType) const
+		{
+			return m_config[idxType][idxSubType];
+		}
+
+
+		/**
 		 * removes one atoms of type idxType and index idxSubType
 		 */
 		void RemoveAtom(std::size_t idxType, std::size_t idxSubType)
@@ -138,6 +147,24 @@ class MolDyn
 		void AddFrame(const MolFrame<t_real, t_vec>& frame)
 		{
 			m_frames.push_back(frame);
+		}
+
+
+		/**
+		 * get atom coordinates for all frames
+		 */
+		std::vector<t_vec> GetAtomCoords(std::size_t idxType, std::size_t idxSubType) const
+		{
+			std::vector<t_vec> allcoords;
+			allcoords.reserve(m_frames.size());
+
+			if(!m_vecAtomNums[idxType])
+				return allcoords;
+
+			for(const MolFrame<t_real, t_vec>& frame : m_frames)
+				allcoords.push_back(frame.GetAtomCoords(idxType, idxSubType));
+
+			return allcoords;
 		}
 
 

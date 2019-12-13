@@ -124,11 +124,26 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 
 		// Edit
-		//auto menuEdit = new QMenu("Edit", m_menu);
+		auto menuEdit = new QMenu("Edit", m_menu);
+		auto acSelectNone = new QAction("Select None", menuEdit);
+
+		menuEdit->addAction(acSelectNone);
+
+		connect(acSelectNone, &QAction::triggered, this, &MolDynDlg::SelectNone);
+
+
+		// Calculate
+		auto menuCalc = new QMenu("Calculate", m_menu);
+		auto acCalcDist = new QAction("Distance Between Selected Atoms", menuEdit);
+
+		menuCalc->addAction(acCalcDist);
+
+		connect(acCalcDist, &QAction::triggered, this, &MolDynDlg::CalculateDistanceBetweenAtoms);
 
 
 		m_menu->addMenu(menuFile);
-		//m_menu->addMenu(menuEdit);
+		m_menu->addMenu(menuEdit);
+		m_menu->addMenu(menuCalc);
 		this->setMenuBar(m_menu);
 	}
 
@@ -259,6 +274,67 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
 }
 // ----------------------------------------------------------------------------
 
+
+
+// ----------------------------------------------------------------------------
+/**
+ * calculate the distance between selected atoms
+ */
+void MolDynDlg::CalculateDistanceBetweenAtoms()
+{
+	std::vector<std::tuple<std::size_t, std::size_t>> objs;
+
+	for(const auto& obj : m_sphereHandles)
+	{
+		// continue if object isn't selected
+		if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+			continue;
+
+		// get indices for selected atoms
+		const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
+		if(!bOk)
+		{
+			QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
+			return;
+		}
+
+		objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+	}
+
+	if(objs.size() <= 1)
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", "At least two atoms have to be selected.");
+		return;
+	}
+
+
+	// get coordinates of first atom
+	auto [firstObjTypeIdx, firstObjSubTypeIdx] = objs[0];
+	auto firstObjCoords = m_mol.GetAtomCoords(firstObjTypeIdx, firstObjSubTypeIdx);
+
+	std::vector<t_vec> firstObjCoordsCryst;
+	firstObjCoordsCryst.reserve(m_mol.GetFrameCount());
+
+	for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
+		firstObjCoordsCryst.push_back(m_crystA * firstObjCoords[frameidx]);
+
+
+	// get distances to other selected atoms
+	for(std::size_t objIdx=1; objIdx<objs.size(); ++objIdx)
+	{
+		auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+		const auto objCoords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx);
+		
+		for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
+		{
+			t_real dist = m::get_dist_uc(m_crystA, firstObjCoordsCryst[frameidx], objCoords[frameidx]);
+
+			// TODO: plot/save/...
+			std::cout << dist << std::endl;
+		}
+	}
+}
+// ----------------------------------------------------------------------------
 
 
 
@@ -478,7 +554,7 @@ void MolDynDlg::PlotMouseDown(bool left, bool mid, bool right)
 
 	if(left && m_curPickedObj > 0)
 	{
-		m_plot->GetImpl()->ToggleObjectHighlight(m_curPickedObj);
+		m_plot->GetImpl()->SetObjectHighlight(m_curPickedObj, !m_plot->GetImpl()->GetObjectHighlight(m_curPickedObj));
 		m_plot->update();
 	}
 }
@@ -510,8 +586,23 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 		m_atomContextMenu->popup(ptGlob);
 	}
 }
+
+
 // ----------------------------------------------------------------------------
 
+
+/**
+ * unselect all atoms
+ */
+void MolDynDlg::SelectNone()
+{
+	if(!m_plot) return;
+
+	for(auto handle : m_sphereHandles)
+		m_plot->GetImpl()->SetObjectHighlight(handle, 0);
+
+	m_plot->update();
+}
 
 
 void MolDynDlg::SliderValueChanged(int val)
@@ -543,25 +634,20 @@ void MolDynDlg::SliderValueChanged(int val)
 }
 
 
+// ----------------------------------------------------------------------------
+
+
 /**
- * delete one atom
+ * get the index of the atom in the m_mol data structure
+ * from the handle of the displayed 3d object
  */
-void MolDynDlg::DeleteAtomUnderCursor()
+std::tuple<bool, std::size_t, std::size_t, std::size_t> 
+MolDynDlg::GetAtomIndexFromHandle(std::size_t handle) const
 {
-	// nothing under cursor
-	if(m_curPickedObj <= 0)
-		return;
-
-	// atom type to be deleted
-	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
-
 	// find handle in sphere handle vector
-	auto iter = std::find(m_sphereHandles.begin(), m_sphereHandles.end(), m_curPickedObj);
+	auto iter = std::find(m_sphereHandles.begin(), m_sphereHandles.end(), handle);
 	if(iter == m_sphereHandles.end())
-	{
-		QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
-		return;
-	}
+		return std::make_tuple(0, 0, 0, 0);
 
 	std::size_t sphereIdx = iter - m_sphereHandles.begin();
 
@@ -576,6 +662,31 @@ void MolDynDlg::DeleteAtomUnderCursor()
 		atomCountsSoFar += numAtoms;
 	}
 
+	std::size_t atomSubTypeIdx = sphereIdx-atomCountsSoFar;
+
+	return std::make_tuple(1, atomTypeIdx, atomSubTypeIdx, sphereIdx);
+}
+
+
+/**
+ * delete one atom
+ */
+void MolDynDlg::DeleteAtomUnderCursor()
+{
+	// nothing under cursor
+	if(m_curPickedObj <= 0)
+		return;
+
+	// atom type to be deleted
+	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+
+	const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(m_curPickedObj);
+	if(!bOk)
+	{
+		QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
+		return;
+	}
+
 	if(m_mol.GetAtomName(atomTypeIdx) != atomLabel)
 	{
 		QMessageBox::critical(this, "Molecular Dynamics", "Mismatch in atom type, data is corrupted.");
@@ -587,7 +698,6 @@ void MolDynDlg::DeleteAtomUnderCursor()
 	m_sphereHandles.erase(m_sphereHandles.begin()+sphereIdx);
 
 	// remove atom
-	std::size_t atomSubTypeIdx = sphereIdx-atomCountsSoFar;
 	m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
 
 	SetStatusMsg("1 atom removed.");

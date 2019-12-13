@@ -17,6 +17,7 @@
 #include <QtCore/QSettings>
 
 #include <vector>
+#include <tuple>
 
 #include "libs/_cxx20/glplot.h"
 #include "libs/_cxx20/math_algos.h"
@@ -52,6 +53,10 @@ protected:
 	void AfterGLInitialisation();
 
 	void SliderValueChanged(int val);
+	void SelectNone();
+
+	std::tuple<bool, std::size_t, std::size_t, std::size_t> GetAtomIndexFromHandle(std::size_t handle) const;
+	void CalculateDistanceBetweenAtoms();
 
 	void DeleteAtomUnderCursor();
 	void DeleteAllAtomsOfSameType();
