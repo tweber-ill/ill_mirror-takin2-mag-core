@@ -844,6 +844,7 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 		m_atomContextMenu->actions()[0]->setText("Delete This \"" + atomLabel + "\" Atom");
 		m_atomContextMenu->actions()[1]->setText("Delete All \"" + atomLabel + "\" Atoms");
 		m_atomContextMenu->actions()[2]->setText("Delete All But \"" + atomLabel + "\" Atoms");
+		m_atomContextMenu->actions()[4]->setText("Select All \"" + atomLabel + "\" Atoms");
 
 		auto ptGlob = QCursor::pos();
 		ptGlob.setY(ptGlob.y() + 8);
