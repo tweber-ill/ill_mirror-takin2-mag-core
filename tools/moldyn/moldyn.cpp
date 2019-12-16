@@ -29,6 +29,9 @@ constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
 
 
+#define PROG_NAME "Molecular Dynamics Tool"
+
+
 
 // ----------------------------------------------------------------------------
 /**
@@ -83,7 +86,7 @@ class MolDynFileDlg : public QFileDialog
 MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 	m_sett{new QSettings{"tobis_stuff", "moldyn"}}
 {
-	setWindowTitle("Molecular Dynamics");
+	setWindowTitle(PROG_NAME);
 	this->setObjectName("moldyn");
 
 	m_status = new QStatusBar(this);
@@ -101,6 +104,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 	{
 		m_menu = new QMenuBar(this);
 		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
+
 
 		// File
 		auto menuFile = new QMenu("File", m_menu);
@@ -125,25 +129,62 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 		// Edit
 		auto menuEdit = new QMenu("Edit", m_menu);
+		auto acSelectAll = new QAction("Select All", menuEdit);
 		auto acSelectNone = new QAction("Select None", menuEdit);
 
+		menuEdit->addAction(acSelectAll);
 		menuEdit->addAction(acSelectNone);
 
+		connect(acSelectAll, &QAction::triggered, this, &MolDynDlg::SelectAll);
 		connect(acSelectNone, &QAction::triggered, this, &MolDynDlg::SelectNone);
 
 
 		// Calculate
 		auto menuCalc = new QMenu("Calculate", m_menu);
-		auto acCalcDist = new QAction("Distance Between Selected Atoms", menuEdit);
+		auto acCalcDist = new QAction("Distance Between Selected Atoms...", menuEdit);
+		auto acCalcPos = new QAction("Positions Of Selected Atoms...", menuEdit);
+		auto acCalcDeltaDist = new QAction("Distances to Initial Position of Selected Atoms...", menuEdit);
 
 		menuCalc->addAction(acCalcDist);
+		menuCalc->addAction(acCalcPos);
+		menuCalc->addAction(acCalcDeltaDist);
 
 		connect(acCalcDist, &QAction::triggered, this, &MolDynDlg::CalculateDistanceBetweenAtoms);
+		connect(acCalcPos, &QAction::triggered, this, &MolDynDlg::CalculatePositionsOfAtoms);
+		connect(acCalcDeltaDist, &QAction::triggered, this, &MolDynDlg::CalculateDeltaDistancesOfAtoms);
+
+
+		// Help
+		auto menuHelp = new QMenu("Help", m_menu);
+		auto acHelpInfo = new QAction("Infos...", menuHelp);
+
+		menuHelp->addAction(acHelpInfo);
+
+		connect(acHelpInfo, &QAction::triggered, this, [this]()
+		{
+			QString strHelp;
+
+			strHelp = QString{PROG_NAME} + ", part of the Takin 2 package.\n";
+			strHelp += "Written by Tobias Weber <tweber@ill.fr>\nin December 2019.\n\n";
+
+			strHelp += "This program is free software: you can redistribute it and/or modify "
+				"it under the terms of the GNU General Public License as published by "
+				"the Free Software Foundation, version 3 of the License.\n\n"
+				"This program is distributed in the hope that it will be useful, "
+				"but WITHOUT ANY WARRANTY; without even the implied warranty of "
+				"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+				"GNU General Public License for more details.\n\n"
+				"You should have received a copy of the GNU General Public License "
+				"along with this program.  If not, see <http://www.gnu.org/licenses/>.";
+
+			QMessageBox::information(this, PROG_NAME, strHelp);
+		});
 
 
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuEdit);
 		m_menu->addMenu(menuCalc);
+		m_menu->addMenu(menuHelp);
 		this->setMenuBar(m_menu);
 	}
 
@@ -282,56 +323,277 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
  */
 void MolDynDlg::CalculateDistanceBetweenAtoms()
 {
-	std::vector<std::tuple<std::size_t, std::size_t>> objs;
-
-	for(const auto& obj : m_sphereHandles)
+	try
 	{
-		// continue if object isn't selected
-		if(!m_plot->GetImpl()->GetObjectHighlight(obj))
-			continue;
+		// get selected atoms
+		std::vector<std::tuple<std::size_t, std::size_t>> objs;
 
-		// get indices for selected atoms
-		const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
-		if(!bOk)
+		for(const auto& obj : m_sphereHandles)
 		{
-			QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
+			// continue if object isn't selected
+			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+				continue;
+
+			// get indices for selected atoms
+			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
+			if(!bOk)
+			{
+				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+				return;
+			}
+
+			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+		}
+
+		if(objs.size() <= 1)
+		{
+			QMessageBox::critical(this, PROG_NAME, "At least two atoms have to be selected.");
 			return;
 		}
 
-		objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+
+		// create file
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Data File (*.dat)");
+		if(filename == "")
+			return;
+
+		std::ofstream ofstr(filename.toStdString());
+		if(!ofstr)
+		{
+			QMessageBox::critical(this, PROG_NAME, "Cannot open file.");
+			return;
+		}
+
+		ofstr.precision(g_prec);
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+		// get coordinates of first atom
+		auto [firstObjTypeIdx, firstObjSubTypeIdx] = objs[0];
+		auto firstObjCoords = m_mol.GetAtomCoords(firstObjTypeIdx, firstObjSubTypeIdx);
+
+
+		ofstr << "# Column 1: Frame\n";
+		ofstr << "# Columns 2, 3, ...: Distances to first atom (A)\n";
+
+		// progress dialog
+		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
+			"Calculating...", "Cancel", 1, objs.size(), this);
+		dlgProgress->setWindowModality(Qt::WindowModal);
+
+		// get distances to other selected atoms
+		for(std::size_t objIdx=1; objIdx<objs.size(); ++objIdx)
+		{
+			auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+			const auto objCoords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx);
+			
+			for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
+			{
+				t_real dist = m::get_dist_uc(m_crystA, firstObjCoords[frameidx], objCoords[frameidx]);
+
+				ofstr 
+					<< std::left << std::setw(g_prec*1.5) << frameidx << " "
+					<< std::left << std::setw(g_prec*1.5) << dist << "\n";
+			}
+
+			dlgProgress->setValue(objIdx+1);
+			if(dlgProgress->wasCanceled())
+			{
+				ofstr << "\n# WARNING: Calculation aborted by user.\n";
+				break;
+			}
+		}
 	}
-
-	if(objs.size() <= 1)
+	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Molecular Dynamics", "At least two atoms have to be selected.");
-		return;
+		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
+}
 
 
-	// get coordinates of first atom
-	auto [firstObjTypeIdx, firstObjSubTypeIdx] = objs[0];
-	auto firstObjCoords = m_mol.GetAtomCoords(firstObjTypeIdx, firstObjSubTypeIdx);
 
-	std::vector<t_vec> firstObjCoordsCryst;
-	firstObjCoordsCryst.reserve(m_mol.GetFrameCount());
-
-	for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
-		firstObjCoordsCryst.push_back(m_crystA * firstObjCoords[frameidx]);
-
-
-	// get distances to other selected atoms
-	for(std::size_t objIdx=1; objIdx<objs.size(); ++objIdx)
+/**
+ * calculate positions of selected atoms
+ */
+void MolDynDlg::CalculatePositionsOfAtoms()
+{
+	try
 	{
-		auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
-		const auto objCoords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx);
-		
+		// get selected atoms
+		std::vector<std::tuple<std::size_t, std::size_t>> objs;
+
+		for(const auto& obj : m_sphereHandles)
+		{
+			// continue if object isn't selected
+			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+				continue;
+
+			// get indices for selected atoms
+			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
+			if(!bOk)
+			{
+				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+				return;
+			}
+
+			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+		}
+
+		if(objs.size() <= 0)
+		{
+			QMessageBox::critical(this, PROG_NAME, "At least one atom has to be selected.");
+			return;
+		}
+
+
+		// create file
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Data File (*.dat)");
+		if(filename == "")
+			return;
+
+		std::ofstream ofstr(filename.toStdString());
+		if(!ofstr)
+		{
+			QMessageBox::critical(this, PROG_NAME, "Cannot open file.");
+			return;
+		}
+
+		ofstr.precision(g_prec);
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+		ofstr << "# Column 1: Frame\n";
+		ofstr << "# Columns 2, 3, 4: x, y, z position of atom  (A)\n";
+
+		// progress dialog
+		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
+			"Calculating...", "Cancel", 0, m_mol.GetFrameCount(), this);
+		dlgProgress->setWindowModality(Qt::WindowModal);
+
+		// iterate all selected atoms
 		for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
 		{
-			t_real dist = m::get_dist_uc(m_crystA, firstObjCoordsCryst[frameidx], objCoords[frameidx]);
+			ofstr << std::left << std::setw(g_prec*1.5) << frameidx << " ";
 
-			// TODO: plot/save/...
-			std::cout << dist << std::endl;
+			for(std::size_t objIdx=0; objIdx<objs.size(); ++objIdx)
+			{
+				auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+				const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
+				
+				ofstr 
+					<< std::left << std::setw(g_prec*1.5) << coords[0] << " "
+					<< std::left << std::setw(g_prec*1.5) << coords[1] << " "
+					<< std::left << std::setw(g_prec*1.5) << coords[2] << "  ";
+			}
+
+			ofstr << "\n";
+
+			dlgProgress->setValue(frameidx+1);
+			if(dlgProgress->wasCanceled())
+			{
+				ofstr << "\n# WARNING: Calculation aborted by user.\n";
+				break;
+			}
 		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, PROG_NAME, ex.what());
+	}
+}
+
+
+
+/**
+ * calculate distance to initial positions of selected atoms
+ */
+void MolDynDlg::CalculateDeltaDistancesOfAtoms()
+{
+	try
+	{
+		// get selected atoms
+		std::vector<std::tuple<std::size_t, std::size_t>> objs;
+
+		for(const auto& obj : m_sphereHandles)
+		{
+			// continue if object isn't selected
+			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+				continue;
+
+			// get indices for selected atoms
+			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
+			if(!bOk)
+			{
+				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+				return;
+			}
+
+			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+		}
+
+		if(objs.size() <= 0)
+		{
+			QMessageBox::critical(this, PROG_NAME, "At least one atom has to be selected.");
+			return;
+		}
+
+
+		// create file
+		QString dirLast = m_sett->value("dir", "").toString();
+		QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Data File (*.dat)");
+		if(filename == "")
+			return;
+
+		std::ofstream ofstr(filename.toStdString());
+		if(!ofstr)
+		{
+			QMessageBox::critical(this, PROG_NAME, "Cannot open file.");
+			return;
+		}
+
+		ofstr.precision(g_prec);
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+
+		ofstr << "# Column 1: Frame\n";
+		ofstr << "# Column 2, 3, ...: Distance delta (A)\n";
+
+		// progress dialog
+		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
+			"Calculating...", "Cancel", 0, m_mol.GetFrameCount(), this);
+		dlgProgress->setWindowModality(Qt::WindowModal);
+
+		// iterate all selected atoms
+		for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
+		{
+			ofstr << std::left << std::setw(g_prec*1.5) << frameidx << " ";
+
+			for(std::size_t objIdx=0; objIdx<objs.size(); ++objIdx)
+			{
+				auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+			 	const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
+				const t_vec& coordsInitial = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, 0);
+
+				t_real dist = m::get_dist_uc(m_crystA, coords, coordsInitial);
+
+				ofstr << std::left << std::setw(g_prec*1.5) << dist << " ";
+			}
+
+			ofstr << "\n";
+
+			dlgProgress->setValue(frameidx+1);
+			if(dlgProgress->wasCanceled())
+			{
+				ofstr << "\n# WARNING: Calculation aborted by user.\n";
+				break;
+			}
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 }
 // ----------------------------------------------------------------------------
@@ -392,7 +654,7 @@ void MolDynDlg::Load()
 		{
 			// only show error if not explicitely cancelled
 			if(!bCancelled)
-				QMessageBox::critical(this, "Molecular Dynamics", "Error loading file.");
+				QMessageBox::critical(this, PROG_NAME, "Error loading file.");
 			return;
 		}
 
@@ -416,7 +678,7 @@ void MolDynDlg::Load()
 		if(!ok)
 		{
 			m_crystB = m::unit<t_mat>();
-			QMessageBox::critical(this, "Molecular Dynamics", "Error: Cannot invert A matrix.");
+			QMessageBox::critical(this, PROG_NAME, "Error: Cannot invert A matrix.");
 		}
 
 		m_crystB /= t_real_gl(2)*m::pi<t_real_gl>;
@@ -458,7 +720,7 @@ void MolDynDlg::Load()
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Molecular Dynamics", ex.what());
+		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 
 	m_plot->update();
@@ -491,7 +753,7 @@ void MolDynDlg::SaveAs()
 
 		if(!m_mol.SaveFile(filename.toStdString()))
 		{
-			QMessageBox::critical(this, "Molecular Dynamics", "Error saving file.");
+			QMessageBox::critical(this, PROG_NAME, "Error saving file.");
 		}
 
 
@@ -499,7 +761,7 @@ void MolDynDlg::SaveAs()
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Molecular Dynamics", ex.what());
+		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 }
 // ----------------------------------------------------------------------------
@@ -589,6 +851,20 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 
 
 // ----------------------------------------------------------------------------
+
+
+/**
+ * select all atoms
+ */
+void MolDynDlg::SelectAll()
+{
+	if(!m_plot) return;
+
+	for(auto handle : m_sphereHandles)
+		m_plot->GetImpl()->SetObjectHighlight(handle, 1);
+
+	m_plot->update();
+}
 
 
 /**
@@ -683,13 +959,13 @@ void MolDynDlg::DeleteAtomUnderCursor()
 	const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(m_curPickedObj);
 	if(!bOk)
 	{
-		QMessageBox::critical(this, "Molecular Dynamics", "Atom handle not found, data is corrupted.");
+		QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
 		return;
 	}
 
 	if(m_mol.GetAtomName(atomTypeIdx) != atomLabel)
 	{
-		QMessageBox::critical(this, "Molecular Dynamics", "Mismatch in atom type, data is corrupted.");
+		QMessageBox::critical(this, PROG_NAME, "Mismatch in atom type, data is corrupted.");
 		return;
 	}
 

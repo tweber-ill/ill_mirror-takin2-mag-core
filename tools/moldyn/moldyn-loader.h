@@ -151,6 +151,15 @@ class MolDyn
 
 
 		/**
+		 * get atom coordinates for a specific frame
+		 */
+		const t_vec& GetAtomCoords(std::size_t idxType, std::size_t idxSubType, std::size_t iFrameIdx) const
+		{
+			return GetFrame(iFrameIdx).GetAtomCoords(idxType, idxSubType);
+		}
+
+
+		/**
 		 * get atom coordinates for all frames
 		 */
 		std::vector<t_vec> GetAtomCoords(std::size_t idxType, std::size_t idxSubType) const

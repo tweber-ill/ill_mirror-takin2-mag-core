@@ -53,10 +53,15 @@ protected:
 	void AfterGLInitialisation();
 
 	void SliderValueChanged(int val);
+
+	void SelectAll();
 	void SelectNone();
 
 	std::tuple<bool, std::size_t, std::size_t, std::size_t> GetAtomIndexFromHandle(std::size_t handle) const;
+
 	void CalculateDistanceBetweenAtoms();
+	void CalculatePositionsOfAtoms();
+	void CalculateDeltaDistancesOfAtoms();
 
 	void DeleteAtomUnderCursor();
 	void DeleteAllAtomsOfSameType();
