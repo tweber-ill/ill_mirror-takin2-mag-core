@@ -196,6 +196,8 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_atomContextMenu->addAction("Delete Atom", this, &MolDynDlg::DeleteAtomUnderCursor);
 		m_atomContextMenu->addAction("Delete All Atoms Of Selected Type", this, &MolDynDlg::DeleteAllAtomsOfSameType);
 		m_atomContextMenu->addAction("Only Keep Atoms Of Selected Type", this, &MolDynDlg::KeepAtomsOfSameType);
+		m_atomContextMenu->addSeparator();
+		m_atomContextMenu->addAction("Select All Atoms of Same Type", this, &MolDynDlg::SelectAtomsOfSameType);
 	}
 
 
@@ -941,6 +943,26 @@ MolDynDlg::GetAtomIndexFromHandle(std::size_t handle) const
 	std::size_t atomSubTypeIdx = sphereIdx-atomCountsSoFar;
 
 	return std::make_tuple(1, atomTypeIdx, atomSubTypeIdx, sphereIdx);
+}
+
+
+/**
+ * select all atoms of the same type as the one under the cursor
+ */
+void MolDynDlg::SelectAtomsOfSameType()
+{
+	// nothing under cursor
+	if(m_curPickedObj <= 0)
+		return;
+
+	// atom type to be selected
+	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+
+	for(auto handle : m_sphereHandles)
+		if(m_plot->GetImpl()->GetObjectDataString(handle) == atomLabel)
+			m_plot->GetImpl()->SetObjectHighlight(handle, 1);
+
+	m_plot->update();
 }
 
 

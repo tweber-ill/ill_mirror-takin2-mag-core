@@ -52,17 +52,18 @@ protected:
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 
-	void SliderValueChanged(int val);
-
-	void SelectAll();
-	void SelectNone();
-
 	std::tuple<bool, std::size_t, std::size_t, std::size_t> GetAtomIndexFromHandle(std::size_t handle) const;
 
 	void CalculateDistanceBetweenAtoms();
 	void CalculatePositionsOfAtoms();
 	void CalculateDeltaDistancesOfAtoms();
 
+	void SliderValueChanged(int val);
+
+	void SelectAll();
+	void SelectNone();
+
+	void SelectAtomsOfSameType();
 	void DeleteAtomUnderCursor();
 	void DeleteAllAtomsOfSameType();
 	void KeepAtomsOfSameType();
