@@ -813,10 +813,26 @@ void MolDynDlg::SetStatusMsg(const std::string& msg)
 
 void  MolDynDlg::UpdateAtomsStatusMsg()
 {
-	if(!m_statusAtoms) return;
+	if(!m_statusAtoms || !m_slider) return;
 
-	std::string numAtoms = std::to_string(m_mol.GetNumAtomsTotal()) + " atoms in " 
-		+ std::to_string(m_mol.GetFrameCount()) + " frames.";
+	// Atoms
+	std::string numAtoms = std::to_string(m_mol.GetNumAtomsTotal()) + " atoms.";
+
+	// Selected
+	if(m_plot)
+	{
+		std::size_t numSelected = 0;
+
+		for(auto handle : m_sphereHandles)
+			if(m_plot->GetImpl()->GetObjectHighlight(handle))
+				++numSelected;
+
+		numAtoms += " " + std::to_string(numSelected) + " selected.";
+	}
+
+	// Frames
+	numAtoms += " Frame " + std::to_string(m_slider->value()+1) + " of " + std::to_string(m_mol.GetFrameCount()) + ".";
+
 	m_statusAtoms->setText(numAtoms.c_str());
 }
 
@@ -832,6 +848,7 @@ void MolDynDlg::PlotMouseDown(bool left, bool mid, bool right)
 	if(left && m_curPickedObj > 0)
 	{
 		m_plot->GetImpl()->SetObjectHighlight(m_curPickedObj, !m_plot->GetImpl()->GetObjectHighlight(m_curPickedObj));
+		UpdateAtomsStatusMsg();
 		m_plot->update();
 	}
 }
@@ -879,6 +896,7 @@ void MolDynDlg::SelectAll()
 	for(auto handle : m_sphereHandles)
 		m_plot->GetImpl()->SetObjectHighlight(handle, 1);
 
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -893,6 +911,7 @@ void MolDynDlg::SelectNone()
 	for(auto handle : m_sphereHandles)
 		m_plot->GetImpl()->SetObjectHighlight(handle, 0);
 
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -922,6 +941,7 @@ void MolDynDlg::SliderValueChanged(int val)
 		}
 	}
 
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -976,6 +996,7 @@ void MolDynDlg::SelectAtomsOfSameType()
 		if(m_plot->GetImpl()->GetObjectDataString(handle) == atomLabel)
 			m_plot->GetImpl()->SetObjectHighlight(handle, 1);
 
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
