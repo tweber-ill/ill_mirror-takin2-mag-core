@@ -38,11 +38,12 @@ class MolFrame
 		{ m_config.push_back(config); }
 
 
-		std::size_t GetNumAtoms() const
+		std::size_t GetNumAtomTypes() const
 		{ return m_config.size(); }
 
-		const std::vector<t_vec>& GetCoords(std::size_t atomidx) const
-		{ return m_config[atomidx]; }
+
+		const std::vector<t_vec>& GetCoords(std::size_t idxType) const
+		{ return m_config[idxType]; }
 
 
 		/**
@@ -122,14 +123,24 @@ class MolDyn
 		{ return m_frames[frame]; }
 
 
-		std::size_t GetAtomCount() const
+		std::size_t GetNumAtomTypes() const
 		{ return m_vecAtoms.size(); }
 
-		const std::string& GetAtomName(std::size_t idx) const
-		{ return m_vecAtoms[idx]; }
+		std::size_t GetNumAtomsTotal() const
+		{
+			std::size_t num = 0;
 
-		unsigned int GetAtomNum(std::size_t idx) const
-		{ return m_vecAtomNums[idx]; }
+			for(std::size_t numpertype : m_vecAtomNums)
+				num += numpertype;
+
+			return num;
+		}
+
+		const std::string& GetAtomName(std::size_t idxType) const
+		{ return m_vecAtoms[idxType]; }
+
+		unsigned int GetAtomNum(std::size_t idxType) const
+		{ return m_vecAtomNums[idxType]; }
 
 
 		void AddAtomType(const std::string& name, unsigned int number)
@@ -415,7 +426,7 @@ class MolDyn
 				const MolFrame<t_real, t_vec>& config = m_frames[frame];
 
 				// iterate atom types
-				for(std::size_t atomidx=0; atomidx<config.GetNumAtoms(); ++atomidx)
+				for(std::size_t atomidx=0; atomidx<config.GetNumAtomTypes(); ++atomidx)
 				{
 					const auto& coords = config.GetCoords(atomidx);
 					// iterate coordinates

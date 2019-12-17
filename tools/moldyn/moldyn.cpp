@@ -10,7 +10,6 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QFileDialog>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QMessageBox>
@@ -90,6 +89,8 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 	this->setObjectName("moldyn");
 
 	m_status = new QStatusBar(this);
+	m_statusAtoms = new QLabel(m_status);
+	m_status->addPermanentWidget(m_statusAtoms);
 	this->setStatusBar(m_status);
 
 
@@ -706,9 +707,9 @@ void MolDynDlg::Load()
 		if(m_mol.GetFrameCount())
 		{
 			const auto& frame = m_mol.GetFrame(0);
-			m_sphereHandles.reserve(frame.GetNumAtoms());
+			m_sphereHandles.reserve(frame.GetNumAtomTypes());
 
-			for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
+			for(std::size_t atomidx=0; atomidx<frame.GetNumAtomTypes(); ++atomidx)
 			{
 				const auto& coords = frame.GetCoords(atomidx);
 				for(const t_vec& vec : coords)
@@ -725,6 +726,8 @@ void MolDynDlg::Load()
 		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 
+	
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -803,8 +806,18 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 void MolDynDlg::SetStatusMsg(const std::string& msg)
 {
 	if(!m_status) return;
-
 	m_status->showMessage(msg.c_str());
+}
+
+
+
+void  MolDynDlg::UpdateAtomsStatusMsg()
+{
+	if(!m_statusAtoms) return;
+
+	std::string numAtoms = std::to_string(m_mol.GetNumAtomsTotal()) + " atoms in " 
+		+ std::to_string(m_mol.GetFrameCount()) + " frames.";
+	m_statusAtoms->setText(numAtoms.c_str());
 }
 
 
@@ -897,7 +910,7 @@ void MolDynDlg::SliderValueChanged(int val)
 	t_real atomscale = m_spinScale->value();
 
 	std::size_t counter = 0;
-	for(std::size_t atomidx=0; atomidx<frame.GetNumAtoms(); ++atomidx)
+	for(std::size_t atomidx=0; atomidx<frame.GetNumAtomTypes(); ++atomidx)
 	{
 		const auto& coords = frame.GetCoords(atomidx);
 		for(const t_vec& vec : coords)
@@ -932,7 +945,7 @@ MolDynDlg::GetAtomIndexFromHandle(std::size_t handle) const
 
 	std::size_t atomCountsSoFar = 0;
 	std::size_t atomTypeIdx = 0;
-	for(atomTypeIdx=0; atomTypeIdx<m_mol.GetAtomCount(); ++atomTypeIdx)
+	for(atomTypeIdx=0; atomTypeIdx<m_mol.GetNumAtomTypes(); ++atomTypeIdx)
 	{
 		std::size_t numAtoms = m_mol.GetAtomNum(atomTypeIdx);
 		if(atomCountsSoFar + numAtoms > sphereIdx)
@@ -1000,6 +1013,7 @@ void MolDynDlg::DeleteAtomUnderCursor()
 	m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
 
 	SetStatusMsg("1 atom removed.");
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -1018,7 +1032,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 
 	std::size_t startIdx = 0;
 	std::size_t totalRemoved = 0;
-	for(std::size_t atomIdx=0; atomIdx<m_mol.GetAtomCount();)
+	for(std::size_t atomIdx=0; atomIdx<m_mol.GetNumAtomTypes();)
 	{
 		std::size_t numAtoms = m_mol.GetAtomNum(atomIdx);
 
@@ -1042,6 +1056,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 	}
 
 	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 
@@ -1060,7 +1075,7 @@ void MolDynDlg::KeepAtomsOfSameType()
 
 	std::size_t startIdx = 0;
 	std::size_t totalRemoved = 0;
-	for(std::size_t atomIdx=0; atomIdx<m_mol.GetAtomCount();)
+	for(std::size_t atomIdx=0; atomIdx<m_mol.GetNumAtomTypes();)
 	{
 		std::size_t numAtoms = m_mol.GetAtomNum(atomIdx);
 
@@ -1084,6 +1099,7 @@ void MolDynDlg::KeepAtomsOfSameType()
 	}
 
 	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
 

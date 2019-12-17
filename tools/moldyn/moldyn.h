@@ -13,6 +13,7 @@
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QSlider>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtCore/QSettings>
 
@@ -41,6 +42,7 @@ protected:
 	void Change3DItem(std::size_t obj, const t_vec* vec, const t_vec* col=nullptr, const t_real *scale=nullptr, const std::string *label=nullptr);
 
 	void SetStatusMsg(const std::string& msg);
+	void UpdateAtomsStatusMsg();
 
 	void New();
 	void Load();
@@ -80,6 +82,7 @@ protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 	QStatusBar *m_status = nullptr;
+	QLabel *m_statusAtoms = nullptr;
 	QSlider *m_slider = nullptr;
 	QDoubleSpinBox *m_spinScale = nullptr;
 	QMenu *m_atomContextMenu = nullptr;
