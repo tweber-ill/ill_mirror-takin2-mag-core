@@ -390,12 +390,12 @@ void MolDynDlg::CalculateDistanceBetweenAtoms()
 		{
 			auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
 			const auto objCoords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx);
-			
+
 			for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
 			{
 				t_real dist = m::get_dist_uc(m_crystA, firstObjCoords[frameidx], objCoords[frameidx]);
 
-				ofstr 
+				ofstr
 					<< std::left << std::setw(g_prec*1.5) << frameidx << " "
 					<< std::left << std::setw(g_prec*1.5) << dist << "\n";
 			}
@@ -484,7 +484,7 @@ void MolDynDlg::CalculatePositionsOfAtoms()
 			{
 				auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
 				const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
-				
+
 				ofstr 
 					<< std::left << std::setw(g_prec*1.5) << coords[0] << " "
 					<< std::left << std::setw(g_prec*1.5) << coords[1] << " "
@@ -631,7 +631,7 @@ void MolDynDlg::Load()
 		auto files = filedlg->selectedFiles();
 		if(!files.size())
 			return;
-		
+
 		QString filename = files[0];
 		if(filename == "" || !QFile::exists(filename))
 			return;
@@ -726,7 +726,7 @@ void MolDynDlg::Load()
 		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 
-	
+
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
@@ -1185,7 +1185,12 @@ int main(int argc, char** argv)
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
+	QApplication::addLibraryPath(QApplication::applicationDirPath());
+	QApplication::addLibraryPath(QApplication::applicationDirPath() + QDir::separator() + "qtplugins");
+	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
+
 	auto app = std::make_unique<QApplication>(argc, argv);
+
 	auto dlg = std::make_unique<MolDynDlg>(nullptr);
 	dlg->show();
 

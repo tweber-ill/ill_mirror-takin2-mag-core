@@ -3,6 +3,9 @@
 # @date dec-2019
 # @license GPLv3, see 'LICENSE' file
 #
+# cmake -DCMAKE_BUILD_TYPE=Release ..
+# mingw64-cmake -DCMAKE_BUILD_TYPE=Release ..
+#
 
 cmake_minimum_required(VERSION 3.0)
 project(moldyn)
