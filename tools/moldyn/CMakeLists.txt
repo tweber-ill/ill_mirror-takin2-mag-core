@@ -12,9 +12,11 @@ project(moldyn)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
+
 #find_package(Boost REQUIRED COMPONENTS system REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
+
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
@@ -23,6 +25,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_definitions(-std=c++2a -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
 add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED -DBOOST_ERROR_CODE_HEADER_ONLY)
+add_definitions(-D_GL_MAJ_VER=3 -D_GL_MIN_VER=3 -D_GL_SUFFIX=_Core)
+
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
