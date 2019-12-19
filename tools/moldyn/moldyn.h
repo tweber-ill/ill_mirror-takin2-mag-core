@@ -53,6 +53,7 @@ protected:
 	void PlotMouseClick(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
+	void GLInitialisationFailed();
 
 	std::tuple<bool, std::size_t, std::size_t, std::size_t> GetAtomIndexFromHandle(std::size_t handle) const;
 

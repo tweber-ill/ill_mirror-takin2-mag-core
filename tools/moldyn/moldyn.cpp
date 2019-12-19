@@ -215,6 +215,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 			m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
 
 		connect(m_plot, &GlPlot::AfterGLInitialisation, this, &MolDynDlg::AfterGLInitialisation);
+		connect(m_plot, &GlPlot::GLInitialisationFailed, this, &MolDynDlg::GLInitialisationFailed);
 		connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MolDynDlg::PickerIntersection);
 		connect(m_plot, &GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
 		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
@@ -1143,6 +1144,15 @@ void MolDynDlg::AfterGLInitialisation()
 		= m_plot->GetImpl()->GetGlDescr();
 	std::cout << "GL Version: " << strGlVer << ", Shader Version: " << strGlShaderVer << "." << std::endl;
 	std::cout << "GL Device: " << strGlRenderer << ", " << strGlVendor << "." << std::endl;
+}
+
+
+void MolDynDlg::GLInitialisationFailed()
+{
+	std::string err = "GL initialisation failed.";
+	err += " Need GL version " + std::to_string(_GL_MAJ_VER) + "." + std::to_string(_GL_MIN_VER);
+	err += " and shader version " + std::to_string(_GLSL_MAJ_VER) + std::to_string(_GLSL_MIN_VER) + "0.";
+	QMessageBox::critical(this, PROG_NAME, err.c_str());
 }
 
 
