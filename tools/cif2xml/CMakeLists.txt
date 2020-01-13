@@ -13,7 +13,7 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 find_package(Boost REQUIRED)
 
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 add_definitions(-std=c++2a -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
 
@@ -27,6 +27,11 @@ include_directories(
 
 add_executable(cif2xml
 	cif2xml.cpp ../structfact/loadcif.h)
-target_link_libraries(cif2xml 
+target_link_libraries(cif2xml
 #	-static-libstdc++ -static-libgcc
 )
+
+
+add_executable(findsg
+	findsg.cpp ../structfact/loadcif.h)
+target_link_libraries(findsg)

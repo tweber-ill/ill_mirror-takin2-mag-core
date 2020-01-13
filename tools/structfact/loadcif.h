@@ -264,7 +264,11 @@ load_cif(const std::string& filename, t_real eps=1e-6)
  * gets space group description strings and symmetry operations
  */
 template<class t_mat, class t_real = typename t_mat::value_type>
-std::vector<std::tuple<int, std::string, std::vector<t_mat>>>
+std::vector<std::tuple<
+	int,				// sg number 
+	std::string, 		// description
+	std::vector<t_mat>	// symops
+	>>
 get_sgs(bool bAddNr=true, bool bAddHall=true)
 {
 	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> sgs;
@@ -299,6 +303,56 @@ get_sgs(bool bAddNr=true, bool bAddHall=true)
 	});
 
 	return sgs;
+}
+
+
+
+/**
+ * finds all space groups which transform the initial positions into the final ones
+ */
+template<class t_vec, class t_mat, class t_real = typename t_mat::value_type>
+std::vector<std::tuple<
+	int,				// sg number 
+	std::string, 		// description
+	std::vector<t_mat>	// symops
+	>>
+find_matching_sgs(
+	const std::vector<t_vec>& posInit, const std::vector<t_vec>& _posFinal, 
+	t_real eps=1e-6)
+{
+	std::vector<t_vec> posFinal = m::keep_atoms_in_uc<t_vec, t_real>(_posFinal);
+
+
+	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> matchingSGs;
+	auto sgs = get_sgs<t_mat, t_real>();
+
+	// iterate spacegroups
+	for(const auto& [sgNum, sgName, sgOps] : sgs)
+	{
+		// generate symmetry-equivalent positions
+		std::vector<t_vec> generatedpos;
+
+		for(const t_vec& pos : posInit)
+		{
+			std::vector<t_vec> newpos = m::apply_ops_hom<t_vec, t_mat, t_real>(pos, sgOps, eps);
+			generatedpos.insert(generatedpos.end(), newpos.begin(), newpos.end());
+		}
+
+		//for(const auto& thepos : generatedpos)
+		//	std::cout << thepos << std::endl;
+
+		// filter multiple occupancies in generatedpos
+		generatedpos = m::remove_duplicates<t_vec>(generatedpos, eps);
+
+
+		// no match
+		if(!m::equals_all<t_vec>(generatedpos, posFinal, eps, 3))
+			continue;
+
+		matchingSGs.emplace_back(std::make_tuple(sgNum, sgName, sgOps));
+	}
+
+	return matchingSGs;
 }
 
 
