@@ -89,7 +89,9 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 	this->setObjectName("moldyn");
 
 	m_status = new QStatusBar(this);
+	m_statusCurAtom = new QLabel(m_status);
 	m_statusAtoms = new QLabel(m_status);
+	m_status->addWidget(m_statusCurAtom);
 	m_status->addPermanentWidget(m_statusAtoms);
 	this->setStatusBar(m_status);
 
@@ -791,11 +793,13 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 	if(m_curPickedObj > 0)
 	{
 		const std::string& label = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
-		SetStatusMsg(label);
+		m_statusCurAtom->setText(label.c_str());
+		//SetStatusMsg(label);
 	}
 	else
 	{
-		SetStatusMsg("");
+		m_statusCurAtom->setText("");
+		//SetStatusMsg("");
 	}
 }
 

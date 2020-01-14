@@ -82,8 +82,11 @@ protected:
 
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
+
 	QStatusBar *m_status = nullptr;
+	QLabel *m_statusCurAtom = nullptr;
 	QLabel *m_statusAtoms = nullptr;
+
 	QSlider *m_slider = nullptr;
 	QDoubleSpinBox *m_spinScale = nullptr;
 	QMenu *m_atomContextMenu = nullptr;
