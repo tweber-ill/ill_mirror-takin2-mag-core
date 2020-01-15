@@ -16,7 +16,7 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 add_definitions(-std=c++2a -fconcepts)
 add_definitions(${Boost_CXX_FLAGS})
 

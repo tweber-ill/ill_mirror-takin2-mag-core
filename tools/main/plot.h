@@ -11,6 +11,7 @@
 #include <QtCore/QSettings>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QMenu>
+#include <memory>
 
 #include "qcp/qcustomplot.h"
 

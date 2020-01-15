@@ -23,5 +23,9 @@ add_subdirectory(tools/cif2xml)
 add_subdirectory(tools/pol)
 
 
+# misc tools
+add_subdirectory(tools/moldyn)
+
+
 # main GUI tool
 add_subdirectory(tools/main)

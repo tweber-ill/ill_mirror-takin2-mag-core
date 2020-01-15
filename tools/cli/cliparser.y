@@ -5,8 +5,8 @@
  * @license see 'LICENSE' file
  */
 
-//%define parser_class_name { CliParser }
-%define api.parser.class { CliParser }
+%define parser_class_name { CliParser }
+//%define api.parser.class { CliParser }
 %define api.value.type variant
 %define api.token.constructor
 //%error-verbose
