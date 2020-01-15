@@ -29,6 +29,7 @@ constexpr int g_prec = 6;
 
 
 #define PROG_NAME "Molecular Dynamics Tool"
+#define PROG_VER "0.2"
 
 
 
@@ -85,7 +86,7 @@ class MolDynFileDlg : public QFileDialog
 MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 	m_sett{new QSettings{"tobis_stuff", "moldyn"}}
 {
-	setWindowTitle(PROG_NAME);
+	setWindowTitle(QString(PROG_NAME) + QString(" Version ") + QString(PROG_VER));
 	this->setObjectName("moldyn");
 
 	m_status = new QStatusBar(this);
@@ -167,7 +168,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		{
 			QString strHelp;
 
-			strHelp = QString{PROG_NAME} + ", part of the Takin 2 package.\n";
+			strHelp = QString{PROG_NAME} + " v" + QString{PROG_VER} + ", part of the Takin 2 package.\n";
 			strHelp += "Written by Tobias Weber <tweber@ill.fr>\nin December 2019.\n\n";
 
 			strHelp += "This program is free software: you can redistribute it and/or modify "
@@ -197,6 +198,10 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_atomContextMenu = new QMenu(this);
 		m_atomContextMenu->setTitle("Atoms");
 		m_atomContextMenu->addAction("Delete Atom", this, &MolDynDlg::DeleteAtomUnderCursor);
+        m_atomContextMenu->addSeparator();
+        m_atomContextMenu->addAction("Delete Selected Atoms", this, &MolDynDlg::DeleteSelectedAtoms);
+        m_atomContextMenu->addAction("Delete All But Selected Atoms", this, &MolDynDlg::OnlyKeepSelectedAtoms);
+        m_atomContextMenu->addSeparator();
 		m_atomContextMenu->addAction("Delete All Atoms Of Selected Type", this, &MolDynDlg::DeleteAllAtomsOfSameType);
 		m_atomContextMenu->addAction("Only Keep Atoms Of Selected Type", this, &MolDynDlg::KeepAtomsOfSameType);
 		m_atomContextMenu->addSeparator();
@@ -811,7 +816,7 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 void MolDynDlg::SetStatusMsg(const std::string& msg)
 {
 	if(!m_status) return;
-	m_status->showMessage(msg.c_str());
+	m_status->showMessage(msg.c_str(), 2000);
 }
 
 
@@ -829,8 +834,10 @@ void  MolDynDlg::UpdateAtomsStatusMsg()
 		std::size_t numSelected = 0;
 
 		for(auto handle : m_sphereHandles)
+        {
 			if(m_plot->GetImpl()->GetObjectHighlight(handle))
 				++numSelected;
+        }
 
 		numAtoms += " " + std::to_string(numSelected) + " selected.";
 	}
@@ -877,9 +884,9 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 	{
 		QString atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj).c_str();
 		m_atomContextMenu->actions()[0]->setText("Delete This \"" + atomLabel + "\" Atom");
-		m_atomContextMenu->actions()[1]->setText("Delete All \"" + atomLabel + "\" Atoms");
-		m_atomContextMenu->actions()[2]->setText("Delete All But \"" + atomLabel + "\" Atoms");
-		m_atomContextMenu->actions()[4]->setText("Select All \"" + atomLabel + "\" Atoms");
+		m_atomContextMenu->actions()[5]->setText("Delete All \"" + atomLabel + "\" Atoms");
+		m_atomContextMenu->actions()[6]->setText("Delete All But \"" + atomLabel + "\" Atoms");
+		m_atomContextMenu->actions()[8]->setText("Select All \"" + atomLabel + "\" Atoms");
 
 		auto ptGlob = QCursor::pos();
 		ptGlob.setY(ptGlob.y() + 8);
@@ -998,9 +1005,89 @@ void MolDynDlg::SelectAtomsOfSameType()
 	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
 
 	for(auto handle : m_sphereHandles)
+    {
 		if(m_plot->GetImpl()->GetObjectDataString(handle) == atomLabel)
 			m_plot->GetImpl()->SetObjectHighlight(handle, 1);
+    }
 
+	UpdateAtomsStatusMsg();
+	m_plot->update();
+}
+
+
+/**
+ * delete the selected atoms
+ */
+void MolDynDlg::DeleteSelectedAtoms()
+{
+    std::size_t totalRemoved = 0;
+
+    for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
+    {
+        auto handle = *iter;
+        if(m_plot->GetImpl()->GetObjectHighlight(handle))
+        {
+            const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
+            if(!bOk)
+            {
+                QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+                return;
+            }
+
+            // remove 3d objects
+            m_plot->GetImpl()->RemoveObject(handle);
+            iter = m_sphereHandles.erase(iter);
+
+            // remove atom
+            m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
+            
+            ++totalRemoved;
+            continue;
+        }
+
+        ++iter;
+    }
+
+    SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+	UpdateAtomsStatusMsg();
+	m_plot->update();
+}
+
+
+/**
+ * delete all but the selected atoms
+ */
+void MolDynDlg::OnlyKeepSelectedAtoms()
+{
+    std::size_t totalRemoved = 0;
+
+    for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
+    {
+        auto handle = *iter;
+        if(!m_plot->GetImpl()->GetObjectHighlight(handle))
+        {
+            const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
+            if(!bOk)
+            {
+                QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+                return;
+            }
+
+            // remove 3d objects
+            m_plot->GetImpl()->RemoveObject(handle);
+            iter = m_sphereHandles.erase(iter);
+
+            // remove atom
+            m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
+            
+            ++totalRemoved;
+            continue;
+        }
+
+        ++iter;
+    }
+
+    SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }

@@ -66,6 +66,8 @@ protected:
 	void SelectAll();
 	void SelectNone();
 
+    void DeleteSelectedAtoms();
+    void OnlyKeepSelectedAtoms();
 	void SelectAtomsOfSameType();
 	void DeleteAtomUnderCursor();
 	void DeleteAllAtomsOfSameType();
