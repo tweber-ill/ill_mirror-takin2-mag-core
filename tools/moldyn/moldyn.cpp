@@ -31,6 +31,8 @@ constexpr int g_prec = 6;
 #define PROG_NAME "Molecular Dynamics Tool"
 #define PROG_VER "0.2"
 
+#define DATA_SEP "#|#"	// data separation string
+
 
 
 // ----------------------------------------------------------------------------
@@ -300,10 +302,10 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 /**
  * add an atom
  */
-std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& label)
+std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex)
 {
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
-	Change3DItem(obj, &vec, &col, &scale, &label);
+	Change3DItem(obj, &vec, &col, &scale, &typelabel, atomindex);
 	return obj;
 }
 
@@ -311,7 +313,8 @@ std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scal
 /**
  * change an atom
  */
-void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale, const std::string *label)
+void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale,
+	const std::string *label, int atomindex)
 {
 	if(vec)
 	{
@@ -321,8 +324,14 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
 	}
 
 	if(col) m_plot->GetImpl()->SetObjectCol(obj, (*col)[0], (*col)[1], (*col)[2], 1);
-	if(label) m_plot->GetImpl()->SetObjectLabel(obj, *label);
-	if(label) m_plot->GetImpl()->SetObjectDataString(obj, *label);
+	if(label)
+	{
+		std::ostringstream ostrData;
+		ostrData << *label << DATA_SEP << atomindex;
+
+		m_plot->GetImpl()->SetObjectLabel(obj, *label);
+		m_plot->GetImpl()->SetObjectDataString(obj, ostrData.str());
+	}
 }
 // ----------------------------------------------------------------------------
 
@@ -385,8 +394,21 @@ void MolDynDlg::CalculateDistanceBetweenAtoms()
 		auto firstObjCoords = m_mol.GetAtomCoords(firstObjTypeIdx, firstObjSubTypeIdx);
 
 
+		// output data file header infos
+		ofstr << "#\n";
 		ofstr << "# Column 1: Frame\n";
 		ofstr << "# Columns 2, 3, ...: Distances to first atom (A)\n";
+		ofstr << "# Atoms: ";
+
+		for(std::size_t objIdx=0; objIdx<objs.size(); ++objIdx)
+		{
+			auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+			ofstr << m_mol.GetAtomName(objTypeIdx) << "#" << (objSubTypeIdx+1);
+			if(objIdx < objs.size()-1)
+				ofstr << ", ";
+		}
+		ofstr << "\n#\n";
+
 
 		// progress dialog
 		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
@@ -475,8 +497,21 @@ void MolDynDlg::CalculatePositionsOfAtoms()
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
 
+		// output data file header infos
+		ofstr << "#\n";
 		ofstr << "# Column 1: Frame\n";
 		ofstr << "# Columns 2, 3, 4: x, y, z position of atom  (A)\n";
+		ofstr << "# Atoms: ";
+
+		for(std::size_t objIdx=0; objIdx<objs.size(); ++objIdx)
+		{
+			auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+			ofstr << m_mol.GetAtomName(objTypeIdx) << "#" << (objSubTypeIdx+1);
+			if(objIdx < objs.size()-1)
+				ofstr << ", ";
+		}
+		ofstr << "\n#\n";
+
 
 		// progress dialog
 		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
@@ -533,9 +568,11 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
 				continue;
 
+			//const auto [typelabel, _atomSubTypeIdx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(obj));
+
 			// get indices for selected atoms
 			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
-			if(!bOk)
+			if(!bOk /*|| _atomSubTypeIdx != atomSubTypeIdx*/)
 			{
 				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
 				return;
@@ -568,8 +605,21 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
 
+		// output data file header infos
+		ofstr << "#\n";
 		ofstr << "# Column 1: Frame\n";
-		ofstr << "# Column 2, 3, ...: Distance delta (A)\n";
+		ofstr << "# Column 2, 3, ...: Distance deltas (A)\n";
+		ofstr << "# Atoms: ";
+
+		for(std::size_t objIdx=0; objIdx<objs.size(); ++objIdx)
+		{
+			auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
+			ofstr << m_mol.GetAtomName(objTypeIdx) << "#" << (objSubTypeIdx+1);
+			if(objIdx < objs.size()-1)
+				ofstr << ", ";
+		}
+		ofstr << "\n#\n";
+	
 
 		// progress dialog
 		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
@@ -717,14 +767,20 @@ void MolDynDlg::Load()
 			const auto& frame = m_mol.GetFrame(0);
 			m_sphereHandles.reserve(frame.GetNumAtomTypes());
 
-			for(std::size_t atomidx=0; atomidx<frame.GetNumAtomTypes(); ++atomidx)
+			for(std::size_t atomtypeidx=0; atomtypeidx<frame.GetNumAtomTypes(); ++atomtypeidx)
 			{
-				const auto& coords = frame.GetCoords(atomidx);
+				const auto& coords = frame.GetCoords(atomtypeidx);
+
+				int atomidx = 0;
 				for(const t_vec& vec : coords)
 				{
 					t_real atomscale = m_spinScale->value();
-					std::size_t handle = Add3DItem(vec, cols[atomidx % cols.size()], atomscale, m_mol.GetAtomName(atomidx));
+
+					std::size_t handle = Add3DItem(vec, cols[atomtypeidx % cols.size()], atomscale, 
+						m_mol.GetAtomName(atomtypeidx), atomidx);
 					m_sphereHandles.push_back(handle);
+
+					++atomidx;
 				}
 			}
 		}
@@ -797,8 +853,12 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 
 	if(m_curPickedObj > 0)
 	{
-		const std::string& label = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
-		m_statusCurAtom->setText(label.c_str());
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+
+		std::ostringstream ostrLabel;
+		ostrLabel << "Current Atom: " << typelabel << " #" << (atomidx+1);
+	
+		m_statusCurAtom->setText(ostrLabel.str().c_str());
 		//SetStatusMsg(label);
 	}
 	else
@@ -882,7 +942,9 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 	// show context menu
 	if(right && m_curPickedObj > 0)
 	{
-		QString atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj).c_str();
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+
+		QString atomLabel = typelabel.c_str();
 		m_atomContextMenu->actions()[0]->setText("Delete This \"" + atomLabel + "\" Atom");
 		m_atomContextMenu->actions()[5]->setText("Delete All \"" + atomLabel + "\" Atoms");
 		m_atomContextMenu->actions()[6]->setText("Delete All But \"" + atomLabel + "\" Atoms");
@@ -941,15 +1003,18 @@ void MolDynDlg::SliderValueChanged(int val)
 	t_real atomscale = m_spinScale->value();
 
 	std::size_t counter = 0;
-	for(std::size_t atomidx=0; atomidx<frame.GetNumAtomTypes(); ++atomidx)
+	for(std::size_t atomtypeidx=0; atomtypeidx<frame.GetNumAtomTypes(); ++atomtypeidx)
 	{
-		const auto& coords = frame.GetCoords(atomidx);
+		const auto& coords = frame.GetCoords(atomtypeidx);
+
+		int atomidx = 0;
 		for(const t_vec& vec : coords)
 		{
 			std::size_t obj = m_sphereHandles[counter];
-			Change3DItem(obj, &vec, nullptr, &atomscale);
+			Change3DItem(obj, &vec, nullptr, &atomscale, nullptr, atomidx);
 
 			++counter;
+			++atomidx;
 		}
 	}
 
@@ -959,6 +1024,24 @@ void MolDynDlg::SliderValueChanged(int val)
 
 
 // ----------------------------------------------------------------------------
+
+/**
+ * extract [typelabel, atomindex] from the atom data strings
+ */
+std::tuple<std::string, int> MolDynDlg::SplitDataString(const std::string& data) const
+{
+	std::size_t idx = data.rfind(DATA_SEP);
+
+	// no separator found, just return atom type string
+	if(idx == std::string::npos)
+		return std::make_tuple(data, -1);
+
+	// split string
+	std::string atomtype = data.substr(0, idx);
+	std::string atomidx = data.substr(idx + std::strlen(DATA_SEP));
+
+	return std::make_tuple(atomtype, std::stoi(atomidx));
+}
 
 
 /**
@@ -1002,11 +1085,12 @@ void MolDynDlg::SelectAtomsOfSameType()
 		return;
 
 	// atom type to be selected
-	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
 
 	for(auto handle : m_sphereHandles)
     {
-		if(m_plot->GetImpl()->GetObjectDataString(handle) == atomLabel)
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(handle));
+		if(typelabel == atomLabel)
 			m_plot->GetImpl()->SetObjectHighlight(handle, 1);
     }
 
@@ -1103,8 +1187,7 @@ void MolDynDlg::DeleteAtomUnderCursor()
 		return;
 
 	// atom type to be deleted
-	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
-
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
 	const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(m_curPickedObj);
 	if(!bOk)
 	{
@@ -1141,7 +1224,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 		return;
 
 	// atom type to be deleted
-	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
 
 	std::size_t startIdx = 0;
 	std::size_t totalRemoved = 0;

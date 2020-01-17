@@ -381,7 +381,7 @@ class MolDyn
 					return 0;
 				}
 			}
-	
+
 			std::cout << "\rRead " << iNumConfigs << " configurations. " << "                        " << std::endl;
 			return 1;
 		}
@@ -409,7 +409,7 @@ class MolDyn
 			ofstr << m_strSys << "\n" << "1" << std::endl;
 			for(int i=0; i<m_baseA.size(); ++i)
 				ofstr << m_baseA[i] << " " << m_baseB[i] << " " << m_baseC[i] << std::endl;
-			
+
 			for(const std::string& strAtom : m_vecAtoms)
 				ofstr << strAtom << " ";
 			ofstr << std::endl;
