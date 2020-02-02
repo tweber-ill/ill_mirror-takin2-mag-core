@@ -8,6 +8,7 @@
 
 #include "structfact.h"
 
+#include <QtCore/QDir>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
@@ -1491,6 +1492,7 @@ int main(int argc, char** argv)
 	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
+	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
 	auto app = std::make_unique<QApplication>(argc, argv);
 	auto dlg = std::make_unique<StructFactDlg>(nullptr);
 	dlg->show();
