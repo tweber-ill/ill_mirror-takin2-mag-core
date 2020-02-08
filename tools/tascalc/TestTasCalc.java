@@ -29,7 +29,7 @@ class TestCalc
 
     /*@Disabled*/ /*@Ignore*/
     @Test
-    public void testDot()
+    public void dot()
     {
         try
         {
@@ -47,7 +47,7 @@ class TestCalc
 
 
     @Test
-    public void testCross()
+    public void cross()
     {
         try
         {
@@ -65,8 +65,8 @@ class TestCalc
     }
 
 
-    @Test
-    public void testDet()
+    @Test(/*expected=Exception.class*/)
+    public void det()
         throws Exception
     {
         double[][] M2 = new double[][]
@@ -91,7 +91,7 @@ class TestCalc
 
 
     @Test
-    public void testInv()
+    public void inv()
         throws Exception
     {
         double[][] M2 = new double[][]
@@ -136,7 +136,7 @@ class TestCalc
 class TestTasCalc
 {
     @Test
-    public void testMono()
+    public void mono()
         throws Exception
     {
         double d = 3.437;
@@ -150,7 +150,7 @@ class TestTasCalc
 
 
     @Test
-    public void testQ()
+    public void Q()
         throws Exception
     {
         double ki = 1.444;
@@ -173,7 +173,7 @@ class TestTasCalc
 
 
     @Test
-    public void testAngles()
+    public void angles()
         throws Exception
     {
         double kf = 2.662;
