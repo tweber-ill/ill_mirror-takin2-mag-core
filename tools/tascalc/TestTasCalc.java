@@ -3,22 +3,32 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date 29-jun-19
  * @license see 'LICENSE' file
- * 
- * javac -cp .:/Users/tw/tmp/junit-4.13-beta-3.jar Calc.java TasCalc.java TestTasCalc.java
- * java -cp .:/Users/tw/tmp/junit-4.13-beta-3.jar:/Users/tw/tmp/hamcrest-core-1.3.jar org.junit.runner.JUnitCore TestTasCalc
+ *
+ * javac -cp .:/usr/share/java/junit5/junit-jupiter-api.jar Calc.java TasCalc.java TestTasCalc.java
+ * java -jar /opt/tools/junit-platform-console-standalone-1.6.0.jar -cp . --scan-class-path --disable-banner
  */
 
-import junit.framework.TestCase;
-import org.junit.Assert;
+import org.junit.jupiter.api.*;
 
 
-public class TestTasCalc extends TestCase
+
+@DisplayName("Tests for math routines.")
+class TestCalc
 {
-    public void setUp()
-    {   
+	@BeforeAll
+    static public void setUpAll()
+    {
     }
 
 
+	@BeforeEach
+    public void setUp()
+    {
+    }
+
+
+    /*@Disabled*/ /*@Ignore*/
+    @Test
     public void testDot()
     {
         try
@@ -27,7 +37,7 @@ public class TestTasCalc extends TestCase
             double[] y = new double[]{4., 5., 6.};
 
             double d = Calc.dot(x, y);
-            assertEquals(32., d, 1e-6);
+            Assertions.assertEquals(32., d, 1e-6);
         }
         catch(Exception ex)
         {
@@ -36,6 +46,7 @@ public class TestTasCalc extends TestCase
     }
 
 
+    @Test
     public void testCross()
     {
         try
@@ -45,7 +56,7 @@ public class TestTasCalc extends TestCase
 
             double[] r = Calc.cross(x, y);
             double[] res = new double[]{38., 20., -26.};
-            Assert.assertArrayEquals(res, r, 1e-6);
+            Assertions.assertArrayEquals(res, r, 1e-6);
         }
         catch(Exception ex)
         {
@@ -54,6 +65,7 @@ public class TestTasCalc extends TestCase
     }
 
 
+    @Test
     public void testDet()
         throws Exception
     {
@@ -71,13 +83,14 @@ public class TestTasCalc extends TestCase
         };
 
         double d2 = Calc.det(M2);
-        assertEquals("Wrong determinant!", -2., d2, 1e-6);
- 
+        Assertions.assertEquals(-2., d2, 1e-6, "Wrong determinant!");
+
         double d3 = Calc.det(M3);
-        assertEquals("Wrong determinant!", 240., d3, 1e-6);
+        Assertions.assertEquals(240., d3, 1e-6, "Wrong determinant!");
     }
 
 
+    @Test
     public void testInv()
         throws Exception
     {
@@ -109,27 +122,34 @@ public class TestTasCalc extends TestCase
 
         double[][] I2 = Calc.inv(M2);
         for(int i=0; i<I2.length; ++i)
-            Assert.assertArrayEquals("Wrong inverse!", _I2[i], I2[i], 1e-6);
- 
+            Assertions.assertArrayEquals(_I2[i], I2[i], 1e-6, "Wrong inverse!");
+
         double[][] I3 = Calc.inv(M3);
         for(int i=0; i<I3.length; ++i)
-            Assert.assertArrayEquals("Wrong inverse!", _I3[i], I3[i], 1e-6);
+            Assertions.assertArrayEquals(_I3[i], I3[i], 1e-6, "Wrong inverse!");
     }
+}
 
 
+
+@DisplayName("Tests for TAS calculator.")
+class TestTasCalc
+{
+    @Test
     public void testMono()
         throws Exception
     {
         double d = 3.437;
         double theta = Math.toRadians(78.15/2.);
         double k = TasCalc.get_monok(theta, d);
-        assertEquals("Wrong mono k!", 1.45, k, 1e-4);
+        Assertions.assertEquals(1.45, k, 1e-4, "Wrong mono k!");
 
         double a1 = TasCalc.get_a1(k, d);
-        assertEquals("Wrong a1 angle!", theta, a1, 1e-4);
+        Assertions.assertEquals(theta, a1, 1e-4, "Wrong a1 angle!");
     }
 
 
+    @Test
     public void testQ()
         throws Exception
     {
@@ -138,20 +158,21 @@ public class TestTasCalc extends TestCase
         double a4 = Math.toRadians(84.74);
         double Q = 1.951;
         double Q_2 = TasCalc.get_Q(ki, kf, a4);
-        assertEquals("Wrong Q!", Q, Q, 1e-3);
+        Assertions.assertEquals(Q, Q, 1e-3, "Wrong Q!");
 
         double a4_2 = TasCalc.get_a4(ki, kf, Q);
-        assertEquals("Wrong a4 angle!", a4, a4_2, 1e-3);
+        Assertions.assertEquals(a4, a4_2, 1e-3, "Wrong a4 angle!");
 
         double E = -0.036;
         double ki_2 = TasCalc.get_ki(kf, E);
-        assertEquals("Wrong ki!", ki, ki_2, 1e-3);
+        Assertions.assertEquals(ki, ki_2, 1e-3, "Wrong ki!");
 
         double E_2 = TasCalc.get_E(ki, kf);
-        assertEquals("Wrong E!", E, E_2, 1e-3);
+        Assertions.assertEquals(E, E_2, 1e-3, "Wrong E!");
     }
 
 
+    @Test
     public void testAngles()
         throws Exception
     {
@@ -168,14 +189,14 @@ public class TestTasCalc extends TestCase
         double[][] B = TasCalc.get_B(lattice, angles);
         double[] a3a4 = TasCalc.get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, 1.);
 
-        assertEquals("Wrong distance to scattering plane!", 0., a3a4[2], 1e-3);
-        assertEquals("Wrong a4!", 80.457, a3a4[1]/Math.PI*180., 1e-3);
-        assertEquals("Wrong a3!", 42.389, a3a4[0]/Math.PI*180., 1e-3);
+        Assertions.assertEquals(0., a3a4[2], 1e-3, "Wrong distance to scattering plane!");
+        Assertions.assertEquals(80.457, a3a4[1]/Math.PI*180., 1e-3, "Wrong a4!");
+        Assertions.assertEquals(42.389, a3a4[0]/Math.PI*180., 1e-3, "Wrong a3!");
 
 
         double[][] metric = Calc.get_metric(B);
         double Qlen = Math.sqrt(Calc.dot(Q_rlu, Q_rlu, metric));
         double[] Qhkl = TasCalc.get_hkl(ki, kf, a3a4[0], Qlen, orient_rlu, orient_up_rlu, B, 1.);
-        Assert.assertArrayEquals("Wrong Q position!", new double[]{1., 2., 2.}, Qhkl, 1e-4);
+        Assertions.assertArrayEquals(new double[]{1., 2., 2.}, Qhkl, 1e-4, "Wrong Q position!");
     }
 }
