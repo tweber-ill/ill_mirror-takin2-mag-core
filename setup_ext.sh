@@ -17,7 +17,7 @@ UZIP=unzip
 # -----------------------------------------------------------------------------
 # URLs for external libs
 TLIBS=https://forge.frm2.tum.de/cgit/cgit.cgi/frm2/mira/tlibs.git/snapshot/tlibs-master.tar.bz2
-QCP=http://www.qcustomplot.com/release/2.0.0/QCustomPlot-source.tar.gz
+QCP=https://www.qcustomplot.com/release/2.0.1/QCustomPlot-source.tar.gz
 GEMMI=https://github.com/project-gemmi/gemmi/archive/master.zip
 
 # local file names
