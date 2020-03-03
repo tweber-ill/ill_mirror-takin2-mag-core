@@ -11,6 +11,14 @@ public class Calc
     /**
      * r_i = x_i + y_i
      */
+    /*@
+        requires x.length == y.length;
+        ensures \result.length == x.length;
+        ensures (\forall int i; 
+                 0<=i && i<\result.length; 
+                 \result[i] - (x[i] + y[i]) < 1e-6 ||
+                 -(\result[i] - (x[i] + y[i])) < 1e-6);
+    @*/
     public static double[] add(double[] x, double[] y)
         throws Exception
     {
@@ -29,6 +37,14 @@ public class Calc
     /**
      * r_i = x_i - y_i
      */
+    /*@
+        requires x.length == y.length;
+        ensures \result.length == x.length;
+        ensures (\forall int i;
+                 0<=i && i<\result.length;
+                 \result[i] - (x[i] - y[i]) < 1e-6 ||
+                 -(\result[i] - (x[i] - y[i])) < 1e-6);
+    @*/
     public static double[] sub(double[] x, double[] y)
         throws Exception
     {
@@ -47,6 +63,13 @@ public class Calc
     /**
      * r_i = x_i * d
      */
+    /*@
+        ensures \result.length == x.length;
+        ensures (\forall int i; 
+                 0<=i && i<\result.length;
+                 \result[i] - x[i]*d < 1e-6 ||
+                 -(\result[i] - x[i]*d) < 1e-6);
+    @*/
     public static double[] mul(double[] x, double d)
         throws Exception
     {
@@ -63,6 +86,13 @@ public class Calc
     /**
      * r_i = d * x_i
      */
+    /*@
+        ensures \result.length == x.length;
+        ensures (\forall int i; 
+                 0<=i && i<\result.length;
+                 \result[i] - x[i]*d < 1e-6 ||
+                 -(\result[i] - x[i]*d) < 1e-6);
+    @*/
     public static double[] mul(double d, double[] x)
         throws Exception
     {
@@ -73,6 +103,13 @@ public class Calc
     /**
      * r_i = x_i / d
      */
+    /*@
+        ensures \result.length == x.length;
+        ensures (\forall int i; 
+                 0<=i && i<\result.length;
+                 \result[i] - x[i]/d < 1e-6 ||
+                 -(\result[i] - x[i]/d) < 1e-6);
+    @*/
     public static double[] div(double[] x, double d)
         throws Exception
     {
@@ -294,7 +331,7 @@ public class Calc
             {
                 if(_j == j)
                     continue;
-                
+
                 R[_i2][_j2] = M[_i][_j];
                 ++_j2;
             }
@@ -312,7 +349,7 @@ public class Calc
         for(int i=0; i<dim; ++i)
             for(int j=0; j<dim; ++j)
                 M[i][j] = 0.;
-        
+
         return M;
     }
 
@@ -323,7 +360,7 @@ public class Calc
 
         for(int i=0; i<dim; ++i)
             M[i][i] = 1.;
-        
+
         return M;
     }
 
@@ -342,7 +379,7 @@ public class Calc
 
         if(dim1 != dim2)
             throw new Exception("Expecting a square matrix.");
-        
+
         if(dim1 <= 0)
             return 0.;
         else if(dim1 == 1)
@@ -360,7 +397,7 @@ public class Calc
             double sgn = (((i+j) % 2) == 0) ? 1. : -1.;
             d += sgn * M[i][j] * det(submat(M, i,j));
         }
-        
+
         return d;
     }
 
@@ -379,7 +416,7 @@ public class Calc
 
         if(dim1 != dim2)
             throw new Exception("Expecting a square matrix.");
- 
+
         double d = det(M);
         double[][] I = new double[dim2][dim1];
 
@@ -426,7 +463,7 @@ public class Calc
     }
 
 
-    /** 
+    /**
      * levi-civita in cartesian coordinates
      */
     public static double levi(int i, int j, int k)
@@ -444,7 +481,7 @@ public class Calc
     }
 
 
-    /** 
+    /**
      * levi-civita symbol in fractional coordinates
      */
     public static double levi(int i, int j, int k, double[][] B)
@@ -463,7 +500,7 @@ public class Calc
         return det(M);
     }
 
- 
+
     /**
      * cross product in fractional coordinates
      */
@@ -474,7 +511,7 @@ public class Calc
 
         double[][] metric_inv = inv(get_metric(B));
         double[] vec = new double[dim];
-        
+
         for(int l=0; l<dim; ++l)
             for(int i=0; i<dim; ++i)
                 for(int j=0; j<dim; ++j)
@@ -482,7 +519,7 @@ public class Calc
                         vec[l] = levi(i,j,k, B) * a[j] * b[k] * metric_inv[l][i];
         return vec;
     }
-    
+
 
     /**
      * angle between peaks in fractional coordinates
@@ -508,4 +545,26 @@ public class Calc
         return dot(transpose(B), B);
     }
     // ------------------------------------------------------------------------
+
+
+    /*
+     * testing openjml:
+     * static checking: java -jar /opt/openjml/openjml.jar -esc Calc.java
+     * dynamic checking: java -jar /opt/openjml/openjml.jar -rac Calc.java
+     * java -cp .:/opt/openjml/jmlruntime.jar Calc
+     */
+    /*public static void main(String[] args)
+    {
+        try
+        {
+            double[] x = new double[]{1., 2., 3.};
+            double[] y = new double[]{3., 4., 5.};
+            double[] z1 = Calc.add(x, y);
+            double[] z2 = Calc.sub(x, y);
+        }
+        catch(Exception ex)
+        {
+            System.err.println(ex);
+        }
+    }*/
 }

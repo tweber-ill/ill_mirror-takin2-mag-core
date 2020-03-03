@@ -48,7 +48,7 @@ public class TasCalc
                 lattice[1] * cs[2],
                 lattice[1] * s2,
                 0.
-            },    
+            },
             {
                 lattice[2] * cs[1],
                 lattice[2] * (cs[0]-cs[1]*cs[2]) / s2,
@@ -95,7 +95,7 @@ public class TasCalc
             U_invA[1][i] = orient2_invA[i];
             U_invA[2][i] = orientup_invA[i];
         }
-          
+
         double[][] UB = Calc.dot(U_invA, B);
         return UB;
     }
@@ -138,7 +138,7 @@ public class TasCalc
         double c = (ki*ki + kf*kf - Q*Q) / (2.*ki*kf);
         return Math.acos(c);
     }
-    
+
 
     /**
      * scattering triangle
@@ -160,7 +160,7 @@ public class TasCalc
         double c = (ki*ki + Q*Q - kf*kf) / (2.*ki*Q);
         return sense * Math.acos(c);
     }
-    
+
 
     /**
      * scattering triangle
