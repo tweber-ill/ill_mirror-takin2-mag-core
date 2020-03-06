@@ -15,7 +15,7 @@ import org.junit.jupiter.api.*;
 @DisplayName("Tests for math routines.")
 class TestCalc
 {
-	@BeforeAll
+    @BeforeAll
     static public void setUpAll()
     {
     }

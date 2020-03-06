@@ -453,6 +453,7 @@ class TasGUI:
 		try:
 			import PyQt5 as qt
 			import PyQt5.QtCore as qtc
+			import PyQt5.QtGui as qtg
 			import PyQt5.QtWidgets as qtw
 			qt_ver = 5
 		except ImportError:
@@ -460,7 +461,8 @@ class TasGUI:
 			try:
 				import PyQt4 as qt
 				import PyQt4.QtCore as qtc
-				import PyQt4.QtGui as qtw
+				import PyQt4.QtGui as qtg
+				qtw = qtg
 				qt_ver = 4
 			except ImportError:
 				print("Error: No suitable version of Qt was found!")
@@ -710,7 +712,10 @@ class TasGUI:
 		if sett.contains("qtas/geo"):
 			geo = sett.value("qtas/geo")
 			if qt_ver == 4:
-				geo = geo.toByteArray()
+				try:
+					geo = geo.toByteArray()
+				except AttributeError as err:
+					pass
 			dlg.restoreGeometry(geo)
 
 		self.xtalChanged()
