@@ -270,14 +270,16 @@ def calc_ellipses(Qres_Q):
 #
 # shows the 2d ellipses
 #
-def plot_ellipses(file, Q4, w, Qmean, ellis):
+def plot_ellipses(file, Q4, w, Qmean, ellis, use_tex=False):
 	try:
 		import mpl_toolkits.mplot3d as mplot3d
+		import matplotlib
 		import matplotlib.pyplot as plot
 	except ImportError:
 		print("Matplotlib could not be imported!")
 		exit(-1)
 
+	matplotlib.rc("text", usetex=use_tex)
 
 	thesymsize = options["symsize"] * w
 	themarker = "."
@@ -293,6 +295,12 @@ def plot_ellipses(file, Q4, w, Qmean, ellis):
 	num_ellis = len(ellis)
 	coord_axes = [[0,3], [1,3], [2,3], [0,1]]
 	coord_names = ["Qpara (1/A)", "Qperp (1/A)", "Qup (1/A)", "E (meV)"]
+
+	if use_tex:
+		coord_names[0] = "$Q_{\parallel}$ \AA$^{-1}$"
+		coord_names[1] = "$Q_{\perp}$ \AA$^{-1}$"
+		coord_names[2] = "$Q_{up}$ \AA$^{-1}$"
+
 
 	ellplots = []
 	for ellidx in range(num_ellis):
