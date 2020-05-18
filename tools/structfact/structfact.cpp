@@ -78,10 +78,12 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 	auto tabs = new QTabWidget(this);
-	{
-		m_nucleipanel = new QWidget(this);
 
-		m_nuclei = new QTableWidget(m_nucleipanel);
+
+	{ // nuclei panel
+		QWidget *nucleipanel = new QWidget(this);
+
+		m_nuclei = new QTableWidget(nucleipanel);
 		m_nuclei->setShowGrid(true);
 		m_nuclei->setSortingEnabled(true);
 		m_nuclei->setMouseTracking(true);
@@ -111,11 +113,11 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		m_nuclei->setColumnWidth(COL_RAD, 75);
 		m_nuclei->setColumnWidth(COL_COL, 75);
 
-		QToolButton *pTabBtnAdd = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnDel = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnUp = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnDown = new QToolButton(m_nucleipanel);
-		QToolButton *pTabBtnSG = new QToolButton(m_nucleipanel);
+		QToolButton *pTabBtnAdd = new QToolButton(nucleipanel);
+		QToolButton *pTabBtnDel = new QToolButton(nucleipanel);
+		QToolButton *pTabBtnUp = new QToolButton(nucleipanel);
+		QToolButton *pTabBtnDown = new QToolButton(nucleipanel);
+		QToolButton *pTabBtnSG = new QToolButton(nucleipanel);
 
 		m_nuclei->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -130,14 +132,14 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setText("Move Nuclei Down");
 		pTabBtnSG->setText("Generate");
 
-		m_editA = new QLineEdit("5", m_nucleipanel);
-		m_editB = new QLineEdit("5", m_nucleipanel);
-		m_editC = new QLineEdit("5", m_nucleipanel);
-		m_editAlpha = new QLineEdit("90", m_nucleipanel);
-		m_editBeta = new QLineEdit("90", m_nucleipanel);
-		m_editGamma = new QLineEdit("90", m_nucleipanel);
+		m_editA = new QLineEdit("5", nucleipanel);
+		m_editB = new QLineEdit("5", nucleipanel);
+		m_editC = new QLineEdit("5", nucleipanel);
+		m_editAlpha = new QLineEdit("90", nucleipanel);
+		m_editBeta = new QLineEdit("90", nucleipanel);
+		m_editGamma = new QLineEdit("90", nucleipanel);
 
-		m_comboSG = new QComboBox(m_nucleipanel);
+		m_comboSG = new QComboBox(nucleipanel);
 
 
 		// get space groups and symops
@@ -148,7 +150,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		}
 
 
-		auto pTabGrid = new QGridLayout(m_nucleipanel);
+		auto pTabGrid = new QGridLayout(nucleipanel);
 		pTabGrid->setSpacing(2);
 		pTabGrid->setContentsMargins(4,4,4,4);
 		int y=0;
@@ -164,7 +166,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnSG, y,3,1,1);
 
 
-		auto sep1 = new QFrame(m_nucleipanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep1 = new QFrame(nucleipanel); sep1->setFrameStyle(QFrame::HLine);
 		pTabGrid->addWidget(sep1, ++y,0, 1,4);
 
 		pTabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
@@ -207,7 +209,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged);
 		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu);
 
-		tabs->addTab(m_nucleipanel, "Nuclei");
+		tabs->addTab(nucleipanel, "Nuclei");
 	}
 
 
@@ -258,6 +260,90 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(m_powderlines, 0,0, 1,4);
 
 		tabs->addTab(powderpanel, "Powder Lines");
+	}
+
+
+	{ // find space group panel
+		auto findsgpanel = new QWidget(this);
+
+		m_nuclei_FindSG = new QTableWidget(findsgpanel);
+		m_nuclei_FindSG->setShowGrid(true);
+		m_nuclei_FindSG->setSortingEnabled(true);
+		m_nuclei_FindSG->setMouseTracking(true);
+		m_nuclei_FindSG->setSelectionBehavior(QTableWidget::SelectRows);
+		m_nuclei_FindSG->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_nuclei_FindSG->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		m_nuclei_FindSG->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_nuclei_FindSG->verticalHeader()->setVisible(false);
+
+		m_nuclei_FindSG->setColumnCount(3);
+		m_nuclei_FindSG->setHorizontalHeaderItem(0, new QTableWidgetItem{"x (frac.)"});
+		m_nuclei_FindSG->setHorizontalHeaderItem(1, new QTableWidgetItem{"y (frac.)"});
+		m_nuclei_FindSG->setHorizontalHeaderItem(2, new QTableWidgetItem{"z (frac.)"});
+
+		m_nuclei_FindSG->setColumnWidth(0, 200);
+		m_nuclei_FindSG->setColumnWidth(1, 200);
+		m_nuclei_FindSG->setColumnWidth(2, 200);
+
+		m_sgmatches = new QPlainTextEdit(findsgpanel);
+		m_sgmatches->setReadOnly(true);
+		m_sgmatches->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+
+		QToolButton *pTabBtnAdd = new QToolButton(findsgpanel);
+		QToolButton *pTabBtnDel = new QToolButton(findsgpanel);
+		QToolButton *pTabBtnUp = new QToolButton(findsgpanel);
+		QToolButton *pTabBtnDown = new QToolButton(findsgpanel);
+
+		m_nuclei_FindSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		pTabBtnAdd->setText("Add Nucleus");
+		pTabBtnDel->setText("Delete Nuclei");
+		pTabBtnUp->setText("Move Nuclei Up");
+		pTabBtnDown->setText("Move Nuclei Down");
+
+
+		auto pTabGrid = new QGridLayout(findsgpanel);
+		pTabGrid->setSpacing(2);
+		pTabGrid->setContentsMargins(4,4,4,4);
+		int y=0;
+		pTabGrid->addWidget(m_nuclei_FindSG, y,0,1,4);
+		pTabGrid->addWidget(m_sgmatches, ++y,0,1,4);
+		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
+		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
+		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+
+
+		// table CustomContextMenu
+		m_pTabContextMenu_FindSG = new QMenu(m_nuclei_FindSG);
+		m_pTabContextMenu_FindSG->addAction("Add Nucleus Before", this, [this]() { this->AddTabItem_FindSG(-2); });
+		m_pTabContextMenu_FindSG->addAction("Add Nucleus After", this, [this]() { this->AddTabItem_FindSG(-3); });
+		m_pTabContextMenu_FindSG->addAction("Clone Nucleus", this, [this]() { this->AddTabItem_FindSG(-4); });
+		m_pTabContextMenu_FindSG->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem_FindSG(); });
+
+
+		// table CustomContextMenu in case nothing is selected
+		m_pTabContextMenuNoItem_FindSG = new QMenu(m_nuclei_FindSG);
+		m_pTabContextMenuNoItem_FindSG->addAction("Add Nucleus", this, [this]() { this->AddTabItem_FindSG(); });
+		m_pTabContextMenuNoItem_FindSG->addAction("Delete Nucleus", this, [this]() { StructFactDlg::DelTabItem_FindSG(); });
+
+
+		// signals
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem_FindSG(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem_FindSG(); });
+		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp_FindSG);
+		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown_FindSG);
+
+		connect(m_nuclei_FindSG, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged_FindSG);
+		connect(m_nuclei_FindSG, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu_FindSG);
+
+		tabs->addTab(findsgpanel, "Match Space Group");
 	}
 
 
@@ -443,7 +529,11 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 
+// ============================================================================
+// functions for nuclei tab
+
 // ----------------------------------------------------------------------------
+
 void StructFactDlg::AddTabItem(int row, 
 	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, t_real scale, const std::string& col)
 {
@@ -759,7 +849,262 @@ void StructFactDlg::ShowTableContextMenu(const QPoint& pt)
 	}
 }
 // ----------------------------------------------------------------------------
+// ============================================================================
 
+
+
+
+// ============================================================================
+// functions for space group finder tab
+
+// ----------------------------------------------------------------------------
+
+void StructFactDlg::AddTabItem_FindSG(int row, t_real x, t_real y, t_real z)
+{
+	bool bclone = 0;
+
+	if(row == -1)	// append to end of table
+		row = m_nuclei_FindSG->rowCount();
+	else if(row == -2 && m_iCursorRow_FindSG >= 0)	// use row from member variable
+		row = m_iCursorRow_FindSG;
+	else if(row == -3 && m_iCursorRow_FindSG >= 0)	// use row from member variable +1
+		row = m_iCursorRow_FindSG + 1;
+	else if(row == -4 && m_iCursorRow_FindSG >= 0)	// use row from member variable +1
+	{
+		row = m_iCursorRow_FindSG + 1;
+		bclone = 1;
+	}
+
+	m_nuclei_FindSG->setSortingEnabled(false);
+	m_nuclei_FindSG->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<3; ++thecol)
+			m_nuclei_FindSG->setItem(row, thecol, m_nuclei_FindSG->item(m_iCursorRow_FindSG, thecol)->clone());
+	}
+	else
+	{
+		m_nuclei_FindSG->setItem(row, 0, new NumericTableWidgetItem<t_real>(x));
+		m_nuclei_FindSG->setItem(row, 1, new NumericTableWidgetItem<t_real>(y));
+		m_nuclei_FindSG->setItem(row, 2, new NumericTableWidgetItem<t_real>(z));
+	}
+
+	m_nuclei_FindSG->scrollToItem(m_nuclei_FindSG->item(row, 0));
+	m_nuclei_FindSG->setCurrentCell(row, 0);
+	m_nuclei_FindSG->setSortingEnabled(true);
+
+	FindSG();
+}
+
+
+
+void StructFactDlg::DelTabItem_FindSG(int begin, int end)
+{
+	// if nothing is selected, clear all items
+	if(begin == -1 || m_nuclei_FindSG->selectedItems().count() == 0)
+	{
+		m_nuclei_FindSG->clearContents();
+		m_nuclei_FindSG->setRowCount(0);
+	}
+	else if(begin == -2)	// clear selected
+	{
+		for(int row : GetSelectedRows_FindSG(true))
+			m_nuclei_FindSG->removeRow(row);
+	}
+	else if(begin >= 0 && end >= 0)		// clear given range
+	{
+		for(int row=end-1; row>=begin; --row)
+			m_nuclei_FindSG->removeRow(row);
+	}
+
+	FindSG();
+}
+
+
+void StructFactDlg::MoveTabItemUp_FindSG()
+{
+	m_nuclei_FindSG->setSortingEnabled(false);
+
+	auto selected = GetSelectedRows_FindSG(false);
+	for(int row : selected)
+	{
+		if(row == 0)
+			continue;
+
+		auto *item = m_nuclei_FindSG->item(row, 0);
+		if(!item || !item->isSelected())
+			continue;
+
+		m_nuclei_FindSG->insertRow(row-1);
+		for(int col=0; col<m_nuclei_FindSG->columnCount(); ++col)
+			m_nuclei_FindSG->setItem(row-1, col, m_nuclei_FindSG->item(row+1, col)->clone());
+		m_nuclei_FindSG->removeRow(row+1);
+	}
+
+	for(int row=0; row<m_nuclei_FindSG->rowCount(); ++row)
+	{
+		if(auto *item = m_nuclei_FindSG->item(row, 0);
+		   item && std::find(selected.begin(), selected.end(), row+1) != selected.end())
+		   {
+			   for(int col=0; col<m_nuclei_FindSG->columnCount(); ++col)
+				   m_nuclei_FindSG->item(row, col)->setSelected(true);
+		   }
+	}
+}
+
+
+void StructFactDlg::MoveTabItemDown_FindSG()
+{
+	m_nuclei_FindSG->setSortingEnabled(false);
+
+	auto selected = GetSelectedRows_FindSG(true);
+	for(int row : selected)
+	{
+		if(row == m_nuclei_FindSG->rowCount()-1)
+			continue;
+
+		auto *item = m_nuclei_FindSG->item(row, 0);
+		if(!item || !item->isSelected())
+			continue;
+
+		m_nuclei_FindSG->insertRow(row+2);
+		for(int col=0; col<m_nuclei_FindSG->columnCount(); ++col)
+			m_nuclei_FindSG->setItem(row+2, col, m_nuclei_FindSG->item(row, col)->clone());
+		m_nuclei_FindSG->removeRow(row);
+	}
+
+	for(int row=0; row<m_nuclei_FindSG->rowCount(); ++row)
+	{
+		if(auto *item = m_nuclei_FindSG->item(row, 0);
+		   item && std::find(selected.begin(), selected.end(), row-1) != selected.end())
+		   {
+			   for(int col=0; col<m_nuclei_FindSG->columnCount(); ++col)
+				   m_nuclei_FindSG->item(row, col)->setSelected(true);
+		   }
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+std::vector<int> StructFactDlg::GetSelectedRows_FindSG(bool sort_reversed) const
+{
+	std::vector<int> vec;
+	vec.reserve(m_nuclei_FindSG->selectedItems().size());
+
+	for(int row=0; row<m_nuclei_FindSG->rowCount(); ++row)
+	{
+		if(auto *item = m_nuclei_FindSG->item(row, 0); item && item->isSelected())
+			vec.push_back(row);
+	}
+
+	if(sort_reversed)
+	{
+		std::stable_sort(vec.begin(), vec.end(), [](int row1, int row2)
+		{ return row1 > row2; });
+	}
+
+	return vec;
+}
+
+
+/**
+ * item contents changed
+ */
+void StructFactDlg::TableItemChanged_FindSG(QTableWidgetItem *item)
+{
+	FindSG();
+}
+
+
+void StructFactDlg::ShowTableContextMenu_FindSG(const QPoint& pt)
+{
+	auto ptGlob = m_nuclei_FindSG->mapToGlobal(pt);
+
+	if(const auto* item = m_nuclei_FindSG->itemAt(pt); item)
+	{
+		m_iCursorRow_FindSG = item->row();
+		ptGlob.setY(ptGlob.y() + m_pTabContextMenu_FindSG->sizeHint().height()/2);
+		m_pTabContextMenu_FindSG->popup(ptGlob);
+	}
+	else
+	{
+		ptGlob.setY(ptGlob.y() + m_pTabContextMenuNoItem_FindSG->sizeHint().height()/2);
+		m_pTabContextMenuNoItem_FindSG->popup(ptGlob);
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
+/**
+ * find a matching space group for the given nucleus positions
+ */
+void StructFactDlg::FindSG()
+{
+	m_sgmatches->setPlainText("");
+
+	std::vector<t_vec> vecFinal;
+	std::ostringstream ostr;
+	ostr.precision(g_prec);
+
+	ostr << "Full set of nuclear positions to match:\n";
+	for(int row=0; row<m_nuclei_FindSG->rowCount(); ++row)
+	{
+		auto *itemx = m_nuclei_FindSG->item(row, 0);
+		auto *itemy = m_nuclei_FindSG->item(row, 1);
+		auto *itemz = m_nuclei_FindSG->item(row, 2);
+
+		if(!itemx || !itemy || !itemz)
+			return;
+
+		t_real posx=0, posy=0, posz=0;
+		std::istringstream{itemx->text().toStdString()} >> posx;
+		std::istringstream{itemy->text().toStdString()} >> posy;
+		std::istringstream{itemz->text().toStdString()} >> posz;
+
+		ostr << "\t(" << (row+1) << "): (" << posx << ", " << posy << ", " << posz << ")\n";
+		vecFinal.emplace_back(t_vec{{posx, posy, posz}});
+	}
+
+	ostr << "\n";
+	std::vector<t_vec> vecInit = vecFinal;
+
+	while(1)
+	{
+		ostr << "\n--------------------------------------------------------------------------------\n";
+		ostr << "Base set of nuclear positions:\n";
+		std::size_t ctr = 1;
+		for(const auto& pos : vecInit)
+			ostr << "\t(" << ctr++ << ") " << pos << "\n";
+		ostr << std::endl;
+
+		auto matchingSGs = find_matching_sgs<t_vec, t_mat, t_real>(vecInit, vecFinal, g_eps);
+
+		if(matchingSGs.size())
+		{
+			ostr << "Matching space groups:\n";
+			ctr = 1;
+			for(const auto& sg : matchingSGs)
+				ostr << "\t(" << ctr++ << ") " << std::get<1>(sg) << "\n";
+		}
+		else
+		{
+			ostr << "No matching space groups.\n";
+		}
+		ostr << "--------------------------------------------------------------------------------\n\n";
+
+		vecInit.pop_back();
+		if(vecInit.size() == 0)
+			break;
+	}
+
+	m_sgmatches->setPlainText(ostr.str().c_str());
+}
+
+// ============================================================================
 
 
 

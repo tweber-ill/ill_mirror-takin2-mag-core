@@ -19,19 +19,6 @@ using t_vec = std::vector<t_real>;
 using t_mat = m::mat<t_real, std::vector>;
 
 constexpr t_real g_eps = 1e-6;
-constexpr int g_prec = 6;
-
-
-
-/**
- * find matching spacegroup
- */
-std::vector<std::tuple<int, std::string, std::vector<t_mat>>> find_sgs(
-	const std::vector<t_vec>& vecInit, const std::vector<t_vec>& vecFinal)
-{
-	return find_matching_sgs<t_vec, t_mat, t_real>(vecInit, vecFinal);
-}
-
 
 
 /**
@@ -101,7 +88,7 @@ int main(int argc, char** argv)
 			std::cout << "\t(" << ctr++ << ") " << pos << "\n";
 		std::cout << std::endl;
 
-		auto matchingSGs = find_sgs(vecInit, vecFinal);
+		auto matchingSGs = find_matching_sgs<t_vec, t_mat, t_real>(vecInit, vecFinal, g_eps);
 
 		if(matchingSGs.size())
 		{

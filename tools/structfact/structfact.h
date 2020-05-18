@@ -63,10 +63,11 @@ protected:
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
 
-	QWidget *m_nucleipanel = nullptr;
 	QTableWidget *m_nuclei = nullptr;
 	QPlainTextEdit *m_structfacts = nullptr;
 	QPlainTextEdit *m_powderlines = nullptr;
+	QTableWidget *m_nuclei_FindSG = nullptr;
+	QPlainTextEdit *m_sgmatches = nullptr;
 
 	QLineEdit *m_editA = nullptr;
 	QLineEdit *m_editB = nullptr;
@@ -84,10 +85,14 @@ protected:
 	QMenu *m_pTabContextMenu = nullptr;			// menu in case a nucleus is selected
 	QMenu *m_pTabContextMenuNoItem = nullptr;	// menu if nothing is selected
 
+	QMenu *m_pTabContextMenu_FindSG = nullptr;			// menu in case a nucleus is selected
+	QMenu *m_pTabContextMenuNoItem_FindSG = nullptr;	// menu if nothing is selected
+
 	t_mat m_crystA = m::unit<t_mat>(3);
 	t_mat m_crystB = m::unit<t_mat>(3);
 
 protected:
+	// for nuclei tab
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
 		t_real x=0., t_real y=0., t_real z=0., t_real scale=1., const std::string &col="#ff0000");
 	void DelTabItem(int begin=-2, int end=-2);
@@ -101,6 +106,7 @@ protected:
 	void TableCellEntered(const QModelIndex& idx);
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
+
 
 	void Load();
 	void Save();
@@ -117,6 +123,19 @@ protected:
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
 	void AfterGLInitialisation();
 
+
+	// for space group finder tab
+	void AddTabItem_FindSG(int row=-1, t_real x=0., t_real y=0., t_real z=0.);
+	void DelTabItem_FindSG(int begin=-2, int end=-2);
+	void MoveTabItemUp_FindSG();
+	void MoveTabItemDown_FindSG();
+
+	void TableItemChanged_FindSG(QTableWidgetItem *item);
+	void ShowTableContextMenu_FindSG(const QPoint& pt);
+
+	void FindSG();
+
+
 	virtual void closeEvent(QCloseEvent *evt) override;
 
 private:
@@ -126,8 +145,11 @@ private:
 
 	long m_curPickedObj = -1;
 
+	int m_iCursorRow_FindSG = -1;
+
 private:
 	std::vector<int> GetSelectedRows(bool sort_reversed = false) const;
+	std::vector<int> GetSelectedRows_FindSG(bool sort_reversed = false) const;
 };
 
 
