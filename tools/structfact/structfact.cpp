@@ -295,17 +295,20 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnDel = new QToolButton(findsgpanel);
 		QToolButton *pTabBtnUp = new QToolButton(findsgpanel);
 		QToolButton *pTabBtnDown = new QToolButton(findsgpanel);
+		QToolButton *pBtnCalc = new QToolButton(findsgpanel);
 
 		m_nuclei_FindSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pBtnCalc->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Nucleus");
 		pTabBtnDel->setText("Delete Nuclei");
 		pTabBtnUp->setText("Move Nuclei Up");
 		pTabBtnDown->setText("Move Nuclei Down");
+		pBtnCalc->setText("Find Matching Space Groups");
 
 
 		auto pTabGrid = new QGridLayout(findsgpanel);
@@ -318,6 +321,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
 		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+		pTabGrid->addWidget(pBtnCalc, ++y,2,1,2);
 
 
 		// table CustomContextMenu
@@ -339,6 +343,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { StructFactDlg::DelTabItem_FindSG(); });
 		connect(pTabBtnUp, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemUp_FindSG);
 		connect(pTabBtnDown, &QToolButton::clicked, this, &StructFactDlg::MoveTabItemDown_FindSG);
+		connect(pBtnCalc, &QToolButton::clicked, this, &StructFactDlg::FindSG);
 
 		connect(m_nuclei_FindSG, &QTableWidget::itemChanged, this, &StructFactDlg::TableItemChanged_FindSG);
 		connect(m_nuclei_FindSG, &QTableWidget::customContextMenuRequested, this, &StructFactDlg::ShowTableContextMenu_FindSG);
@@ -894,7 +899,7 @@ void StructFactDlg::AddTabItem_FindSG(int row, t_real x, t_real y, t_real z)
 	m_nuclei_FindSG->setCurrentCell(row, 0);
 	m_nuclei_FindSG->setSortingEnabled(true);
 
-	FindSG();
+	//FindSG();
 }
 
 
@@ -918,7 +923,7 @@ void StructFactDlg::DelTabItem_FindSG(int begin, int end)
 			m_nuclei_FindSG->removeRow(row);
 	}
 
-	FindSG();
+	//FindSG();
 }
 
 
@@ -1015,7 +1020,7 @@ std::vector<int> StructFactDlg::GetSelectedRows_FindSG(bool sort_reversed) const
  */
 void StructFactDlg::TableItemChanged_FindSG(QTableWidgetItem *item)
 {
-	FindSG();
+	//FindSG();
 }
 
 
