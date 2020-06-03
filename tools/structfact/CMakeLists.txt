@@ -16,8 +16,8 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-std=c++2a -fconcepts)
+set(CMAKE_CXX_STANDARD 20)
+add_definitions(-std=c++20)
 add_definitions(${Boost_CXX_FLAGS})
 
 include_directories(
@@ -33,11 +33,11 @@ if(BUILD_LIB)
 	add_definitions(-DBUILD_LIB)
 	add_library(structfact SHARED
 		structfact.cpp structfact.h
-		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
+		../../libs/glplot.cpp ../../libs/glplot.h)
 else()
 	add_executable(structfact
 		structfact.cpp structfact.h
-		../../libs/_cxx20/glplot.cpp ../../libs/_cxx20/glplot.h)
+		../../libs/glplot.cpp ../../libs/glplot.h)
 endif()
 
 target_link_libraries(structfact ${Boost_LIBRARIES})

@@ -21,14 +21,14 @@
 #include <tuple>
 
 #include "libs/glplot.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 #include "moldyn-loader.h"
 
 
 using t_real = double;
 using t_vec = std::vector<t_real>;
-using t_mat = m::mat<t_real, std::vector>;
+using t_mat = tl2::mat<t_real, std::vector>;
 
 
 class MolDynDlg : public QMainWindow
@@ -81,8 +81,8 @@ protected:
 
 protected:
 	MolDyn<t_real, t_vec> m_mol;
-	t_mat m_crystA = m::unit<t_mat>(3);
-	t_mat m_crystB = m::unit<t_mat>(3);
+	t_mat m_crystA = tl2::unit<t_mat>(3);
+	t_mat m_crystB = tl2::unit<t_mat>(3);
 
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;

@@ -24,7 +24,7 @@ namespace ptree = boost::property_tree;
 #include <boost/algorithm/string/trim.hpp>
 namespace algo = boost::algorithm;
 
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 
 using t_real = double;
@@ -37,12 +37,12 @@ bool bSaveOG = false;
 std::string to_str(const t_mat& mat)
 {
 	// special cases
-	static const auto zero = m::zero<t_mat>(mat.size1(), mat.size2());
-	static const auto unit = m::unit<t_mat>(mat.size1(), mat.size2());
+	static const auto zero = tl2::zero<t_mat>(mat.size1(), mat.size2());
+	static const auto unit = tl2::unit<t_mat>(mat.size1(), mat.size2());
 
-	if(m::equals<t_mat>(mat, zero))
+	if(tl2::equals<t_mat>(mat, zero))
 		return "0";
-	else if(m::equals<t_mat>(mat, unit))
+	else if(tl2::equals<t_mat>(mat, unit))
 		return "1";
 
 	// general case
@@ -67,27 +67,27 @@ std::string to_str(const t_mat& mat)
 std::string to_str(const t_vec& vec)
 {
 	// spacial cases
-	static const auto zero = m::zero<t_vec>(vec.size());
-	static const auto x = m::create<t_vec>({1,0,0});
-	static const auto y = m::create<t_vec>({0,1,0});
-	static const auto z = m::create<t_vec>({0,0,1});
-	static const auto mx = m::create<t_vec>({-1,0,0});
-	static const auto my = m::create<t_vec>({0,-1,0});
-	static const auto mz = m::create<t_vec>({0,0,-1});
+	static const auto zero = tl2::zero<t_vec>(vec.size());
+	static const auto x = tl2::create<t_vec>({1,0,0});
+	static const auto y = tl2::create<t_vec>({0,1,0});
+	static const auto z = tl2::create<t_vec>({0,0,1});
+	static const auto mx = tl2::create<t_vec>({-1,0,0});
+	static const auto my = tl2::create<t_vec>({0,-1,0});
+	static const auto mz = tl2::create<t_vec>({0,0,-1});
 
-	if(m::equals<t_vec>(vec, zero))
+	if(tl2::equals<t_vec>(vec, zero))
 		return "0";
-	else if(m::equals<t_vec>(vec, x))
+	else if(tl2::equals<t_vec>(vec, x))
 		return "x";
-	else if(m::equals<t_vec>(vec, y))
+	else if(tl2::equals<t_vec>(vec, y))
 		return "y";
-	else if(m::equals<t_vec>(vec, z))
+	else if(tl2::equals<t_vec>(vec, z))
 		return "z";
-	else if(m::equals<t_vec>(vec, mx))
+	else if(tl2::equals<t_vec>(vec, mx))
 		return "-x";
-	else if(m::equals<t_vec>(vec, my))
+	else if(tl2::equals<t_vec>(vec, my))
 		return "-y";
-	else if(m::equals<t_vec>(vec, mz))
+	else if(tl2::equals<t_vec>(vec, mz))
 		return "-z";
 
 	// general case

@@ -20,7 +20,7 @@
 #include <string>
 
 #include "libs/glplot.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 #include "libs/helper.h"
 
 #include <boost/version.hpp>
@@ -29,12 +29,12 @@
 namespace algo = boost::algorithm;
 
 
-using namespace m_ops;
+using namespace tl2_ops;
 
 using t_real = double;
 using t_cplx = std::complex<t_real>;
 using t_vec = std::vector<t_cplx>;
-using t_mat = m::mat<t_cplx, std::vector>;
+using t_mat = tl2::mat<t_cplx, std::vector>;
 using t_matvec = std::vector<t_mat>;
 
 
@@ -422,11 +422,11 @@ public:
 			resize(800, 600);
 
 		// have scattering plane in horizontal plane
-		m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-		m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetImpl()->SetCoordMax(5.);
-		m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
-			m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+		m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
+			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 		CalcPol();
 	}
@@ -453,15 +453,15 @@ public:
 		t_real PiZ = t_real(m_editPiZ->text().toDouble());
 
 		const t_cplx N(NRe, NIm);
-		const t_vec Mperp = m::create<t_vec>({
+		const t_vec Mperp = tl2::create<t_vec>({
 			t_cplx(MPerpReX,MPerpImX),
 			t_cplx(MPerpReY,MPerpImY),
 			t_cplx(MPerpReZ,MPerpImZ) });
-		const t_vec Pi = m::create<t_vec>({PiX, PiY, PiZ});
+		const t_vec Pi = tl2::create<t_vec>({PiX, PiY, PiZ});
 
 		// calculate final polarisation vector and intensity
-		auto [I, P_f] = m::blume_maleev_indir<t_mat, t_vec, t_cplx>(Pi, Mperp, N);
-		//auto [I, P_f] = m::blume_maleev<t_vec, t_cplx>(Pi, Mperp, N);
+		auto [I, P_f] = tl2::blume_maleev_indir<t_mat, t_vec, t_cplx>(Pi, Mperp, N);
+		//auto [I, P_f] = tl2::blume_maleev<t_vec, t_cplx>(Pi, Mperp, N);
 
 		// set final polarisation
 		m_editPfX->setText(std::to_string(P_f[0].real()).c_str());
@@ -474,39 +474,39 @@ public:
 		{
 			// P_i
 			t_mat_gl matPi = GlPlot_impl::GetArrowMatrix(
-				m::create<t_vec_gl>({t_real_gl(PiX), t_real_gl(PiY), t_real_gl(PiZ)}), 	// to
+				tl2::create<t_vec_gl>({t_real_gl(PiX), t_real_gl(PiY), t_real_gl(PiZ)}), 	// to
 				1., 								// scale
-				m::create<t_vec_gl>({0,0,0.5}),		// translate 
-				m::create<t_vec_gl>({0,0,1}));		// from
+				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
+				tl2::create<t_vec_gl>({0,0,1}));		// from
 			m_plot->GetImpl()->SetObjectMatrix(m_arrow_pi, matPi);
 
 			// P_f
 			t_mat_gl matPf = GlPlot_impl::GetArrowMatrix(
-				m::create<t_vec_gl>({t_real_gl(P_f[0].real()), t_real_gl(P_f[1].real()), t_real_gl(P_f[2].real())}), 	// to
+				tl2::create<t_vec_gl>({t_real_gl(P_f[0].real()), t_real_gl(P_f[1].real()), t_real_gl(P_f[2].real())}), 	// to
 				1., 								// scale
-				m::create<t_vec_gl>({0,0,0.5}),		// translate 
-				m::create<t_vec_gl>({0,0,1}));		// from
+				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
+				tl2::create<t_vec_gl>({0,0,1}));		// from
 			m_plot->GetImpl()->SetObjectMatrix(m_arrow_pf, matPf);
 
 			// Re(M)
 			const t_real_gl lenReM = t_real_gl(std::sqrt(MPerpReX*MPerpReX + MPerpReY*MPerpReY + MPerpReZ*MPerpReZ));
 			t_mat_gl matMRe = GlPlot_impl::GetArrowMatrix(
-				m::create<t_vec_gl>({t_real_gl(MPerpReX), t_real_gl(MPerpReY), t_real_gl(MPerpReZ)}), 	// to
+				tl2::create<t_vec_gl>({t_real_gl(MPerpReX), t_real_gl(MPerpReY), t_real_gl(MPerpReZ)}), 	// to
 				lenReM,								// scale
-				m::create<t_vec_gl>({0,0,0.5}),		// translate 
-				m::create<t_vec_gl>({0,0,1}));		// from
+				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
+				tl2::create<t_vec_gl>({0,0,1}));		// from
 			m_plot->GetImpl()->SetObjectMatrix(m_arrow_M_Re, matMRe);
-			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Re, !m::equals(lenReM, t_real_gl(0)));
+			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Re, !tl2::equals(lenReM, t_real_gl(0)));
 
 			// Im(M)
 			const t_real_gl lenImM = t_real_gl(std::sqrt(MPerpImX*MPerpImX + MPerpImY*MPerpImY + MPerpImZ*MPerpImZ));
 			t_mat_gl matMIm = GlPlot_impl::GetArrowMatrix(
-				m::create<t_vec_gl>({t_real_gl(MPerpImX), t_real_gl(MPerpImY), t_real_gl(MPerpImZ)}), 	// to
+				tl2::create<t_vec_gl>({t_real_gl(MPerpImX), t_real_gl(MPerpImY), t_real_gl(MPerpImZ)}), 	// to
 				lenImM,								// scale
-				m::create<t_vec_gl>({0,0,0.5}),		// translate 
-				m::create<t_vec_gl>({0,0,1}));		// from
+				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
+				tl2::create<t_vec_gl>({0,0,1}));		// from
 			m_plot->GetImpl()->SetObjectMatrix(m_arrow_M_Im, matMIm);
-			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Im, !m::equals(lenImM, t_real_gl(0)));
+			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Im, !tl2::equals(lenImM, t_real_gl(0)));
 
 			m_plot->update();
 		}

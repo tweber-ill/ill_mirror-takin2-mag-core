@@ -6,7 +6,7 @@
  */
 
 #include "../structfact/loadcif.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 #include <gemmi/version.hpp>
 #include <iostream>
@@ -15,7 +15,7 @@
 
 using t_real = double;
 using t_vec = std::vector<t_real>;
-using t_mat = m::mat<t_real, std::vector>;
+using t_mat = tl2::mat<t_real, std::vector>;
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;

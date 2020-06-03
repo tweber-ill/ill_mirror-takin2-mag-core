@@ -8,7 +8,7 @@
 #include "data.h"
 #include "globals.h"
 #include "libs/instr.h"
-#include "libs/mat.h"
+#include "libs/math20.h"
 #include "libs/algos.h"
 
 
@@ -102,7 +102,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
-					if(tl2::float_equal<t_real>(y, 0))
+					if(tl2::equals<t_real>(y, 0))
 						return 1;
 					return std::sqrt(y);
 				});
@@ -119,7 +119,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 			std::transform(thedat.begin(), thedat.end(), std::back_inserter(theerr),
 				[](t_real y) -> t_real
 				{
-					if(tl2::float_equal<t_real>(y, 0))
+					if(tl2::equals<t_real>(y, 0))
 						return 1;
 					return std::sqrt(y);
 				});
@@ -154,7 +154,7 @@ Data Data::add_pointwise(const Data& dat1, const Data& dat2)
 	{
 		for(std::size_t i=0; i<dat2.m_x.size(); ++i)
 		{
-			if(!tl2::vec_equal(dat1.m_x[i], dat2.m_x[i], eps))
+			if(!tl2::equals(dat1.m_x[i], dat2.m_x[i], eps))
 			{
 				compatible = false;
 				break;

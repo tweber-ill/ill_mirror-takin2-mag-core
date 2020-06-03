@@ -19,9 +19,9 @@ namespace consts = si::constants;
 #include <fstream>
 #include <memory>
 
-#include "libs/math_algos.h"
-using namespace m;
-using namespace m_ops;
+#include "libs/math20.h"
+using namespace tl2;
+using namespace tl2_ops;
 
 using t_real = double;
 using t_cplx = std::complex<t_real>;

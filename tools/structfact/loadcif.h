@@ -19,8 +19,8 @@
 #include <gemmi/cif.hpp>
 #include <gemmi/symmetry.hpp>
 
-#include "libs/math_algos.h"
-using namespace m_ops;
+#include "libs/math20.h"
+using namespace tl2_ops;
 
 
 
@@ -82,9 +82,9 @@ get_cif_atoms(gemmi::cif::Block& block)
 			remove_quotes(name);
 			atomnames.emplace_back(std::move(name));
 
-			const t_real x = m::stoval<t_real>(tabAtoms[row][1]);
-			const t_real y = m::stoval<t_real>(tabAtoms[row][2]);
-			const t_real z = m::stoval<t_real>(tabAtoms[row][3]);
+			const t_real x = tl2::stoval<t_real>(tabAtoms[row][1]);
+			const t_real y = tl2::stoval<t_real>(tabAtoms[row][2]);
+			const t_real z = tl2::stoval<t_real>(tabAtoms[row][3]);
 			atoms.emplace_back(t_vec{{x, y, z}});
 		}
 
@@ -128,7 +128,7 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 			auto op = gemmi::parse_triplet(therow)/*.wrap()*/;
 			auto M = op.float_seitz();
 
-			t_mat mat = m::create<t_mat>({
+			t_mat mat = tl2::create<t_mat>({
 				std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
 				std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
 				std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
@@ -149,7 +149,7 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 
 /**
  * gets the symmetry operations from the CIF's space group
- * (use m::equals_all to check if space group operations are the same)
+ * (use tl2::equals_all to check if space group operations are the same)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
@@ -168,7 +168,7 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
 			{
 				auto M = op.float_seitz();
 
-				t_mat mat = m::create<t_mat>({
+				t_mat mat = tl2::create<t_mat>({
 					std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
 					std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
 					std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
@@ -213,12 +213,12 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 
 	// lattice
 	t_real a{}, b{}, c{}, alpha{}, beta{}, gamma{};
-	if(auto val = block.find_values("_cell_length_a"); val.length()) a = m::stoval<t_real>(val[0]);
-	if(auto val = block.find_values("_cell_length_b"); val.length()) b = m::stoval<t_real>(val[0]);
-	if(auto val = block.find_values("_cell_length_c"); val.length()) c = m::stoval<t_real>(val[0]);
-	if(auto val = block.find_values("_cell_angle_alpha"); val.length()) alpha = m::stoval<t_real>(val[0]);
-	if(auto val = block.find_values("_cell_angle_beta"); val.length()) beta = m::stoval<t_real>(val[0]);
-	if(auto val = block.find_values("_cell_angle_gamma"); val.length()) gamma = m::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_length_a"); val.length()) a = tl2::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_length_b"); val.length()) b = tl2::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_length_c"); val.length()) c = tl2::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_alpha"); val.length()) alpha = tl2::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_beta"); val.length()) beta = tl2::stoval<t_real>(val[0]);
+	if(auto val = block.find_values("_cell_angle_gamma"); val.length()) gamma = tl2::stoval<t_real>(val[0]);
 
 	Lattice<t_real> latt{.a=a, .b=b, .c=c, .alpha=alpha, .beta=beta, .gamma=gamma};
 
@@ -251,7 +251,7 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 			continue;
 		}
 
-		std::vector<t_vec> newatoms = m::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops, eps);
+		std::vector<t_vec> newatoms = tl2::apply_ops_hom<t_vec, t_mat, t_real>(atom, ops, eps);
 		generatedatoms.emplace_back(std::move(newatoms));
 	}
 
@@ -285,7 +285,7 @@ get_sgs(bool bAddNr=true, bool bAddHall=true)
 		{
 			auto M = op.float_seitz();
 
-			t_mat mat = m::create<t_mat>({
+			t_mat mat = tl2::create<t_mat>({
 				std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
 				std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
 				std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
@@ -320,7 +320,7 @@ find_matching_sgs(
 	const std::vector<t_vec>& posInit, const std::vector<t_vec>& _posFinal, 
 	t_real eps=1e-6)
 {
-	std::vector<t_vec> posFinal = m::keep_atoms_in_uc<t_vec, t_real>(_posFinal);
+	std::vector<t_vec> posFinal = tl2::keep_atoms_in_uc<t_vec, t_real>(_posFinal);
 
 
 	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> matchingSGs;
@@ -334,7 +334,7 @@ find_matching_sgs(
 
 		for(const t_vec& pos : posInit)
 		{
-			std::vector<t_vec> newpos = m::apply_ops_hom<t_vec, t_mat, t_real>(pos, sgOps, eps);
+			std::vector<t_vec> newpos = tl2::apply_ops_hom<t_vec, t_mat, t_real>(pos, sgOps, eps);
 			generatedpos.insert(generatedpos.end(), newpos.begin(), newpos.end());
 		}
 
@@ -342,11 +342,11 @@ find_matching_sgs(
 		//	std::cout << thepos << std::endl;
 
 		// filter multiple occupancies in generatedpos
-		generatedpos = m::remove_duplicates<t_vec>(generatedpos, eps);
+		generatedpos = tl2::remove_duplicates<t_vec>(generatedpos, eps);
 
 
 		// no match
-		if(!m::equals_all<t_vec>(generatedpos, posFinal, eps, 3))
+		if(!tl2::equals_all<t_vec>(generatedpos, posFinal, eps, 3))
 			continue;
 
 		matchingSGs.emplace_back(std::make_tuple(sgNum, sgName, sgOps));

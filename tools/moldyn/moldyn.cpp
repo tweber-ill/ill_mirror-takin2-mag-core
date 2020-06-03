@@ -22,7 +22,7 @@
 #include "libs/algos.h"
 #include "libs/helper.h"
 
-using namespace m_ops;
+using namespace tl2_ops;
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
@@ -217,11 +217,11 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		m_plot->GetImpl()->EnablePicker(1);
-		m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-		m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetImpl()->SetCoordMax(1.);
-		m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-			m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+		m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 		connect(m_plot, &GlPlot::AfterGLInitialisation, this, &MolDynDlg::AfterGLInitialisation);
 		connect(m_plot, &GlPlot::GLInitialisationFailed, this, &MolDynDlg::GLInitialisationFailed);
@@ -318,8 +318,10 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
 {
 	if(vec)
 	{
-		t_mat_gl mat = m::hom_translation<t_mat_gl>((*vec)[0], (*vec)[1], (*vec)[2]);
-		if(scale) mat *= m::hom_scaling<t_mat_gl>(*scale, *scale, *scale);
+		t_mat_gl mat = tl2::hom_translation<t_mat_gl>(
+			t_real_gl((*vec)[0]), t_real_gl((*vec)[1]), t_real_gl((*vec)[2]));
+		if(scale) mat *= tl2::hom_scaling<t_mat_gl>(
+			t_real_gl(*scale), t_real_gl(*scale), t_real_gl(*scale));
 		m_plot->GetImpl()->SetObjectMatrix(obj, mat);
 	}
 
@@ -423,7 +425,7 @@ void MolDynDlg::CalculateDistanceBetweenAtoms()
 
 			for(std::size_t frameidx=0; frameidx<m_mol.GetFrameCount(); ++frameidx)
 			{
-				t_real dist = m::get_dist_uc(m_crystA, firstObjCoords[frameidx], objCoords[frameidx]);
+				t_real dist = tl2::get_dist_uc(m_crystA, firstObjCoords[frameidx], objCoords[frameidx]);
 
 				ofstr
 					<< std::left << std::setw(g_prec*1.5) << frameidx << " "
@@ -637,7 +639,7 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 			 	const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
 				const t_vec& coordsInitial = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, 0);
 
-				t_real dist = m::get_dist_uc(m_crystA, coords, coordsInitial);
+				t_real dist = tl2::get_dist_uc(m_crystA, coords, coordsInitial);
 
 				ofstr << std::left << std::setw(g_prec*1.5) << dist << " ";
 			}
@@ -729,20 +731,20 @@ void MolDynDlg::Load()
 		const t_vec& _b = m_mol.GetBaseB();
 		const t_vec& _c = m_mol.GetBaseC();
 
-		m_crystA = m::create<t_mat>({
+		m_crystA = tl2::create<t_mat>({
 			_a[0],	_b[0],	_c[0],
 			_a[1],	_b[1],	_c[1],
 			_a[2], 	_b[2],	_c[2] });
 
 		bool ok = true;
-		std::tie(m_crystB, ok) = m::inv(m_crystA);
+		std::tie(m_crystB, ok) = tl2::inv(m_crystA);
 		if(!ok)
 		{
-			m_crystB = m::unit<t_mat>();
+			m_crystB = tl2::unit<t_mat>();
 			QMessageBox::critical(this, PROG_NAME, "Error: Cannot invert A matrix.");
 		}
 
-		m_crystB /= t_real_gl(2)*m::pi<t_real_gl>;
+		m_crystB /= t_real_gl(2)*tl2::pi<t_real_gl>;
 		t_mat_gl matA{m_crystA};
 		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
 
@@ -753,12 +755,12 @@ void MolDynDlg::Load()
 		// atom colors
 		std::vector<t_vec> cols =
 		{
-			m::create<t_vec>({1, 0, 0}),
-			m::create<t_vec>({0, 0, 1}),
-			m::create<t_vec>({0, 0.5, 0}),
-			m::create<t_vec>({0, 0.5, 0.5}),
-			m::create<t_vec>({0.5, 0.5, 0}),
-			m::create<t_vec>({0, 0, 0}),
+			tl2::create<t_vec>({1, 0, 0}),
+			tl2::create<t_vec>({0, 0, 1}),
+			tl2::create<t_vec>({0, 0.5, 0}),
+			tl2::create<t_vec>({0, 0.5, 0.5}),
+			tl2::create<t_vec>({0.5, 0.5, 0}),
+			tl2::create<t_vec>({0, 0, 0}),
 		};
 
 		// add atoms to 3d view

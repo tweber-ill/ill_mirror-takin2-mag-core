@@ -13,8 +13,8 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 find_package(Boost REQUIRED)
 
 
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-std=c++2a -fconcepts)
+set(CMAKE_CXX_STANDARD 20)
+add_definitions(-std=c++20)
 add_definitions(${Boost_CXX_FLAGS})
 
 

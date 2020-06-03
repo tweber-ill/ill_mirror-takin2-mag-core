@@ -6,7 +6,7 @@
  */
 
 #include "../structfact/loadcif.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 #include <gemmi/version.hpp>
 #include <boost/algorithm/string.hpp>
@@ -16,7 +16,7 @@
 
 using t_real = double;
 using t_vec = std::vector<t_real>;
-using t_mat = m::mat<t_real, std::vector>;
+using t_mat = tl2::mat<t_real, std::vector>;
 
 constexpr t_real g_eps = 1e-6;
 
@@ -30,10 +30,10 @@ int main(int argc, char** argv)
 
 	std::vector<t_vec> vecFinal;
 	/*{{ // test data
-		m::create<t_vec>({ 0.1,  0.1,  0.1}),
-		m::create<t_vec>({ 0.4, -0.1, -0.4}),
-		m::create<t_vec>({-0.1, -0.4,  0.4}),
-		m::create<t_vec>({-0.4,  0.4, -0.1}),
+		tl2::create<t_vec>({ 0.1,  0.1,  0.1}),
+		tl2::create<t_vec>({ 0.4, -0.1, -0.4}),
+		tl2::create<t_vec>({-0.1, -0.4,  0.4}),
+		tl2::create<t_vec>({-0.4,  0.4, -0.1}),
 	}}*/;
 
 	std::size_t atomnr = 1;

@@ -17,15 +17,15 @@
 #include <QtWidgets/QListWidgetItem>
 
 #include "libs/magsg.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 #include "ui_browser.h"
 
 
 using t_real_sg = double;
-using t_vec_sg = m::qvec_adapter<int, 3, t_real_sg, QGenericMatrix>;
-using t_mat_sg = m::qmat_adapter<int, 3, 3, t_real_sg, QGenericMatrix>;
-using t_mat44_sg = m::qmat_adapter<int, 4, 4, t_real_sg, QGenericMatrix>;
+using t_vec_sg = tl2::qvec_adapter<int, 3, t_real_sg, QGenericMatrix>;
+using t_mat_sg = tl2::qmat_adapter<int, 3, 3, t_real_sg, QGenericMatrix>;
+using t_mat44_sg = tl2::qmat_adapter<int, 4, 4, t_real_sg, QGenericMatrix>;
 
 
 class SgBrowserDlg : public QDialog, Ui::SgBrowserDlg

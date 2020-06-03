@@ -43,8 +43,8 @@ namespace consts = si::constants;
 #include "libs/helper.h"
 
 
-//using namespace m;
-using namespace m_ops;
+//using namespace tl2;
+using namespace tl2_ops;
 
 
 constexpr t_real g_eps = 1e-6;
@@ -536,11 +536,11 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("Unit Cell");
 
 				m_plot = std::make_shared<GlPlot>(this);
-				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetImpl()->SetCoordMax(1.);
-				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+				m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
@@ -596,11 +596,11 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlotSC->setWindowTitle("Super Cell");
 
 				m_plotSC = std::make_shared<GlPlot>(this);
-				m_plotSC->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plotSC->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plotSC->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plotSC->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plotSC->GetImpl()->SetCoordMax(1.);
-				m_plotSC->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+				m_plotSC->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlotSC*/ this);
@@ -802,30 +802,30 @@ void MagStructFactDlg::Sync3DItem(int row)
 	QColor col{itemCol->text()};
 	col.getRgbF(&r, &g, &b);
 
-	t_mat_gl matSphere = m::hom_translation<t_mat_gl>(posx, posy, posz) * 
-		m::hom_scaling<t_mat_gl>(M*scale, M*scale, M*scale);
+	t_mat_gl matSphere = tl2::hom_translation<t_mat_gl>(posx, posy, posz) *
+		tl2::hom_scaling<t_mat_gl>(M*scale, M*scale, M*scale);
 
-	auto vecReM = m::create<t_vec_gl>({t_real_gl(ReMX), t_real_gl(ReMY), t_real_gl(ReMZ)});
-	auto vecImM = m::create<t_vec_gl>({t_real_gl(ImMX), t_real_gl(ImMY), t_real_gl(ImMZ)});
-	auto normReM = m::norm<t_vec_gl>(vecReM);
-	auto normImM = m::norm<t_vec_gl>(vecImM);
+	auto vecReM = tl2::create<t_vec_gl>({t_real_gl(ReMX), t_real_gl(ReMY), t_real_gl(ReMZ)});
+	auto vecImM = tl2::create<t_vec_gl>({t_real_gl(ImMX), t_real_gl(ImMY), t_real_gl(ImMZ)});
+	auto normReM = tl2::norm<t_vec_gl>(vecReM);
+	auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
 	t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
 		vecReM, 									// to
 		1, 											// post-scale
-		m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
-		m::create<t_vec_gl>({0, 0, 1}),				// from
+		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+		tl2::create<t_vec_gl>({0, 0, 1}),				// from
 		M*scale, 									// pre-scale
-		m::create<t_vec_gl>({posx, posy, posz})		// pre-translate 
+		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
 	);
 
 	t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
 		vecImM, 									// to
 		1, 											// post-scale
-		m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
-		m::create<t_vec_gl>({0, 0, 1}),				// from
+		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+		tl2::create<t_vec_gl>({0, 0, 1}),				// from
 		M*scale, 									// pre-scale
-		m::create<t_vec_gl>({posx, posy, posz})		// pre-translate 
+		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
 	);
 
 	m_plot->GetImpl()->SetObjectMatrix(objSphere, matSphere);
@@ -835,8 +835,8 @@ void MagStructFactDlg::Sync3DItem(int row)
 	m_plot->GetImpl()->SetObjectCol(objSphere, r, g, b, 1);
 	m_plot->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1);
 	m_plot->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1);
-	m_plot->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
-	m_plot->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
+	m_plot->GetImpl()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
+	m_plot->GetImpl()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
 	m_plot->update();
 }
 
@@ -1509,8 +1509,8 @@ void MagStructFactDlg::GenerateFromSG()
 			std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
 			std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
 
-			t_vec nucl = m::create<t_vec>({x, y, z, 1});
-			auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
+			t_vec nucl = tl2::create<t_vec>({x, y, z, 1});
+			auto newnuclei = tl2::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
 
 			for(const auto& newnucl : newnuclei)
 			{
@@ -1606,19 +1606,19 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
 	std::istringstream{m_editBeta->text().toStdString()} >> beta;
 	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
 
-	m_crystB = m::B_matrix<t_mat>(a, b, c,
-		alpha/180.*m::pi<t_real>, beta/180.*m::pi<t_real>, gamma/180.*m::pi<t_real>);
+	m_crystB = tl2::B_matrix<t_mat>(a, b, c,
+		alpha/180.*tl2::pi<t_real>, beta/180.*tl2::pi<t_real>, gamma/180.*tl2::pi<t_real>);
 
 	bool ok = true;
-	std::tie(m_crystA, ok) = m::inv(m_crystB);
+	std::tie(m_crystA, ok) = tl2::inv(m_crystB);
 	if(!ok)
 	{
-		m_crystA = m::unit<t_mat>();
+		m_crystA = tl2::unit<t_mat>();
 		std::cerr << "Error: Cannot invert B matrix." << std::endl;
 	}
 	else
 	{
-		m_crystA *= t_real_gl(2)*m::pi<t_real_gl>;
+		m_crystA *= t_real_gl(2)*tl2::pi<t_real_gl>;
 	}
 
 	if(m_plot)
@@ -1665,7 +1665,7 @@ void MagStructFactDlg::Calc()
 		std::istringstream{m_propvecs->item(row, PROP_COL_Z)->text().toStdString()} >> z;
 		std::istringstream{m_propvecs->item(row, PROP_COL_CONJ)->text().toStdString()} >> iConj;
 
-		propvecs.emplace_back(m::create<t_vec>({x, y, z}));
+		propvecs.emplace_back(tl2::create<t_vec>({x, y, z}));
 		conjFCs.push_back(iConj != 0);
 	}
 
@@ -1682,7 +1682,7 @@ void MagStructFactDlg::Calc()
 		bool foundQ = false;
 		for(auto& line : powderlines)
 		{
-			if(m::equals<t_real>(line.Q, Q, g_eps))
+			if(tl2::equals<t_real>(line.Q, Q, g_eps))
 			{
 				line.I += I;
 				line.peaks +=  ostrPeak.str();
@@ -1714,8 +1714,8 @@ void MagStructFactDlg::Calc()
 
 	for(const auto& nucl : GetNuclei())
 	{
-		pos.emplace_back(m::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
-		Ms.emplace_back(nucl.MAbs * m::create<t_vec_cplx>({ 
+		pos.emplace_back(tl2::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
+		Ms.emplace_back(nucl.MAbs * tl2::create<t_vec_cplx>({
 			t_cplx{nucl.ReM[0], nucl.ImM[0]}, 
 			t_cplx{nucl.ReM[1], nucl.ImM[1]}, 
 			t_cplx{nucl.ReM[2], nucl.ImM[2]} }));
@@ -1760,28 +1760,28 @@ void MagStructFactDlg::Calc()
 			{
 				for(const auto& prop : propvecs)
 				{
-					auto Q = m::create<t_vec>({ h,k,l }) + prop;
+					auto Q = tl2::create<t_vec>({ h,k,l }) + prop;
 					auto Q_invA = m_crystB * Q;
-					auto Qabs_invA = m::norm(Q_invA);
+					auto Qabs_invA = tl2::norm(Q_invA);
 
 					// magnetic structure factor
-					auto Fm = p * m::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
+					auto Fm = p * tl2::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
 					bool Fm_is_zero = 1;
 					for(auto &comp : Fm)
 					{
-						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.); else Fm_is_zero = 0;
-						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.); else Fm_is_zero = 0;
+						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.); else Fm_is_zero = 0;
+						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.); else Fm_is_zero = 0;
 					}
 					if(Fm.size() == 0)
-						Fm = m::zero<t_vec_cplx>(3);
+						Fm = tl2::zero<t_vec_cplx>(3);
 
 					// neutron scattering: orthogonal projection onto plane with normal Q.
-					auto Fm_perp = m::ortho_project<t_vec_cplx>(
-						Fm, m::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+					auto Fm_perp = tl2::ortho_project<t_vec_cplx>(
+						Fm, tl2::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
 					for(auto &comp : Fm_perp)
 					{
-						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
 					}
 
 					t_real I = (std::conj(Fm[0])*Fm[0] +
@@ -1877,7 +1877,7 @@ void MagStructFactDlg::Calc()
 		<< std::setw(g_prec*1.2) << std::right << "sc_z" << "\n";
 
 	//std::vector<t_vec_cplx> moments;
-	auto vecCentring = m::create<t_vec>({0, 0, 0});
+	auto vecCentring = tl2::create<t_vec>({0, 0, 0});
 
 	for(t_real sc_x=-maxSCx; sc_x<=maxSCx; ++sc_x)
 	{
@@ -1885,7 +1885,7 @@ void MagStructFactDlg::Calc()
 		{
 			for(t_real sc_z=-maxSCz; sc_z<=maxSCz; ++sc_z)
 			{
-				auto vecCellCentre = m::create<t_vec>({ sc_x, sc_y, sc_z }) + vecCentring;
+				auto vecCellCentre = tl2::create<t_vec>({ sc_x, sc_y, sc_z }) + vecCentring;
 
 				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
 				{
@@ -1895,9 +1895,9 @@ void MagStructFactDlg::Calc()
 					auto thepos = pos[nuclidx] + vecCellCentre;
 					auto scale = scales[nuclidx];
 
-					auto posGL = m::convert<t_vec_gl>(thepos);
-					auto moment = m::create<t_vec_cplx>({0, 0, 0});
-					auto fourier_conj = m::conj(fourier);
+					auto posGL = tl2::convert<t_vec_gl>(thepos);
+					auto moment = tl2::create<t_vec_cplx>({0, 0, 0});
+					auto fourier_conj = tl2::conj(fourier);
 
 					qreal r=1, g=1, b=1;
 					QColor col{colstr.c_str()};
@@ -1907,13 +1907,13 @@ void MagStructFactDlg::Calc()
 					{
 						const auto& propvec = propvecs[propidx];
 						auto *pfourier = conjFCs[propidx] ? &fourier_conj : &fourier;
-						moment += *pfourier * std::exp(t_cplx{0,1}*m::pi<t_real>*t_real{2} * m::inner<t_vec>(propvec, vecCellCentre));
+						moment += *pfourier * std::exp(t_cplx{0,1}*tl2::pi<t_real>*t_real{2} * tl2::inner<t_vec>(propvec, vecCellCentre));
 					}
 
 					for(auto &comp : moment)
 					{
-						if(m::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-						if(m::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
+						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
+						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
 					}
 
 
@@ -1923,18 +1923,18 @@ void MagStructFactDlg::Calc()
 						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 
-						auto [_vecReM, _vecImM] = m::split_cplx<t_cplx>(moment);
-						auto vecReM = m::convert<t_vec_gl>(_vecReM);
-						auto vecImM = m::convert<t_vec_gl>(_vecImM);
+						auto [_vecReM, _vecImM] = tl2::split_cplx<t_cplx>(moment);
+						auto vecReM = tl2::convert<t_vec_gl>(_vecReM);
+						auto vecImM = tl2::convert<t_vec_gl>(_vecImM);
 					
-						auto normReM = m::norm<t_vec_gl>(vecReM);
-						auto normImM = m::norm<t_vec_gl>(vecImM);
+						auto normReM = tl2::norm<t_vec_gl>(vecReM);
+						auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
 						t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
 							vecReM, 									// to
 							1, 											// post-scale
-							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
-							m::create<t_vec_gl>({0, 0, 1}),				// from
+							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+							tl2::create<t_vec_gl>({0, 0, 1}),				// from
 							normReM*scale, 								// pre-scale
 							posGL										// pre-translate 
 						);
@@ -1942,8 +1942,8 @@ void MagStructFactDlg::Calc()
 						t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
 							vecImM, 									// to
 							1, 											// post-scale
-							m::create<t_vec_gl>({0, 0, 0}),				// post-translate 
-							m::create<t_vec_gl>({0, 0, 1}),				// from
+							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+							tl2::create<t_vec_gl>({0, 0, 1}),				// from
 							normImM*scale, 								// pre-scale
 							posGL										// pre-translate 
 						);
@@ -1964,8 +1964,8 @@ void MagStructFactDlg::Calc()
 						//m_plotSC->GetImpl()->SetObjectLabel(objArrowIm, name + " (imag)");
 						m_plotSC->GetImpl()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
 						m_plotSC->GetImpl()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
-						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !m::equals<t_real_gl>(normReM, 0, g_eps));
-						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !m::equals<t_real_gl>(normImM, 0, g_eps));
+						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
+						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
 
 						m_3dobjsSC.push_back(objArrowRe);
 						m_3dobjsSC.push_back(objArrowIm);
@@ -2027,7 +2027,7 @@ void MagStructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objI
 				auto *itemY = m_nuclei->item(row, COL_Y);
 				auto *itemZ = m_nuclei->item(row, COL_Z);
 
-				t_vec r = m::create<t_vec>({0,0,0});
+				t_vec r = tl2::create<t_vec>({0,0,0});
 				std::istringstream{itemX->text().toStdString()} >> r[0];
 				std::istringstream{itemY->text().toStdString()} >> r[1];
 				std::istringstream{itemZ->text().toStdString()} >> r[2];

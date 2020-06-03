@@ -12,8 +12,8 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-std=c++17 -fconcepts)
+set(CMAKE_CXX_STANDARD 20)
+add_definitions(-std=c++20)
 include_directories("${PROJECT_SOURCE_DIR}" "../.."
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party")
 

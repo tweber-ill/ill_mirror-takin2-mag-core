@@ -26,7 +26,7 @@
 #include <complex>
 
 #include "libs/glplot.h"
-#include "libs/math_algos.h"
+#include "libs/math20.h"
 
 #include "numerictablewidgetitem.h"
 
@@ -35,8 +35,8 @@ using t_real = double;
 using t_cplx = std::complex<t_real>;
 using t_vec = std::vector<t_real>;
 using t_vec_cplx = std::vector<t_cplx>;
-using t_mat = m::mat<t_real, std::vector>;
-using t_mat_cplx = m::mat<t_cplx, std::vector>;
+using t_mat = tl2::mat<t_real, std::vector>;
+using t_mat_cplx = tl2::mat<t_cplx, std::vector>;
 
 
 struct NuclPos
@@ -88,8 +88,8 @@ protected:
 	QMenu *m_pTabContextMenu_FindSG = nullptr;			// menu in case a nucleus is selected
 	QMenu *m_pTabContextMenuNoItem_FindSG = nullptr;	// menu if nothing is selected
 
-	t_mat m_crystA = m::unit<t_mat>(3);
-	t_mat m_crystB = m::unit<t_mat>(3);
+	t_mat m_crystA = tl2::unit<t_mat>(3);
+	t_mat m_crystB = tl2::unit<t_mat>(3);
 
 protected:
 	// for nuclei tab

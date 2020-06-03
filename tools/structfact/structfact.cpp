@@ -38,8 +38,8 @@ namespace pt = boost::property_tree;
 #include "libs/helper.h"
 
 
-//using namespace m;
-using namespace m_ops;
+//using namespace tl2;
+using namespace tl2_ops;
 
 
 constexpr t_real g_eps = 1e-6;
@@ -467,11 +467,11 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
 
 				m_plot = std::make_shared<GlPlot>(this);
-				m_plot->GetImpl()->SetLight(0, m::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plot->GetImpl()->SetLight(1, m::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetImpl()->SetCoordMax(1.);
-				m_plot->GetImpl()->SetCamBase(m::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					m::create<t_vec_gl>({1,0,0,0}), m::create<t_vec_gl>({0,0,1,0}));
+				m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
@@ -624,7 +624,7 @@ void StructFactDlg::Add3DItem(int row)
 
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
 	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
+	m_plot->GetImpl()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
 	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 	m_plot->update();
 
@@ -825,7 +825,7 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 			QColor col{itemCol->text()};
 			col.getRgbF(&r, &g, &b);
 
-			m_plot->GetImpl()->SetObjectMatrix(obj, m::hom_translation<t_mat_gl>(posx, posy, posz)*m::hom_scaling<t_mat_gl>(scale,scale,scale));
+			m_plot->GetImpl()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
 			m_plot->GetImpl()->SetObjectCol(obj, r, g, b, 1);
 			m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
 			m_plot->update();
@@ -1459,8 +1459,8 @@ void StructFactDlg::GenerateFromSG()
 			std::string name = m_nuclei->item(row, COL_NAME)->text().toStdString();
 			std::string col = m_nuclei->item(row, COL_COL)->text().toStdString();
 
-			t_vec nucl = m::create<t_vec>({x, y, z, 1});
-			auto newnuclei = m::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
+			t_vec nucl = tl2::create<t_vec>({x, y, z, 1});
+			auto newnuclei = tl2::apply_ops_hom<t_vec, t_mat, t_real>(nucl, ops, g_eps);
 
 			for(const auto& newnucl : newnuclei)
 			{
@@ -1546,19 +1546,19 @@ void StructFactDlg::CalcB(bool bFullRecalc)
 	std::istringstream{m_editBeta->text().toStdString()} >> beta;
 	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
 
-	m_crystB = m::B_matrix<t_mat>(a, b, c,
-		alpha/180.*m::pi<t_real>, beta/180.*m::pi<t_real>, gamma/180.*m::pi<t_real>);
+	m_crystB = tl2::B_matrix<t_mat>(a, b, c,
+		alpha/180.*tl2::pi<t_real>, beta/180.*tl2::pi<t_real>, gamma/180.*tl2::pi<t_real>);
 
 	bool ok = true;
-	std::tie(m_crystA, ok) = m::inv(m_crystB);
+	std::tie(m_crystA, ok) = tl2::inv(m_crystB);
 	if(!ok)
 	{
-		m_crystA = m::unit<t_mat>();
+		m_crystA = tl2::unit<t_mat>();
 		std::cerr << "Error: Cannot invert B matrix." << std::endl;
 	}
 	else
 	{
-		m_crystA *= t_real_gl(2)*m::pi<t_real_gl>;
+		m_crystA *= t_real_gl(2)*tl2::pi<t_real_gl>;
 	}
 
 	if(m_plot)
@@ -1595,7 +1595,7 @@ void StructFactDlg::Calc()
 		bool foundQ = false;
 		for(auto& line : powderlines)
 		{
-			if(m::equals<t_real>(line.Q, Q, g_eps))
+			if(tl2::equals<t_real>(line.Q, Q, g_eps))
 			{
 				line.I += I;
 				line.peaks +=  ostrPeak.str();
@@ -1624,7 +1624,7 @@ void StructFactDlg::Calc()
 	for(const auto& nucl : GetNuclei())
 	{
 		bs.push_back(nucl.b);
-		pos.emplace_back(m::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
+		pos.emplace_back(tl2::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
 	}
 
 
@@ -1654,18 +1654,18 @@ void StructFactDlg::Calc()
 		{
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
-				auto Q = m::create<t_vec>({h,k,l}) /*+ prop*/;
+				auto Q = tl2::create<t_vec>({h,k,l}) /*+ prop*/;
 				auto Q_invA = m_crystB * Q;
-				auto Qabs_invA = m::norm(Q_invA);
+				auto Qabs_invA = tl2::norm(Q_invA);
 
 				// nuclear structure factor
-				auto Fn = m::structure_factor<t_vec, t_cplx>(bs, pos, Q);
-				if(m::equals<t_cplx>(Fn, t_cplx(0), g_eps)) Fn = 0.;
-				if(m::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
-				if(m::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
+				auto Fn = tl2::structure_factor<t_vec, t_cplx>(bs, pos, Q);
+				if(tl2::equals<t_cplx>(Fn, t_cplx(0), g_eps)) Fn = 0.;
+				if(tl2::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
+				if(tl2::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
 				auto I = (std::conj(Fn)*Fn).real();
 
-				if(remove_zeroes && m::equals<t_cplx>(Fn, t_cplx(0), g_eps))
+				if(remove_zeroes && tl2::equals<t_cplx>(Fn, t_cplx(0), g_eps))
 					continue;
 
 				add_powderline(Qabs_invA, I, h,k,l);
@@ -1732,7 +1732,7 @@ void StructFactDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx,
 				auto *itemY = m_nuclei->item(row, COL_Y);
 				auto *itemZ = m_nuclei->item(row, COL_Z);
 
-				t_vec r = m::create<t_vec>({0,0,0});
+				t_vec r = tl2::create<t_vec>({0,0,0});
 				std::istringstream{itemX->text().toStdString()} >> r[0];
 				std::istringstream{itemY->text().toStdString()} >> r[1];
 				std::istringstream{itemZ->text().toStdString()} >> r[2];

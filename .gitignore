@@ -53,6 +53,8 @@ tools/magstructfact/build/**
 tools/magsgbrowser/build/**
 tools/pol/build/**
 tools/moldyn/build/**
+tools/main/build/**
+tools/setup/build/**
 *.pyc
 .DS_Store
 *.csv
