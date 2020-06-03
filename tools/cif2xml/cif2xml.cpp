@@ -6,7 +6,7 @@
  */
 
 #include "../structfact/loadcif.h"
-#include "libs/_cxx20/math_algos.h"
+#include "libs/math_algos.h"
 
 #include <gemmi/version.hpp>
 #include <iostream>

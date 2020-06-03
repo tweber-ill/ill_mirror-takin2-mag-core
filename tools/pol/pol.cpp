@@ -19,8 +19,8 @@
 #include <vector>
 #include <string>
 
-#include "libs/_cxx20/glplot.h"
-#include "libs/_cxx20/math_algos.h"
+#include "libs/glplot.h"
+#include "libs/math_algos.h"
 #include "libs/helper.h"
 
 #include <boost/version.hpp>

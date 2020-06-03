@@ -19,7 +19,7 @@
 #include <gemmi/cif.hpp>
 #include <gemmi/symmetry.hpp>
 
-#include "libs/_cxx20/math_algos.h"
+#include "libs/math_algos.h"
 using namespace m_ops;
 
 
