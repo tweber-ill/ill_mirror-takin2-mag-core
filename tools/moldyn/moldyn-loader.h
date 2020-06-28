@@ -317,7 +317,7 @@ class MolDyn
 				if(frameskip || iNumConfigs % 100)
 				{
 					std::cout << "\rReading " << strConfig << ". "
-						<< unsigned{percentage} << " %.                ";
+						<< static_cast<unsigned>(percentage) << " %.                ";
 					std::cout.flush();
 				}
 
@@ -374,7 +374,7 @@ class MolDyn
 
 
 				std::size_t filepos = tl2::get_file_pos(ifstr);
-				percentage = t_real{filepos*100} / t_real{filesize};
+				percentage = static_cast<t_real>(filepos*100) / static_cast<t_real>(filesize);
 				if(m_sigLoadProgress.num_slots() && !*m_sigLoadProgress(percentage))
 				{
 					std::cerr << "\nLoading cancelled." << std::endl;
@@ -438,7 +438,7 @@ class MolDyn
 					}
 				}
 
-				percentage = t_real{(frame+1)*100}/t_real{m_frames.size()};
+				percentage = static_cast<t_real>((frame+1)*100)/static_cast<t_real>(m_frames.size());
 				if(m_sigSaveProgress.num_slots() && !*m_sigSaveProgress(percentage))
 				{
 					std::cerr << "\nSaving cancelled." << std::endl;
@@ -448,7 +448,7 @@ class MolDyn
 				if(frame % 100)
 				{
 					std::cout << "\rSaving configuration " << (frame+1) << " of " << m_frames.size() << ". "
-						<< unsigned{percentage} << " %.                ";
+						<< static_cast<unsigned>(percentage) << " %.                ";
 					std::cout.flush();
 				}
 			}

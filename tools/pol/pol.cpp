@@ -33,7 +33,7 @@ using namespace tl2_ops;
 
 using t_real = double;
 using t_cplx = std::complex<t_real>;
-using t_vec = std::vector<t_cplx>;
+using t_vec = tl2::vec<t_cplx, std::vector>;
 using t_mat = tl2::mat<t_cplx, std::vector>;
 using t_matvec = std::vector<t_mat>;
 
