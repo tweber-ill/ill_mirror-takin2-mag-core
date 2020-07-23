@@ -7,7 +7,7 @@
 #
 
 # string to search
-strtofind="test"
+strtofind="takin"
 
 
 # date ranges
@@ -51,20 +51,21 @@ function find_str()
 	local str="$2"
 	local report_tmp="${report%.txt}.tmp"
 
-	echo -en "File \"${file}\" ... " 
+	echo -en "File \"${file}\" ... "
 
 	if ${ZCAT} $file | grep $str > $report_tmp; then
-		echo -e "match found" 
+		echo -e "match found"
 		echo -e "--------------------------------------------------------------------------------" >> $report
-		echo -e "Matches for \"${str}\" in file \"${file}\"" >> $report
+		echo -e "Matches for \"${str}\" in log file \"${file}\"" >> $report
 		echo -e "--------------------------------------------------------------------------------" >> $report
 
 		cat $report_tmp >> $report
-		rm -f $report_tmp
 		echo -e "--------------------------------------------------------------------------------" >> $report
 	else
-		echo -e "no match" 
+		echo -e "no match"
 	fi
+
+	rm -f "${report_tmp}"
 }
 
 
@@ -78,7 +79,7 @@ for y in $(seq $y_start $y_end); do
 				year="$(printf "%04d" $y)"
 				month="$(printf "%02d" $m)"
 				day="$(printf "%02d" $d)"
-				hour="$(printf "%02d" $h)"
+				hour="$(printf "%d" $h)"
 
 				file="${year}-${month}-${day}-${hour}.json.gz"
 
