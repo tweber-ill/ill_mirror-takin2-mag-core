@@ -46,11 +46,11 @@ find_package(BISON 3.0 REQUIRED)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/parser)
 
 # parser
-BISON_TARGET(cliparser ../cli/cliparser.y ${CMAKE_CURRENT_BINARY_DIR}/parser/cliparser_impl.cpp
+BISON_TARGET(cliparser cli/cliparser.y ${CMAKE_CURRENT_BINARY_DIR}/parser/cliparser_impl.cpp
 	COMPILE_FLAGS "-S lalr1.cc --defines=${CMAKE_CURRENT_BINARY_DIR}/parser/cliparser_impl.h")
 
 # lexer
-FLEX_TARGET(clilexer ../cli/clilexer.l ${CMAKE_CURRENT_BINARY_DIR}/parser/clilexer_impl.cpp
+FLEX_TARGET(clilexer cli/clilexer.l ${CMAKE_CURRENT_BINARY_DIR}/parser/clilexer_impl.cpp
 	COMPILE_FLAGS "--c++ --header-file=${CMAKE_CURRENT_BINARY_DIR}/parser/clilexer_impl.h")
 ADD_FLEX_BISON_DEPENDENCY(clilexer cliparser)
 
@@ -65,9 +65,8 @@ set_property(SOURCE
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/ext"
-	"${PROJECT_SOURCE_DIR}/tools/cli" 
 	"${PROJECT_SOURCE_DIR}/../.." "${PROJECT_SOURCE_DIR}/../../ext"
-	"${PROJECT_SOURCE_DIR}/../../tools/cli" 
+	"${PROJECT_SOURCE_DIR}/cli"
 	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.."
 	"${PROJECT_BINARY_DIR}/parser"
 )
@@ -84,9 +83,9 @@ add_executable(magtool
 
 	${BISON_cliparser_OUTPUT_SOURCE} ${BISON_cliparser_OUTPUT_HEADER}
 	${FLEX_clilexer_OUTPUTS} ${FLEX_clilexer_OUTPUT_HEADER}
-	../cli/cliparser.cpp ../cli/cliparser.h ../cli/cliparser_types.h
-	../cli/ast.cpp ../cli/sym.cpp
-	../cli/funcs.cpp ../cli/funcs.h
+	cli/cliparser.cpp cli/cliparser.h cli/cliparser_types.h
+	cli/ast.cpp cli/sym.cpp
+	cli/funcs.cpp cli/funcs.h
 
 	../../libs/log.cpp
 

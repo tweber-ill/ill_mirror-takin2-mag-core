@@ -6,7 +6,7 @@
  */
 
 #include "funcs.h"
-#include "tools/main/globals.h"
+#include "../globals.h"
 #include "libs/phys.h"
 
 

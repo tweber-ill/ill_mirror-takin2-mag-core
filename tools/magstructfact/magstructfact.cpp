@@ -524,7 +524,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(acSave, &QAction::triggered, this, &MagStructFactDlg::Save);
 		connect(acImportCIF, &QAction::triggered, this, &MagStructFactDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
-	
+
 
 		// unit cell view
 		connect(ac3DView, &QAction::triggered, this, [this]()
@@ -1923,10 +1923,10 @@ void MagStructFactDlg::Calc()
 						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 
-						auto [_vecReM, _vecImM] = tl2::split_cplx<t_cplx>(moment);
+						auto [_vecReM, _vecImM] = tl2::split_cplx<t_vec_cplx, t_vec>(moment);
 						auto vecReM = tl2::convert<t_vec_gl>(_vecReM);
 						auto vecImM = tl2::convert<t_vec_gl>(_vecImM);
-					
+
 						auto normReM = tl2::norm<t_vec_gl>(vecReM);
 						auto normImM = tl2::norm<t_vec_gl>(vecImM);
 

@@ -8,6 +8,9 @@
 #ifndef __FILEBROWSER_H__
 #define __FILEBROWSER_H__
 
+#include "data.h"
+//#include "plot.h"
+
 #include <QtCore/QSettings>
 #include <QtCore/QEvent>
 #include <QtWidgets/QWidget>
@@ -19,9 +22,6 @@
 #include <memory>
 #include <vector>
 #include <string>
-
-#include "data.h"
-//#include "plot.h"
 
 
 

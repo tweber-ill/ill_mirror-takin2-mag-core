@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+
 #include <boost/signals2/signal.hpp>
 
 #undef yyFlexLexer
@@ -20,7 +21,7 @@
 #include "cliparser_types.h"
 #include "cliparser_impl.h"
 
-#include "tools/main/data.h"
+#include "../data.h"
 
 
 class CliAST;

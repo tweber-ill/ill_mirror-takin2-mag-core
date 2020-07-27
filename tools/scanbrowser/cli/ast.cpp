@@ -6,7 +6,7 @@
  */
 
 #include "cliparser.h"
-#include "tools/main/globals.h"
+#include "../globals.h"
 #include "funcs.h"
 
 #include <cmath>

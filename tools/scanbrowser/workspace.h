@@ -8,6 +8,10 @@
 #ifndef __WORKSPACE_H__
 #define __WORKSPACE_H__
 
+#include "cli/cliparser.h"
+#include "data.h"
+#include "libs/file.h"
+
 #include <QtCore/QSettings>
 #include <QtCore/QEvent>
 #include <QtWidgets/QWidget>
@@ -18,10 +22,6 @@
 
 #include <memory>
 #include <map>
-
-#include "data.h"
-#include "tools/cli/cliparser.h"
-#include "libs/file.h"
 
 
 

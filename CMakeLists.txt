@@ -27,5 +27,5 @@ add_subdirectory(tools/pol)
 add_subdirectory(tools/moldyn)
 
 
-# main GUI tool
-add_subdirectory(tools/main)
+# new scan browser tool
+add_subdirectory(tools/scanbrowser)
