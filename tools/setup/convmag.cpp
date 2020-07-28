@@ -11,10 +11,11 @@
 #include <iostream>
 #include <fstream>
 #include <tuple>
+#include <vector>
 
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-namespace ublas = boost::numeric::ublas;
+//#include <boost/numeric/ublas/matrix.hpp>
+//#include <boost/numeric/ublas/vector.hpp>
+//namespace ublas = boost::numeric::ublas;
 
 #include <boost/property_tree/ptree.hpp>
 //#include <boost/property_tree/xml_parser.hpp>
@@ -28,8 +29,10 @@ namespace algo = boost::algorithm;
 
 
 using t_real = double;
-using t_mat = ublas::matrix<t_real>;
-using t_vec = ublas::vector<t_real>;
+//using t_mat = ublas::matrix<t_real>;
+//using t_vec = ublas::vector<t_real>;
+using t_mat = tl2::mat<t_real, std::vector>;
+using t_vec = tl2::vec<t_real, std::vector>;
 
 
 bool bSaveOG = false;
@@ -40,9 +43,9 @@ std::string to_str(const t_mat& mat)
 	static const auto zero = tl2::zero<t_mat>(mat.size1(), mat.size2());
 	static const auto unit = tl2::unit<t_mat>(mat.size1(), mat.size2());
 
-	if(tl2::equals<t_mat>(mat, zero))
+	if(tl2::equals<t_mat, t_real>(mat, zero))
 		return "0";
-	else if(tl2::equals<t_mat>(mat, unit))
+	else if(tl2::equals<t_mat, t_real>(mat, unit))
 		return "1";
 
 	// general case
@@ -63,6 +66,7 @@ std::string to_str(const t_mat& mat)
 
 	return ostr.str();
 }
+
 
 std::string to_str(const t_vec& vec)
 {

@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.0)
 
 
 # setup tools
-#add_subdirectory(tools/setup)
+add_subdirectory(tools/setup)
 
 
 # magnetic and nuclear structure tools
