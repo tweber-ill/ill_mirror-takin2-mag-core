@@ -5,7 +5,7 @@
 #
 
 cmake_minimum_required(VERSION 3.0)
-project(maintool)
+project(scanbrowser)
 
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
@@ -72,7 +72,7 @@ include_directories(
 )
 
 
-add_executable(magtool
+add_executable(scanbrowser
 	main.cpp mainwnd.cpp mainwnd.h
 	filebrowser.cpp filebrowser.h
 	workspace.cpp workspace.h
@@ -93,7 +93,7 @@ add_executable(magtool
 )
 
 
-target_link_libraries(magtool
+target_link_libraries(scanbrowser
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	-ldl
