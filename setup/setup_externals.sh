@@ -3,7 +3,7 @@
 # downloads external libraries for in20tools
 # @author Tobias Weber <tweber@ill.fr>
 # @date 6-apr-18
-# @license see 'LICENSE' file
+# @license GPLv3, see 'LICENSE' file
 #
 
 # -----------------------------------------------------------------------------
