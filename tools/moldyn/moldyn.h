@@ -31,6 +31,15 @@ using t_vec = tl2::vec<t_real, std::vector>;
 using t_mat = tl2::mat<t_real, std::vector>;
 
 
+/**
+ * atom indices for convex hull calculation
+ */
+struct HullIndices
+{
+	std::vector<std::tuple<std::size_t, std::size_t>> vertices;
+};
+
+
 class MolDynDlg : public QMainWindow
 {
 public:
@@ -62,11 +71,16 @@ protected:
 	void CalculateDistanceBetweenAtoms();
 	void CalculatePositionsOfAtoms();
 	void CalculateDeltaDistancesOfAtoms();
+	void CalculateConvexHullOfAtoms();
+
+	void CalculateConvexHulls();
 
 	void SliderValueChanged(int val);
 
 	void SelectAll();
 	void SelectNone();
+
+	std::vector<std::tuple<std::size_t, std::size_t>> GetSelectedAtoms();
 
     void DeleteSelectedAtoms();
     void OnlyKeepSelectedAtoms();
@@ -91,13 +105,15 @@ protected:
 	QLabel *m_statusCurAtom = nullptr;
 	QLabel *m_statusAtoms = nullptr;
 
-	QSlider *m_slider = nullptr;
+	QSlider *m_sliderFrame = nullptr;
 	QDoubleSpinBox *m_spinScale = nullptr;
 	QMenu *m_atomContextMenu = nullptr;
 
 	GlPlot *m_plot = nullptr;
 	std::size_t m_sphere = 0;
 	std::vector<std::size_t> m_sphereHandles;
+
+	std::vector<HullIndices> m_hulls;
 
 
 private:

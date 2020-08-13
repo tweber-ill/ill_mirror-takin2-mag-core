@@ -1,5 +1,5 @@
 /**
- * atom dynamics
+ * atom dynamics tool
  * @author Tobias Weber <tweber@ill.fr>
  * @date Dec-2019
  * @license GPLv3, see 'LICENSE' file
@@ -150,14 +150,18 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		auto acCalcDist = new QAction("Distance Between Selected Atoms...", menuEdit);
 		auto acCalcPos = new QAction("Positions Of Selected Atoms...", menuEdit);
 		auto acCalcDeltaDist = new QAction("Distances to Initial Position of Selected Atoms...", menuEdit);
+		auto acCalcHull = new QAction("Convex Hull of Selected Atoms", menuEdit);
 
 		menuCalc->addAction(acCalcDist);
 		menuCalc->addAction(acCalcPos);
 		menuCalc->addAction(acCalcDeltaDist);
+		menuCalc->addSeparator();
+		menuCalc->addAction(acCalcHull);
 
 		connect(acCalcDist, &QAction::triggered, this, &MolDynDlg::CalculateDistanceBetweenAtoms);
 		connect(acCalcPos, &QAction::triggered, this, &MolDynDlg::CalculatePositionsOfAtoms);
 		connect(acCalcDeltaDist, &QAction::triggered, this, &MolDynDlg::CalculateDeltaDistancesOfAtoms);
+		connect(acCalcHull, &QAction::triggered, this, &MolDynDlg::CalculateConvexHullOfAtoms);
 
 
 		// Help
@@ -256,15 +260,15 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_spinScale->setValue(0.4);
 		m_spinScale->setFocusPolicy(Qt::StrongFocus);
 
-		m_slider = new QSlider(Qt::Horizontal, this);
-		m_slider->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Minimum});
-		m_slider->setMinimum(0);
-		m_slider->setSingleStep(1);
-		m_slider->setPageStep(10);
-		m_slider->setTracking(1);
-		m_slider->setFocusPolicy(Qt::StrongFocus);
+		m_sliderFrame = new QSlider(Qt::Horizontal, this);
+		m_sliderFrame->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Minimum});
+		m_sliderFrame->setMinimum(0);
+		m_sliderFrame->setSingleStep(1);
+		m_sliderFrame->setPageStep(10);
+		m_sliderFrame->setTracking(1);
+		m_sliderFrame->setFocusPolicy(Qt::StrongFocus);
 
-		connect(m_slider, &QSlider::valueChanged, this, &MolDynDlg::SliderValueChanged);
+		connect(m_sliderFrame, &QSlider::valueChanged, this, &MolDynDlg::SliderValueChanged);
 		connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 		{
 			if(this->m_plot)
@@ -275,7 +279,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 			if(!this->m_plot) return;
 
 			// hack to trigger update
-			SliderValueChanged(m_slider->value());
+			SliderValueChanged(m_sliderFrame->value());
 		});
 
 		pMainGrid->addWidget(labCoordSys, 1,0,1,1);
@@ -283,7 +287,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		pMainGrid->addWidget(labScale, 1,2,1,1);
 		pMainGrid->addWidget(m_spinScale, 1,3,1,1);
 		pMainGrid->addWidget(labFrames, 1,4,1,1);
-		pMainGrid->addWidget(m_slider, 1,5,1,4);
+		pMainGrid->addWidget(m_sliderFrame, 1,5,1,4);
 	}
 
 
@@ -340,6 +344,35 @@ void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col
 
 
 // ----------------------------------------------------------------------------
+
+std::vector<std::tuple<std::size_t, std::size_t>> MolDynDlg::GetSelectedAtoms()
+{
+	// get selected atoms
+	std::vector<std::tuple<std::size_t, std::size_t>> objs;
+
+	for(const auto& obj : m_sphereHandles)
+	{
+		// continue if object isn't selected
+		if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+			continue;
+
+		//const auto [typelabel, _atomSubTypeIdx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(obj));
+
+		// get indices for selected atoms
+		const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
+		if(!bOk /*|| _atomSubTypeIdx != atomSubTypeIdx*/)
+		{
+			QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+			return std::vector<std::tuple<std::size_t, std::size_t>>{};
+		}
+
+		objs.emplace_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
+	}
+
+	return objs;
+}
+
+
 /**
  * calculate the distance between selected atoms
  */
@@ -348,24 +381,7 @@ void MolDynDlg::CalculateDistanceBetweenAtoms()
 	try
 	{
 		// get selected atoms
-		std::vector<std::tuple<std::size_t, std::size_t>> objs;
-
-		for(const auto& obj : m_sphereHandles)
-		{
-			// continue if object isn't selected
-			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
-				continue;
-
-			// get indices for selected atoms
-			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
-			if(!bOk)
-			{
-				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
-				return;
-			}
-
-			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
-		}
+		std::vector<std::tuple<std::size_t, std::size_t>> objs = GetSelectedAtoms();
 
 		if(objs.size() <= 1)
 		{
@@ -447,7 +463,6 @@ void MolDynDlg::CalculateDistanceBetweenAtoms()
 }
 
 
-
 /**
  * calculate positions of selected atoms
  */
@@ -456,24 +471,7 @@ void MolDynDlg::CalculatePositionsOfAtoms()
 	try
 	{
 		// get selected atoms
-		std::vector<std::tuple<std::size_t, std::size_t>> objs;
-
-		for(const auto& obj : m_sphereHandles)
-		{
-			// continue if object isn't selected
-			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
-				continue;
-
-			// get indices for selected atoms
-			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
-			if(!bOk)
-			{
-				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
-				return;
-			}
-
-			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
-		}
+		std::vector<std::tuple<std::size_t, std::size_t>> objs = GetSelectedAtoms();
 
 		if(objs.size() <= 0)
 		{
@@ -553,7 +551,6 @@ void MolDynDlg::CalculatePositionsOfAtoms()
 }
 
 
-
 /**
  * calculate distance to initial positions of selected atoms
  */
@@ -562,26 +559,7 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 	try
 	{
 		// get selected atoms
-		std::vector<std::tuple<std::size_t, std::size_t>> objs;
-
-		for(const auto& obj : m_sphereHandles)
-		{
-			// continue if object isn't selected
-			if(!m_plot->GetImpl()->GetObjectHighlight(obj))
-				continue;
-
-			//const auto [typelabel, _atomSubTypeIdx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(obj));
-
-			// get indices for selected atoms
-			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
-			if(!bOk /*|| _atomSubTypeIdx != atomSubTypeIdx*/)
-			{
-				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
-				return;
-			}
-
-			objs.push_back(std::make_tuple(atomTypeIdx, atomSubTypeIdx));
-		}
+		std::vector<std::tuple<std::size_t, std::size_t>> objs = GetSelectedAtoms();
 
 		if(objs.size() <= 0)
 		{
@@ -659,7 +637,60 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 		QMessageBox::critical(this, PROG_NAME, ex.what());
 	}
 }
+
+
+/**
+ * calculate the convex hull of selected atoms
+ */
+void MolDynDlg::CalculateConvexHullOfAtoms()
+{
+	// get selected atoms
+	HullIndices hull;
+	hull.vertices = GetSelectedAtoms();
+
+	if(hull.vertices.size() <= 3)
+	{
+		QMessageBox::critical(this, PROG_NAME, "At least four atoms have to be selected.");
+		return;
+	}
+
+	// mark indices for hull calculation
+	m_hulls.emplace_back(std::move(hull));
+	CalculateConvexHulls();
+}
+
+
+/**
+ * calculate all convex hulls for the atom indices given in m_hulls
+ */
+void MolDynDlg::CalculateConvexHulls()
+{
+	std::size_t frameidx = m_sliderFrame->value();
+
+	for(const auto& hull : m_hulls)
+	{
+		std::vector<t_vec> vertices;
+
+		for(const auto [objTypeIdx, objSubTypeIdx] : hull.vertices)
+		{
+			const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
+			vertices.push_back(coords);
+		}
+
+
+		auto polys = tl2_qh::get_convexhull(vertices);
+		for(const auto& poly : polys)
+		{
+			std::cout << "hull polygon:\n";
+			for(const auto& vert : poly)
+				std::cout << "\tvertex: " << vert << std::endl;
+		}
+
+		// TODO
+	}
+}
 // ----------------------------------------------------------------------------
+
 
 
 
@@ -672,7 +703,7 @@ void MolDynDlg::New()
 		m_plot->GetImpl()->RemoveObject(obj);
 
 	m_sphereHandles.clear();
-	m_slider->setValue(0);
+	m_sliderFrame->setValue(0);
 
 	m_plot->update();
 }
@@ -723,7 +754,7 @@ void MolDynDlg::Load()
 
 
 		m_mol.UnsubscribeFromLoadProgress(&progressHandler);
-		m_slider->setMaximum(m_mol.GetFrameCount() - 1);
+		m_sliderFrame->setMaximum(m_mol.GetFrameCount() - 1);
 
 
 		// crystal A and B matrices
@@ -885,7 +916,7 @@ void MolDynDlg::SetStatusMsg(const std::string& msg)
 
 void  MolDynDlg::UpdateAtomsStatusMsg()
 {
-	if(!m_statusAtoms || !m_slider) return;
+	if(!m_statusAtoms || !m_sliderFrame) return;
 
 	// Atoms
 	std::string numAtoms = std::to_string(m_mol.GetNumAtomsTotal()) + " atoms.";
@@ -905,7 +936,7 @@ void  MolDynDlg::UpdateAtomsStatusMsg()
 	}
 
 	// Frames
-	numAtoms += " Frame " + std::to_string(m_slider->value()+1) + " of " + std::to_string(m_mol.GetFrameCount()) + ".";
+	numAtoms += " Frame " + std::to_string(m_sliderFrame->value()+1) + " of " + std::to_string(m_mol.GetFrameCount()) + ".";
 
 	m_statusAtoms->setText(numAtoms.c_str());
 }
@@ -1344,17 +1375,17 @@ void MolDynDlg::closeEvent(QCloseEvent *evt)
 void MolDynDlg::keyPressEvent(QKeyEvent *evt)
 {
 	if(evt->key()==Qt::Key_Left || evt->key()==Qt::Key_Down)
-		m_slider->setValue(m_slider->value() - m_slider->singleStep());
+		m_sliderFrame->setValue(m_sliderFrame->value() - m_sliderFrame->singleStep());
 	else if(evt->key()==Qt::Key_Right || evt->key()==Qt::Key_Up)
-		m_slider->setValue(m_slider->value() + m_slider->singleStep());
+		m_sliderFrame->setValue(m_sliderFrame->value() + m_sliderFrame->singleStep());
 	else if(evt->key()==Qt::Key_PageUp)
-		m_slider->setValue(m_slider->value() + m_slider->pageStep());
+		m_sliderFrame->setValue(m_sliderFrame->value() + m_sliderFrame->pageStep());
 	else if(evt->key()==Qt::Key_PageDown)
-		m_slider->setValue(m_slider->value() - m_slider->pageStep());
+		m_sliderFrame->setValue(m_sliderFrame->value() - m_sliderFrame->pageStep());
 	else if(evt->key()==Qt::Key_Home)
-		m_slider->setValue(m_slider->minimum());
+		m_sliderFrame->setValue(m_sliderFrame->minimum());
 	else if(evt->key()==Qt::Key_End)
-		m_slider->setValue(m_slider->maximum());
+		m_sliderFrame->setValue(m_sliderFrame->maximum());
 
 	QMainWindow::keyPressEvent(evt);
 }
