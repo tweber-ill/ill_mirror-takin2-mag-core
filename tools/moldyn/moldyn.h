@@ -47,8 +47,8 @@ public:
 	~MolDynDlg() = default;
 
 protected:
-	std::size_t Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex=-1);
-	void Change3DItem(std::size_t obj, const t_vec* vec, const t_vec* col=nullptr, const t_real *scale=nullptr, 
+	std::size_t Add3DAtom(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex=-1);
+	void Change3DAtom(std::size_t obj, const t_vec* vec, const t_vec* col=nullptr, const t_real *scale=nullptr, 
 		const std::string *typelabel=nullptr, int atomindex=-1);
 
 	void SetStatusMsg(const std::string& msg);

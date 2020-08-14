@@ -306,10 +306,10 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 /**
  * add an atom
  */
-std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex)
+std::size_t MolDynDlg::Add3DAtom(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex)
 {
 	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
-	Change3DItem(obj, &vec, &col, &scale, &typelabel, atomindex);
+	Change3DAtom(obj, &vec, &col, &scale, &typelabel, atomindex);
 	return obj;
 }
 
@@ -317,7 +317,7 @@ std::size_t MolDynDlg::Add3DItem(const t_vec& vec, const t_vec& col, t_real scal
 /**
  * change an atom
  */
-void MolDynDlg::Change3DItem(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale,
+void MolDynDlg::Change3DAtom(std::size_t obj, const t_vec *vec, const t_vec *col, const t_real *scale,
 	const std::string *label, int atomindex)
 {
 	if(vec)
@@ -678,13 +678,24 @@ void MolDynDlg::CalculateConvexHulls()
 		}
 
 
-		auto polys = tl2_qh::get_convexhull(vertices);
-		for(const auto& poly : polys)
+		auto [polys, normals] = tl2_qh::get_convexhull<t_vec>(vertices);
+
+
+		std::vector<t_vec3_gl> glvertices;
+		std::vector<t_vec3_gl> glnormals;
+
+		for(std::size_t polyidx=0; polyidx<polys.size(); ++polyidx)
 		{
-			std::cout << "hull polygon:\n";
+			const auto& poly = polys[polyidx];
+			const auto& normal = normals[polyidx];
+
 			for(const auto& vert : poly)
-				std::cout << "\tvertex: " << vert << std::endl;
+				glvertices.emplace_back(tl2::convert<t_vec3_gl, t_vec>(vert));
+
+			glnormals.emplace_back(tl2::convert<t_vec3_gl, t_vec>(normal));
 		}
+
+		m_plot->GetImpl()->AddSolidObject(glvertices, glnormals, 0,0,1,0.5);
 
 		// TODO
 	}
@@ -809,7 +820,7 @@ void MolDynDlg::Load()
 				{
 					t_real atomscale = m_spinScale->value();
 
-					std::size_t handle = Add3DItem(vec, cols[atomtypeidx % cols.size()], atomscale, 
+					std::size_t handle = Add3DAtom(vec, cols[atomtypeidx % cols.size()], atomscale, 
 						m_mol.GetAtomName(atomtypeidx), atomidx);
 					m_sphereHandles.push_back(handle);
 
@@ -1044,7 +1055,7 @@ void MolDynDlg::SliderValueChanged(int val)
 		for(const t_vec& vec : coords)
 		{
 			std::size_t obj = m_sphereHandles[counter];
-			Change3DItem(obj, &vec, nullptr, &atomscale, nullptr, atomidx);
+			Change3DAtom(obj, &vec, nullptr, &atomscale, nullptr, atomidx);
 
 			++counter;
 			++atomidx;
