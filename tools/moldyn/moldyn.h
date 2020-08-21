@@ -34,9 +34,10 @@ using t_mat = tl2::mat<t_real, std::vector>;
 /**
  * atom indices for convex hull calculation
  */
-struct HullIndices
+struct Hull
 {
 	std::vector<std::tuple<std::size_t, std::size_t>> vertices;
+	std::optional<std::size_t> plotObj;
 };
 
 
@@ -113,7 +114,7 @@ protected:
 	std::size_t m_sphere = 0;
 	std::vector<std::size_t> m_sphereHandles;
 
-	std::vector<HullIndices> m_hulls;
+	std::vector<Hull> m_hulls;
 
 
 private:

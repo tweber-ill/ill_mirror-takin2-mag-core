@@ -645,7 +645,7 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 void MolDynDlg::CalculateConvexHullOfAtoms()
 {
 	// get selected atoms
-	HullIndices hull;
+	Hull hull;
 	hull.vertices = GetSelectedAtoms();
 
 	if(hull.vertices.size() <= 3)
@@ -667,8 +667,15 @@ void MolDynDlg::CalculateConvexHulls()
 {
 	std::size_t frameidx = m_sliderFrame->value();
 
-	for(const auto& hull : m_hulls)
+	for(auto& hull : m_hulls)
 	{
+		// remove old plot object
+		if(hull.plotObj)
+		{
+			m_plot->GetImpl()->RemoveObject(*hull.plotObj);
+			hull.plotObj.reset();
+		}
+
 		std::vector<t_vec> vertices;
 
 		for(const auto [objTypeIdx, objSubTypeIdx] : hull.vertices)
@@ -695,7 +702,7 @@ void MolDynDlg::CalculateConvexHulls()
 			glnormals.emplace_back(tl2::convert<t_vec3_gl, t_vec>(normal));
 		}
 
-		m_plot->GetImpl()->AddSolidObject(glvertices, glnormals, 0,0,1,0.5);
+		hull.plotObj = m_plot->GetImpl()->AddTriangleObject(glvertices, glnormals, 0,0,1,0.5);
 
 		// TODO
 	}
@@ -709,6 +716,14 @@ void MolDynDlg::CalculateConvexHulls()
 void MolDynDlg::New()
 {
 	m_mol.Clear();
+	
+	for(auto& hull : m_hulls)
+	{
+		if(hull.plotObj)
+			m_plot->GetImpl()->RemoveObject(*hull.plotObj);
+	}
+	
+	m_hulls.clear();
 
 	for(const auto& obj : m_sphereHandles)
 		m_plot->GetImpl()->RemoveObject(obj);
@@ -1062,6 +1077,7 @@ void MolDynDlg::SliderValueChanged(int val)
 		}
 	}
 
+	CalculateConvexHulls();
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
