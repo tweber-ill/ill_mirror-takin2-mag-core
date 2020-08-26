@@ -15,20 +15,24 @@
 using t_real = t_real_dat;
 
 
-Plotter::Plotter(QWidget *parent, QSettings* pSettings) : QWidget(parent), m_pSettings(pSettings)
+Plotter::Plotter(QWidget *parent, QSettings* pSettings)
+	: QWidget(parent), m_pSettings(pSettings), 
+	m_pPlotter{std::make_shared<QCustomPlot>(this)}, 
+	m_pPlotContextMenu{new QMenu(m_pPlotter.get())}
+
 {
 	auto *pGrid = new QGridLayout(this);
 	pGrid->setHorizontalSpacing(4);
 	pGrid->setVerticalSpacing(4);
 	pGrid->setContentsMargins(0,0,0,0);
-	pGrid->addWidget(m_pPlotter, 0, 0, 1, 1);
+	pGrid->addWidget(m_pPlotter.get(), 0, 0, 1, 1);
 
 	m_pPlotContextMenu->setTitle("Plot");
 	m_pPlotContextMenu->addAction("Export to Gnuplot...", this, &Plotter::SaveGpl);
 	m_pPlotContextMenu->addAction("Save as PDF...", this, &Plotter::SavePDF);
 
 	m_pPlotter->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(m_pPlotter, &QCustomPlot::customContextMenuRequested, this, &Plotter::ShowPlotContextMenu);
+	connect(m_pPlotter.get(), &QCustomPlot::customContextMenuRequested, this, &Plotter::ShowPlotContextMenu);
 
 }
 
@@ -101,6 +105,8 @@ void Plotter::SaveGpl()
 void Plotter::Clear()
 {
 	m_pPlotter->clearGraphs();
+	m_pPlotter->clearItems();
+	m_pPlotter->clearPlottables();
 	m_dataset.clear();
 }
 

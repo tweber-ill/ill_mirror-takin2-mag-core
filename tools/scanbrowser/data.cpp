@@ -613,7 +613,7 @@ Dataset Dataset::norm(std::size_t mon) const
 	Dataset dataset;
 
 	for(std::size_t ch=0; ch<GetNumChannels(); ++ch)
-		dataset.AddChannel(GetChannel(ch).norm());
+		dataset.AddChannel(GetChannel(ch).norm(mon));
 
 	return dataset;
 }

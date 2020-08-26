@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 	tl2::set_locales();
 
 	QApplication app(argc, argv);
-	QSettings sett("tobis_stuff", "magtool");
+	QSettings sett("tobis_stuff", "scanbrowser");
 
 	// set GUI style
 	//sett.setValue("mainwnd/theme", "fusion");

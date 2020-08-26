@@ -16,8 +16,8 @@ endif()
 
 
 set(CMAKE_CXX_STANDARD 20)
-add_definitions(-std=c++20)
-
+add_compile_options(-std=c++20)
+add_compile_options(-Wall -Wextra)
 
 
 # -----------------------------------------------------------------------------

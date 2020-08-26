@@ -108,7 +108,7 @@ void WorkSpaceWidget::ItemSelected(QListWidgetItem* pCur)
 /**
  * an item in the list was double-clicked
  */
-void WorkSpaceWidget::ItemDoubleClicked(QListWidgetItem* pCur)
+void WorkSpaceWidget::ItemDoubleClicked(QListWidgetItem*)
 {
 }
 
@@ -223,7 +223,7 @@ void WorkSpaceWidget::ReceiveFiles(const std::vector<std::string> &files)
 
 		// insert the dataset into the workspace
 		std::string fileident = "sc" + filepath.baseName().toStdString();
-		const auto [iter, insert_ok] = m_workspace.emplace(std::make_pair(fileident, std::make_shared<SymbolDataset>(std::move(dataset))));
+		/*const auto [iter, insert_ok] = */m_workspace.emplace(std::make_pair(fileident, std::make_shared<SymbolDataset>(std::move(dataset))));
 	}
 
 	UpdateList();
@@ -241,7 +241,7 @@ void WorkSpaceWidget::UpdateList()
 		// skip real or string variables
 		if(symdataset->GetType() != SymbolType::DATASET)
 			continue;
-		const Dataset& dataset = dynamic_cast<const SymbolDataset&>(*symdataset).GetValue();
+		//const Dataset& dataset = dynamic_cast<const SymbolDataset&>(*symdataset).GetValue();
 
 		QString qident(ident.c_str());
 		// dataset with this identifier already in list?

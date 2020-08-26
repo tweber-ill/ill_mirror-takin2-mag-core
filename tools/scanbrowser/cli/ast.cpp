@@ -23,7 +23,7 @@ using t_real = t_real_cli;
 /**
  * real constant
  */
-std::shared_ptr<Symbol> CliASTReal::Eval(CliParserContext& ctx) const
+std::shared_ptr<Symbol> CliASTReal::Eval(CliParserContext&) const
 {
 	return std::make_shared<SymbolReal>(m_val);
 }
@@ -32,7 +32,7 @@ std::shared_ptr<Symbol> CliASTReal::Eval(CliParserContext& ctx) const
 /**
  * string constant
  */
-std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext& ctx) const
+std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext&) const
 {
 	return std::make_shared<SymbolString>(m_val);
 }

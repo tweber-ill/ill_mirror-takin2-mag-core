@@ -14,7 +14,7 @@
 // ----------------------------------------------------------------------------
 
 CliLexer::CliLexer(CliParserContext *ctx)
-	: m_pContext(ctx), yyFlexLexer()
+	: yyFlexLexer(), m_pContext(ctx)
 {}
 
 template<> double str_to_real(const std::string& str) { return std::stod(str); }

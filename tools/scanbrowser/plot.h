@@ -24,8 +24,8 @@ class Plotter : public QWidget
 private:
 	QSettings *m_pSettings = nullptr;
 
-	QCustomPlot *m_pPlotter = new QCustomPlot(this);
-	QMenu *m_pPlotContextMenu = new QMenu(m_pPlotter);
+	std::shared_ptr<QCustomPlot> m_pPlotter;
+	QMenu *m_pPlotContextMenu = nullptr;
 
 	// copy of current dataset
 	Dataset m_dataset;
@@ -34,8 +34,8 @@ public:
 	Plotter(QWidget *parent, QSettings* = nullptr);
 	virtual ~Plotter();
 
-	QCustomPlot* GetPlotter() { return m_pPlotter; }
-	const QCustomPlot* GetPlotter() const { return m_pPlotter; }
+	std::shared_ptr<QCustomPlot> GetPlotter() { return m_pPlotter; }
+	std::shared_ptr<QCustomPlot> GetPlotter() const { return m_pPlotter; }
 
 	void Plot(const Dataset &dataset);
 	void Clear();

@@ -30,12 +30,12 @@ MainWnd::MainWnd(QSettings* pSettings)
 	m_pBrowser(new FileBrowser(this, pSettings)),
 	m_pWS(new WorkSpace(this, pSettings)),
 	m_pCLI(new CommandLine(this, pSettings)),
-	m_pCurPlot(new PlotterDock(this, pSettings))
+	m_pCurPlot(new Plotter(this, pSettings))
 {
 	// the command line widget has to be accessible globally for error output
 	g_pCLI = m_pCLI;
 
-	this->setObjectName("magtool");
+	this->setObjectName("scanbrowser");
 	SetCurrentFile("");
 	LoadPlugins();
 
@@ -73,7 +73,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	menuView->addAction(m_pBrowser->toggleViewAction());
 	menuView->addAction(m_pWS->toggleViewAction());
 	menuView->addAction(m_pCLI->toggleViewAction());
-	menuView->addAction(m_pCurPlot->toggleViewAction());
+	//menuView->addAction(m_pCurPlot->toggleViewAction());
 
 	// help
 	auto *acAbout = new QAction(QIcon::fromTheme("help-about"), "About...", m_pMenu);
@@ -101,7 +101,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 	this->addDockWidget(Qt::LeftDockWidgetArea, m_pBrowser);
 	this->addDockWidget(Qt::RightDockWidgetArea, m_pWS);
 	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCLI);
-	this->addDockWidget(Qt::BottomDockWidgetArea, m_pCurPlot);
+	//this->addDockWidget(Qt::BottomDockWidgetArea, m_pCurPlot);
+	this->setCentralWidget(m_pCurPlot);
 	// ------------------------------------------------------------------------
 
 
@@ -109,8 +110,8 @@ MainWnd::MainWnd(QSettings* pSettings)
 	// ------------------------------------------------------------------------
 	// connections
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles, m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
-	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
-	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot->GetWidget(), &Plotter::Plot);
+	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot, &Plotter::Plot);
+	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::PlotDataset, m_pCurPlot, &Plotter::Plot);
 	connect(acNew, &QAction::triggered, this, &MainWnd::NewFile);
 	connect(acOpen, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::OpenFile));
 	connect(acSave, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::SaveFile));
@@ -124,7 +125,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	m_pCLI->GetWidget()->GetParserContext().SetWorkspace(m_pWS->GetWidget()->GetWorkspace());
 
 	// connect the "workspace updated" signal from the command line parser
-	m_pCLI->GetWidget()->GetParserContext().GetWorkspaceUpdatedSignal().connect([this](const std::string& ident)
+	m_pCLI->GetWidget()->GetParserContext().GetWorkspaceUpdatedSignal().connect([this](const std::string& /*ident*/)
 	{
 		m_pWS->GetWidget()->UpdateList();
 	});
@@ -217,7 +218,7 @@ void MainWnd::OpenFile()
 {
 	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open File", dirLast, "Magtool Files (*.mag *.MAG)");
+	QString filename = QFileDialog::getOpenFileName(this, "Open File", dirLast, "Scan Browser Files (*.sbr *.SBR)");
 	if(filename=="" || !QFile::exists(filename))
 		return;
 
@@ -245,7 +246,7 @@ void MainWnd::SaveFileAs()
 {
 	QString dirLast = m_pSettings->value("mainwnd/sessiondir", "").toString();
 
-	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Magtool Files (*.mag *.MAG)");
+	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "Scan Browser Files (*.sbr *.SBR)");
 	if(filename=="")
 		return;
 
@@ -259,7 +260,7 @@ void MainWnd::SaveFileAs()
  */
 bool MainWnd::OpenFile(const QString &file)
 {
-	static const std::string basename = "mag/";
+	static const std::string basename = "scanbrowser/";
 
 	if(file=="" || !QFile::exists(file))
 		return false;
@@ -302,7 +303,7 @@ bool MainWnd::OpenFile(const QString &file)
  */
 bool MainWnd::SaveFile(const QString &file)
 {
-	static const std::string basename = "mag/";
+	static const std::string basename = "scanbrowser/";
 
 	if(file=="")
 		return false;
@@ -389,7 +390,7 @@ void MainWnd::RebuildRecentFiles()
  */
 void MainWnd::SetCurrentFile(const QString &file)
 {
-	static const QString title("Magtool");
+	static const QString title("Scan Browser");
 	m_curFile = file;
 
 	if(m_curFile == "")

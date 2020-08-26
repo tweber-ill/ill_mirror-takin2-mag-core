@@ -120,7 +120,7 @@ std::shared_ptr<Symbol> func_norm(std::shared_ptr<SymbolList> sym)
 /**
  * typeof function
  */
-static std::shared_ptr<Symbol> func_typeof(CliParserContext & ctx, std::shared_ptr<Symbol> sym)
+static std::shared_ptr<Symbol> func_typeof(CliParserContext&, std::shared_ptr<Symbol> sym)
 {
 	const std::string& ty = Symbol::get_type_name(*sym);
 	return std::make_shared<SymbolString>(ty);
@@ -130,7 +130,7 @@ static std::shared_ptr<Symbol> func_typeof(CliParserContext & ctx, std::shared_p
 /**
  * sizeof function
  */
-static std::shared_ptr<Symbol> func_sizeof(CliParserContext & ctx, std::shared_ptr<Symbol> sym)
+static std::shared_ptr<Symbol> func_sizeof(CliParserContext&, std::shared_ptr<Symbol> sym)
 {
 	if(sym->GetType() == SymbolType::ARRAY)
 	{	// array length
@@ -207,12 +207,12 @@ std::shared_ptr<Symbol> func_array(CliParserContext & ctx, std::shared_ptr<Symbo
 /**
  * help
  */
-std::shared_ptr<Symbol> func_help(CliParserContext & ctx)
+std::shared_ptr<Symbol> func_help(CliParserContext&)
 {
 	std::ostringstream ostr;
 
-	ostr << "<hr>IN20 data treatment tool version " << PROGRAM_VERSION << ".<br>\n";
-	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018-2019.<hr><br>\n";
+	ostr << "<hr>Takin/Scan Browser version " << PROGRAM_VERSION << ".<br>\n";
+	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018-2020.<hr><br>\n";
 
 	ostr << "Type funcs() or vars() to list available functions or variables.<br>\n";
 
@@ -224,7 +224,7 @@ std::shared_ptr<Symbol> func_help(CliParserContext & ctx)
 /**
  * list of functions
  */
-std::shared_ptr<Symbol> func_funcs(CliParserContext & ctx)
+std::shared_ptr<Symbol> func_funcs(CliParserContext&)
 {
 	std::ostringstream ostr;
 

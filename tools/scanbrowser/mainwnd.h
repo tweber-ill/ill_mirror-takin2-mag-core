@@ -76,7 +76,7 @@ private:
 	FileBrowser *m_pBrowser = nullptr;
 	WorkSpace *m_pWS = nullptr;
 	CommandLine *m_pCLI = nullptr;
-	PlotterDock *m_pCurPlot = nullptr;
+	Plotter *m_pCurPlot = nullptr;
 
 	QMenu *m_menuOpenRecent = nullptr;
 	QStringList m_recentFiles;
