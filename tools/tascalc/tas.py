@@ -241,7 +241,7 @@ def get_angle_deltas(ki1, kf1, Q_rlu1, di1, df1, \
 	[a5_2, a6_2] = get_a1a2(kf2, df2)
 	[a3_2, a4_2, dist_Q_plane_2] = get_a3a4(ki2, kf2, Q_rlu2, orient_rlu, orient_up_rlu, B, sense_sample, a3_offs)
 
-	return [a1_2-a1_1, a2_2-a2_1, a3_2-a3_1, a4_2-a4_1, a5_2-a5_1, a6_2-a6_1]
+	return [a1_2-a1_1, a2_2-a2_1, a3_2-a3_1, a4_2-a4_1, a5_2-a5_1, a6_2-a6_1, dist_Q_plane_1, dist_Q_plane_2]
 # -----------------------------------------------------------------------------
 
 
@@ -472,7 +472,7 @@ class TasGUI:
 			if self.checkA4Sense.isChecked() == False:
 				sense_sample = -1.
 
-			[da1, da2, da3, da4, da5, da6] = get_angle_deltas(\
+			[da1, da2, da3, da4, da5, da6, dist1, dist2] = get_angle_deltas(\
 				ki1, kf1, Q_rlu1, di, df, \
 				ki2, kf2, Q_rlu2, di, df, \
 				self.orient_rlu, self.orient_up_rlu, self.B, sense_sample, self.a3_offs)
@@ -483,6 +483,20 @@ class TasGUI:
 			self.editdA4.setText("%.6g" % (da4 / np.pi * 180.))
 			self.editdA5.setText("%.6g" % (da5 / np.pi * 180.))
 			self.editdA6.setText("%.6g" % (da6 / np.pi * 180.))
+
+			Q1_in_plane = np.abs(dist1) < self.g_eps
+			Q2_in_plane = np.abs(dist2) < self.g_eps
+
+			status = ""
+			if not Q1_in_plane:
+				status += "Position 1 is out-of-plane! "
+			if not Q2_in_plane:
+				status += "Position 2 is out-of-plane! "
+
+			if status != "":
+				status = "WARNING: " + status
+			self.anglesstatus.setText(status)
+
 		except (ArithmeticError, la.LinAlgError) as err:
 			self.editdA1.setText("invalid")
 			self.editdA2.setText("invalid")
@@ -766,6 +780,7 @@ class TasGUI:
 		taslayout.addWidget(qtw.QLabel(u"Mono., Ana. d (\u212b):", taspanel), 13,0, 1,1)
 		taslayout.addWidget(self.editDm, 13,1, 1,1)
 		taslayout.addWidget(self.editDa, 13,2, 1,1)
+
 		taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 14,0, 1,3)
 		taslayout.addWidget(self.tasstatus, 15,0, 1,3)
 
@@ -806,6 +821,7 @@ class TasGUI:
 		self.editKi2 = qtw.QLineEdit(anglespanel)
 		self.editKf2 = qtw.QLineEdit(anglespanel)
 
+		self.anglesstatus = qtw.QLabel(anglespanel)
 		separatorAngles = qtw.QFrame(anglespanel)
 		separatorAngles.setFrameStyle(qtw.QFrame.HLine)
 
@@ -871,7 +887,9 @@ class TasGUI:
 		angleslayout.addWidget(qtw.QLabel("\u0394a5, \u0394a6 (deg):", anglespanel), 11,0, 1,1)
 		angleslayout.addWidget(self.editdA5, 11,1, 1,1)
 		angleslayout.addWidget(self.editdA6, 11,2, 1,1)
+
 		angleslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 12,0, 1,3)
+		angleslayout.addWidget(self.anglesstatus, 13,0, 1,3)
 
 		tabs.addTab(anglespanel, "Distances")
 		# -----------------------------------------------------------------------------
