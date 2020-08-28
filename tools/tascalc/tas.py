@@ -242,6 +242,13 @@ def get_angle_deltas(ki1, kf1, Q_rlu1, di1, df1, \
 	[a3_2, a4_2, dist_Q_plane_2] = get_a3a4(ki2, kf2, Q_rlu2, orient_rlu, orient_up_rlu, B, sense_sample, a3_offs)
 
 	return [a1_2-a1_1, a2_2-a2_1, a3_2-a3_1, a4_2-a4_1, a5_2-a5_1, a6_2-a6_1, dist_Q_plane_1, dist_Q_plane_2]
+
+
+# get the instrument driving time
+def driving_time(deltas, rads_per_times):
+	times = np.abs(deltas) / rads_per_times
+	return np.max(times)
+
 # -----------------------------------------------------------------------------
 
 
@@ -467,6 +474,13 @@ class TasGUI:
 		di = self.getfloat(self.editDm.text())
 		df = self.getfloat(self.editDa.text())
 
+		speed_a1 = self.getfloat(self.editSpeedA1.text()) / 180.*np.pi
+		speed_a2 = self.getfloat(self.editSpeedA2.text()) / 180.*np.pi
+		speed_a3 = self.getfloat(self.editSpeedA3.text()) / 180.*np.pi
+		speed_a4 = self.getfloat(self.editSpeedA4.text()) / 180.*np.pi
+		speed_a5 = self.getfloat(self.editSpeedA5.text()) / 180.*np.pi
+		speed_a6 = self.getfloat(self.editSpeedA6.text()) / 180.*np.pi
+
 		try:
 			sense_sample = 1.
 			if self.checkA4Sense.isChecked() == False:
@@ -495,6 +509,12 @@ class TasGUI:
 
 			if status != "":
 				status = "WARNING: " + status
+
+			if status == "":
+				driving = driving_time([da1, da2, da3, da4, da5, da6], \
+					[speed_a1, speed_a2, speed_a3, speed_a4, speed_a5, speed_a6])
+				status = "Instrument driving time: %.2f s" % (driving)
+
 			self.anglesstatus.setText(status)
 
 		except (ArithmeticError, la.LinAlgError) as err:
@@ -807,6 +827,13 @@ class TasGUI:
 		self.editdA5.setReadOnly(True)
 		self.editdA6.setReadOnly(True)
 
+		self.editSpeedA1 = qtw.QLineEdit(anglespanel)
+		self.editSpeedA2 = qtw.QLineEdit(anglespanel)
+		self.editSpeedA3 = qtw.QLineEdit(anglespanel)
+		self.editSpeedA4 = qtw.QLineEdit(anglespanel)
+		self.editSpeedA5 = qtw.QLineEdit(anglespanel)
+		self.editSpeedA6 = qtw.QLineEdit(anglespanel)
+
 		self.edith1 = qtw.QLineEdit(anglespanel)
 		self.editk1 = qtw.QLineEdit(anglespanel)
 		self.editl1 = qtw.QLineEdit(anglespanel)
@@ -822,8 +849,12 @@ class TasGUI:
 		self.editKf2 = qtw.QLineEdit(anglespanel)
 
 		self.anglesstatus = qtw.QLabel(anglespanel)
+
 		separatorAngles = qtw.QFrame(anglespanel)
 		separatorAngles.setFrameStyle(qtw.QFrame.HLine)
+		separatorAngles2 = qtw.QFrame(anglespanel)
+		separatorAngles2.setFrameStyle(qtw.QFrame.HLine)
+
 
 		self.edith1.textEdited.connect(self.QChanged_angles)
 		self.editk1.textEdited.connect(self.QChanged_angles)
@@ -839,6 +870,13 @@ class TasGUI:
 		self.editKf2.textEdited.connect(self.KiKfChanged_angles)
 		self.editE2.textEdited.connect(self.EChanged_angles)
 
+		self.editSpeedA1.textEdited.connect(self.QChanged_angles)
+		self.editSpeedA2.textEdited.connect(self.QChanged_angles)
+		self.editSpeedA3.textEdited.connect(self.QChanged_angles)
+		self.editSpeedA4.textEdited.connect(self.QChanged_angles)
+		self.editSpeedA5.textEdited.connect(self.QChanged_angles)
+		self.editSpeedA6.textEdited.connect(self.QChanged_angles)
+
 
 		self.edith1.setText("%.6g" % sett.value("qtas/h1", 1., type=float))
 		self.editk1.setText("%.6g" % sett.value("qtas/k1", 0., type=float))
@@ -853,6 +891,13 @@ class TasGUI:
 		#self.editE2.setText("%.6g" % sett.value("qtas/E2", 0., type=float))
 		self.editKi2.setText("%.6g" % sett.value("qtas/ki2", 2.662, type=float))
 		self.editKf2.setText("%.6g" % sett.value("qtas/kf2", 2.662, type=float))
+
+		self.editSpeedA1.setText("%.2f" % sett.value("qtas/v_a1", 1., type=float))
+		self.editSpeedA2.setText("%.2f" % sett.value("qtas/v_a2", 1., type=float))
+		self.editSpeedA3.setText("%.2f" % sett.value("qtas/v_a3", 1., type=float))
+		self.editSpeedA4.setText("%.2f" % sett.value("qtas/v_a4", 1., type=float))
+		self.editSpeedA5.setText("%.2f" % sett.value("qtas/v_a5", 1., type=float))
+		self.editSpeedA6.setText("%.2f" % sett.value("qtas/v_a6", 1., type=float))
 
 
 		angleslayout.addWidget(qtw.QLabel("Position 1:", anglespanel), 0,1, 1,1)
@@ -877,19 +922,31 @@ class TasGUI:
 		angleslayout.addWidget(self.editKf2, 6,2, 1,1)
 
 		angleslayout.addWidget(separatorAngles, 7,0,1,3)
-		angleslayout.addWidget(qtw.QLabel("Angular Distances:", anglespanel), 8,1, 1,3)
-		angleslayout.addWidget(qtw.QLabel("\u0394a1, \u0394a2 (deg):", anglespanel), 9,0, 1,1)
-		angleslayout.addWidget(self.editdA1, 9,1, 1,1)
-		angleslayout.addWidget(self.editdA2, 9,2, 1,1)
-		angleslayout.addWidget(qtw.QLabel("\u0394a3, \u0394a4 (deg):", anglespanel), 10,0, 1,1)
-		angleslayout.addWidget(self.editdA3, 10,1, 1,1)
-		angleslayout.addWidget(self.editdA4, 10,2, 1,1)
-		angleslayout.addWidget(qtw.QLabel("\u0394a5, \u0394a6 (deg):", anglespanel), 11,0, 1,1)
-		angleslayout.addWidget(self.editdA5, 11,1, 1,1)
-		angleslayout.addWidget(self.editdA6, 11,2, 1,1)
+		angleslayout.addWidget(qtw.QLabel("Motor Speeds:", anglespanel), 8,1, 1,3)
+		angleslayout.addWidget(qtw.QLabel("v_a1, v_a2 (deg/s):", anglespanel), 9,0, 1,1)
+		angleslayout.addWidget(self.editSpeedA1, 9,1, 1,1)
+		angleslayout.addWidget(self.editSpeedA2, 9,2, 1,1)
+		angleslayout.addWidget(qtw.QLabel("v_a3, v_a4 (deg/s):", anglespanel), 10,0, 1,1)
+		angleslayout.addWidget(self.editSpeedA3, 10,1, 1,1)
+		angleslayout.addWidget(self.editSpeedA4, 10,2, 1,1)
+		angleslayout.addWidget(qtw.QLabel("v_a5, v_a6 (deg/s):", anglespanel), 11,0, 1,1)
+		angleslayout.addWidget(self.editSpeedA5, 11,1, 1,1)
+		angleslayout.addWidget(self.editSpeedA6, 11,2, 1,1)
 
-		angleslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 12,0, 1,3)
-		angleslayout.addWidget(self.anglesstatus, 13,0, 1,3)
+		angleslayout.addWidget(separatorAngles2, 12,0,1,3)
+		angleslayout.addWidget(qtw.QLabel("Angular Distances:", anglespanel), 13,1, 1,3)
+		angleslayout.addWidget(qtw.QLabel("\u0394a1, \u0394a2 (deg):", anglespanel), 14,0, 1,1)
+		angleslayout.addWidget(self.editdA1, 14,1, 1,1)
+		angleslayout.addWidget(self.editdA2, 14,2, 1,1)
+		angleslayout.addWidget(qtw.QLabel("\u0394a3, \u0394a4 (deg):", anglespanel), 15,0, 1,1)
+		angleslayout.addWidget(self.editdA3, 15,1, 1,1)
+		angleslayout.addWidget(self.editdA4, 15,2, 1,1)
+		angleslayout.addWidget(qtw.QLabel("\u0394a5, \u0394a6 (deg):", anglespanel), 16,0, 1,1)
+		angleslayout.addWidget(self.editdA5, 16,1, 1,1)
+		angleslayout.addWidget(self.editdA6, 16,2, 1,1)
+
+		angleslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 17,0, 1,3)
+		angleslayout.addWidget(self.anglesstatus, 18,0, 1,3)
 
 		tabs.addTab(anglespanel, "Distances")
 		# -----------------------------------------------------------------------------
@@ -992,6 +1049,13 @@ class TasGUI:
 		sett.setValue("qtas/ki2", self.getfloat(self.editKi2.text()))
 		sett.setValue("qtas/kf2", self.getfloat(self.editKf2.text()))
 		#sett.setValue("qtas/E2", self.getfloat(self.editE2.text()))
+
+		sett.setValue("qtas/v_a1", self.getfloat(self.editSpeedA1.text()))
+		sett.setValue("qtas/v_a2", self.getfloat(self.editSpeedA2.text()))
+		sett.setValue("qtas/v_a3", self.getfloat(self.editSpeedA3.text()))
+		sett.setValue("qtas/v_a4", self.getfloat(self.editSpeedA4.text()))
+		sett.setValue("qtas/v_a5", self.getfloat(self.editSpeedA5.text()))
+		sett.setValue("qtas/v_a6", self.getfloat(self.editSpeedA6.text()))
 		# -----------------------------------------------------------------------------
 
 
