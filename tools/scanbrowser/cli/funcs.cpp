@@ -8,6 +8,7 @@
 #include "funcs.h"
 #include "../globals.h"
 #include "libs/phys.h"
+#include "libs/fit.h"
 
 
 using t_real = t_real_cli;
@@ -606,6 +607,77 @@ std::shared_ptr<Symbol> func_normtomon(CliParserContext & ctx, std::shared_ptr<S
 	const auto &dat = dynamic_cast<const SymbolDataset&>(*arg);
 	return std::make_shared<SymbolDataset>(dat.GetValue().norm(0));
 }
+
+
+
+/**
+ * fit function
+ */
+std::shared_ptr<Symbol> func_fit (CliParserContext & ctx, const std::vector<std::shared_ptr<Symbol>>& args)
+{
+	if(args.size() < 2)
+	{
+		ctx.PrintError("Insufficient number of arguments given. At least a dataset and a fit function is needed.");
+		return nullptr;
+	}
+
+	// TODO: multiple data sets
+	if(args[0]->GetType() != SymbolType::DATASET)
+	{
+		ctx.PrintError("The first argument has to be a data set or a list of data sets.");
+		return nullptr;
+	}
+
+	if(args[1]->GetType() != SymbolType::STRING)
+	{
+		ctx.PrintError("The second argument has to be a string giving the fit expression.");
+		return nullptr;
+	}
+
+
+	const auto& dataset = dynamic_cast<SymbolDataset&>(*args[0]).GetValue();
+	const std::string& strexpr = dynamic_cast<SymbolString&>(*args[1]).GetValue();
+
+	std::vector<std::string> vars;
+	std::vector<t_real> initials;
+	std::vector<t_real> errs;
+	std::vector<bool> fixed;
+
+
+	// if no variables are given, determine them
+	if(vars.size() == 0)
+	{
+		tl2::ExprParser<t_real> expr;
+		expr.parse(strexpr);
+		const auto& exprvars = expr.get_vars();
+		for(const auto& pair : exprvars)
+		{
+			if(pair.first == "x")
+				continue;
+			
+			vars.push_back(pair.first);
+		}
+	}
+
+	initials.resize(vars.size(), 0);
+	errs.resize(vars.size(), 0);
+	fixed.resize(vars.size(), false);
+
+
+	// fit all channels in the data set
+	for(std::size_t channel=0; channel<dataset.GetNumChannels(); ++channel)
+	{
+		const auto& dat = dataset.GetChannel(channel);
+
+		const auto& xvals = dat.GetAxis(0);
+		const auto& yvals = dat.GetCounter(0);
+		const auto& yerrs = dat.GetCounterErrors(0);
+
+		tl2::fit_expr(strexpr, xvals, yvals, yerrs, "x", vars, initials, errs, &fixed);
+	}
+
+	return nullptr;
+}
 // ----------------------------------------------------------------------------
 
 
@@ -746,6 +818,7 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 	std::make_pair("append", std::make_tuple(&func_append, "appends two or more data sets")),
 	std::make_pair("append_channels", std::make_tuple(&func_append_channels, "appends two or more data set as individual channels")),
 	std::make_pair("add_pointwise", std::make_tuple(&func_add_pointwise, "pointwise addition of two or more data sets")),
+	std::make_pair("fit", std::make_tuple(&func_fit, "fitting of one or more data sets")),
 };
 
 

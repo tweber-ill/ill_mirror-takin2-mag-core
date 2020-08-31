@@ -4,9 +4,10 @@
 # @license see 'LICENSE' file
 #
 
-cmake_minimum_required(VERSION 3.0)
 project(scanbrowser)
+cmake_minimum_required(VERSION 3.0)
 
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/../../../tlibs2/cmake")
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -33,6 +34,11 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5PrintSupport REQUIRED)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
+
+# Minuit
+find_package(Minuit2 REQUIRED)
+find_package(Threads REQUIRED)
+find_package(OpenMP REQUIRED)
 # -----------------------------------------------------------------------------
 
 
@@ -96,5 +102,6 @@ add_executable(scanbrowser
 target_link_libraries(scanbrowser
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
+	${Minuit2_LIBRARIES} Threads::Threads OpenMP::OpenMP_CXX
 	-ldl
 )

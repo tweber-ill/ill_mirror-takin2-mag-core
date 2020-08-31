@@ -30,6 +30,8 @@ real 	{uinteger}(\.[0-9]*)?|\.[0-9]+
 ")" { return yy::CliParser::make_TOK_BRACKET_CLOSE(); }
 "[" { return yy::CliParser::make_TOK_SQBRACKET_OPEN(); }
 "]" { return yy::CliParser::make_TOK_SQBRACKET_CLOSE(); }
+"{" { return yy::CliParser::make_TOK_CURLBRACKET_OPEN(); }
+"}" { return yy::CliParser::make_TOK_CURLBRACKET_CLOSE(); }
 "+" { return yy::CliParser::make_TOK_PLUS(); }
 "-" { return yy::CliParser::make_TOK_MINUS(); }
 "*" { return yy::CliParser::make_TOK_MULT(); }

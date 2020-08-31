@@ -112,6 +112,7 @@ enum class SymbolType
 	STRING,	// e.g. "abc"
 	LIST,	// e.g. 1, 2, 3
 	ARRAY,	// e.g. [1, 2, 3]
+	MAP,	// e.g. {"key" : 1.23}
 	DATASET
 };
 

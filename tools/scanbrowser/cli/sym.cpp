@@ -1,5 +1,5 @@
 /**
- * Evaluates symbols
+ * evaluates symbols
  * @author Tobias Weber <tweber@ill.fr>
  * @date 15-Jun-2018
  * @license see 'LICENSE' file
