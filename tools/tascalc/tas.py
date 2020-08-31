@@ -892,10 +892,10 @@ class TasGUI:
 		self.editKi2.setText("%.6g" % sett.value("qtas/ki2", 2.662, type=float))
 		self.editKf2.setText("%.6g" % sett.value("qtas/kf2", 2.662, type=float))
 
-		self.editSpeedA1.setText("%.2f" % sett.value("qtas/v_a1", 1., type=float))
-		self.editSpeedA2.setText("%.2f" % sett.value("qtas/v_a2", 1., type=float))
-		self.editSpeedA3.setText("%.2f" % sett.value("qtas/v_a3", 1., type=float))
-		self.editSpeedA4.setText("%.2f" % sett.value("qtas/v_a4", 1., type=float))
+		self.editSpeedA1.setText("%.2f" % sett.value("qtas/v_a1", 0.15, type=float))
+		self.editSpeedA2.setText("%.2f" % sett.value("qtas/v_a2", 0.15, type=float))
+		self.editSpeedA3.setText("%.2f" % sett.value("qtas/v_a3", 1.25, type=float))
+		self.editSpeedA4.setText("%.2f" % sett.value("qtas/v_a4", 1.88, type=float))
 		self.editSpeedA5.setText("%.2f" % sett.value("qtas/v_a5", 1., type=float))
 		self.editSpeedA6.setText("%.2f" % sett.value("qtas/v_a6", 1., type=float))
 
