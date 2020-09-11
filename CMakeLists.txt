@@ -7,25 +7,32 @@
 project(magtools)
 cmake_minimum_required(VERSION 3.0)
 
-
-# setup tools
-add_subdirectory(tools/setup)
+option(ONLY_BUILD_FINISHED "only build finished tools" FALSE)
 
 
-# magnetic and nuclear structure tools
-add_subdirectory(tools/structfact)
-add_subdirectory(tools/magstructfact)
-add_subdirectory(tools/magsgbrowser)
-add_subdirectory(tools/cif2xml)
+if(ONLY_BUILD_FINISHED)
+	# final tools
 
+	# cif converter
+	add_subdirectory(tools/cif2xml)
 
-# polarisation tools
-add_subdirectory(tools/pol)
+	# polarisation tools
+	add_subdirectory(tools/pol)
 
+else()
+	# unfinished tools
 
-# misc tools
-add_subdirectory(tools/moldyn)
+	# setup tools
+	add_subdirectory(tools/setup)
 
+	# magnetic and nuclear structure tools
+	add_subdirectory(tools/structfact)
+	add_subdirectory(tools/magstructfact)
+	add_subdirectory(tools/magsgbrowser)
 
-# new scan browser tool
-add_subdirectory(tools/scanbrowser)
+	# molecular dynamics tools
+	add_subdirectory(tools/moldyn)
+
+	# new scan browser tool
+	add_subdirectory(tools/scanbrowser)
+endif()
