@@ -13,7 +13,7 @@
 #include <QtWidgets/QMenu>
 #include <memory>
 
-#include "qcp/qcustomplot.h"
+#include "qcustomplot.h"
 
 #include "data.h"
 

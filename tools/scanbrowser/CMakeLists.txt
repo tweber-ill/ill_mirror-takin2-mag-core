@@ -35,6 +35,9 @@ find_package(Qt5PrintSupport REQUIRED)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
+# qcp
+find_package(QCP REQUIRED)
+
 # Minuit
 find_package(Minuit2 REQUIRED)
 find_package(Threads REQUIRED)
@@ -70,11 +73,12 @@ set_property(SOURCE
 
 
 include_directories(
-	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/ext"
-	"${PROJECT_SOURCE_DIR}/../.." "${PROJECT_SOURCE_DIR}/../../ext"
+	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/ext" "${PROJECT_SOURCE_DIR}/ext/qcp"
+	"${PROJECT_SOURCE_DIR}/../.." "${PROJECT_SOURCE_DIR}/../../ext" "${PROJECT_SOURCE_DIR}/../../ext/qcp"
 	"${PROJECT_SOURCE_DIR}/cli"
 	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.."
 	"${PROJECT_BINARY_DIR}/parser"
+	"${QCP_INCLUDE_DIRS}"
 )
 
 
@@ -95,13 +99,14 @@ add_executable(scanbrowser
 
 	../../libs/log.cpp
 
-	../../ext/qcp/qcustomplot.cpp ../../ext/qcp/qcustomplot.h
+#	../../ext/qcp/qcustomplot.cpp ../../ext/qcp/qcustomplot.h
 )
 
 
 target_link_libraries(scanbrowser
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
+	${QCP_LIBRARIES}
 	${Minuit2_LIBRARIES} Threads::Threads OpenMP::OpenMP_CXX
 	-ldl
 )

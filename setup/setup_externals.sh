@@ -31,14 +31,12 @@ GEMMI_LOCAL=${GEMMI##*[/\\]}
 # cleans externals
 function clean_dirs()
 {
-	rm -rf tlibs
 	rm -rf qcp
 	rm -rf gemmi
 }
 
 function clean_files()
 {
-	rm -f ${TLIBS_LOCAL}
 	rm -f ${QCP_LOCAL}
 	rm -f ${GEMMI_LOCAL}
 }
@@ -46,24 +44,6 @@ function clean_files()
 
 
 # -----------------------------------------------------------------------------
-function dl_tlibs()
-{
-	if ! ${WGET} ${TLIBS}
-	then
-		echo -e "Error downloading tlibs.";
-		exit -1;
-	fi
-
-	if ! ${TAR} xjvf ${TLIBS_LOCAL}
-	then
-		echo -e "Error extracting tlibs.";
-		exit -1;
-	fi
-
-	mv tlibs-master tlibs
-}
-
-
 function dl_qcp()
 {
 	if ! ${WGET} ${QCP}
@@ -113,14 +93,9 @@ clean_files
 echo -e "--------------------------------------------------------------------------------\n"
 
 #echo -e "\n--------------------------------------------------------------------------------"
-#echo -e "Installing external tlibs library...\n"
-#dl_tlibs
+#echo -e "Installing external qcustomplot library...\n"
+#dl_qcp
 #echo -e "--------------------------------------------------------------------------------\n"
-
-echo -e "\n--------------------------------------------------------------------------------"
-echo -e "Installing external qcustomplot library...\n"
-dl_qcp
-echo -e "--------------------------------------------------------------------------------\n"
 
 echo -e "\n--------------------------------------------------------------------------------"
 echo -e "Installing external Gemmi library...\n"
