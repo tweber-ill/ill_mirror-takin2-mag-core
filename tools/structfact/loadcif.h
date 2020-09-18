@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <string>
-//#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -54,7 +54,7 @@ void remove_quotes(t_str& str)
  * gets the atom positions from the CIF
  */
 template<class t_vec, class t_real = typename t_vec::value_type>
-std::tuple<std::vector<t_vec>, std::vector<std::string>> 
+std::tuple<std::vector<t_vec>, std::vector<std::string>>
 get_cif_atoms(gemmi::cif::Block& block)
 {
 	std::vector<t_vec> atoms;
@@ -80,11 +80,14 @@ get_cif_atoms(gemmi::cif::Block& block)
 		{
 			auto name = boost::trim_copy(tabAtoms[row][0]);
 			remove_quotes(name);
-			atomnames.emplace_back(std::move(name));
 
 			const t_real x = tl2::stoval<t_real>(tabAtoms[row][1]);
 			const t_real y = tl2::stoval<t_real>(tabAtoms[row][2]);
 			const t_real z = tl2::stoval<t_real>(tabAtoms[row][3]);
+
+			//std::cout << name << ": " << x << " " << y << " " << z << std::endl;
+
+			atomnames.emplace_back(std::move(name));
 			atoms.emplace_back(t_vec{{x, y, z}});
 		}
 
@@ -265,7 +268,7 @@ load_cif(const std::string& filename, t_real eps=1e-6)
  */
 template<class t_mat, class t_real = typename t_mat::value_type>
 std::vector<std::tuple<
-	int,				// sg number 
+	int,			// sg number
 	std::string, 		// description
 	std::vector<t_mat>	// symops
 	>>
@@ -312,12 +315,12 @@ get_sgs(bool bAddNr=true, bool bAddHall=true)
  */
 template<class t_vec, class t_mat, class t_real = typename t_mat::value_type>
 std::vector<std::tuple<
-	int,				// sg number 
+	int,			// sg number
 	std::string, 		// description
 	std::vector<t_mat>	// symops
 	>>
 find_matching_sgs(
-	const std::vector<t_vec>& posInit, const std::vector<t_vec>& _posFinal, 
+	const std::vector<t_vec>& posInit, const std::vector<t_vec>& _posFinal,
 	t_real eps=1e-6)
 {
 	std::vector<t_vec> posFinal = tl2::keep_atoms_in_uc<t_vec, t_real>(_posFinal);
