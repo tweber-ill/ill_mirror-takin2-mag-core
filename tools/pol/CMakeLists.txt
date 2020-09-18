@@ -27,12 +27,12 @@ if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 	add_definitions(-DBUILD_LIB)
-	add_library(pol SHARED pol.cpp
+	add_library(takin_pol SHARED pol.cpp
 		../../libs/glplot.cpp ../../libs/glplot.h)
 else()
-	add_executable(pol pol.cpp
+	add_executable(takin_pol pol.cpp
 		../../libs/glplot.cpp ../../libs/glplot.h)
 endif()
 
-target_link_libraries(pol ${Boost_LIBRARIES})
-qt5_use_modules(pol Core Gui Widgets OpenGL)
+target_link_libraries(takin_pol ${Boost_LIBRARIES})
+qt5_use_modules(takin_pol Core Gui Widgets OpenGL)
