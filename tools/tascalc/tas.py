@@ -12,7 +12,7 @@ try:
 	import numpy as np
 	import numpy.linalg as la
 except ImportError:
-	printn("Numpy could not be imported!")
+	print("Numpy could not be imported!")
 	exit(-1)
 
 use_scipy = False
