@@ -12,7 +12,7 @@ try:
 	import numpy as np
 	import numpy.linalg as la
 except ImportError:
-	print("Numpy could not be imported!")
+	printn("Numpy could not be imported!")
 	exit(-1)
 
 use_scipy = False
@@ -60,6 +60,15 @@ def angle(a, b, metric):
 	len_b = np.sqrt(dot(b, b, metric))
 
 	c = dot(a, b, metric) / (len_a * len_b)
+
+	# check for rounding errors
+	if c > 1.:
+		#print("arccos precision overflow: " + str(c) + ".")
+		c = 1.
+	if c < -1.:
+		#print("arccos precision underflow: " + str(c) + ".")
+		c = -1.
+
 	return np.arccos(c)
 # -----------------------------------------------------------------------------
 
