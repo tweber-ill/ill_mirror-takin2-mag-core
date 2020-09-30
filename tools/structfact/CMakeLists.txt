@@ -31,14 +31,14 @@ if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 	add_definitions(-DBUILD_LIB)
-	add_library(structfact SHARED
+	add_library(takin_structfact SHARED
 		structfact.cpp structfact.h
 		../../libs/glplot.cpp ../../libs/glplot.h)
 else()
-	add_executable(structfact
+	add_executable(takin_structfact
 		structfact.cpp structfact.h
 		../../libs/glplot.cpp ../../libs/glplot.h)
 endif()
 
-target_link_libraries(structfact ${Boost_LIBRARIES})
-qt5_use_modules(structfact Core Gui Widgets OpenGL)
+target_link_libraries(takin_structfact ${Boost_LIBRARIES})
+qt5_use_modules(takin_structfact Core Gui Widgets OpenGL)

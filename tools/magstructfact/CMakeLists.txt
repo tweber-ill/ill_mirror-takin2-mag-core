@@ -30,14 +30,14 @@ if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 	add_definitions(-DBUILD_LIB)
-	add_library(magstructfact SHARED
+	add_library(takin_magstructfact SHARED
 		magstructfact.cpp magstructfact.h
 		../../libs/glplot.cpp ../../libs/glplot.h)
 else()
-	add_executable(magstructfact
+	add_executable(takin_magstructfact
 		magstructfact.cpp magstructfact.h
 		../../libs/glplot.cpp ../../libs/glplot.h)
 endif()
 
-target_link_libraries(magstructfact ${Boost_LIBRARIES})
-qt5_use_modules(magstructfact Core Gui Widgets OpenGL)
+target_link_libraries(takin_magstructfact ${Boost_LIBRARIES})
+qt5_use_modules(takin_magstructfact Core Gui Widgets OpenGL)
