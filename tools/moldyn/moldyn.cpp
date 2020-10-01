@@ -599,7 +599,7 @@ void MolDynDlg::CalculateDeltaDistancesOfAtoms()
 				ofstr << ", ";
 		}
 		ofstr << "\n#\n";
-	
+
 
 		// progress dialog
 		std::shared_ptr<QProgressDialog> dlgProgress = std::make_shared<QProgressDialog>(
@@ -716,13 +716,13 @@ void MolDynDlg::CalculateConvexHulls()
 void MolDynDlg::New()
 {
 	m_mol.Clear();
-	
+
 	for(auto& hull : m_hulls)
 	{
 		if(hull.plotObj)
 			m_plot->GetImpl()->RemoveObject(*hull.plotObj);
 	}
-	
+
 	m_hulls.clear();
 
 	for(const auto& obj : m_sphereHandles)
@@ -916,7 +916,7 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 
 		std::ostringstream ostrLabel;
 		ostrLabel << "Current Atom: " << typelabel << " #" << (atomidx+1);
-	
+
 		m_statusCurAtom->setText(ostrLabel.str().c_str());
 		//SetStatusMsg(label);
 	}
@@ -1164,35 +1164,35 @@ void MolDynDlg::SelectAtomsOfSameType()
  */
 void MolDynDlg::DeleteSelectedAtoms()
 {
-    std::size_t totalRemoved = 0;
+	std::size_t totalRemoved = 0;
 
-    for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
-    {
-        auto handle = *iter;
-        if(m_plot->GetImpl()->GetObjectHighlight(handle))
-        {
-            const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
-            if(!bOk)
-            {
-                QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
-                return;
-            }
+	for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
+	{
+		auto handle = *iter;
+		if(m_plot->GetImpl()->GetObjectHighlight(handle))
+		{
+			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
+			if(!bOk)
+			{
+				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+				return;
+			}
 
-            // remove 3d objects
-            m_plot->GetImpl()->RemoveObject(handle);
-            iter = m_sphereHandles.erase(iter);
+			// remove 3d objects
+			m_plot->GetImpl()->RemoveObject(handle);
+			iter = m_sphereHandles.erase(iter);
 
-            // remove atom
-            m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
-            
-            ++totalRemoved;
-            continue;
-        }
+			// remove atom
+			m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
 
-        ++iter;
-    }
+			++totalRemoved;
+			continue;
+		}
 
-    SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+		++iter;
+	}
+
+	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
@@ -1203,35 +1203,35 @@ void MolDynDlg::DeleteSelectedAtoms()
  */
 void MolDynDlg::OnlyKeepSelectedAtoms()
 {
-    std::size_t totalRemoved = 0;
+	std::size_t totalRemoved = 0;
 
-    for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
-    {
-        auto handle = *iter;
-        if(!m_plot->GetImpl()->GetObjectHighlight(handle))
-        {
-            const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
-            if(!bOk)
-            {
-                QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
-                return;
-            }
+	for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
+	{
+		auto handle = *iter;
+		if(!m_plot->GetImpl()->GetObjectHighlight(handle))
+		{
+			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
+			if(!bOk)
+			{
+				QMessageBox::critical(this, PROG_NAME, "Atom handle not found, data is corrupted.");
+				return;
+			}
 
-            // remove 3d objects
-            m_plot->GetImpl()->RemoveObject(handle);
-            iter = m_sphereHandles.erase(iter);
+			// remove 3d objects
+			m_plot->GetImpl()->RemoveObject(handle);
+			iter = m_sphereHandles.erase(iter);
 
-            // remove atom
-            m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
-            
-            ++totalRemoved;
-            continue;
-        }
+			// remove atom
+			m_mol.RemoveAtom(atomTypeIdx, atomSubTypeIdx);
 
-        ++iter;
-    }
+			++totalRemoved;
+			continue;
+		}
 
-    SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
+		++iter;
+	}
+
+	SetStatusMsg(std::to_string(totalRemoved) + " atoms removed.");
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
@@ -1374,10 +1374,11 @@ void MolDynDlg::AfterGLInitialisation()
 	m_plot->GetImpl()->SetBTrafo(m_crystB);
 
 	// GL device info
-	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
-		= m_plot->GetImpl()->GetGlDescr();
-	std::cout << "GL Version: " << strGlVer << ", Shader Version: " << strGlShaderVer << "." << std::endl;
-	std::cout << "GL Device: " << strGlRenderer << ", " << strGlVendor << "." << std::endl;
+	// TODO: outputting something here to stdout interferes with pipeproc process creation in takin main gui...
+	//auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
+	//	= m_plot->GetImpl()->GetGlDescr();
+	//std::cout << "GL Version: " << strGlVer << ", Shader Version: " << strGlShaderVer << "." << std::endl;
+	//std::cout << "GL Device: " << strGlRenderer << ", " << strGlVendor << "." << std::endl;
 }
 
 
