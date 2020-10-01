@@ -82,7 +82,7 @@ include_directories(
 )
 
 
-add_executable(scanbrowser
+add_executable(takin_scanbrowser
 	main.cpp mainwnd.cpp mainwnd.h
 	filebrowser.cpp filebrowser.h
 	workspace.cpp workspace.h
@@ -103,7 +103,7 @@ add_executable(scanbrowser
 )
 
 
-target_link_libraries(scanbrowser
+target_link_libraries(takin_scanbrowser
 	${Boost_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	${QCP_LIBRARIES}

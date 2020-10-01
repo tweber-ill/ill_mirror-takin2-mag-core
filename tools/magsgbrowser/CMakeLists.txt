@@ -20,12 +20,12 @@ include_directories("${PROJECT_SOURCE_DIR}" "../.."
 
 # -----------------------------------------------------------------------------
 # main program
-add_executable(magsgbrowser
+add_executable(takin_magsgbrowser
 	main.cpp
 	browser.cpp browser.h
 )
 
-target_link_libraries(magsgbrowser
+target_link_libraries(takin_magsgbrowser
 	Qt5::Core Qt5::Gui Qt5::Widgets
 )
 # -----------------------------------------------------------------------------

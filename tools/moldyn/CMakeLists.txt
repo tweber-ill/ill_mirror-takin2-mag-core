@@ -37,9 +37,9 @@ include_directories(
 )
 
 
-add_executable(moldyn
+add_executable(takin_moldyn
 	moldyn.cpp moldyn.h
 	../../libs/glplot.cpp ../../libs/glplot.h)
 
-target_link_libraries(moldyn ${Qhull_LIBRARIES} ${Boost_LIBRARIES})
-qt5_use_modules(moldyn Core Gui Widgets OpenGL)
+target_link_libraries(takin_moldyn ${Qhull_LIBRARIES} ${Boost_LIBRARIES})
+qt5_use_modules(takin_moldyn Core Gui Widgets OpenGL)
