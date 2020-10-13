@@ -155,8 +155,10 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		menuCalc->addAction(acCalcDist);
 		menuCalc->addAction(acCalcPos);
 		menuCalc->addAction(acCalcDeltaDist);
+#ifdef USE_QHULL
 		menuCalc->addSeparator();
 		menuCalc->addAction(acCalcHull);
+#endif
 
 		connect(acCalcDist, &QAction::triggered, this, &MolDynDlg::CalculateDistanceBetweenAtoms);
 		connect(acCalcPos, &QAction::triggered, this, &MolDynDlg::CalculatePositionsOfAtoms);
@@ -665,6 +667,7 @@ void MolDynDlg::CalculateConvexHullOfAtoms()
  */
 void MolDynDlg::CalculateConvexHulls()
 {
+#ifdef USE_QHULL
 	std::size_t frameidx = m_sliderFrame->value();
 
 	for(auto& hull : m_hulls)
@@ -706,6 +709,10 @@ void MolDynDlg::CalculateConvexHulls()
 
 		// TODO
 	}
+
+#else
+	QMessageBox::critical(this, "Error", "Calculation of convex hull is disabled.");
+#endif
 }
 // ----------------------------------------------------------------------------
 

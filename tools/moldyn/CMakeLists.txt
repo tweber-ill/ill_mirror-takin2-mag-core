@@ -17,7 +17,7 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 #find_package(Boost REQUIRED COMPONENTS system REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
-find_package(Qhull REQUIRED)
+#find_package(Qhull)	# TODO
 
 
 set(CMAKE_AUTOUIC TRUE)
@@ -28,12 +28,17 @@ add_definitions(-std=c++20)
 add_definitions(${Boost_CXX_FLAGS})
 add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED -DBOOST_ERROR_CODE_HEADER_ONLY)
 add_definitions(-D_GL_MAJ_VER=3 -D_GL_MIN_VER=2)
-add_definitions(-DUSE_QHULL)
+
+
+if(Qhull_FOUND)
+	add_definitions(-DUSE_QHULL)
+	include_directories("${Qhull_INCLUDE_DIRS}")
+endif()
 
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/.." "${PROJECT_SOURCE_DIR}/../.."
-	"${Boost_INCLUDE_DIRS}/.." "${Qhull_INCLUDE_DIRS}" "ext"
+	"${Boost_INCLUDE_DIRS}/.." "ext"
 )
 
 
@@ -41,5 +46,5 @@ add_executable(takin_moldyn
 	moldyn.cpp moldyn.h
 	../../libs/glplot.cpp ../../libs/glplot.h)
 
-target_link_libraries(takin_moldyn ${Qhull_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(takin_moldyn ${Boost_LIBRARIES} ${Qhull_LIBRARIES})
 qt5_use_modules(takin_moldyn Core Gui Widgets OpenGL)
