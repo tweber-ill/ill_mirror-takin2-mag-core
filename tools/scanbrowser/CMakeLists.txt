@@ -28,10 +28,7 @@ find_package(Boost REQUIRED COMPONENTS system filesystem iostreams REQUIRED)
 add_definitions(${Boost_CXX_FLAGS})
 
 # Qt
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5PrintSupport REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
@@ -105,7 +102,7 @@ add_executable(takin_scanbrowser
 
 target_link_libraries(takin_scanbrowser
 	${Boost_LIBRARIES}
-	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
+	Core Gui Widgets PrintSupport
 	${QCP_LIBRARIES}
 	${Minuit2_LIBRARIES} Threads::Threads OpenMP::OpenMP_CXX
 	-ldl
