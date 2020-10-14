@@ -18,6 +18,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <optional>
 
 #include "libs/glplot.h"
 #include "libs/math20.h"
@@ -75,8 +76,8 @@ private:
 
 	bool m_3dobjsReady = false;
 	bool m_mouseDown[3] = {false, false, false};
-	long m_curPickedObj = -1;
-	long m_curDraggedObj = -1;
+	std::optional<std::size_t> m_curPickedObj{};
+	std::optional<std::size_t> m_curDraggedObj{};
 
 
 protected:
@@ -172,19 +173,20 @@ protected slots:
 	 */
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere)
 	{
-		m_curPickedObj = -1;
+		m_curPickedObj.reset();
+
 		if(pos)
 		{	// object selected?
-			m_curPickedObj = long(objIdx);
+			m_curPickedObj = objIdx;
 
 			if(objIdx == m_arrow_pi) m_labelStatus->setText("P_i");
 			else if(objIdx == m_arrow_pf) m_labelStatus->setText("P_f");
 			else if(objIdx == m_arrow_M_Re) m_labelStatus->setText("Re{M_perp}");
 			else if(objIdx == m_arrow_M_Im) m_labelStatus->setText("Im{M_perp}");
-			else m_curPickedObj = -1;
+			else m_curPickedObj.reset();
 		}
 
-		if(m_curPickedObj >= 0)
+		if(m_curPickedObj)
 		{
 			setCursor(Qt::CrossCursor);
 		}
@@ -195,26 +197,26 @@ protected slots:
 		}
 
 
-		if(posSphere && m_mouseDown[0])
+		if(posSphere && m_mouseDown[0] && m_curDraggedObj)
 		{	// picker intersecting unit sphere and mouse dragged?
 
 			t_vec3_gl posSph = *posSphere;
 
-			if(m_curDraggedObj == m_arrow_pi)
+			if(*m_curDraggedObj == m_arrow_pi)
 			{
 				m_editPiX->setText(QVariant(posSph[0]).toString());
 				m_editPiY->setText(QVariant(posSph[1]).toString());
 				m_editPiZ->setText(QVariant(posSph[2]).toString());
 				CalcPol();
 			}
-			else if(m_curDraggedObj == m_arrow_M_Re)
+			else if(*m_curDraggedObj == m_arrow_M_Re)
 			{
 				m_editMPerpReX->setText(QVariant(posSph[0]).toString());
 				m_editMPerpReY->setText(QVariant(posSph[1]).toString());
 				m_editMPerpReZ->setText(QVariant(posSph[2]).toString());
 				CalcPol();
 			}
-			else if(m_curDraggedObj == m_arrow_M_Im)
+			else if(*m_curDraggedObj == m_arrow_M_Im)
 			{
 				m_editMPerpImX->setText(QVariant(posSph[0]).toString());
 				m_editMPerpImY->setText(QVariant(posSph[1]).toString());
@@ -236,10 +238,12 @@ protected slots:
 
 		if(m_mouseDown[0])
 		{
-			m_curDraggedObj = m_curPickedObj;
-			auto lenVec = GetArrowLen(m_curDraggedObj);
-			if(lenVec > 0.)
-				m_plot->GetImpl()->SetPickerSphereRadius(lenVec);
+			if((m_curDraggedObj = m_curPickedObj))
+			{
+				auto lenVec = GetArrowLen(*m_curDraggedObj);
+				if(lenVec > 0.)
+					m_plot->GetImpl()->SetPickerSphereRadius(lenVec);
+			}
 		}
 	}
 
@@ -254,7 +258,7 @@ protected slots:
 		if(right) m_mouseDown[2] = false;
 
 		if(!m_mouseDown[0])
-			m_curDraggedObj = -1;
+			m_curDraggedObj.reset();
 	}
 
 

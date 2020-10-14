@@ -23,9 +23,9 @@ add_compile_options(-Wall -Wextra)
 
 # -----------------------------------------------------------------------------
 # Boost
-add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
+add_compile_options(-DBOOST_SYSTEM_NO_DEPRECATED)
 find_package(Boost REQUIRED COMPONENTS system filesystem iostreams REQUIRED)
-add_definitions(${Boost_CXX_FLAGS})
+add_compile_options(${Boost_CXX_FLAGS})
 
 # Qt
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
@@ -99,10 +99,10 @@ add_executable(takin_scanbrowser
 #	../../ext/qcp/qcustomplot.cpp ../../ext/qcp/qcustomplot.h
 )
 
+qt5_use_modules(takin_scanbrowser Core Gui Widgets OpenGL)
 
 target_link_libraries(takin_scanbrowser
 	${Boost_LIBRARIES}
-	Core Gui Widgets PrintSupport
 	${QCP_LIBRARIES}
 	${Minuit2_LIBRARIES} Threads::Threads OpenMP::OpenMP_CXX
 	-ldl
