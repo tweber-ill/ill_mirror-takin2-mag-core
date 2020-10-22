@@ -29,6 +29,8 @@
 ext/**
 plugins/**
 data/**
+tlibs
+tlibs2
 
 # Temporary files
 tmp/**
