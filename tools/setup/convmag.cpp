@@ -3,7 +3,7 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date 18-nov-17
  * @license GPLv3, see 'LICENSE' file
- * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
+ * @desc The present version was forked on 8-Nov-2018 from my privately developed "magtools" project (https://github.com/t-weber/magtools).
  *
  * g++-8 -std=c++17 -fconcepts -I../../ -o convmag convmag.cpp
  */

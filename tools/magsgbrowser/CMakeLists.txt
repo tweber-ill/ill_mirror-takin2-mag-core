@@ -2,7 +2,7 @@
 # @author Tobias Weber
 # @date Apr-2018
 # @license GPLv3, see 'LICENSE' file
-# @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
+# @desc The present version was forked on 8-Nov-2018 from my privately developed "magtools" project (https://github.com/t-weber/magtools).
 #
 project(magsgbrowser)
 cmake_minimum_required(VERSION 3.0)

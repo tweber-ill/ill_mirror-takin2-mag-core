@@ -3,7 +3,7 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date Dec-2018
  * @license GPLv3, see 'LICENSE' file
- * @desc The present version was forked on 28-Dec-2018 from the privately developed "misc" project (https://github.com/t-weber/misc).
+ * @desc The present version was forked on 28-Dec-2018 from my privately developed "misc" project (https://github.com/t-weber/misc).
  */
 
 #include "structfact.h"

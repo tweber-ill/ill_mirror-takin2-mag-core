@@ -3,7 +3,7 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date aug-18
  * @license GPLv3, see 'LICENSE' file
- * @desc The present version was forked on 8-Nov-2018 from the privately developed "magtools" project (https://github.com/t-weber/magtools).
+ * @desc The present version was forked on 8-Nov-2018 from my privately developed "magtools" project (https://github.com/t-weber/magtools).
  *
  * g++ -std=c++2a -fconcepts -I../.. -o pol_cli pol_cli.cpp
  */
