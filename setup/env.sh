@@ -3,5 +3,5 @@
 #export CC=clang
 #export CXX=clang++
 
-export CC=gcc-9
-export CXX=g++-9
+export CC=gcc-10
+export CXX=g++-10
