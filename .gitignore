@@ -28,13 +28,10 @@
 # External libraries
 ext/**
 plugins/**
-!ext/.dir
-!plugins/.dir
-!plugins/qtas.py
+data/**
 
 # Temporary files
 tmp/**
-!tmp/.dir
 build/**
 tools/structfact/build/**
 tools/cif2xml/build/**

@@ -438,12 +438,10 @@ void convert_table(const char* pcInFile, const char* pcOutFile)
 
 int main(int argc, char **argv)
 {
-	if(argc < 3)
-	{
-		std::cerr << "Usage: " << argv[0] << " <in.dat> <out.info>" << std::endl;
-		return -1;
-	}
+	if(argc >= 3)
+		convert_table(argv[1], argv[2]);
+	else
+		convert_table("ext/magsg.dat", "data/magsg.info");
 
-	convert_table(argv[1], argv[2]);
 	return 0;
 }

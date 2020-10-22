@@ -28,12 +28,9 @@ add_subdirectory(tools/scanbrowser)
 
 
 if(NOT ONLY_BUILD_FINISHED)
-	# tools in development
-
 	# setup tools
 	add_subdirectory(tools/setup)
 
 	# magnetic structure factor browser
 	add_subdirectory(tools/magsgbrowser)
 endif()
-

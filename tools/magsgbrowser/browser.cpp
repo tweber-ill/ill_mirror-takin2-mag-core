@@ -80,7 +80,7 @@ SgBrowserDlg::SgBrowserDlg(QWidget* pParent, QSettings *pSett)
 void SgBrowserDlg::SetupMagSpaceGroups()
 {
 	std::cerr << "Loading magnetic space groups ... ";
-	m_magsgs.Load("magsg.info");
+	m_magsgs.Load("data/magsg.info");
 	std::cerr << "Done." << std::endl;
 
 	const auto *pSgs = m_magsgs.GetSpacegroups();
