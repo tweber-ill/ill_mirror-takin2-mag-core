@@ -25,12 +25,14 @@
 *.out
 *.app
 
-# External libraries
+# External libraries and resources
 ext/**
 plugins/**
 data/**
+res/**
 tlibs
 tlibs2
+data
 
 # Temporary files
 tmp/**

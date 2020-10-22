@@ -441,7 +441,7 @@ int main(int argc, char **argv)
 	if(argc >= 3)
 		convert_table(argv[1], argv[2]);
 	else
-		convert_table("ext/magsg.dat", "data/magsg.info");
+		convert_table("ext/magsg.dat", "res/data/magsg.info");
 
 	return 0;
 }
