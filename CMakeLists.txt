@@ -10,23 +10,24 @@ cmake_minimum_required(VERSION 3.0)
 option(ONLY_BUILD_FINISHED "only build finished tools" FALSE)
 
 
-if(ONLY_BUILD_FINISHED)
-	# cif converter
-	add_subdirectory(tools/cif2xml)
+# cif converter
+add_subdirectory(tools/cif2xml)
 
-	# polarisation tools
-	add_subdirectory(tools/pol)
+# polarisation tools
+add_subdirectory(tools/pol)
 
-	# nuclear and magnetic structure factors
-	add_subdirectory(tools/structfact)
-	add_subdirectory(tools/magstructfact)
+# nuclear and magnetic structure factors
+add_subdirectory(tools/structfact)
+add_subdirectory(tools/magstructfact)
 
-	# molecular dynamics tools
-	add_subdirectory(tools/moldyn)
+# molecular dynamics tools
+add_subdirectory(tools/moldyn)
 
-	# new scan browser tool
-	add_subdirectory(tools/scanbrowser)
-else()
+# new scan browser tool
+add_subdirectory(tools/scanbrowser)
+
+
+if(NOT ONLY_BUILD_FINISHED)
 	# tools in development
 
 	# setup tools
@@ -35,3 +36,4 @@ else()
 	# magnetic structure factor browser
 	add_subdirectory(tools/magsgbrowser)
 endif()
+
