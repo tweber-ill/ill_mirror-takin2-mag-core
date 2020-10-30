@@ -14,7 +14,7 @@
 
 %code requires { #include "cliparser_types.h" }
 %code { #include "cliparser.h" }
-%param { CliParserContext &context }
+%param { CliParserContext &ctx }
 
 
 // terminals
@@ -51,7 +51,7 @@
 
 commands
 	: commands command
-	    { context.AddAST($2); }
+	    { ctx.AddAST($2); }
 	| /* eps */
 	    { $$ = nullptr; }
 	;

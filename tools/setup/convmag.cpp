@@ -390,13 +390,13 @@ void convert_spacegroup(std::istream& istr, ptree::ptree& prop, const std::strin
 }
 
 
-void convert_table(const char* pcInFile, const char* pcOutFile)
+bool convert_table(const char* pcInFile, const char* pcOutFile)
 {
 	std::ifstream istr(pcInFile);
 	if(!istr)
 	{
 		std::cerr << "Cannot open \"" << pcInFile << "\"." << std::endl;
-		return;
+		return false;
 	}
 
 	std::vector<std::tuple<std::string, t_mat>> vecPtOps, vecHexPtOps;
@@ -427,12 +427,22 @@ void convert_table(const char* pcInFile, const char* pcOutFile)
 	std::cout << "\n";
 
 
-	/*ptree::write_xml(pcOutFile, prop,
-		std::locale(),
-		ptree::xml_writer_make_settings('\t', 1, std::string("utf-8")));*/
-	ptree::write_info(pcOutFile, prop,
-		std::locale(),
-		ptree::info_writer_make_settings('\t', 1));
+	try
+	{
+		/*ptree::write_xml(pcOutFile, prop,
+			std::locale(),
+			ptree::xml_writer_make_settings('\t', 1, std::string("utf-8")));*/
+		ptree::write_info(pcOutFile, prop,
+			std::locale(),
+			ptree::info_writer_make_settings('\t', 1));
+	}
+	catch(const std::exception& ex)
+	{
+		std::cerr << "Error in setup tool: " << ex.what() << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 

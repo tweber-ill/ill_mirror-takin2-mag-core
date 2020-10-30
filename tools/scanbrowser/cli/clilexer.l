@@ -59,7 +59,7 @@ real 	{uinteger}(\.[0-9]*)?|\.[0-9]+
 
 
 . {
-	context.PrintError(std::string("Lexer error: Unknown token: \"") + yytext + std::string("\""));
+	ctx.PrintError(std::string("Lexer error: Unknown token: \"") + yytext + std::string("\""));
 } 
 
 

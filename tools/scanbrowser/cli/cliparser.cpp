@@ -41,7 +41,7 @@ void CliParserContext::PrintErrorString(const std::string &err)
 
 void yy::CliParser::error(const std::string &err)
 {
-	context.PrintError(std::string("Parser error: ") + err + std::string("."));
+	ctx.PrintError(std::string("Parser error: ") + err + std::string("."));
 }
 
 void CliParserContext::SetLexerInput(std::istream &istr)
@@ -49,8 +49,8 @@ void CliParserContext::SetLexerInput(std::istream &istr)
 	m_lex.switch_streams(&istr/*, &std::cout*/);
 }
 
-extern yy::CliParser::symbol_type yylex(CliParserContext &context)
+extern yy::CliParser::symbol_type yylex(CliParserContext &ctx)
 {
-	return context.GetLexer().yylex(context);
+	return ctx.GetLexer().yylex(ctx);
 }
 // ----------------------------------------------------------------------------

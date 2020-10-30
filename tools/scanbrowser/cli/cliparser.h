@@ -44,7 +44,7 @@ protected:
 
 public:
 	CliLexer(CliParserContext *ctx = nullptr);
-	virtual yy::CliParser::symbol_type yylex(CliParserContext &context);
+	virtual yy::CliParser::symbol_type yylex(CliParserContext &ctx);
 };
 
 template<class t_real_cli> t_real_cli str_to_real(const std::string& str);
@@ -500,8 +500,8 @@ public:
 
 
 #undef YY_DECL
-#define YY_DECL yy::CliParser::symbol_type CliLexer::yylex(CliParserContext &context)
-extern yy::CliParser::symbol_type yylex(CliParserContext &context);
+#define YY_DECL yy::CliParser::symbol_type CliLexer::yylex(CliParserContext &ctx)
+extern yy::CliParser::symbol_type yylex(CliParserContext &ctx);
 
 #define yyterminate() return yy::CliParser::token::yytokentype(YY_NULL);
 

@@ -73,7 +73,7 @@ include_directories(
 	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/ext" "${PROJECT_SOURCE_DIR}/ext/qcp"
 	"${PROJECT_SOURCE_DIR}/../.." "${PROJECT_SOURCE_DIR}/../../ext" "${PROJECT_SOURCE_DIR}/../../ext/qcp"
 	"${PROJECT_SOURCE_DIR}/cli"
-	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.."
+	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "${FLEX_INCLUDE_DIRS}"
 	"${PROJECT_BINARY_DIR}/parser"
 	"${QCP_INCLUDE_DIRS}"
 )
