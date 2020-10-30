@@ -41,7 +41,7 @@ std::shared_ptr<Symbol> CliASTString::Eval(CliParserContext&) const
 /**
  * recursively evaluate a list and collect symbols into a vector
  */
-static std::vector<std::shared_ptr<Symbol>> 
+static std::vector<std::shared_ptr<Symbol>>
 list_eval(CliParserContext& ctx, std::shared_ptr<CliAST> left, std::shared_ptr<CliAST> right)
 {
 	std::vector<std::shared_ptr<Symbol>> vec;
@@ -149,7 +149,7 @@ std::shared_ptr<Symbol> CliASTArrayAccess::Eval(CliParserContext& ctx) const
 		}
 		else
 		{
-			ctx.PrintError("Variables of type ", Symbol::get_type_name(*lefteval), 
+			ctx.PrintError("Variables of type ", Symbol::get_type_name(*lefteval),
 				" do not support element access.");
 			return nullptr;
 		}
@@ -260,7 +260,7 @@ std::shared_ptr<Symbol> CliASTPlus::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
-	
+
 	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::add(*lefteval, *righteval);
 
@@ -295,7 +295,7 @@ std::shared_ptr<Symbol> CliASTMult::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
-	
+
 	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::mul(*lefteval, *righteval);
 
@@ -310,7 +310,7 @@ std::shared_ptr<Symbol> CliASTDiv::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
-	
+
 	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::div(*lefteval, *righteval);
 
@@ -325,7 +325,7 @@ std::shared_ptr<Symbol> CliASTMod::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
-	
+
 	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::mod(*lefteval, *righteval);
 
@@ -340,7 +340,7 @@ std::shared_ptr<Symbol> CliASTPow::Eval(CliParserContext& ctx) const
 {
 	if(!m_left || !m_right)
 		return nullptr;
-	
+
 	if(auto lefteval=m_left->Eval(ctx), righteval=m_right->Eval(ctx); lefteval && righteval)
 		return Symbol::pow(*lefteval, *righteval);
 
@@ -446,7 +446,7 @@ std::shared_ptr<Symbol> CliASTCall::Eval(CliParserContext& ctx) const
 		{	// general function
 			return (*std::get<0>(iter->second))(ctx, args[0], args[1]);
 		}
-		else if(auto iter = g_funcs_real_2args.find(ident); 
+		else if(auto iter = g_funcs_real_2args.find(ident);
 			iter != g_funcs_real_2args.end() &&
 			args[0]->GetType() == SymbolType::REAL && args[1]->GetType() == SymbolType::REAL)
 		{ // real function
