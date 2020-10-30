@@ -45,6 +45,11 @@ using namespace tl2_ops;
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
 
+std::vector<std::string> StructFactDlg::g_default_colours
+{{
+	"#ff0000", "#0000ff", "#00ff00", "#000000",
+}};
+
 
 enum : int
 {
@@ -424,6 +429,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
+		auto acImportTAZ = new QAction("Import TAZ...", menuFile);
 		auto acExportTAZ = new QAction("Export TAZ...", menuFile);
 		auto acExit = new QAction("Exit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
@@ -434,6 +440,8 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
 		menuFile->addAction(acImportCIF);
+		menuFile->addSeparator();
+		menuFile->addAction(acImportTAZ);
 		menuFile->addAction(acExportTAZ);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
@@ -456,6 +464,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(acLoad, &QAction::triggered, this, &StructFactDlg::Load);
 		connect(acSave, &QAction::triggered, this, &StructFactDlg::Save);
 		connect(acImportCIF, &QAction::triggered, this, &StructFactDlg::ImportCIF);
+		connect(acImportTAZ, &QAction::triggered, this, &StructFactDlg::ImportTAZ);
 		connect(acExportTAZ, &QAction::triggered, this, &StructFactDlg::ExportTAZ);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, [this]()
@@ -539,7 +548,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 // ----------------------------------------------------------------------------
 
-void StructFactDlg::AddTabItem(int row, 
+void StructFactDlg::AddTabItem(int row,
 	const std::string& name, t_real bRe, t_real bIm, t_real x, t_real y, t_real z, t_real scale, const std::string& col)
 {
 	bool bclone = 0;
@@ -1190,6 +1199,7 @@ void StructFactDlg::Load()
 		// nuclei
 		if(auto nuclei = node.get_child_optional("sfact.nuclei"); nuclei)
 		{
+			std::size_t nucIdx = 0;
 			for(const auto &nucl : *nuclei)
 			{
 				auto optName = nucl.second.get<std::string>("name", "n/a");
@@ -1199,9 +1209,10 @@ void StructFactDlg::Load()
 				auto optY = nucl.second.get<t_real>("y", 0.);
 				auto optZ = nucl.second.get<t_real>("z", 0.);
 				auto optRad = nucl.second.get<t_real>("rad", 1.);
-				auto optCol = nucl.second.get<std::string>("col", "#ff0000");
+				auto optCol = nucl.second.get<std::string>("col", g_default_colours[nucIdx%g_default_colours.size()]);
 
 				AddTabItem(-1, optName, optbRe, optbIm, optX,  optY, optZ, optRad, optCol);
+				++nucIdx;
 			}
 		}
 	}
@@ -1286,6 +1297,102 @@ void StructFactDlg::Save()
 
 
 /**
+ * load a TAZ file
+ */
+void StructFactDlg::ImportTAZ()
+{
+	m_ignoreCalc = 1;
+
+	try
+	{
+		QString dirLast = m_sett->value("dir_taz", "").toString();
+		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "TAZ Files (*.taz *.TAZ)");
+		if(filename=="" || !QFile::exists(filename))
+			return;
+		m_sett->setValue("dir_taz", QFileInfo(filename).path());
+
+
+		pt::ptree node;
+
+		std::ifstream ifstr{filename.toStdString()};
+		pt::read_xml(ifstr, node);
+
+		// clear old nuclei
+		DelTabItem(-1);
+
+		if(auto opt = node.get_optional<t_real>("taz.sample.a"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editA->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("taz.sample.b"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editB->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("taz.sample.c"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editC->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("taz.sample.alpha"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editAlpha->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("taz.sample.beta"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editBeta->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<t_real>("taz.sample.gamma"); opt)
+		{
+			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
+			m_editGamma->setText(ostr.str().c_str());
+		}
+		if(auto opt = node.get_optional<std::string>("taz.sample.spacegroup"); opt)
+		{
+			// TODO
+			//std::cout << *opt << std::endl;
+		}
+
+		// nuclei
+		if(auto opt = node.get_optional<std::size_t>("taz.sample.atoms.num"); opt)
+		{
+			std::size_t numAtoms = *opt;
+			for(std::size_t atomIdx=0; atomIdx<numAtoms; ++atomIdx)
+			{
+				std::string strNum = tl2::var_to_str(atomIdx);
+
+				std::string name = node.get<std::string>("taz.sample.atoms."+strNum+".name", "n/a");
+				t_real x = node.get<t_real>("taz.sample.atoms."+strNum+".x", 0.);
+				t_real y = node.get<t_real>("taz.sample.atoms."+strNum+".y", 0.);
+				t_real z = node.get<t_real>("taz.sample.atoms."+strNum+".z", 0.);
+
+				// TODO
+				t_real bRe = 0.;
+				t_real bIm = 0.;
+
+				t_real rad = 1.;
+				std::string col = g_default_colours[atomIdx%g_default_colours.size()];
+
+				AddTabItem(-1, name, bRe, bIm, x, y, z, rad, col);
+			}
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Structure Factors", ex.what());
+	}
+
+	m_ignoreCalc = 0;
+	GenerateFromSG();
+	CalcB(false);
+	Calc();
+}
+
+
+/**
  * save a TAZ file
  */
 void StructFactDlg::ExportTAZ()
@@ -1305,7 +1412,7 @@ void StructFactDlg::ExportTAZ()
 	ofstr.precision(g_prec);
 
 	ofstr << "<taz>\n";
-	ofstr << "\t<meta><info>Exported from IN20Tools/Structfact.</info></meta>\n";
+	ofstr << "\t<meta><info>Exported from Takin/Structfact.</info></meta>\n";
 
 	// sample infos
 	ofstr << "\t<sample>\n";
@@ -1354,7 +1461,7 @@ void StructFactDlg::ImportCIF()
 			return;
 		m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
-		auto [errstr, atoms, generatedatoms, atomnames, lattice, symops] = 
+		auto [errstr, atoms, generatedatoms, atomnames, lattice, symops] =
 			load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
 		if(errstr != "")
 		{
@@ -1391,7 +1498,7 @@ void StructFactDlg::ImportCIF()
 			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
 			m_editGamma->setText(ostr.str().c_str());
 		}
-	
+
 
 		// atoms
 		std::mt19937 gen{tl2::epoch<unsigned int>()};
@@ -1400,14 +1507,14 @@ void StructFactDlg::ImportCIF()
 			// random colour
 			std::ostringstream ostrcol;
 			std::uniform_int_distribution<int> dist{0, 255};
-			ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen) 
-				<< std::setw(2) << std::setfill('0') << dist(gen) 
+			ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen)
+				<< std::setw(2) << std::setfill('0') << dist(gen)
 				<< std::setw(2) << std::setfill('0') << dist(gen);
 
 			for(std::size_t symnr=0; symnr<generatedatoms[atomnum].size(); ++symnr)
 			{
-				AddTabItem(-1, atomnames[atomnum], 0, 0, 
-					generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
+				AddTabItem(-1, atomnames[atomnum], 0, 0,
+					generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2],
 					1, ostrcol.str());
 			}
 		}
@@ -1436,7 +1543,7 @@ void StructFactDlg::GenerateFromSG()
 	{
 		// symops of current space group
 		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
-		if(sgidx < 0 || sgidx >= m_SGops.size())
+		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
 		{
 			QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
 			return;

@@ -1,5 +1,5 @@
 /**
- * in20 data analysis tool
+ * scan browser / analysis tool
  * @author Tobias Weber <tweber@ill.fr>
  * @date 6-Apr-2018
  * @license see 'LICENSE' file

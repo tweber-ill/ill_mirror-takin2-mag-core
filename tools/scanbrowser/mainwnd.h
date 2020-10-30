@@ -5,8 +5,8 @@
  * @license see 'LICENSE' file
  */
 
-#ifndef __IN20MAINWND_H__
-#define __IN20MAINWND_H__
+#ifndef __SCANBROWSER_MAINWND_H__
+#define __SCANBROWSER_MAINWND_H__
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QMainWindow>

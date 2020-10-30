@@ -123,7 +123,7 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 		//std::cerr << "Trying symop loop name " << loopName << std::endl;
 	 	auto colOps = block.find_values(loopName);
 
-		for(std::size_t row=0; row<colOps.length(); ++row)
+		for(std::size_t row=0; row<std::size_t(colOps.length()); ++row)
 		{
 			auto therow = boost::trim_copy(colOps[row]);
 			remove_quotes(therow);
@@ -192,12 +192,12 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::tuple<
-	std::string /* errors and warnings */, 
-	std::vector<t_vec> /* basic atom positions */, 
-	std::vector<std::vector<t_vec>> /* all generated atoms */, 
-	std::vector<std::string> /* atom names */, 
+	std::string /* errors and warnings */,
+	std::vector<t_vec> /* basic atom positions */,
+	std::vector<std::vector<t_vec>> /* all generated atoms */,
+	std::vector<std::string> /* atom names */,
 	Lattice<t_real> /* lattice */ ,
-	std::vector<t_mat> /* ops */ > 
+	std::vector<t_mat> /* ops */ >
 load_cif(const std::string& filename, t_real eps=1e-6)
 {
 	auto ifstr = std::ifstream(filename);

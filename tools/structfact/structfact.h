@@ -111,6 +111,7 @@ protected:
 	void Load();
 	void Save();
 	void ImportCIF();
+	void ImportTAZ();
 	void ExportTAZ();
 	void GenerateFromSG();
 
@@ -146,6 +147,8 @@ private:
 	long m_curPickedObj = -1;
 
 	int m_iCursorRow_FindSG = -1;
+
+	static std::vector<std::string> g_default_colours;
 
 private:
 	std::vector<int> GetSelectedRows(bool sort_reversed = false) const;
