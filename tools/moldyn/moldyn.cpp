@@ -688,7 +688,7 @@ void MolDynDlg::CalculateConvexHulls()
 		}
 
 
-		auto [polys, normals] = tl2_qh::get_convexhull<t_vec>(vertices);
+		auto [polys, normals, dists] = tl2_qh::get_convexhull<t_vec>(vertices);
 
 
 		std::vector<t_vec3_gl> glvertices;
