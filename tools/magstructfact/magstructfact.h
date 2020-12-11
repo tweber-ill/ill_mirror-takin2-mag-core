@@ -25,8 +25,8 @@
 #include <sstream>
 #include <complex>
 
-#include "libs/glplot.h"
-#include "libs/math20.h"
+#include "tlibs2/libs/glplot.h"
+#include "tlibs2/libs/math20.h"
 
 #include "../structfact/numerictablewidgetitem.h"
 
@@ -114,9 +114,9 @@ protected:
 
 	// Fourier components table
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real MMag=1.,
-		t_real x=0., t_real y=0., t_real z=0., 
+		t_real x=0., t_real y=0., t_real z=0.,
 		t_real ReMx=0., t_real ReMy=0., t_real ReMz=1.,
-		t_real ImMx=0., t_real ImMy=0., t_real ImMz=0., 
+		t_real ImMx=0., t_real ImMy=0., t_real ImMz=0.,
 		t_real scale=1., const std::string &col="#ff0000");
 	void DelTabItem(int begin=-2, int end=-2);
 	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
@@ -124,7 +124,7 @@ protected:
 	void TableItemChanged(QTableWidgetItem *item);
 
 	// propagation vectors table
-	void AddPropItem(int row=-1, const std::string& name="n/a", 
+	void AddPropItem(int row=-1, const std::string& name="n/a",
 		t_real x=0., t_real y=0., t_real z=0., bool bConjFC=0);
 	void DelPropItem(int begin=-2, int end=-2);
 	void PropItemChanged(QTableWidgetItem *item);

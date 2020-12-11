@@ -20,9 +20,10 @@
 #include <string>
 #include <optional>
 
-#include "libs/glplot.h"
-#include "libs/math20.h"
-#include "libs/helper.h"
+#include "tlibs2/libs/glplot.h"
+#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/str.h"
+#include "tlibs2/libs/helper.h"
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
@@ -44,6 +45,7 @@ class PolDlg : public QDialog
 { /*Q_OBJECT*/
 private:
 	QSettings m_sett{"tobis_stuff", "pol"};
+	int m_prec = 6;		// precision
 
 	std::shared_ptr<GlPlot> m_plot{std::make_shared<GlPlot>(this)};
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
@@ -81,7 +83,7 @@ private:
 
 
 protected:
-	virtual void closeEvent(QCloseEvent *evt) override
+	virtual void closeEvent(QCloseEvent *) override
 	{
 		// save window size and position
 		m_sett.setValue("geo", saveGeometry());
@@ -204,23 +206,23 @@ protected slots:
 
 			if(*m_curDraggedObj == m_arrow_pi)
 			{
-				m_editPiX->setText(QVariant(posSph[0]).toString());
-				m_editPiY->setText(QVariant(posSph[1]).toString());
-				m_editPiZ->setText(QVariant(posSph[2]).toString());
+				m_editPiX->setText(tl2::var_to_str(posSph[0], m_prec).c_str());
+				m_editPiY->setText(tl2::var_to_str(posSph[1], m_prec).c_str());
+				m_editPiZ->setText(tl2::var_to_str(posSph[2], m_prec).c_str());
 				CalcPol();
 			}
 			else if(*m_curDraggedObj == m_arrow_M_Re)
 			{
-				m_editMPerpReX->setText(QVariant(posSph[0]).toString());
-				m_editMPerpReY->setText(QVariant(posSph[1]).toString());
-				m_editMPerpReZ->setText(QVariant(posSph[2]).toString());
+				m_editMPerpReX->setText(tl2::var_to_str(posSph[0], m_prec).c_str());
+				m_editMPerpReY->setText(tl2::var_to_str(posSph[1], m_prec).c_str());
+				m_editMPerpReZ->setText(tl2::var_to_str(posSph[2], m_prec).c_str());
 				CalcPol();
 			}
 			else if(*m_curDraggedObj == m_arrow_M_Im)
 			{
-				m_editMPerpImX->setText(QVariant(posSph[0]).toString());
-				m_editMPerpImY->setText(QVariant(posSph[1]).toString());
-				m_editMPerpImZ->setText(QVariant(posSph[2]).toString());
+				m_editMPerpImX->setText(tl2::var_to_str(posSph[0], m_prec).c_str());
+				m_editMPerpImY->setText(tl2::var_to_str(posSph[1], m_prec).c_str());
+				m_editMPerpImZ->setText(tl2::var_to_str(posSph[2], m_prec).c_str());
 				CalcPol();
 			}
 		}
@@ -293,7 +295,7 @@ public:
 				editPf->setReadOnly(true);
 
 			m_labelStatus->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-			m_labelStatus->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+			m_labelStatus->setFrameStyle(int(QFrame::Sunken) | int(QFrame::Panel));
 			m_labelStatus->setLineWidth(1);
 
 
@@ -468,9 +470,9 @@ public:
 		//auto [I, P_f] = tl2::blume_maleev<t_vec, t_cplx>(Pi, Mperp, N);
 
 		// set final polarisation
-		m_editPfX->setText(std::to_string(P_f[0].real()).c_str());
-		m_editPfY->setText(std::to_string(P_f[1].real()).c_str());
-		m_editPfZ->setText(std::to_string(P_f[2].real()).c_str());
+		m_editPfX->setText(tl2::var_to_str(P_f[0].real(), m_prec).c_str());
+		m_editPfY->setText(tl2::var_to_str(P_f[1].real(), m_prec).c_str());
+		m_editPfZ->setText(tl2::var_to_str(P_f[2].real(), m_prec).c_str());
 
 
 		// update 3d objects

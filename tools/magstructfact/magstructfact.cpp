@@ -39,8 +39,8 @@ namespace si = boost::units::si;
 namespace consts = si::constants;
 
 #include "../structfact/loadcif.h"
-#include "libs/algos.h"
-#include "libs/helper.h"
+#include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/helper.h"
 
 
 //using namespace tl2;
@@ -235,7 +235,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_nuclei, &QTableWidget::currentCellChanged, this, &MagStructFactDlg::TableCurCellChanged);
 		connect(m_nuclei, &QTableWidget::entered, this, &MagStructFactDlg::TableCellEntered);
 		connect(m_nuclei, &QTableWidget::itemChanged, this, &MagStructFactDlg::TableItemChanged);
-		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this, 
+		connect(m_nuclei, &QTableWidget::customContextMenuRequested, this,
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_nuclei, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
@@ -321,7 +321,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		//connect(m_propvecs, &QTableWidget::currentCellChanged, this, &MagStructFactDlg::PropCurCellChanged);
 		//connect(m_propvecs, &QTableWidget::entered, this, &MagStructFactDlg::PropCellEntered);
 		connect(m_propvecs, &QTableWidget::itemChanged, this, &MagStructFactDlg::PropItemChanged);
-		connect(m_propvecs, &QTableWidget::customContextMenuRequested, this, 
+		connect(m_propvecs, &QTableWidget::customContextMenuRequested, this,
 			[this, pPropContextMenu, pPropContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_propvecs, pPropContextMenu, pPropContextMenuNoItem, pt); });
 
@@ -664,9 +664,9 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 // ----------------------------------------------------------------------------
-void MagStructFactDlg::AddTabItem(int row, 
-	const std::string& name, t_real MMag, t_real x, t_real y, t_real z, 
-	t_real ReMx, t_real ReMy, t_real ReMz, t_real ImMx, t_real ImMy, t_real ImMz, 
+void MagStructFactDlg::AddTabItem(int row,
+	const std::string& name, t_real MMag, t_real x, t_real y, t_real z,
+	t_real ReMx, t_real ReMy, t_real ReMz, t_real ImMx, t_real ImMy, t_real ImMz,
 	t_real scale, const std::string& col)
 {
 	bool bclone = 0;
@@ -1052,7 +1052,7 @@ void MagStructFactDlg::ShowTableContextMenu(QTableWidget *pTab, QMenu *pMenu, QM
 
 
 // ----------------------------------------------------------------------------
-void MagStructFactDlg::AddPropItem(int row, 
+void MagStructFactDlg::AddPropItem(int row,
 	const std::string& name, t_real x, t_real y, t_real z, bool bConjFC)
 {
 	bool bclone = 0;
@@ -1256,7 +1256,7 @@ void MagStructFactDlg::Load()
 				auto optCol = nucl.second.get<std::string>("col", "#ff0000");
 
 				AddTabItem(-1, optName, optMMag, optX,  optY, optZ,
-					optReMX, optReMY, optReMZ, optImMX, optImMY, optImMZ, 
+					optReMX, optReMY, optReMZ, optImMX, optImMY, optImMZ,
 					optRad, optCol);
 			}
 		}
@@ -1404,7 +1404,7 @@ void MagStructFactDlg::ImportCIF()
 		return;
 	m_sett->setValue("dir_cif", QFileInfo(filename).path());
 
-	auto [errstr, atoms, generatedatoms, atomnames, lattice, symops] = 
+	auto [errstr, atoms, generatedatoms, atomnames, lattice, symops] =
 		load_cif<t_vec, t_mat>(filename.toStdString(), g_eps);
 	if(errstr)
 	{
@@ -1452,14 +1452,14 @@ void MagStructFactDlg::ImportCIF()
 		// random colour
 		std::ostringstream ostrcol;
 		std::uniform_int_distribution<int> dist{0, 255};
-		ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen) 
-			<< std::setw(2) << std::setfill('0') << dist(gen) 
+		ostrcol << "#" << std::hex << std::setw(2) << std::setfill('0') << dist(gen)
+			<< std::setw(2) << std::setfill('0') << dist(gen)
 			<< std::setw(2) << std::setfill('0') << dist(gen);
 
 		for(std::size_t symnr=0; symnr<generatedatoms[atomnum].size(); ++symnr)
 		{
-			AddTabItem(-1, atomnames[atomnum], 0, 0, 
-				generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2], 
+			AddTabItem(-1, atomnames[atomnum], 0, 0,
+				generatedatoms[atomnum][symnr][0],  generatedatoms[atomnum][symnr][1], generatedatoms[atomnum][symnr][2],
 				1, ostrcol.str());
 		}
 	}*/
@@ -1485,9 +1485,9 @@ void MagStructFactDlg::GenerateFromSG()
 		}
 
 		auto ops = m_SGops[sgidx];
-		std::vector<std::tuple<std::string, t_real, 
-			t_real, t_real, t_real, 
-			t_real, t_real, t_real, t_real, t_real, t_real, 
+		std::vector<std::tuple<std::string, t_real,
+			t_real, t_real, t_real,
+			t_real, t_real, t_real, t_real, t_real, t_real,
 			t_real, std::string>> generatednuclei;
 
 		// iterate nuclei
@@ -1514,7 +1514,7 @@ void MagStructFactDlg::GenerateFromSG()
 
 			for(const auto& newnucl : newnuclei)
 			{
-				generatednuclei.emplace_back(std::make_tuple(name, MMag, newnucl[0], newnucl[1], newnucl[2], 
+				generatednuclei.emplace_back(std::make_tuple(name, MMag, newnucl[0], newnucl[1], newnucl[2],
 					ReMx, ReMy, ReMz, ImMx, ImMy, ImMz,		// TODO: apply sg ops to spins
 					scale, col));
 			}
@@ -1716,8 +1716,8 @@ void MagStructFactDlg::Calc()
 	{
 		pos.emplace_back(tl2::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
 		Ms.emplace_back(nucl.MAbs * tl2::create<t_vec_cplx>({
-			t_cplx{nucl.ReM[0], nucl.ImM[0]}, 
-			t_cplx{nucl.ReM[1], nucl.ImM[1]}, 
+			t_cplx{nucl.ReM[0], nucl.ImM[0]},
+			t_cplx{nucl.ReM[1], nucl.ImM[1]},
 			t_cplx{nucl.ReM[2], nucl.ImM[2]} }));
 		names.emplace_back(std::move(nucl.name));
 		cols.emplace_back(std::move(nucl.col));
@@ -1936,7 +1936,7 @@ void MagStructFactDlg::Calc()
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
 							tl2::create<t_vec_gl>({0, 0, 1}),				// from
 							normReM*scale, 								// pre-scale
-							posGL										// pre-translate 
+							posGL										// pre-translate
 						);
 
 						t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
@@ -1945,13 +1945,13 @@ void MagStructFactDlg::Calc()
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
 							tl2::create<t_vec_gl>({0, 0, 1}),				// from
 							normImM*scale, 								// pre-scale
-							posGL										// pre-translate 
+							posGL										// pre-translate
 						);
 
 						// labels
 						std::ostringstream ostrMom;
 						ostrMom.precision(g_prec);
-						ostrMom 
+						ostrMom
 							<< "Re{M} = (" << moment[0].real() << " " << moment[1].real() << " " << moment[2].real() << "); "
 							<< "Im{M} = (" << moment[0].imag() << " " << moment[1].imag() << " " << moment[2].imag() << "); "
 							<< "r = (" << thepos[0] << " " << thepos[1] << " " << thepos[2] << ")";

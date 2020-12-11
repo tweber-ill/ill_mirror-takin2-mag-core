@@ -6,7 +6,7 @@
  */
 
 #include "command.h"
-#include "libs/algos.h"
+#include "tlibs2/libs/algos.h"
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLineEdit>
@@ -64,7 +64,7 @@ CommandLineWidget::CommandLineWidget(QWidget *pParent, QSettings *pSettings)
 	// ------------------------------------------------------------------------
 	// connections
 	connect(m_pEditCLI->lineEdit(), &QLineEdit::returnPressed, this, &CommandLineWidget::CommandEntered);
-	connect(m_pEditCLI->completer(), static_cast<void(QCompleter::*)(const QString&)>(&QCompleter::activated), 
+	connect(m_pEditCLI->completer(), static_cast<void(QCompleter::*)(const QString&)>(&QCompleter::activated),
 		this, &CommandLineWidget::CompleterActivated);
 	// ------------------------------------------------------------------------
 

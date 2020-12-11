@@ -25,8 +25,8 @@
 #include <sstream>
 #include <complex>
 
-#include "libs/glplot.h"
-#include "libs/math20.h"
+#include "tlibs2/libs/glplot.h"
+#include "tlibs2/libs/math20.h"
 
 #include "numerictablewidgetitem.h"
 

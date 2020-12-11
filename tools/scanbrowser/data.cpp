@@ -7,9 +7,9 @@
 
 #include "data.h"
 #include "globals.h"
-#include "libs/instr.h"
-#include "libs/math20.h"
-#include "libs/algos.h"
+#include "tlibs2/libs/instr.h"
+#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/algos.h"
 
 
 using t_real = t_real_dat;
@@ -647,7 +647,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 
 	const std::string cols[] = { "col_0", "col_1", "col_2", "col_3" };
 	const std::size_t iNumCols = sizeof(cols) / sizeof(*cols);
-	
+
 	const int pts[] = {7, 5, 9, 11, 13};
 	const std::size_t iNumPts = sizeof(pts) / sizeof(*pts);
 
@@ -710,7 +710,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetCounter(iC);
 				const auto& vecErr = dat.GetCounterErrors(iC);
 
-				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " " 
+				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " "
 					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow] << " ";
 			}
 
@@ -721,7 +721,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetMonitor(iM);
 				const auto& vecErr = dat.GetMonitorErrors(iM);
 
-				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " " 
+				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " "
 					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow];
 			}
 
@@ -746,7 +746,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 		const std::size_t idx_yerr = idx_y+1;
 
 		ofstr << "\t$dat_" << ch << " u ($" << idx_x << "):($" << idx_y << "):($" << idx_yerr << ")"
-			<< " w yerrorbars pt " << pts[ch % iNumPts] 
+			<< " w yerrorbars pt " << pts[ch % iNumPts]
 			<< " ps 1 lw 1.5 lc rgb " << cols[ch % iNumCols]
 			<< " title \"Channel " << (ch+1) << "\""
 			<< (ch == N-1 ? "\n" : ", \\\n");

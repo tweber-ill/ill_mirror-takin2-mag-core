@@ -11,7 +11,7 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QPushButton>
 
-#include "libs/str.h"
+#include "tlibs2/libs/str.h"
 #include "globals.h"
 
 using t_real = t_real_dat;
@@ -164,7 +164,7 @@ void WorkSpaceWidget::ItemEdited()
 				// sync data with new name
 				pItem->setData(Qt::UserRole, newName);
 			}
-			else 
+			else
 			{
 				// renaming failed, undo changes
 				inserted.node.key() = oldName.toStdString();

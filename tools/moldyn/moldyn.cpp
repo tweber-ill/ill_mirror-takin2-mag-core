@@ -19,8 +19,8 @@
 #include <tuple>
 #include <memory>
 
-#include "libs/algos.h"
-#include "libs/helper.h"
+#include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/helper.h"
 
 using namespace tl2_ops;
 
@@ -530,7 +530,7 @@ void MolDynDlg::CalculatePositionsOfAtoms()
 				auto [objTypeIdx, objSubTypeIdx] = objs[objIdx];
 				const t_vec& coords = m_mol.GetAtomCoords(objTypeIdx, objSubTypeIdx, frameidx);
 
-				ofstr 
+				ofstr
 					<< std::left << std::setw(g_prec*1.5) << coords[0] << " "
 					<< std::left << std::setw(g_prec*1.5) << coords[1] << " "
 					<< std::left << std::setw(g_prec*1.5) << coords[2] << "  ";
@@ -842,7 +842,7 @@ void MolDynDlg::Load()
 				{
 					t_real atomscale = m_spinScale->value();
 
-					std::size_t handle = Add3DAtom(vec, cols[atomtypeidx % cols.size()], atomscale, 
+					std::size_t handle = Add3DAtom(vec, cols[atomtypeidx % cols.size()], atomscale,
 						m_mol.GetAtomName(atomtypeidx), atomidx);
 					m_sphereHandles.push_back(handle);
 
@@ -1115,7 +1115,7 @@ std::tuple<std::string, int> MolDynDlg::SplitDataString(const std::string& data)
  * get the index of the atom in the m_mol data structure
  * from the handle of the displayed 3d object
  */
-std::tuple<bool, std::size_t, std::size_t, std::size_t> 
+std::tuple<bool, std::size_t, std::size_t, std::size_t>
 MolDynDlg::GetAtomIndexFromHandle(std::size_t handle) const
 {
 	// find handle in sphere handle vector

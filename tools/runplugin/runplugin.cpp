@@ -13,8 +13,8 @@
 #include <iostream>
 #include <memory>
 #include <boost/dll/shared_library.hpp>
-#include "libs/helper.h"
-#include "libs/str.h"
+#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/str.h"
 
 
 int main(int argc, char** argv)
@@ -50,9 +50,9 @@ int main(int argc, char** argv)
 		{
 			std::vector<std::string> vecdescr;
 			tl2::get_tokens<std::string, std::string>(descr(), ";", vecdescr);
-			std::cout << "Module type: \"" << vecdescr[0] << "\", " 
-				<< "Name: \"" << vecdescr[1] << "\", " 
-				<< "Descr: \"" << vecdescr[2] << "\"" << std::endl; 
+			std::cout << "Module type: \"" << vecdescr[0] << "\", "
+				<< "Name: \"" << vecdescr[1] << "\", "
+				<< "Descr: \"" << vecdescr[2] << "\"" << std::endl;
 		}
 
 

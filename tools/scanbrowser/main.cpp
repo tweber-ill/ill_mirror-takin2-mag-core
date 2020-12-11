@@ -8,7 +8,7 @@
 #include <iostream>
 #include <QtWidgets/QApplication>
 
-#include "libs/helper.h"
+#include "tlibs2/libs/helper.h"
 #include "mainwnd.h"
 
 

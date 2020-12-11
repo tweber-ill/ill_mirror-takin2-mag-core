@@ -16,8 +16,8 @@
 #include <QtWidgets/QTreeWidgetItem>
 #include <QtWidgets/QListWidgetItem>
 
-#include "libs/magsg.h"
-#include "libs/math20.h"
+#include "tlibs2/libs/magsg.h"
+#include "tlibs2/libs/math20.h"
 
 #include "ui_browser.h"
 

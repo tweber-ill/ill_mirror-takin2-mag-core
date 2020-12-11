@@ -10,7 +10,7 @@
 
 #include "cli/cliparser.h"
 #include "data.h"
-#include "libs/file.h"
+#include "tlibs2/libs/file.h"
 
 #include <QtCore/QSettings>
 #include <QtCore/QEvent>

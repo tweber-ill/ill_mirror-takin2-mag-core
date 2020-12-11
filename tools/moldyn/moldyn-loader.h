@@ -17,8 +17,8 @@
 // for progress callback
 #include <boost/signals2/signal.hpp>
 
-#include "libs/file.h"
-#include "libs/str.h"
+#include "tlibs2/libs/file.h"
+#include "tlibs2/libs/str.h"
 
 
 template<class t_real, class t_vec>
@@ -118,7 +118,7 @@ class MolDyn
 
 		std::size_t GetFrameCount() const
 		{ return m_frames.size(); }
-	
+
 		const MolFrame<t_real, t_vec>& GetFrame(std::size_t frame) const
 		{ return m_frames[frame]; }
 

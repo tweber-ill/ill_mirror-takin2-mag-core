@@ -19,7 +19,7 @@
 #include <gemmi/cif.hpp>
 #include <gemmi/symmetry.hpp>
 
-#include "libs/math20.h"
+#include "tlibs2/libs/math20.h"
 using namespace tl2_ops;
 
 

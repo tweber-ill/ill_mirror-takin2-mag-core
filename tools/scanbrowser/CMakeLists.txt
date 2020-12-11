@@ -94,8 +94,7 @@ add_executable(takin_scanbrowser
 	cli/ast.cpp cli/sym.cpp
 	cli/funcs.cpp cli/funcs.h
 
-	../../libs/log.cpp
-
+	../../tlibs2/libs/log.cpp
 #	../../ext/qcp/qcustomplot.cpp ../../ext/qcp/qcustomplot.h
 )
 

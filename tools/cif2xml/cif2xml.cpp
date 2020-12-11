@@ -6,7 +6,7 @@
  */
 
 #include "../structfact/loadcif.h"
-#include "libs/math20.h"
+#include "tlibs2/libs/math20.h"
 
 #include <gemmi/version.hpp>
 #include <iostream>
@@ -169,7 +169,7 @@ static void show_infos(const char* pcProg)
 		"You should have received a copy of the GNU General Public License "
 		"along with this program. If not, see <http://www.gnu.org/licenses/>.\n\n";
 
-	std::cout << "This program uses the Gemmi library (version " << GEMMI_VERSION << "), " 
+	std::cout << "This program uses the Gemmi library (version " << GEMMI_VERSION << "), "
 		<< "which is available under: https://github.com/project-gemmi/gemmi.\n";
 	std::cout << std::endl;
 

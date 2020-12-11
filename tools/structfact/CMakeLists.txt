@@ -34,11 +34,11 @@ if(BUILD_LIB)
 	add_definitions(-DBUILD_LIB)
 	add_library(takin_structfact SHARED
 		structfact.cpp structfact.h
-		../../libs/glplot.cpp ../../libs/glplot.h)
+		../../tlibs2/libs/glplot.cpp ../../tlibs2/libs/glplot.h)
 else()
 	add_executable(takin_structfact
 		structfact.cpp structfact.h
-		../../libs/glplot.cpp ../../libs/glplot.h)
+		../../tlibs2/libs/glplot.cpp ../../tlibs2/libs/glplot.h)
 endif()
 
 target_link_libraries(takin_structfact ${Boost_LIBRARIES})

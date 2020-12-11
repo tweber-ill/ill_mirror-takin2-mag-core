@@ -34,8 +34,8 @@ namespace algo = boost::algorithm;
 namespace pt = boost::property_tree;
 
 #include "loadcif.h"
-#include "libs/algos.h"
-#include "libs/helper.h"
+#include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/helper.h"
 
 
 //using namespace tl2;

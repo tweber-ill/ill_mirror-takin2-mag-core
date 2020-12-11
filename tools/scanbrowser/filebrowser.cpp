@@ -13,7 +13,7 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 
-#include "libs/instr.h"
+#include "tlibs2/libs/instr.h"
 
 using t_real = t_real_dat;
 
@@ -55,7 +55,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *pParent, QSettings *pSettings)
 	// connections
 	connect(pBtnFolders, &QPushButton::clicked, this, &FileBrowserWidget::SelectFolder);
 	connect(pCheckMultiSelect, &QCheckBox::stateChanged, [this](bool checked)
-	{ 
+	{
 		m_pListFiles->setSelectionMode(checked ? QAbstractItemView::ExtendedSelection : QAbstractItemView::SingleSelection);
 	});
 	connect(pBtnTransfer, &QPushButton::clicked, this, &FileBrowserWidget::TransferSelectedToWorkspace);

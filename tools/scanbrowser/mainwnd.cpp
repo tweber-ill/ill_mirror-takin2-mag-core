@@ -10,10 +10,10 @@
 #include "mainwnd.h"
 #include "globals.h"
 #include "funcs.h"
-#include "libs/file.h"
-#include "libs/algos.h"
-#include "libs/helper.h"
-#include "libs/str.h"
+#include "tlibs2/libs/file.h"
+#include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/str.h"
 
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
@@ -26,7 +26,7 @@ using t_real = double;
 
 
 MainWnd::MainWnd(QSettings* pSettings)
-	: QMainWindow(), m_pSettings(pSettings), 
+	: QMainWindow(), m_pSettings(pSettings),
 	m_pBrowser(new FileBrowser(this, pSettings)),
 	m_pWS(new WorkSpace(this, pSettings)),
 	m_pCLI(new CommandLine(this, pSettings)),
@@ -271,7 +271,7 @@ bool MainWnd::OpenFile(const QString &file)
 	prop.SetSeparator('/');
 	if(!prop.Load(file.toStdString(), tl2::PropType::XML))
 	{
-		QMessageBox::critical(this, "Error", "Could not open session.");	
+		QMessageBox::critical(this, "Error", "Could not open session.");
 		return false;
 	}
 
@@ -326,7 +326,7 @@ bool MainWnd::SaveFile(const QString &file)
 
 	if(!prop.Save(file.toStdString(), tl2::PropType::XML))
 	{
-		QMessageBox::critical(this, "Error", "Could not save session.");	
+		QMessageBox::critical(this, "Error", "Could not save session.");
 		return false;
 	}
 
