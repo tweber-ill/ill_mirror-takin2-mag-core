@@ -428,7 +428,7 @@ bool convert_table(const char* pcInFile, const char* pcOutFile)
 
 
 	// reference for the magnetic space group data
-	prop.put("mag_groups.source", "Magnetic space group data obtained from the <a href=\"http://iso.byu.edu\">ISOTROPY Sofware Suite</a>.");
+	prop.put("mag_groups.source", "Magnetic space group data obtained from <a href=\"https://stokes.byu.edu/iso/magneticspacegroups.php\">ISO-MAG, ISOTROPY Sofware Suite</a>.");
 	prop.put("mag_groups.source_url", "https://stokes.byu.edu/iso/magnetic_data.txt");
 
 
