@@ -7,7 +7,7 @@
 project(magtools)
 cmake_minimum_required(VERSION 3.0)
 
-option(ONLY_BUILD_FINISHED "only build finished tools" FALSE)
+option(ONLY_BUILD_FINISHED "only build finished tools" TRUE)
 
 
 # cif converter
