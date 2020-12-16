@@ -7,8 +7,8 @@
 
 #include "funcs.h"
 #include "../globals.h"
-#include "libs/phys.h"
-#include "libs/fit.h"
+#include "tlibs2/libs/phys.h"
+#include "tlibs2/libs/fit.h"
 
 
 using t_real = t_real_cli;
