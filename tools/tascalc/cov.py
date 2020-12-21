@@ -17,9 +17,12 @@ except ImportError:
 	exit(-1)
 
 
-np.set_printoptions(
-	floatmode = "fixed",
-	precision = 4)
+try:
+	np.set_printoptions(
+		precision = 4,
+		floatmode = "fixed")
+except TypeError:
+	print("Warning: Numpy print options could not be set.")
 
 
 options = {
