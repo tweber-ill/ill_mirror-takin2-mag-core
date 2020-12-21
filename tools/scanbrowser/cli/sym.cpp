@@ -8,8 +8,8 @@
 #include "cliparser.h"
 #include "../globals.h"
 #include "funcs.h"
-#include "libs/algos.h"
-#include "libs/str.h"
+#include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/str.h"
 
 #include <cmath>
 
