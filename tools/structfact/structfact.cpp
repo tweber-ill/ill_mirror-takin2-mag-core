@@ -431,7 +431,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
 		auto acImportTAZ = new QAction("Import TAZ...", menuFile);
 		auto acExportTAZ = new QAction("Export TAZ...", menuFile);
-		auto acExit = new QAction("Exit", menuFile);
+		auto acExit = new QAction("Quit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
 
 		menuFile->addAction(acNew);

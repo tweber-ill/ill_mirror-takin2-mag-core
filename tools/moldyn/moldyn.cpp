@@ -118,7 +118,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSaveAs = new QAction("Save As...", menuFile);
-		auto acExit = new QAction("Exit", menuFile);
+		auto acExit = new QAction("Quit", menuFile);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();

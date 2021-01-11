@@ -490,7 +490,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
-		auto acExit = new QAction("Exit", menuFile);
+		auto acExit = new QAction("Quit", menuFile);
 		auto ac3DView = new QAction("Unit Cell / Fourier Components...", menuFile);
 		auto ac3DViewSC = new QAction("Super Cell / Magnetic Moments...", menuFile);
 
