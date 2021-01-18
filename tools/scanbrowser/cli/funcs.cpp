@@ -213,7 +213,7 @@ std::shared_ptr<Symbol> func_help(CliParserContext&)
 	std::ostringstream ostr;
 
 	ostr << "<hr>Takin/Scan Browser version " << PROGRAM_VERSION << ".<br>\n";
-	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018-2020.<hr><br>\n";
+	ostr << "Written by Tobias Weber &lt;tweber@ill.fr&gt;, 2018-2021.<hr><br>\n";
 
 	ostr << "Type funcs() or vars() to list available functions or variables.<br>\n";
 
