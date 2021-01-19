@@ -11,19 +11,43 @@ project(pol)
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 option(BUILD_LIB "build as dynamic library" FALSE)
 
+
+# -----------------------------------------------------------------------------
+# system specific settings
+message("Building for ${CMAKE_SYSTEM_NAME} systems.")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	# pass linker --subsystem option
+	add_compile_options(-Wl,--subsystem,windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	add_compile_options(-mmacosx-version-min=10.10)
+endif()
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# packages
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
+# -----------------------------------------------------------------------------
 
+
+# -----------------------------------------------------------------------------
+# compiler settings
 set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-std=c++20)
 add_compile_options(${Boost_CXX_FLAGS})
 add_compile_options(-Wall -Wextra)
 
 include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../..")
+# -----------------------------------------------------------------------------
 
+
+# -----------------------------------------------------------------------------
+# output
 if(BUILD_LIB)
 	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
@@ -37,3 +61,4 @@ endif()
 
 target_link_libraries(takin_pol ${Boost_LIBRARIES})
 qt5_use_modules(takin_pol Core Gui Widgets OpenGL)
+# -----------------------------------------------------------------------------

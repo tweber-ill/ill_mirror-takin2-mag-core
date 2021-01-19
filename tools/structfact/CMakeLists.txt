@@ -10,6 +10,16 @@ project(structfact)
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 option(BUILD_LIB "build as dynamic library" FALSE)
 
+# system specific settings
+message("Building for ${CMAKE_SYSTEM_NAME} systems.")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	# pass linker --subsystem option
+	add_compile_options(-Wl,--subsystem,windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	add_compile_options(-mmacosx-version-min=10.10)
+endif()
+
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 
