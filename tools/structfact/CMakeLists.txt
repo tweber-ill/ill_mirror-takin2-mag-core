@@ -51,5 +51,12 @@ else()
 		../../tlibs2/libs/glplot.cpp ../../tlibs2/libs/glplot.h)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	target_link_options(takin_structfact
+		# create an __info_plist section in the binary
+		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../../core/setup_mac/InfoBundle.plist
+	)
+endif()
+
 target_link_libraries(takin_structfact ${Boost_LIBRARIES})
 qt5_use_modules(takin_structfact Core Gui Widgets OpenGL)
