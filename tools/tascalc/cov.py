@@ -5,6 +5,8 @@
 # @date 30-mar-2019
 # @license GPLv3, see 'LICENSE' file
 #
+# for a good explanation of the covariance matrix method, see, e.g., (Arens 2015), p. 795.
+#
 
 import os
 import tas

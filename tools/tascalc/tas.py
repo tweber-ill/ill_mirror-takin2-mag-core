@@ -32,12 +32,14 @@ def rotate(_axis, vec, phi):
 
 # get metric from crystal B matrix
 # basis vectors are in the columns of B, i.e. the second index
+# see (Arens 2015), p. 815
 def get_metric(B):
 	#return np.einsum("ij,ik -> jk", B, B)
 	return np.dot(np.transpose(B), B)
 
 
 # cross product in fractional coordinates
+# see: (Arens 2015), p. 815
 def cross(a, b, B):
 	# levi-civita in fractional coordinates
 	def levi(i,j,k, B):
@@ -50,11 +52,13 @@ def cross(a, b, B):
 
 
 # dot product in fractional coordinates
+# see: (Arens 2015), p. 808
 def dot(a, b, metric):
 	return np.dot(a, np.dot(metric, b))
 
 
 # angle between peaks in fractional coordinates
+# see (Arens 2015), p. 808
 def angle(a, b, metric):
 	len_a = np.sqrt(dot(a, a, metric))
 	len_b = np.sqrt(dot(b, b, metric))
