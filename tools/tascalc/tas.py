@@ -38,7 +38,7 @@ def get_metric(B):
 	return np.dot(np.transpose(B), B)
 
 
-# cross product in fractional coordinates
+# cross product in fractional coordinates: c^l = eps_ijk g^li a^j b^k
 # see: (Arens 2015), p. 815
 def cross(a, b, B):
 	# levi-civita in fractional coordinates
@@ -161,6 +161,7 @@ def get_B(lattice, angles):
 
 
 # UB orientation matrix
+# see: https://dx.doi.org/10.1107/S0021889805004875
 def get_UB(B, orient1_rlu, orient2_rlu, orientup_rlu):
 	orient1_invA = np.dot(B, orient1_rlu)
 	orient2_invA = np.dot(B, orient2_rlu)
