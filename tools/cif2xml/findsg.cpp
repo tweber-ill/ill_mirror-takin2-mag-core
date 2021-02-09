@@ -68,6 +68,12 @@ int main(int argc, char** argv)
 		vecFinal.emplace_back(std::move(vecPos));
 	}
 
+	if(vecFinal.size() == 0)
+	{
+		std::cerr << "Insufficient number of positions given." << std::endl;
+		return -1;
+	}
+
 
 	std::cout << "\nFull set of positions to match:\n";
 	std::size_t ctr = 1;
