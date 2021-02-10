@@ -44,7 +44,7 @@ using t_matvec = std::vector<t_mat>;
 class PolDlg : public QDialog
 { /*Q_OBJECT*/
 private:
-	QSettings m_sett{"tobis_stuff", "pol"};
+	QSettings m_sett{"takin", "pol"};
 	int m_prec = 6;		// precision
 
 	std::shared_ptr<GlPlot> m_plot{std::make_shared<GlPlot>(this)};

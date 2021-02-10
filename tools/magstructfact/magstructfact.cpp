@@ -88,7 +88,7 @@ struct PowderLine
 
 // ----------------------------------------------------------------------------
 MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
-	m_sett{new QSettings{"tobis_stuff", "magstructfact"}}
+	m_sett{new QSettings{"takin", "magstructfact"}}
 {
 	setWindowTitle("Magnetic Structure Factors");
 	setSizeGripEnabled(true);

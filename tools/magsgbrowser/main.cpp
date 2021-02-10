@@ -31,7 +31,7 @@ static inline void set_locales()
 
 int main(int argc, char** argv)
 {
-	QSettings sett("tobis_stuff", "sgbrowser", nullptr);
+	QSettings sett("takin", "sgbrowser", nullptr);
 
 	auto app = std::make_unique<QApplication>(argc, argv);
 	set_locales();

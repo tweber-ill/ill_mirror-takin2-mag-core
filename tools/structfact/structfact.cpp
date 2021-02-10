@@ -75,7 +75,7 @@ struct PowderLine
 
 // ----------------------------------------------------------------------------
 StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
-	m_sett{new QSettings{"tobis_stuff", "structfact"}}
+	m_sett{new QSettings{"takin", "structfact"}}
 {
 	setWindowTitle("Nuclear Structure Factors");
 	setSizeGripEnabled(true);
