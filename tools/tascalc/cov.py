@@ -5,7 +5,8 @@
 # @date 30-mar-2019
 # @license GPLv3, see 'LICENSE' file
 #
-# for a good explanation of the covariance matrix method, see, e.g., (Arens 2015), pp. 795 and 1372.
+# @desc For a good explanation of the covariance matrix method, see (Arens 2015), pp. 795 and 1372.
+# @desc reimplements the functionality of https://github.com/McStasMcXtrace/McCode/blob/master/tools/Legacy-Perl/mcresplot.pl
 #
 
 import os
@@ -52,6 +53,7 @@ options = {
 # constants
 sig2hwhm = np.sqrt(2. * np.log(2.))
 sig2fwhm = 2.*sig2hwhm
+
 
 
 #
@@ -215,6 +217,7 @@ def proj_quad(_E, idx):
 	vv = np.delete(np.delete(vv, idx, axis=0), idx, axis=1)
 
 	return E - vv
+
 
 
 #
