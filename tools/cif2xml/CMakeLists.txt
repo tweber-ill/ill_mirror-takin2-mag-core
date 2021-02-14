@@ -40,11 +40,11 @@ target_link_libraries(takin_findsg)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	target_link_options(takin_cif2xml
 		# create an __info_plist section in the binary
-		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../../core/setup_mac/InfoBundle.plist
+		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../setup_mac/InfoCif2Xml.plist
 	)
 
 	target_link_options(takin_findsg
 		# create an __info_plist section in the binary
-		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../../core/setup_mac/InfoBundle.plist
+		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../setup_mac/InfoFindSG.plist
 	)
 endif()
