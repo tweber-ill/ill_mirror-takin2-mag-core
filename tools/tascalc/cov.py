@@ -354,7 +354,8 @@ def plot_ellipses(file, Q4, w, Qmean, ellis):
 	subplot3d.set_ylabel(coord_names[1])
 	subplot3d.set_zlabel(coord_names[3])
 
-	subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], marker=themarker, s=thesymsize)
+	if len(Q4.shape)==2 and len(Q4)>0 and len(Q4[0])==4:
+		subplot3d.scatter(Q4[:,0], Q4[:,1], Q4[:,3], marker=themarker, s=thesymsize)
 	# xE
 	subplot3d.plot(ellplots[0]["sliced"][0], ellplots[0]["sliced"][1], zs=0., zdir="y", c="black", linestyle="dashed")
 	subplot3d.plot(ellplots[0]["proj"][0], ellplots[0]["proj"][1], zs=0., zdir="y", c="black", linestyle="solid")
