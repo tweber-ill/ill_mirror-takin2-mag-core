@@ -628,7 +628,7 @@ class TasGUI:
 		app.setApplicationName("qtas")
 		#app.setStyle("Fusion")
 
-		sett = qtc.QSettings("tobis_stuff", "in20tool")
+		sett = qtc.QSettings("takin", "tascalc")
 		if sett.contains("mainwnd/theme"):
 			app.setStyle(sett.value("mainwnd/theme"))
 
