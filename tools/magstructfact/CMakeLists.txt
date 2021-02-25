@@ -56,5 +56,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	)
 endif()
 
-target_link_libraries(takin_magstructfact ${Boost_LIBRARIES})
-qt5_use_modules(takin_magstructfact Core Gui Widgets OpenGL)
+target_link_libraries(takin_magstructfact ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL)
