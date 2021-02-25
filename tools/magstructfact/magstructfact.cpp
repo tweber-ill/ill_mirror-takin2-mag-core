@@ -536,10 +536,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("Unit Cell");
 
 				m_plot = std::make_shared<GlPlot>(this);
-				m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
-				m_plot->GetImpl()->SetCoordMax(1.);
-				m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plot->GetRenderer()->SetCoordMax(1.);
+				m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
@@ -564,13 +564,13 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
+				connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
 				connect(m_plot.get(), &GlPlot::MouseDown, this, &MagStructFactDlg::PlotMouseDown);
 				//connect(m_plot.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
-						this->m_plot->GetImpl()->SetCoordSys(val);
+						this->m_plot->GetRenderer()->SetCoordSys(val);
 				});
 
 
@@ -596,10 +596,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlotSC->setWindowTitle("Super Cell");
 
 				m_plotSC = std::make_shared<GlPlot>(this);
-				m_plotSC->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plotSC->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
-				m_plotSC->GetImpl()->SetCoordMax(1.);
-				m_plotSC->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+				m_plotSC->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plotSC->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plotSC->GetRenderer()->SetCoordMax(1.);
+				m_plotSC->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
@@ -624,13 +624,13 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 				connect(m_plotSC.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisationSC);
-				connect(m_plotSC->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
+				connect(m_plotSC->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
 				//connect(m_plotSC.get(), &GlPlot::MouseDown, this, [this](bool left, bool mid, bool right) {});
 				//connect(m_plotSC.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plotSC)
-						this->m_plotSC->GetImpl()->SetCoordSys(val);
+						this->m_plotSC->GetRenderer()->SetCoordSys(val);
 				});
 
 
@@ -737,10 +737,10 @@ void MagStructFactDlg::Add3DItem(int row)
 		return;
 	}
 
-	auto objSphere = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, 1,1,1,1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, 1,1,1,1);
-	auto objArrowRe = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
-	auto objArrowIm = m_plot->GetImpl()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
+	auto objSphere = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, 1,1,1,1);
+	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, 1,1,1,1);
+	auto objArrowRe = m_plot->GetRenderer()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
+	auto objArrowIm = m_plot->GetRenderer()->AddLinkedObject(m_arrow, 0,0,0, 1,1,1,1);
 
 	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+0, unsigned(objSphere));	// atomic position
 	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole+1, unsigned(objArrowRe));	// real part of Fourier comp
@@ -810,7 +810,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 	auto normReM = tl2::norm<t_vec_gl>(vecReM);
 	auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
-	t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
+	t_mat_gl matArrowRe = GlPlotRenderer::GetArrowMatrix(
 		vecReM, 									// to
 		1, 											// post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -819,7 +819,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
 	);
 
-	t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
+	t_mat_gl matArrowIm = GlPlotRenderer::GetArrowMatrix(
 		vecImM, 									// to
 		1, 											// post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -828,15 +828,15 @@ void MagStructFactDlg::Sync3DItem(int row)
 		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
 	);
 
-	m_plot->GetImpl()->SetObjectMatrix(objSphere, matSphere);
-	m_plot->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
-	m_plot->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
-	m_plot->GetImpl()->SetObjectLabel(objSphere, itemName->text().toStdString());
-	m_plot->GetImpl()->SetObjectCol(objSphere, r, g, b, 1);
-	m_plot->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1);
-	m_plot->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1);
-	m_plot->GetImpl()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
-	m_plot->GetImpl()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
+	m_plot->GetRenderer()->SetObjectMatrix(objSphere, matSphere);
+	m_plot->GetRenderer()->SetObjectMatrix(objArrowRe, matArrowRe);
+	m_plot->GetRenderer()->SetObjectMatrix(objArrowIm, matArrowIm);
+	m_plot->GetRenderer()->SetObjectLabel(objSphere, itemName->text().toStdString());
+	m_plot->GetRenderer()->SetObjectCol(objSphere, r, g, b, 1);
+	m_plot->GetRenderer()->SetObjectCol(objArrowRe, r, g, b, 1);
+	m_plot->GetRenderer()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1);
+	m_plot->GetRenderer()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
+	m_plot->GetRenderer()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
 	m_plot->update();
 }
 
@@ -853,11 +853,11 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 			for(int row=0; row<m_nuclei->rowCount(); ++row)
 			{
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 			}
 			m_plot->update();
 		}
@@ -873,11 +873,11 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 			if(m_plot)
 			{
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				m_plot->update();
 			}
 
@@ -892,11 +892,11 @@ void MagStructFactDlg::DelTabItem(int begin, int end)
 			if(m_plot)
 			{
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+0).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+1).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole+2).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				m_plot->update();
 			}
 
@@ -1624,12 +1624,12 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
 	if(m_plot)
 	{
 		t_mat_gl matA{m_crystA};
-		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
+		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
 	}
 	if(m_plotSC)
 	{
 		t_mat_gl matA{m_crystA};
-		m_plotSC->GetImpl()->SetBTrafo(m_crystB, &matA);
+		m_plotSC->GetRenderer()->SetBTrafo(m_crystB, &matA);
 	}
 
 	if(bFullRecalc)
@@ -1853,7 +1853,7 @@ void MagStructFactDlg::Calc()
 	if(m_plotSC)
 	{
 		for(auto obj : m_3dobjsSC)
-			m_plotSC->GetImpl()->RemoveObject(obj);
+			m_plotSC->GetRenderer()->RemoveObject(obj);
 		m_3dobjsSC.clear();
 	}
 
@@ -1920,8 +1920,8 @@ void MagStructFactDlg::Calc()
 					// add 3d objs to super cell view
 					if(m_plotSC)
 					{
-						auto objArrowRe = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
-						auto objArrowIm = m_plotSC->GetImpl()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+						auto objArrowRe = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+						auto objArrowIm = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
 
 						auto [_vecReM, _vecImM] = tl2::split_cplx<t_vec_cplx, t_vec>(moment);
 						auto vecReM = tl2::convert<t_vec_gl>(_vecReM);
@@ -1930,7 +1930,7 @@ void MagStructFactDlg::Calc()
 						auto normReM = tl2::norm<t_vec_gl>(vecReM);
 						auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
-						t_mat_gl matArrowRe = GlPlot_impl::GetArrowMatrix(
+						t_mat_gl matArrowRe = GlPlotRenderer::GetArrowMatrix(
 							vecReM, 									// to
 							1, 											// post-scale
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -1939,7 +1939,7 @@ void MagStructFactDlg::Calc()
 							posGL										// pre-translate
 						);
 
-						t_mat_gl matArrowIm = GlPlot_impl::GetArrowMatrix(
+						t_mat_gl matArrowIm = GlPlotRenderer::GetArrowMatrix(
 							vecImM, 									// to
 							1, 											// post-scale
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -1956,16 +1956,16 @@ void MagStructFactDlg::Calc()
 							<< "Im{M} = (" << moment[0].imag() << " " << moment[1].imag() << " " << moment[2].imag() << "); "
 							<< "r = (" << thepos[0] << " " << thepos[1] << " " << thepos[2] << ")";
 
-						m_plotSC->GetImpl()->SetObjectMatrix(objArrowRe, matArrowRe);
-						m_plotSC->GetImpl()->SetObjectMatrix(objArrowIm, matArrowIm);
-						m_plotSC->GetImpl()->SetObjectCol(objArrowRe, r, g, b, 1.);
-						m_plotSC->GetImpl()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
-						//m_plotSC->GetImpl()->SetObjectLabel(objArrowRe, name + " (real)");
-						//m_plotSC->GetImpl()->SetObjectLabel(objArrowIm, name + " (imag)");
-						m_plotSC->GetImpl()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
-						m_plotSC->GetImpl()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
-						m_plotSC->GetImpl()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
-						m_plotSC->GetImpl()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
+						m_plotSC->GetRenderer()->SetObjectMatrix(objArrowRe, matArrowRe);
+						m_plotSC->GetRenderer()->SetObjectMatrix(objArrowIm, matArrowIm);
+						m_plotSC->GetRenderer()->SetObjectCol(objArrowRe, r, g, b, 1.);
+						m_plotSC->GetRenderer()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
+						//m_plotSC->GetRenderer()->SetObjectLabel(objArrowRe, name + " (real)");
+						//m_plotSC->GetRenderer()->SetObjectLabel(objArrowIm, name + " (imag)");
+						m_plotSC->GetRenderer()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
+						m_plotSC->GetRenderer()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
+						m_plotSC->GetRenderer()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
+						m_plotSC->GetRenderer()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
 
 						m_3dobjsSC.push_back(objArrowRe);
 						m_3dobjsSC.push_back(objArrowIm);
@@ -2055,7 +2055,7 @@ void MagStructFactDlg::PickerIntersectionSC(const t_vec3_gl* pos, std::size_t ob
 {
 	if(pos && m_plotSC)
 	{
-		const std::string& str = m_plotSC->GetImpl()->GetObjectDataString(objIdx);
+		const std::string& str = m_plotSC->GetRenderer()->GetObjectDataString(objIdx);
 		m_status3DSC->setText(str.c_str());
 	}
 	else
@@ -2099,13 +2099,13 @@ void MagStructFactDlg::AfterGLInitialisation()
 	SetGLInfos();
 
 	// reference sphere and arrow for linked objects
-	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
-	m_arrow = m_plot->GetImpl()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
-	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
-	m_plot->GetImpl()->SetObjectVisible(m_arrow, false);
+	m_sphere = m_plot->GetRenderer()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_arrow = m_plot->GetRenderer()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
+	m_plot->GetRenderer()->SetObjectVisible(m_sphere, false);
+	m_plot->GetRenderer()->SetObjectVisible(m_arrow, false);
 
 	// B matrix
-	m_plot->GetImpl()->SetBTrafo(m_crystB);
+	m_plot->GetRenderer()->SetBTrafo(m_crystB);
 
 	// add all 3d objects
 	Add3DItem(-1);
@@ -2121,13 +2121,13 @@ void MagStructFactDlg::AfterGLInitialisationSC()
 	SetGLInfos();
 
 	// reference sphere and arrow for linked objects
-	m_sphereSC = m_plotSC->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
-	m_arrowSC = m_plotSC->GetImpl()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
-	m_plotSC->GetImpl()->SetObjectVisible(m_sphereSC, false);
-	m_plotSC->GetImpl()->SetObjectVisible(m_arrowSC, false);
+	m_sphereSC = m_plotSC->GetRenderer()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_arrowSC = m_plotSC->GetRenderer()->AddArrow(0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
+	m_plotSC->GetRenderer()->SetObjectVisible(m_sphereSC, false);
+	m_plotSC->GetRenderer()->SetObjectVisible(m_arrowSC, false);
 
 	// B matrix
-	m_plotSC->GetImpl()->SetBTrafo(m_crystB);
+	m_plotSC->GetRenderer()->SetBTrafo(m_crystB);
 
 	// add all 3d objects (generated in calc)
 	Calc();
@@ -2147,7 +2147,7 @@ void MagStructFactDlg::SetGLInfos()
 	{
 		if(!plot) continue;
 
-		auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer] = plot->GetImpl()->GetGlDescr();
+		auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer] = plot->GetRenderer()->GetGlDescr();
 		m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
 		m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
 		m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));

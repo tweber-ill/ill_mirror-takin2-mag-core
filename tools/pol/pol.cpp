@@ -111,7 +111,7 @@ protected slots:
 	{
 		// GL device info
 		auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
-			= m_plot->GetImpl()->GetGlDescr();
+			= m_plot->GetRenderer()->GetGlDescr();
 		m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
 		m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
 		m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
@@ -120,15 +120,15 @@ protected slots:
 
 		if(!m_3dobjsReady)		// create 3d objects
 		{
-			m_arrow_pi = m_plot->GetImpl()->AddArrow(0.05, 1., 0.,0.,0.5,  0.,0.,0.85,1.);
-			m_arrow_pf = m_plot->GetImpl()->AddArrow(0.05, 1., 0.,0.,0.5,  0.,0.5,0.,1.);
-			m_arrow_M_Re = m_plot->GetImpl()->AddArrow(0.05, 1., 0.,0.,0.5,  0.85,0.,0.,1.);
-			m_arrow_M_Im = m_plot->GetImpl()->AddArrow(0.05, 1., 0.,0.,0.5,  0.85,0.25,0.,1.);
+			m_arrow_pi = m_plot->GetRenderer()->AddArrow(0.05, 1., 0.,0.,0.5,  0.,0.,0.85,1.);
+			m_arrow_pf = m_plot->GetRenderer()->AddArrow(0.05, 1., 0.,0.,0.5,  0.,0.5,0.,1.);
+			m_arrow_M_Re = m_plot->GetRenderer()->AddArrow(0.05, 1., 0.,0.,0.5,  0.85,0.,0.,1.);
+			m_arrow_M_Im = m_plot->GetRenderer()->AddArrow(0.05, 1., 0.,0.,0.5,  0.85,0.25,0.,1.);
 
-			m_plot->GetImpl()->SetObjectLabel(m_arrow_pi, "P_i");
-			m_plot->GetImpl()->SetObjectLabel(m_arrow_pf, "P_f");
-			m_plot->GetImpl()->SetObjectLabel(m_arrow_M_Re, "Re{M_perp}");
-			m_plot->GetImpl()->SetObjectLabel(m_arrow_M_Im, "Im{M_perp}");
+			m_plot->GetRenderer()->SetObjectLabel(m_arrow_pi, "P_i");
+			m_plot->GetRenderer()->SetObjectLabel(m_arrow_pf, "P_f");
+			m_plot->GetRenderer()->SetObjectLabel(m_arrow_M_Re, "Re{M_perp}");
+			m_plot->GetRenderer()->SetObjectLabel(m_arrow_M_Im, "Im{M_perp}");
 
 			m_3dobjsReady = true;
 			CalcPol();
@@ -244,7 +244,7 @@ protected slots:
 			{
 				auto lenVec = GetArrowLen(*m_curDraggedObj);
 				if(lenVec > 0.)
-					m_plot->GetImpl()->SetPickerSphereRadius(lenVec);
+					m_plot->GetRenderer()->SetPickerSphereRadius(lenVec);
 			}
 		}
 	}
@@ -308,7 +308,7 @@ public:
 				connect(edit, &QLineEdit::textEdited, this, &PolDlg::CalcPol);
 
 			connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &PolDlg::AfterGLInitialisation);
-			connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &PolDlg::PickerIntersection);
+			connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &PolDlg::PickerIntersection);
 
 			connect(m_plot.get(), &GlPlot::MouseDown, this, &PolDlg::MouseDown);
 			connect(m_plot.get(), &GlPlot::MouseUp, this, &PolDlg::MouseUp);
@@ -428,10 +428,10 @@ public:
 			resize(800, 600);
 
 		// have scattering plane in horizontal plane
-		m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
-		m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
-		m_plot->GetImpl()->SetCoordMax(5.);
-		m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
+		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_plot->GetRenderer()->SetCoordMax(5.);
+		m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
 			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 		CalcPol();
@@ -479,40 +479,40 @@ public:
 		if(m_3dobjsReady)
 		{
 			// P_i
-			t_mat_gl matPi = GlPlot_impl::GetArrowMatrix(
+			t_mat_gl matPi = GlPlotRenderer::GetArrowMatrix(
 				tl2::create<t_vec_gl>({t_real_gl(PiX), t_real_gl(PiY), t_real_gl(PiZ)}), 	// to
 				1., 								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
 				tl2::create<t_vec_gl>({0,0,1}));		// from
-			m_plot->GetImpl()->SetObjectMatrix(m_arrow_pi, matPi);
+			m_plot->GetRenderer()->SetObjectMatrix(m_arrow_pi, matPi);
 
 			// P_f
-			t_mat_gl matPf = GlPlot_impl::GetArrowMatrix(
+			t_mat_gl matPf = GlPlotRenderer::GetArrowMatrix(
 				tl2::create<t_vec_gl>({t_real_gl(P_f[0].real()), t_real_gl(P_f[1].real()), t_real_gl(P_f[2].real())}), 	// to
 				1., 								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
 				tl2::create<t_vec_gl>({0,0,1}));		// from
-			m_plot->GetImpl()->SetObjectMatrix(m_arrow_pf, matPf);
+			m_plot->GetRenderer()->SetObjectMatrix(m_arrow_pf, matPf);
 
 			// Re(M)
 			const t_real_gl lenReM = t_real_gl(std::sqrt(MPerpReX*MPerpReX + MPerpReY*MPerpReY + MPerpReZ*MPerpReZ));
-			t_mat_gl matMRe = GlPlot_impl::GetArrowMatrix(
+			t_mat_gl matMRe = GlPlotRenderer::GetArrowMatrix(
 				tl2::create<t_vec_gl>({t_real_gl(MPerpReX), t_real_gl(MPerpReY), t_real_gl(MPerpReZ)}), 	// to
 				lenReM,								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
 				tl2::create<t_vec_gl>({0,0,1}));		// from
-			m_plot->GetImpl()->SetObjectMatrix(m_arrow_M_Re, matMRe);
-			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Re, !tl2::equals(lenReM, t_real_gl(0)));
+			m_plot->GetRenderer()->SetObjectMatrix(m_arrow_M_Re, matMRe);
+			m_plot->GetRenderer()->SetObjectVisible(m_arrow_M_Re, !tl2::equals(lenReM, t_real_gl(0)));
 
 			// Im(M)
 			const t_real_gl lenImM = t_real_gl(std::sqrt(MPerpImX*MPerpImX + MPerpImY*MPerpImY + MPerpImZ*MPerpImZ));
-			t_mat_gl matMIm = GlPlot_impl::GetArrowMatrix(
+			t_mat_gl matMIm = GlPlotRenderer::GetArrowMatrix(
 				tl2::create<t_vec_gl>({t_real_gl(MPerpImX), t_real_gl(MPerpImY), t_real_gl(MPerpImZ)}), 	// to
 				lenImM,								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
 				tl2::create<t_vec_gl>({0,0,1}));		// from
-			m_plot->GetImpl()->SetObjectMatrix(m_arrow_M_Im, matMIm);
-			m_plot->GetImpl()->SetObjectVisible(m_arrow_M_Im, !tl2::equals(lenImM, t_real_gl(0)));
+			m_plot->GetRenderer()->SetObjectMatrix(m_arrow_M_Im, matMIm);
+			m_plot->GetRenderer()->SetObjectVisible(m_arrow_M_Im, !tl2::equals(lenImM, t_real_gl(0)));
 
 			m_plot->update();
 		}

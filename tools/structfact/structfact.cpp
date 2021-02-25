@@ -476,10 +476,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
 
 				m_plot = std::make_shared<GlPlot>(this);
-				m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
-				m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
-				m_plot->GetImpl()->SetCoordMax(1.);
-				m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+				m_plot->GetRenderer()->SetCoordMax(1.);
+				m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 
@@ -504,13 +504,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &StructFactDlg::PickerIntersection);
+				connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &StructFactDlg::PickerIntersection);
 				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
 				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
-						this->m_plot->GetImpl()->SetCoordSys(val);
+						this->m_plot->GetRenderer()->SetCoordSys(val);
 				});
 
 
@@ -631,10 +631,10 @@ void StructFactDlg::Add3DItem(int row)
 	QColor col{itemCol->text()};
 	col.getRgbF(&r, &g, &b);
 
-	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
-	//auto obj = m_plot->GetImpl()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	m_plot->GetImpl()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
-	m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
+	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
+	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, r,g,b,1);
+	m_plot->GetRenderer()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
+	m_plot->GetRenderer()->SetObjectLabel(obj, itemName->text().toStdString());
 	m_plot->update();
 
 	m_nuclei->item(row, COL_NAME)->setData(Qt::UserRole, unsigned(obj));
@@ -652,7 +652,7 @@ void StructFactDlg::DelTabItem(int begin, int end)
 		{
 			for(int row=0; row<m_nuclei->rowCount(); ++row)
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 			m_plot->update();
 		}
 
@@ -667,7 +667,7 @@ void StructFactDlg::DelTabItem(int begin, int end)
 			if(m_plot)
 			{
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				m_plot->update();
 			}
 
@@ -682,7 +682,7 @@ void StructFactDlg::DelTabItem(int begin, int end)
 			if(m_plot)
 			{
 				if(std::size_t obj = m_nuclei->item(row, COL_NAME)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetImpl()->RemoveObject(obj);
+					m_plot->GetRenderer()->RemoveObject(obj);
 				m_plot->update();
 			}
 
@@ -834,9 +834,9 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 			QColor col{itemCol->text()};
 			col.getRgbF(&r, &g, &b);
 
-			m_plot->GetImpl()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
-			m_plot->GetImpl()->SetObjectCol(obj, r, g, b, 1);
-			m_plot->GetImpl()->SetObjectLabel(obj, itemName->text().toStdString());
+			m_plot->GetRenderer()->SetObjectMatrix(obj, tl2::hom_translation<t_mat_gl>(posx, posy, posz)*tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
+			m_plot->GetRenderer()->SetObjectCol(obj, r, g, b, 1);
+			m_plot->GetRenderer()->SetObjectLabel(obj, itemName->text().toStdString());
 			m_plot->update();
 		}
 	}
@@ -1671,7 +1671,7 @@ void StructFactDlg::CalcB(bool bFullRecalc)
 	if(m_plot)
 	{
 		t_mat_gl matA{m_crystA};
-		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
+		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
 	}
 	if(bFullRecalc)
 		Calc();
@@ -1907,18 +1907,18 @@ void StructFactDlg::AfterGLInitialisation()
 	if(!m_plot) return;
 
 	// reference sphere for linked objects
-	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
-	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+	m_sphere = m_plot->GetRenderer()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_plot->GetRenderer()->SetObjectVisible(m_sphere, false);
 
 	// B matrix
-	m_plot->GetImpl()->SetBTrafo(m_crystB);
+	m_plot->GetRenderer()->SetBTrafo(m_crystB);
 
 	// add all 3d objects
 	Add3DItem(-1);
 
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
-		= m_plot->GetImpl()->GetGlDescr();
+		= m_plot->GetRenderer()->GetGlDescr();
 	m_labelGlInfos[0]->setText(QString("GL Version: ") + strGlVer.c_str() + QString("."));
 	m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
 	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));

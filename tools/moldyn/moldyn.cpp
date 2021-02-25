@@ -222,16 +222,16 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_plot = new GlPlot(this);
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-		m_plot->GetImpl()->EnablePicker(1);
-		m_plot->GetImpl()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
-		m_plot->GetImpl()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
-		m_plot->GetImpl()->SetCoordMax(1.);
-		m_plot->GetImpl()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
+		m_plot->GetRenderer()->EnablePicker(1);
+		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_plot->GetRenderer()->SetCoordMax(1.);
+		m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
 		connect(m_plot, &GlPlot::AfterGLInitialisation, this, &MolDynDlg::AfterGLInitialisation);
 		connect(m_plot, &GlPlot::GLInitialisationFailed, this, &MolDynDlg::GLInitialisationFailed);
-		connect(m_plot->GetImpl(), &GlPlot_impl::PickerIntersection, this, &MolDynDlg::PickerIntersection);
+		connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MolDynDlg::PickerIntersection);
 		connect(m_plot, &GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
 		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
 		connect(m_plot, &GlPlot::MouseClick, this, &MolDynDlg::PlotMouseClick);
@@ -274,7 +274,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 		{
 			if(this->m_plot)
-				this->m_plot->GetImpl()->SetCoordSys(val);
+				this->m_plot->GetRenderer()->SetCoordSys(val);
 		});
 		connect(m_spinScale, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, [this](double val)
 		{
@@ -310,7 +310,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
  */
 std::size_t MolDynDlg::Add3DAtom(const t_vec& vec, const t_vec& col, t_real scale, const std::string& typelabel, int atomindex)
 {
-	auto obj = m_plot->GetImpl()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
+	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, col[0],col[1],col[2],1);
 	Change3DAtom(obj, &vec, &col, &scale, &typelabel, atomindex);
 	return obj;
 }
@@ -328,17 +328,17 @@ void MolDynDlg::Change3DAtom(std::size_t obj, const t_vec *vec, const t_vec *col
 			t_real_gl((*vec)[0]), t_real_gl((*vec)[1]), t_real_gl((*vec)[2]));
 		if(scale) mat *= tl2::hom_scaling<t_mat_gl>(
 			t_real_gl(*scale), t_real_gl(*scale), t_real_gl(*scale));
-		m_plot->GetImpl()->SetObjectMatrix(obj, mat);
+		m_plot->GetRenderer()->SetObjectMatrix(obj, mat);
 	}
 
-	if(col) m_plot->GetImpl()->SetObjectCol(obj, (*col)[0], (*col)[1], (*col)[2], 1);
+	if(col) m_plot->GetRenderer()->SetObjectCol(obj, (*col)[0], (*col)[1], (*col)[2], 1);
 	if(label)
 	{
 		std::ostringstream ostrData;
 		ostrData << *label << DATA_SEP << atomindex;
 
-		m_plot->GetImpl()->SetObjectLabel(obj, *label);
-		m_plot->GetImpl()->SetObjectDataString(obj, ostrData.str());
+		m_plot->GetRenderer()->SetObjectLabel(obj, *label);
+		m_plot->GetRenderer()->SetObjectDataString(obj, ostrData.str());
 	}
 }
 // ----------------------------------------------------------------------------
@@ -355,10 +355,10 @@ std::vector<std::tuple<std::size_t, std::size_t>> MolDynDlg::GetSelectedAtoms()
 	for(const auto& obj : m_sphereHandles)
 	{
 		// continue if object isn't selected
-		if(!m_plot->GetImpl()->GetObjectHighlight(obj))
+		if(!m_plot->GetRenderer()->GetObjectHighlight(obj))
 			continue;
 
-		//const auto [typelabel, _atomSubTypeIdx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(obj));
+		//const auto [typelabel, _atomSubTypeIdx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(obj));
 
 		// get indices for selected atoms
 		const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(obj);
@@ -675,7 +675,7 @@ void MolDynDlg::CalculateConvexHulls()
 		// remove old plot object
 		if(hull.plotObj)
 		{
-			m_plot->GetImpl()->RemoveObject(*hull.plotObj);
+			m_plot->GetRenderer()->RemoveObject(*hull.plotObj);
 			hull.plotObj.reset();
 		}
 
@@ -705,7 +705,7 @@ void MolDynDlg::CalculateConvexHulls()
 			glnormals.emplace_back(tl2::convert<t_vec3_gl, t_vec>(normal));
 		}
 
-		hull.plotObj = m_plot->GetImpl()->AddTriangleObject(glvertices, glnormals, 0,0,1,0.5);
+		hull.plotObj = m_plot->GetRenderer()->AddTriangleObject(glvertices, glnormals, 0,0,1,0.5);
 
 		// TODO
 	}
@@ -727,13 +727,13 @@ void MolDynDlg::New()
 	for(auto& hull : m_hulls)
 	{
 		if(hull.plotObj)
-			m_plot->GetImpl()->RemoveObject(*hull.plotObj);
+			m_plot->GetRenderer()->RemoveObject(*hull.plotObj);
 	}
 
 	m_hulls.clear();
 
 	for(const auto& obj : m_sphereHandles)
-		m_plot->GetImpl()->RemoveObject(obj);
+		m_plot->GetRenderer()->RemoveObject(obj);
 
 	m_sphereHandles.clear();
 	m_sliderFrame->setValue(0);
@@ -810,7 +810,7 @@ void MolDynDlg::Load()
 
 		m_crystB /= t_real_gl(2)*tl2::pi<t_real_gl>;
 		t_mat_gl matA{m_crystA};
-		m_plot->GetImpl()->SetBTrafo(m_crystB, &matA);
+		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
 
 		std::cout << "A matrix: " << m_crystA << ", \n"
 			<< "B matrix: " << m_crystB << "." << std::endl;
@@ -919,7 +919,7 @@ void MolDynDlg::PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, con
 
 	if(m_curPickedObj > 0)
 	{
-		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj));
 
 		std::ostringstream ostrLabel;
 		ostrLabel << "Current Atom: " << typelabel << " #" << (atomidx+1);
@@ -961,7 +961,7 @@ void  MolDynDlg::UpdateAtomsStatusMsg()
 
 		for(auto handle : m_sphereHandles)
         {
-			if(m_plot->GetImpl()->GetObjectHighlight(handle))
+			if(m_plot->GetRenderer()->GetObjectHighlight(handle))
 				++numSelected;
         }
 
@@ -985,7 +985,7 @@ void MolDynDlg::PlotMouseDown(bool left, bool mid, bool right)
 
 	if(left && m_curPickedObj > 0)
 	{
-		m_plot->GetImpl()->SetObjectHighlight(m_curPickedObj, !m_plot->GetImpl()->GetObjectHighlight(m_curPickedObj));
+		m_plot->GetRenderer()->SetObjectHighlight(m_curPickedObj, !m_plot->GetRenderer()->GetObjectHighlight(m_curPickedObj));
 		UpdateAtomsStatusMsg();
 		m_plot->update();
 	}
@@ -1008,7 +1008,7 @@ void MolDynDlg::PlotMouseClick(bool left, bool mid, bool right)
 	// show context menu
 	if(right && m_curPickedObj > 0)
 	{
-		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj));
 
 		QString atomLabel = typelabel.c_str();
 		m_atomContextMenu->actions()[0]->setText("Delete This \"" + atomLabel + "\" Atom");
@@ -1034,7 +1034,7 @@ void MolDynDlg::SelectAll()
 	if(!m_plot) return;
 
 	for(auto handle : m_sphereHandles)
-		m_plot->GetImpl()->SetObjectHighlight(handle, 1);
+		m_plot->GetRenderer()->SetObjectHighlight(handle, 1);
 
 	UpdateAtomsStatusMsg();
 	m_plot->update();
@@ -1049,7 +1049,7 @@ void MolDynDlg::SelectNone()
 	if(!m_plot) return;
 
 	for(auto handle : m_sphereHandles)
-		m_plot->GetImpl()->SetObjectHighlight(handle, 0);
+		m_plot->GetRenderer()->SetObjectHighlight(handle, 0);
 
 	UpdateAtomsStatusMsg();
 	m_plot->update();
@@ -1084,7 +1084,9 @@ void MolDynDlg::SliderValueChanged(int val)
 		}
 	}
 
+#ifdef USE_QHULL
 	CalculateConvexHulls();
+#endif
 	UpdateAtomsStatusMsg();
 	m_plot->update();
 }
@@ -1152,13 +1154,13 @@ void MolDynDlg::SelectAtomsOfSameType()
 		return;
 
 	// atom type to be selected
-	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj));
 
 	for(auto handle : m_sphereHandles)
     {
-		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(handle));
+		const auto [typelabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(handle));
 		if(typelabel == atomLabel)
-			m_plot->GetImpl()->SetObjectHighlight(handle, 1);
+			m_plot->GetRenderer()->SetObjectHighlight(handle, 1);
     }
 
 	UpdateAtomsStatusMsg();
@@ -1176,7 +1178,7 @@ void MolDynDlg::DeleteSelectedAtoms()
 	for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
 	{
 		auto handle = *iter;
-		if(m_plot->GetImpl()->GetObjectHighlight(handle))
+		if(m_plot->GetRenderer()->GetObjectHighlight(handle))
 		{
 			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
 			if(!bOk)
@@ -1186,7 +1188,7 @@ void MolDynDlg::DeleteSelectedAtoms()
 			}
 
 			// remove 3d objects
-			m_plot->GetImpl()->RemoveObject(handle);
+			m_plot->GetRenderer()->RemoveObject(handle);
 			iter = m_sphereHandles.erase(iter);
 
 			// remove atom
@@ -1215,7 +1217,7 @@ void MolDynDlg::OnlyKeepSelectedAtoms()
 	for(auto iter=m_sphereHandles.begin(); iter!=m_sphereHandles.end();)
 	{
 		auto handle = *iter;
-		if(!m_plot->GetImpl()->GetObjectHighlight(handle))
+		if(!m_plot->GetRenderer()->GetObjectHighlight(handle))
 		{
 			const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(handle);
 			if(!bOk)
@@ -1225,7 +1227,7 @@ void MolDynDlg::OnlyKeepSelectedAtoms()
 			}
 
 			// remove 3d objects
-			m_plot->GetImpl()->RemoveObject(handle);
+			m_plot->GetRenderer()->RemoveObject(handle);
 			iter = m_sphereHandles.erase(iter);
 
 			// remove atom
@@ -1254,7 +1256,7 @@ void MolDynDlg::DeleteAtomUnderCursor()
 		return;
 
 	// atom type to be deleted
-	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj));
 	const auto [bOk, atomTypeIdx, atomSubTypeIdx, sphereIdx] = GetAtomIndexFromHandle(m_curPickedObj);
 	if(!bOk)
 	{
@@ -1269,7 +1271,7 @@ void MolDynDlg::DeleteAtomUnderCursor()
 	}
 
 	// remove 3d objects
-	m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
+	m_plot->GetRenderer()->RemoveObject(m_sphereHandles[sphereIdx]);
 	m_sphereHandles.erase(m_sphereHandles.begin()+sphereIdx);
 
 	// remove atom
@@ -1291,7 +1293,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 		return;
 
 	// atom type to be deleted
-	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetImpl()->GetObjectDataString(m_curPickedObj));
+	const auto [atomLabel, atomidx] = SplitDataString(m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj));
 
 	std::size_t startIdx = 0;
 	std::size_t totalRemoved = 0;
@@ -1303,7 +1305,7 @@ void MolDynDlg::DeleteAllAtomsOfSameType()
 		{
 			// remove 3d objects
 			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
-				m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
+				m_plot->GetRenderer()->RemoveObject(m_sphereHandles[sphereIdx]);
 			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
 
 			// remove atoms
@@ -1334,7 +1336,7 @@ void MolDynDlg::KeepAtomsOfSameType()
 		return;
 
 	// atom type to be deleted
-	const std::string& atomLabel = m_plot->GetImpl()->GetObjectDataString(m_curPickedObj);
+	const std::string& atomLabel = m_plot->GetRenderer()->GetObjectDataString(m_curPickedObj);
 
 	std::size_t startIdx = 0;
 	std::size_t totalRemoved = 0;
@@ -1346,7 +1348,7 @@ void MolDynDlg::KeepAtomsOfSameType()
 		{
 			// remove 3d objects
 			for(std::size_t sphereIdx=startIdx; sphereIdx<startIdx+numAtoms; ++sphereIdx)
-				m_plot->GetImpl()->RemoveObject(m_sphereHandles[sphereIdx]);
+				m_plot->GetRenderer()->RemoveObject(m_sphereHandles[sphereIdx]);
 			m_sphereHandles.erase(m_sphereHandles.begin()+startIdx, m_sphereHandles.begin()+startIdx+numAtoms);
 
 			// remove atoms
@@ -1374,16 +1376,16 @@ void MolDynDlg::AfterGLInitialisation()
 	if(!m_plot) return;
 
 	// reference sphere for linked objects
-	m_sphere = m_plot->GetImpl()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
-	m_plot->GetImpl()->SetObjectVisible(m_sphere, false);
+	m_sphere = m_plot->GetRenderer()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_plot->GetRenderer()->SetObjectVisible(m_sphere, false);
 
 	// B matrix
-	m_plot->GetImpl()->SetBTrafo(m_crystB);
+	m_plot->GetRenderer()->SetBTrafo(m_crystB);
 
 	// GL device info
 	// TODO: outputting something here to stdout interferes with pipeproc process creation in takin main gui...
 	//auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
-	//	= m_plot->GetImpl()->GetGlDescr();
+	//	= m_plot->GetRenderer()->GetGlDescr();
 	//std::cout << "GL Version: " << strGlVer << ", Shader Version: " << strGlShaderVer << "." << std::endl;
 	//std::cout << "GL Device: " << strGlRenderer << ", " << strGlVendor << "." << std::endl;
 }
