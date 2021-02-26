@@ -810,7 +810,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 	auto normReM = tl2::norm<t_vec_gl>(vecReM);
 	auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
-	t_mat_gl matArrowRe = GlPlotRenderer::GetArrowMatrix(
+	t_mat_gl matArrowRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 		vecReM, 									// to
 		1, 											// post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -819,7 +819,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
 	);
 
-	t_mat_gl matArrowIm = GlPlotRenderer::GetArrowMatrix(
+	t_mat_gl matArrowIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 		vecImM, 									// to
 		1, 											// post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -1930,7 +1930,7 @@ void MagStructFactDlg::Calc()
 						auto normReM = tl2::norm<t_vec_gl>(vecReM);
 						auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
-						t_mat_gl matArrowRe = GlPlotRenderer::GetArrowMatrix(
+						t_mat_gl matArrowRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 							vecReM, 									// to
 							1, 											// post-scale
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
@@ -1939,7 +1939,7 @@ void MagStructFactDlg::Calc()
 							posGL										// pre-translate
 						);
 
-						t_mat_gl matArrowIm = GlPlotRenderer::GetArrowMatrix(
+						t_mat_gl matArrowIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 							vecImM, 									// to
 							1, 											// post-scale
 							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate

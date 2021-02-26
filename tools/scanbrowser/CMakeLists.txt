@@ -76,6 +76,7 @@ include_directories(
 	"${PROJECT_SOURCE_DIR}/cli"
 	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "${FLEX_INCLUDE_DIRS}"
 	"${PROJECT_BINARY_DIR}/parser"
+	"${Minuit2_INCLUDE_DIRS}"
 	"${QCP_INCLUDE_DIRS}"
 )
 
