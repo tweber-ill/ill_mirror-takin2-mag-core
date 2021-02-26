@@ -479,7 +479,7 @@ public:
 		if(m_3dobjsReady)
 		{
 			// P_i
-			t_mat_gl matPi = GlPlotRenderer::GetArrowMatrix(
+			t_mat_gl matPi = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 				tl2::create<t_vec_gl>({t_real_gl(PiX), t_real_gl(PiY), t_real_gl(PiZ)}), 	// to
 				1., 								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
@@ -487,7 +487,7 @@ public:
 			m_plot->GetRenderer()->SetObjectMatrix(m_arrow_pi, matPi);
 
 			// P_f
-			t_mat_gl matPf = GlPlotRenderer::GetArrowMatrix(
+			t_mat_gl matPf = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 				tl2::create<t_vec_gl>({t_real_gl(P_f[0].real()), t_real_gl(P_f[1].real()), t_real_gl(P_f[2].real())}), 	// to
 				1., 								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
@@ -496,7 +496,7 @@ public:
 
 			// Re(M)
 			const t_real_gl lenReM = t_real_gl(std::sqrt(MPerpReX*MPerpReX + MPerpReY*MPerpReY + MPerpReZ*MPerpReZ));
-			t_mat_gl matMRe = GlPlotRenderer::GetArrowMatrix(
+			t_mat_gl matMRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 				tl2::create<t_vec_gl>({t_real_gl(MPerpReX), t_real_gl(MPerpReY), t_real_gl(MPerpReZ)}), 	// to
 				lenReM,								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
@@ -506,7 +506,7 @@ public:
 
 			// Im(M)
 			const t_real_gl lenImM = t_real_gl(std::sqrt(MPerpImX*MPerpImX + MPerpImY*MPerpImY + MPerpImZ*MPerpImZ));
-			t_mat_gl matMIm = GlPlotRenderer::GetArrowMatrix(
+			t_mat_gl matMIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 				tl2::create<t_vec_gl>({t_real_gl(MPerpImX), t_real_gl(MPerpImY), t_real_gl(MPerpImZ)}), 	// to
 				lenImM,								// scale
 				tl2::create<t_vec_gl>({0,0,0.5}),		// translate
