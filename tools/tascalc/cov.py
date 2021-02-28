@@ -7,6 +7,7 @@
 #
 # @desc For a good explanation of the covariance matrix method, see (Arens 2015), pp. 795 and 1372.
 # @desc reimplements the functionality of https://github.com/McStasMcXtrace/McCode/blob/master/tools/Legacy-Perl/mcresplot.pl
+# @desc see also [eck14] G. Eckold and O. Sobolev, NIM A 752, pp. 54-64 (2014), doi: 10.1016/j.nima.2014.03.019
 #
 
 import os
@@ -201,11 +202,10 @@ def calc_covar(Q, E, w, Qpara, Qperp):
 #
 def descr_ellipse(quadric):
 	[ evals, evecs ] = la.eig(quadric)
-	#print("Evals: %s" % evals)
 
 	fwhms = 1./np.sqrt(np.abs(evals)) * sig2fwhm
-
 	angles = np.array([])
+
 	if len(quadric) == 2:
 		angles = np.array([ np.arctan2(evecs[1][0], evecs[0][0]) ])
 
@@ -215,6 +215,7 @@ def descr_ellipse(quadric):
 
 #
 # projects along one axis of the quadric
+# see [eck14], equ. 57
 #
 def proj_quad(_E, idx):
 	E = np.delete(np.delete(_E, idx, axis=0), idx, axis=1)

@@ -144,10 +144,6 @@ def get_A(lattice, angles):
 		(cs[0]-cs[1]*cs[2]) / s2, \
 		(np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2])
 
-	# testing equality with own derivation
-	#print((np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2)
-	#print(np.sqrt(1. - cs[1]*cs[1] - ((cs[0] - cs[2]*cs[1])/s2)**2.))
-
 	# the real-space basis vectors form the columns of the A matrix
 	return np.transpose(np.array([a, b, c]))
 
@@ -200,7 +196,6 @@ def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, sense_sample=1., a3_of
 	a3 = - psi - xi + a3_offs
 	a4 = get_a4(ki, kf, Qlen)
 
-	#print("xi = " + str(xi/np.pi*180.) + ", psi = " + str(psi/np.pi*180.) + ", offs = " + str(a3_offs/np.pi*180.))
 	return [a3, a4, dist_Q_plane]
 
 
@@ -435,8 +430,6 @@ class TasGUI:
 				self.tasstatus.setText("")
 			else:
 				metric = get_metric(self.B)
-				#ang1 = angle(Q_rlu, self.orient_rlu, metric)
-				#ang2 = angle(Q_rlu, self.orient2_rlu, metric)
 				ang_plane = np.pi*0.5 - angle(Q_rlu, self.orient_up_rlu, metric)
 
 				self.tasstatus.setText(u"WARNING: Q is out of the plane by %.4g \u212b\u207b\u00b9, i.e. %.4g deg!" \
@@ -1017,7 +1010,6 @@ class TasGUI:
 		self.xtalChanged()
 		self.KiKfChanged()
 		self.comboA3ConvChanged()
-		#self.QChanged()
 		self.KiKfChanged_angles()
 
 		dlg.show()
