@@ -7,12 +7,9 @@
 	<key>CFBundleIdentifier</key>		<string>eu.ill.cs.takin.structfact</string>
 	<key>CFBundleVersion</key>		<string>2.0.0</string>
 	<key>CFBundleShortVersionString</key>	<string>2.0.0</string>
-
 	<key>CFBundleSupportedPlatforms</key>	<array> <string>MacOSX</string> </array>
+	<key>CFBundleIconFile</key>		<string>takin.icns</string>
+
 	<key>LSMinimumSystemVersion</key>	<string>10.13</string>
 </dict>
 </plist>
-
-<!--
-	This Info.plist has to be linked to the external tool binaries as section "__TEXT" -> "__info_plist".
--->

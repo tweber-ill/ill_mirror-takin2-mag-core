@@ -12,7 +12,3 @@
 	<key>LSMinimumSystemVersion</key>	<string>10.13</string>
 </dict>
 </plist>
-
-<!--
-	This Info.plist has to be linked to the external tool binaries as section "__TEXT" -> "__info_plist".
--->
