@@ -3,6 +3,12 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date 28-may-18
  * @license see 'LICENSE' file
+ * @desc Originally forked from: https://github.com/t-weber/misc/tree/master/parser
+ *
+ * References:
+ *	https://github.com/westes/flex/tree/master/examples/manual
+ *	http://www.gnu.org/software/bison/manual/html_node/index.html
+ *	http://git.savannah.gnu.org/cgit/bison.git/tree/examples
  */
 
 %define parser_class_name { CliParser }
