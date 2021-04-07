@@ -20,7 +20,7 @@ use_scipy = False
 
 # -----------------------------------------------------------------------------
 # rotate a vector around an axis using Rodrigues' formula
-# see: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+# see https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 def rotate(_axis, vec, phi):
 	axis = _axis / la.norm(_axis)
 
@@ -39,7 +39,7 @@ def get_metric(B):
 
 
 # cross product in fractional coordinates: c^l = eps_ijk g^li a^j b^k
-# see: (Arens 2015), p. 815
+# see (Arens 2015), p. 815
 def cross(a, b, B):
 	# levi-civita in fractional coordinates
 	def levi(i,j,k, B):
@@ -47,12 +47,15 @@ def cross(a, b, B):
 		return la.det(M)
 
 	metric_inv = la.inv(get_metric(B))
-	eps = [[[ levi(i,j,k, B) for k in range(0,3) ] for j in range(0,3) ] for i in range(0,3) ]
+	eps = [[[ levi(i,j,k, B) 
+		for k in range(0,3) ] 
+			for j in range(0,3) ] 
+				for i in range(0,3) ]
 	return np.einsum("ijk,j,k,li -> l", eps, a, b, metric_inv)
 
 
 # dot product in fractional coordinates
-# see: (Arens 2015), p. 808
+# see (Arens 2015), p. 808
 def dot(a, b, metric):
 	return np.dot(a, np.dot(metric, b))
 
@@ -133,7 +136,7 @@ def get_psi(ki, kf, Q, sense=1.):
 
 
 # crystallographic A matrix converting fractional to lab coordinates
-# see: https://de.wikipedia.org/wiki/Fraktionelle_Koordinaten
+# see https://de.wikipedia.org/wiki/Fraktionelle_Koordinaten
 def get_A(lattice, angles):
 	cs = np.cos(angles)
 	s2 = np.sin(angles[2])
@@ -157,7 +160,7 @@ def get_B(lattice, angles):
 
 
 # UB orientation matrix
-# see: https://dx.doi.org/10.1107/S0021889805004875
+# see https://dx.doi.org/10.1107/S0021889805004875
 def get_UB(B, orient1_rlu, orient2_rlu, orientup_rlu):
 	orient1_invA = np.dot(B, orient1_rlu)
 	orient2_invA = np.dot(B, orient2_rlu)
@@ -175,6 +178,7 @@ def get_UB(B, orient1_rlu, orient2_rlu, orientup_rlu):
 # a3 & a4 angles
 def get_a3a4(ki, kf, Q_rlu, orient_rlu, orient_up_rlu, B, sense_sample=1., a3_offs=np.pi):
 	metric = get_metric(B)
+	#print("Metric: " + str(metric))
 
 	# angle xi between Q and orientation reflex
 	xi = angle(Q_rlu, orient_rlu, metric)
