@@ -92,7 +92,7 @@ if use_scipy:
 	hbar_in_meVs = co.Planck/co.elementary_charge*1000./2./np.pi
 	E_to_k2 = 2.*co.neutron_mass/hbar_in_meVs**2. / co.elementary_charge*1000. * 1e-20
 else:
-	E_to_k2 = 0.482596406464	# calculated with scipy, using the formula above
+	E_to_k2 = 0.482596423544	# calculated with scipy, using the formula above
 
 k2_to_E = 1./E_to_k2
 # -----------------------------------------------------------------------------
@@ -139,13 +139,14 @@ def get_psi(ki, kf, Q, sense=1.):
 # see https://de.wikipedia.org/wiki/Fraktionelle_Koordinaten
 def get_A(lattice, angles):
 	cs = np.cos(angles)
+	s1 = np.sin(angles[1])
 	s2 = np.sin(angles[2])
 
 	a = lattice[0] * np.array([1, 0, 0])
 	b = lattice[1] * np.array([cs[2], s2, 0])
 	c = lattice[2] * np.array([cs[1], \
 		(cs[0]-cs[1]*cs[2]) / s2, \
-		(np.sqrt(1. - np.dot(cs,cs) + 2.*cs[0]*cs[1]*cs[2])) / s2])
+		np.sqrt(s1*s1 - ((cs[0] - cs[2]*cs[1])/s2)**2.)])
 
 	# the real-space basis vectors form the columns of the A matrix
 	return np.transpose(np.array([a, b, c]))
