@@ -38,6 +38,12 @@ using t_vec_cplx = std::vector<t_cplx>;
 using t_mat = tl2::mat<t_real, std::vector>;
 using t_mat_cplx = tl2::mat<t_cplx, std::vector>;
 
+using t_real_gl = tl2::t_real_gl;
+using t_vec2_gl = tl2::t_vec2_gl;
+using t_vec3_gl = tl2::t_vec3_gl;
+using t_vec_gl = tl2::t_vec_gl;
+using t_mat_gl = tl2::t_mat_gl;
+
 
 struct NuclPos
 {
@@ -58,7 +64,7 @@ protected:
 	QMenuBar *m_menu = nullptr;
 
 	QDialog *m_dlgPlot = nullptr;
-	std::shared_ptr<GlPlot> m_plot;
+	std::shared_ptr<tl2::GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;

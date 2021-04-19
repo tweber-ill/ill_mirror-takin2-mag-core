@@ -39,6 +39,12 @@ using t_vec = tl2::vec<t_cplx, std::vector>;
 using t_mat = tl2::mat<t_cplx, std::vector>;
 using t_matvec = std::vector<t_mat>;
 
+using t_real_gl = tl2::t_real_gl;
+using t_vec2_gl = tl2::t_vec2_gl;
+using t_vec3_gl = tl2::t_vec3_gl;
+using t_vec_gl = tl2::t_vec_gl;
+using t_mat_gl = tl2::t_mat_gl;
+
 
 // ----------------------------------------------------------------------------
 class PolDlg : public QDialog
@@ -47,7 +53,7 @@ private:
 	QSettings m_sett{"takin", "pol"};
 	int m_prec = 6;		// precision
 
-	std::shared_ptr<GlPlot> m_plot{std::make_shared<GlPlot>(this)};
+	std::shared_ptr<tl2::GlPlot> m_plot{std::make_shared<tl2::GlPlot>(this)};
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 
 	QLineEdit* m_editNRe = new QLineEdit("0", this);
@@ -307,11 +313,11 @@ public:
 				m_editPfX, m_editPfY, m_editPfZ})
 				connect(edit, &QLineEdit::textEdited, this, &PolDlg::CalcPol);
 
-			connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &PolDlg::AfterGLInitialisation);
-			connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &PolDlg::PickerIntersection);
+			connect(m_plot.get(), &tl2::GlPlot::AfterGLInitialisation, this, &PolDlg::AfterGLInitialisation);
+			connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &PolDlg::PickerIntersection);
 
-			connect(m_plot.get(), &GlPlot::MouseDown, this, &PolDlg::MouseDown);
-			connect(m_plot.get(), &GlPlot::MouseUp, this, &PolDlg::MouseUp);
+			connect(m_plot.get(), &tl2::GlPlot::MouseDown, this, &PolDlg::MouseDown);
+			connect(m_plot.get(), &tl2::GlPlot::MouseUp, this, &PolDlg::MouseUp);
 
 
 			auto pGrid = new QGridLayout(plotpanel);
@@ -529,7 +535,7 @@ public:
 
 int main(int argc, char** argv)
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
@@ -552,7 +558,7 @@ int main(int argc, char** argv)
  */
 bool init()
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	return true;

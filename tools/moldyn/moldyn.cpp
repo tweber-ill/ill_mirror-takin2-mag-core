@@ -219,7 +219,7 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 
 	// plot widget
 	{
-		m_plot = new GlPlot(this);
+		m_plot = new tl2::GlPlot(this);
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		m_plot->GetRenderer()->EnablePicker(1);
@@ -229,12 +229,12 @@ MolDynDlg::MolDynDlg(QWidget* pParent) : QMainWindow{pParent},
 		m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
 			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
 
-		connect(m_plot, &GlPlot::AfterGLInitialisation, this, &MolDynDlg::AfterGLInitialisation);
-		connect(m_plot, &GlPlot::GLInitialisationFailed, this, &MolDynDlg::GLInitialisationFailed);
-		connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MolDynDlg::PickerIntersection);
-		connect(m_plot, &GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
-		connect(m_plot, &GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
-		connect(m_plot, &GlPlot::MouseClick, this, &MolDynDlg::PlotMouseClick);
+		connect(m_plot, &tl2::GlPlot::AfterGLInitialisation, this, &MolDynDlg::AfterGLInitialisation);
+		connect(m_plot, &tl2::GlPlot::GLInitialisationFailed, this, &MolDynDlg::GLInitialisationFailed);
+		connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &MolDynDlg::PickerIntersection);
+		connect(m_plot, &tl2::GlPlot::MouseDown, this, &MolDynDlg::PlotMouseDown);
+		connect(m_plot, &tl2::GlPlot::MouseUp, this, &MolDynDlg::PlotMouseUp);
+		connect(m_plot, &tl2::GlPlot::MouseClick, this, &MolDynDlg::PlotMouseClick);
 
 		//this->setCentralWidget(m_plot);
 		pMainGrid->addWidget(m_plot, 0,0,1,9);
@@ -1436,7 +1436,7 @@ void MolDynDlg::keyPressEvent(QKeyEvent *evt)
 
 int main(int argc, char** argv)
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 0);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 0);
 	tl2::set_locales();
 
 	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");

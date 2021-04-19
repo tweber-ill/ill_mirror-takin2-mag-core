@@ -30,6 +30,12 @@ using t_real = double;
 using t_vec = tl2::vec<t_real, std::vector>;
 using t_mat = tl2::mat<t_real, std::vector>;
 
+using t_real_gl = tl2::t_real_gl;
+using t_vec2_gl = tl2::t_vec2_gl;
+using t_vec3_gl = tl2::t_vec3_gl;
+using t_vec_gl = tl2::t_vec_gl;
+using t_mat_gl = tl2::t_mat_gl;
+
 
 /**
  * atom indices for convex hull calculation
@@ -110,7 +116,7 @@ protected:
 	QDoubleSpinBox *m_spinScale = nullptr;
 	QMenu *m_atomContextMenu = nullptr;
 
-	GlPlot *m_plot = nullptr;
+	tl2::GlPlot *m_plot = nullptr;
 	std::size_t m_sphere = 0;
 	std::vector<std::size_t> m_sphereHandles;
 

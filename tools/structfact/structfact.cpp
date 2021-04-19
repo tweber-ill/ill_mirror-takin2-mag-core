@@ -38,7 +38,6 @@ namespace pt = boost::property_tree;
 #include "tlibs2/libs/helper.h"
 
 
-//using namespace tl2;
 using namespace tl2_ops;
 
 
@@ -475,7 +474,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot = new QDialog(this);
 				m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
 
-				m_plot = std::make_shared<GlPlot>(this);
+				m_plot = std::make_shared<tl2::GlPlot>(this);
 				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetRenderer()->SetCoordMax(1.);
@@ -503,10 +502,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 				grid->addWidget(m_status3D, 2,0,1,2);
 
 
-				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &StructFactDlg::PickerIntersection);
-				connect(m_plot.get(), &GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
-				connect(m_plot.get(), &GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
+				connect(m_plot.get(), &tl2::GlPlot::AfterGLInitialisation, this, &StructFactDlg::AfterGLInitialisation);
+				connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &StructFactDlg::PickerIntersection);
+				connect(m_plot.get(), &tl2::GlPlot::MouseDown, this, &StructFactDlg::PlotMouseDown);
+				connect(m_plot.get(), &tl2::GlPlot::MouseUp, this, &StructFactDlg::PlotMouseUp);
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
@@ -1946,7 +1945,7 @@ void StructFactDlg::closeEvent(QCloseEvent *evt)
 
 int main(int argc, char** argv)
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
@@ -1969,7 +1968,7 @@ int main(int argc, char** argv)
  */
 bool init()
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	return true;

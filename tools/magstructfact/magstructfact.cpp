@@ -42,10 +42,7 @@ namespace consts = si::constants;
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/helper.h"
 
-
-//using namespace tl2;
 using namespace tl2_ops;
-
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
@@ -535,7 +532,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlot = new QDialog(this);
 				m_dlgPlot->setWindowTitle("Unit Cell");
 
-				m_plot = std::make_shared<GlPlot>(this);
+				m_plot = std::make_shared<tl2::GlPlot>(this);
 				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetRenderer()->SetCoordMax(1.);
@@ -563,10 +560,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				grid->addWidget(m_status3D, 2,0,1,2);
 
 
-				connect(m_plot.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisation);
-				connect(m_plot->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
-				connect(m_plot.get(), &GlPlot::MouseDown, this, &MagStructFactDlg::PlotMouseDown);
-				//connect(m_plot.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
+				connect(m_plot.get(), &tl2::GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisation);
+				connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersection);
+				connect(m_plot.get(), &tl2::GlPlot::MouseDown, this, &MagStructFactDlg::PlotMouseDown);
+				//connect(m_plot.get(), &tl2::GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plot)
@@ -595,7 +592,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_dlgPlotSC = new QDialog(this);
 				m_dlgPlotSC->setWindowTitle("Super Cell");
 
-				m_plotSC = std::make_shared<GlPlot>(this);
+				m_plotSC = std::make_shared<tl2::GlPlot>(this);
 				m_plotSC->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plotSC->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plotSC->GetRenderer()->SetCoordMax(1.);
@@ -623,10 +620,10 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				grid->addWidget(m_status3DSC, 2,0,1,2);
 
 
-				connect(m_plotSC.get(), &GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisationSC);
-				connect(m_plotSC->GetRenderer(), &GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
-				//connect(m_plotSC.get(), &GlPlot::MouseDown, this, [this](bool left, bool mid, bool right) {});
-				//connect(m_plotSC.get(), &GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
+				connect(m_plotSC.get(), &tl2::GlPlot::AfterGLInitialisation, this, &MagStructFactDlg::AfterGLInitialisationSC);
+				connect(m_plotSC->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &MagStructFactDlg::PickerIntersectionSC);
+				//connect(m_plotSC.get(), &tl2::GlPlot::MouseDown, this, [this](bool left, bool mid, bool right) {});
+				//connect(m_plotSC.get(), &tl2::GlPlot::MouseUp, this, [this](bool left, bool mid, bool right) {});
 				connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 				{
 					if(this->m_plotSC)
@@ -2181,7 +2178,7 @@ void MagStructFactDlg::closeEvent(QCloseEvent *evt)
 
 int main(int argc, char** argv)
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
@@ -2204,7 +2201,7 @@ int main(int argc, char** argv)
  */
 bool init()
 {
-	set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
+	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 	tl2::set_locales();
 
 	return true;
