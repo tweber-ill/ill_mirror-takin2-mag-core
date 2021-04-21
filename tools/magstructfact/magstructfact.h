@@ -27,8 +27,7 @@
 
 #include "tlibs2/libs/glplot.h"
 #include "tlibs2/libs/math20.h"
-
-#include "../structfact/numerictablewidgetitem.h"
+#include "tlibs2/libs/numerictablewidgetitem.h"
 
 
 using t_real = double;
