@@ -25,7 +25,7 @@
 #include <sstream>
 #include <complex>
 
-#include "tlibs2/libs/glplot.h"
+#include "tlibs2/libs/qt/glplot.h"
 #include "tlibs2/libs/math20.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 

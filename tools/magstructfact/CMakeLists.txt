@@ -42,11 +42,13 @@ if(BUILD_LIB)
 	add_definitions(-DBUILD_LIB)
 	add_library(takin_magstructfact SHARED
 		magstructfact.cpp magstructfact.h
-		../../tlibs2/libs/glplot.cpp ../../tlibs2/libs/glplot.h)
+		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
+		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 else()
 	add_executable(takin_magstructfact
 		magstructfact.cpp magstructfact.h
-		../../tlibs2/libs/glplot.cpp ../../tlibs2/libs/glplot.h)
+		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
+		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
