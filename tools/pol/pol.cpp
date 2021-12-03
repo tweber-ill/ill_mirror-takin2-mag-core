@@ -41,7 +41,8 @@
 #include <optional>
 
 #include "tlibs2/libs/qt/glplot.h"
-#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/maths.h"
+#include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/str.h"
 #include "tlibs2/libs/helper.h"
 
