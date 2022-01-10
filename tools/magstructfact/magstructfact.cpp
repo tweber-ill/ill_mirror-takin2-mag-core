@@ -513,6 +513,13 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto ac3DView = new QAction("Unit Cell / Fourier Components...", menuFile);
 		auto ac3DViewSC = new QAction("Super Cell / Magnetic Moments...", menuFile);
 
+		acNew->setShortcut(QKeySequence::New);
+		acLoad->setShortcut(QKeySequence::Open);
+		acSave->setShortcut(QKeySequence::Save);
+		acExit->setShortcut(QKeySequence::Quit);
+
+		acExit->setMenuRole(QAction::QuitRole);
+
 		// not yet implemented
 		acImportCIF->setEnabled(false);
 
@@ -1644,7 +1651,7 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
 	}
 	else
 	{
-		m_crystA *= t_real_gl(2)*tl2::pi<t_real_gl>;
+		m_crystA *= t_real(2)*tl2::pi<t_real>;
 	}
 
 	if(m_plot)

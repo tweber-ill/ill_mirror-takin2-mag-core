@@ -455,6 +455,13 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		auto acExit = new QAction("Quit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
 
+		acNew->setShortcut(QKeySequence::New);
+		acLoad->setShortcut(QKeySequence::Open);
+		acSave->setShortcut(QKeySequence::Save);
+		acExit->setShortcut(QKeySequence::Quit);
+
+		acExit->setMenuRole(QAction::QuitRole);
+
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
@@ -1686,7 +1693,7 @@ void StructFactDlg::CalcB(bool bFullRecalc)
 	}
 	else
 	{
-		m_crystA *= t_real_gl(2)*tl2::pi<t_real_gl>;
+		m_crystA *= t_real(2)*tl2::pi<t_real>;
 	}
 
 	if(m_plot)
