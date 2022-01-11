@@ -5,7 +5,7 @@
  * @license GPLv3
  *
  * References:
- *   - S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
+ *   - (Toth 2015) S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
  *     https://doi.org/10.1088/0953-8984/27/16/166002
  *   - N. Heinsdorf, personal communication, 2021, 2022.
  */
@@ -56,12 +56,14 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	// imaginary unit
 	const t_cplx imag{0., 1.};
 
-	// create hamiltonian
+	// create hamiltonian of formula 25 from (Toth 2015)
 	t_mat H = tl2::zero<t_mat>(m_num_cells, m_num_cells);
 
+	// formulas 12 and 14 from (Toth 2015)
 	for(const ExchangeTerm& term : m_exchange_terms)
 	{
-		t_cplx contrib = 0.5 * term.J * std::exp(imag * tl2::inner<t_vec>(term.dist, k));
+		t_cplx contrib = 0.5 * term.J * 
+			std::exp(-imag * tl2::inner<t_vec>(term.dist, k));
 
 		H(term.atom1, term.atom2) += contrib;
 		H(term.atom2, term.atom1) += std::conj(contrib);
