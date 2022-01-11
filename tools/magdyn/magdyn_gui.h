@@ -63,6 +63,7 @@ public:
 protected:
 	QSettings *m_sett{};
 	QMenuBar *m_menu{};
+	QLabel *m_status{};
 
 	QWidget *m_termspanel{};
 	QTableWidget *m_termstab{};
@@ -96,10 +97,12 @@ protected:
 
 	void Load();
 	void Save();
+	void SavePlotFigure();
 
 	void CalcExchangeTerms();
 	void CalcDispersion();
 
+	void PlotMouseMove(QMouseEvent* evt);
 	virtual void closeEvent(QCloseEvent *evt) override;
 
 

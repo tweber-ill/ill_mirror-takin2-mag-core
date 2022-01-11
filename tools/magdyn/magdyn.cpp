@@ -3,6 +3,11 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
  * @license GPLv3
+ *
+ * References:
+ *   - S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
+ *     https://doi.org/10.1088/0953-8984/27/16/166002
+ *   - N. Heinsdorf, personal communication, 2021, 2022.
  */
 
 #include <algorithm>
@@ -29,10 +34,10 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
 {
 	ExchangeTerm term
 	{
-		.atom1 = atom1,
-		.atom2 = atom2,
-		.dist = dist,
-		.J = J,
+		.atom1 = atom1, // index of first atom
+		.atom2 = atom2, // index of second atom
+		.dist = dist,   // distance between the atom's unit cells (not the atoms)
+		.J = J,         // interaction
 	};
 
 	AddExchangeTerm(std::move(term));

@@ -3,6 +3,11 @@
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
  * @license GPLv3
+ *
+ * References:
+ *   - S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
+ *     https://doi.org/10.1088/0953-8984/27/16/166002
+ *   - N. Heinsdorf, personal communication, 2021, 2022.
  */
 
 #ifndef __MAGDYN_H__

@@ -62,6 +62,7 @@ using namespace tl2_ops;
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
+constexpr int g_prec_gui = 3;
 
 
 // columns of exchange terms table
@@ -108,9 +109,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setHorizontalHeaderItem(COL_NAME, new QTableWidgetItem{"Name"});
 		m_termstab->setHorizontalHeaderItem(COL_ATOM1_IDX, new QTableWidgetItem{"Atom 1"});
 		m_termstab->setHorizontalHeaderItem(COL_ATOM2_IDX, new QTableWidgetItem{"Atom 2"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_X, new QTableWidgetItem{"Bond Δx"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_Y, new QTableWidgetItem{"Bond Δy"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_Z, new QTableWidgetItem{"Bond Δz"});
+		m_termstab->setHorizontalHeaderItem(COL_DIST_X, new QTableWidgetItem{"Cell Δx"});
+		m_termstab->setHorizontalHeaderItem(COL_DIST_Y, new QTableWidgetItem{"Cell Δy"});
+		m_termstab->setHorizontalHeaderItem(COL_DIST_Z, new QTableWidgetItem{"Cell Δz"});
 		m_termstab->setHorizontalHeaderItem(COL_INTERACTION, new QTableWidgetItem{"Bond J"});
 
 		m_termstab->setColumnWidth(COL_NAME, 90);
@@ -182,7 +183,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
-		tabs->addTab(m_termspanel, "Exchange Terms");
+		tabs->addTab(m_termspanel, "Coupling Terms");
 	}
 
 
@@ -193,6 +194,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_plot = new QCustomPlot(m_disppanel);
 		m_plot->xAxis->setLabel("Q (rlu)");
 		m_plot->yAxis->setLabel("E (meV)");
+		m_plot->setInteraction(QCP::iRangeDrag, true);
+		m_plot->setInteraction(QCP::iRangeZoom, true);
+		m_plot->setSelectionRectMode(QCP::srmZoom);
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		m_spin_q_start[0] = new QDoubleSpinBox(m_disppanel);
@@ -262,6 +266,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 			[this]() { this->CalcDispersion(); });
 
+		connect(m_plot, &QCustomPlot::mouseMove,
+			this, &MagDynDlg::PlotMouseMove);
+
 		tabs->addTab(m_disppanel, "Dispersion");
 	}
 
@@ -309,13 +316,17 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		tabs->addTab(infopanel, "Infos");
 	}
 
+	// status
+	m_status = new QLabel(this);
+	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+	m_status->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 	// main grid
 	auto pmainGrid = new QGridLayout(this);
 	pmainGrid->setSpacing(4);
 	pmainGrid->setContentsMargins(4,4,4,4);
 	pmainGrid->addWidget(tabs, 0,0, 1,1);
-
+	pmainGrid->addWidget(m_status, 1,0,1,1);
 
 	// menu bar
 	{
@@ -327,6 +338,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Open...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
+		auto acSaveFigure = new QAction("Save Figure...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
 
 		acNew->setShortcut(QKeySequence::New);
@@ -341,6 +353,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acLoad);
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
+		menuFile->addAction(acSaveFigure);
+		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 
 		connect(acNew, &QAction::triggered, this,  [this]()
@@ -351,6 +365,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(acLoad, &QAction::triggered, this, &MagDynDlg::Load);
 		connect(acSave, &QAction::triggered, this, &MagDynDlg::Save);
+		connect(acSaveFigure, &QAction::triggered, this, &MagDynDlg::SavePlotFigure);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
 		m_menu->addMenu(menuFile);
@@ -589,6 +604,9 @@ void MagDynDlg::ShowTableContextMenu(
 }
 
 
+/**
+ * load settings
+ */
 void MagDynDlg::Load()
 {
 	m_ignoreCalc = 1;
@@ -601,27 +619,41 @@ void MagDynDlg::Load()
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
 
-
+		// properties tree
 		pt::ptree node;
 
+		// load from file
 		std::ifstream ifstr{filename.toStdString()};
 		pt::read_xml(ifstr, node);
 
 		// check signature
-		if(auto optInfo = node.get_optional<std::string>("sfact.meta.info");
+		if(auto optInfo = node.get_optional<std::string>("magdyn.meta.info");
 			!optInfo || !(*optInfo==std::string{"magdyn_tool"}))
 		{
 			QMessageBox::critical(this, "Magnon Dynamics", "Unrecognised file format.");
 			return;
 		}
 
+		// settings
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_start"))
+			m_spin_q_start[0]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_start"))
+			m_spin_q_start[1]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_start"))
+			m_spin_q_start[2]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_end"))
+			m_spin_q_end[0]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_end"))
+			m_spin_q_end[1]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_end"))
+			m_spin_q_end[2]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_size>("magdyn.config.num_Q_points"))
+			m_num_points->setValue(*optVal);
 
 		// clear old tables
 		DelTabItem(-1);
-
-
 		// exchange terms
-		if(auto nuclei = node.get_child_optional("sfact.exchange_terms"); nuclei)
+		if(auto nuclei = node.get_child_optional("magdyn.exchange_terms"); nuclei)
 		{
 			for(const auto &nucl : *nuclei)
 			{
@@ -645,12 +677,15 @@ void MagDynDlg::Load()
 		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
 	}
 
-
+	// recalculate
 	m_ignoreCalc = 0;
 	CalcExchangeTerms();
 }
 
 
+/**
+ * save current settings
+ */
 void MagDynDlg::Save()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
@@ -659,11 +694,19 @@ void MagDynDlg::Save()
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
 
-
+	// properties tree
 	pt::ptree node;
-	node.put<std::string>("sfact.meta.info", "magdyn_tool");
-	node.put<std::string>("sfact.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+	node.put<std::string>("magdyn.meta.info", "magdyn_tool");
+	node.put<std::string>("magdyn.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 
+	// settings
+	node.put<t_real>("magdyn.config.h_start", m_spin_q_start[0]->value());
+	node.put<t_real>("magdyn.config.k_start", m_spin_q_start[1]->value());
+	node.put<t_real>("magdyn.config.l_start", m_spin_q_start[2]->value());
+	node.put<t_real>("magdyn.config.h_end", m_spin_q_end[0]->value());
+	node.put<t_real>("magdyn.config.k_end", m_spin_q_end[1]->value());
+	node.put<t_real>("magdyn.config.l_end", m_spin_q_end[2]->value());
+	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 
 	// exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
@@ -689,10 +732,10 @@ void MagDynDlg::Save()
 		itemNode.put<t_real>("distance_z", dist[2]);
 		itemNode.put<t_real>("interaction", J);
 
-		node.add_child("sfact.exchange_terms.term", itemNode);
+		node.add_child("magdyn.exchange_terms.term", itemNode);
 	}
 
-
+	// save to file
 	std::ofstream ofstr{filename.toStdString()};
 	if(!ofstr)
 	{
@@ -701,6 +744,24 @@ void MagDynDlg::Save()
 	}
 	ofstr.precision(g_prec);
 	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+}
+
+
+/**
+ * save the plot as pdf
+ */
+void MagDynDlg::SavePlotFigure()
+{
+	if(!m_plot)
+		return;
+
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(this, "Save Figure", dirLast, "PDf Files (*.pdf *.PDF)");
+	if(filename=="")
+		return;
+	m_sett->setValue("dir", QFileInfo(filename).path());
+
+	m_plot->savePdf(filename);
 }
 
 
@@ -831,6 +892,23 @@ void MagDynDlg::CalcDispersion()
 
 	m_plot->rescaleAxes();
 	m_plot->replot();
+}
+
+
+/**
+ * mouse move event of the plot
+ */
+void MagDynDlg::PlotMouseMove(QMouseEvent* evt)
+{
+	if(!m_status)
+		return;
+
+	t_real Q = m_plot->xAxis->pixelToCoord(evt->pos().x());
+	t_real E = m_plot->yAxis->pixelToCoord(evt->pos().y());
+
+	QString status("Q = %1 rlu, E = %2 meV.");
+	status = status.arg(Q, 0, 'g', g_prec_gui).arg(E, 0, 'g', g_prec_gui);
+	m_status->setText(status);
 }
 
 
