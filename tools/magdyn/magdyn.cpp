@@ -10,12 +10,38 @@
  *   - N. Heinsdorf, personal communication, 2021, 2022.
  */
 
+#include <tuple>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
 #include "magdyn.h"
+
+
+
+// ----------------------------------------------------------------------------
+// helper functions
+// ----------------------------------------------------------------------------
+
+/**
+ * converts the rotation matrix rotating the local spins to ferromagnetic 
+ * [001] directions into the vectors comprised of the matrix columns
+ * @see equation (9) from (Toth 2015). 
+ */
+static std::tuple<t_vec, t_vec> R_to_uv(const t_mat& R)
+{
+	// imaginary unit
+	const t_cplx imag{0., 1.};
+
+	t_vec u = tl2::col<t_mat, t_vec>(R, 0)
+		+ imag*tl2::col<t_mat, t_vec>(R, 1);
+	t_vec v = tl2::col<t_mat, t_vec>(R, 2);
+
+	return std::make_tuple(u, v);
+}
+// ----------------------------------------------------------------------------
+
 
 
 void MagDyn::ClearExchangeTerms()

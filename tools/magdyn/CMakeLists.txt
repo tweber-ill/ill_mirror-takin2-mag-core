@@ -66,6 +66,13 @@ set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
 
+find_package(QCP)
+if(QCP_FOUND)
+	include_directories("${QCP_INCLUDE_DIRS}")
+endif()
+
+
+
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
 )
@@ -86,6 +93,7 @@ endif()
 
 
 target_link_libraries(takin_magdyn
-	Qt5::Core Qt5::Gui Qt5::Widgets -lqcustomplot-qt5
+	Qt5::Core Qt5::Gui Qt5::Widgets
+	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
 	"${Lapacke_LIBRARIES}")

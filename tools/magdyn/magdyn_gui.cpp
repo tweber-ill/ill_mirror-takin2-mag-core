@@ -151,8 +151,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
 
 
-		auto sep1 = new QFrame(m_termspanel); sep1->setFrameStyle(QFrame::HLine);
-		pTabGrid->addWidget(sep1, ++y,0, 1,4);
+		//auto sep1 = new QFrame(m_termspanel); sep1->setFrameStyle(QFrame::HLine);
+		//pTabGrid->addWidget(sep1, ++y,0, 1,4);
 
 
 		// table CustomContextMenu
