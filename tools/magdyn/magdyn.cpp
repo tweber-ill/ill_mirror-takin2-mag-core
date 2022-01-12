@@ -77,10 +77,11 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
 std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 {
 	// momentum
-	const t_vec k = tl2::create<t_vec>({_h, _k, _l});
+	const t_vec Q = tl2::create<t_vec>({_h, _k, _l});
 
 	// imaginary unit
 	const t_cplx imag{0., 1.};
+	const t_real twopi = t_real(2)*tl2::pi<t_real>;
 
 	// create hamiltonian of formula 25 from (Toth 2015)
 	t_mat H = tl2::zero<t_mat>(m_num_cells, m_num_cells);
@@ -88,8 +89,8 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	// formulas 12 and 14 from (Toth 2015)
 	for(const ExchangeTerm& term : m_exchange_terms)
 	{
-		t_cplx contrib = 0.5 * term.J * 
-			std::exp(-imag * tl2::inner<t_vec>(term.dist, k));
+		t_cplx contrib = term.J * 
+			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
 
 		H(term.atom1, term.atom2) += contrib;
 		H(term.atom2, term.atom1) += std::conj(contrib);
