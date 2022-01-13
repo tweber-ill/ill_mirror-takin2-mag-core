@@ -334,12 +334,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
 		auto menuFile = new QMenu("File", m_menu);
-
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Open...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
-		auto acSaveFigure = new QAction("Save Figure...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
+
+		auto menuPlot = new QMenu("Plot", m_menu);
+		auto acSaveFigure = new QAction("Save Figure...", menuPlot);
+		auto acRescalePlot = new QAction("Rescale Axes...", menuPlot);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -353,9 +355,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acLoad);
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
-		menuFile->addAction(acSaveFigure);
-		menuFile->addSeparator();
 		menuFile->addAction(acExit);
+
+		menuPlot->addAction(acRescalePlot);
+		menuPlot->addAction(acSaveFigure);
 
 		connect(acNew, &QAction::triggered, this,  [this]()
 		{
@@ -365,10 +368,20 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(acLoad, &QAction::triggered, this, &MagDynDlg::Load);
 		connect(acSave, &QAction::triggered, this, &MagDynDlg::Save);
-		connect(acSaveFigure, &QAction::triggered, this, &MagDynDlg::SavePlotFigure);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
+		connect(acSaveFigure, &QAction::triggered, this, &MagDynDlg::SavePlotFigure);
+		connect(acRescalePlot, &QAction::triggered, [this]()
+		{
+			if(!m_plot)
+				return;
+
+			m_plot->rescaleAxes();
+			m_plot->replot();
+		});
+
 		m_menu->addMenu(menuFile);
+		m_menu->addMenu(menuPlot);
 		pmainGrid->setMenuBar(m_menu);
 	}
 
@@ -886,11 +899,15 @@ void MagDynDlg::CalcDispersion()
 	m_plot->xAxis->setLabel(Q_label[Q_idx]);
 	m_plot->xAxis->setRange(Q_start[Q_idx], Q_end[Q_idx]);
 	if(min_E_iter != Es_data.end() && max_E_iter != Es_data.end())
-		m_plot->yAxis->setRange(*min_E_iter, *max_E_iter);
+	{
+		t_real E_range = *max_E_iter - *min_E_iter;
+		m_plot->yAxis->setRange(*min_E_iter - E_range*0.05, *max_E_iter + E_range*0.05);
+	}
 	else
+	{
 		m_plot->yAxis->setRange(0., 1.);
+	}
 
-	m_plot->rescaleAxes();
 	m_plot->replot();
 }
 
