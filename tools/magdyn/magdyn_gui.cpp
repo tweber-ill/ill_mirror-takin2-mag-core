@@ -341,7 +341,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		auto menuPlot = new QMenu("Plot", m_menu);
 		auto acSaveFigure = new QAction("Save Figure...", menuPlot);
-		auto acRescalePlot = new QAction("Rescale Axes...", menuPlot);
+		auto acRescalePlot = new QAction("Rescale Axes", menuPlot);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
