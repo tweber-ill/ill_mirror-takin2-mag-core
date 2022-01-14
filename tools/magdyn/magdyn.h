@@ -25,6 +25,7 @@ struct ExchangeTerm
 	t_size atom2{};
 	t_vec dist{};
 	t_cplx J{};
+	t_mat rot = tl2::unit<t_mat>(3);  // default to ferromagnetic case
 };
 
 
