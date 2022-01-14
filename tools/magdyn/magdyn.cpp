@@ -102,30 +102,32 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 		vs.emplace_back(std::move(v));
 		us_conj.emplace_back(std::move(u_conj));
 
-		t_mat J_d = tl2::diag<t_mat>(
+		t_mat J = tl2::diag<t_mat>(
 			tl2::create<t_vec>({term.J, term.J, term.J}));
 
-		t_mat contrib_Q = J_d *
+		t_mat contrib_Q = J *
 			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
-		t_mat contrib_mQ = J_d *
+		t_mat contrib_mQ = J *
 			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, -Q));
-		t_mat contrib_Q0 = J_d;
+		t_mat contrib_Q0 = J;
 
-		add_submat<t_mat>(J_Q, 0.5 * contrib_Q, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_Q, 0.5 * tl2::conj(contrib_Q), term.atom2*3, term.atom1*3);
+		t_real prefactor = 1.;
 
-		add_submat<t_mat>(J_mQ, 0.5 * contrib_mQ, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_mQ, 0.5 * tl2::conj(contrib_mQ), term.atom2*3, term.atom1*3);
+		add_submat<t_mat>(J_Q, prefactor*contrib_Q, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_Q, prefactor*tl2::conj(contrib_Q), term.atom2*3, term.atom1*3);
 
-		add_submat<t_mat>(J_Q0, 0.5 * contrib_Q0, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_Q0, 0.5 * tl2::conj(contrib_Q0), term.atom2*3, term.atom1*3);
+		add_submat<t_mat>(J_mQ, prefactor*contrib_mQ, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_mQ, prefactor*tl2::conj(contrib_mQ), term.atom2*3, term.atom1*3);
+
+		add_submat<t_mat>(J_Q0, prefactor*contrib_Q0, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_Q0, prefactor*tl2::conj(contrib_Q0), term.atom2*3, term.atom1*3);
 	}
 
 	// create hamiltonian of formula 25 and 26 from (Toth 2015)
-	t_mat A = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	t_mat A_conj = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	t_mat B = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	t_mat C = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
+	t_mat A = tl2::create<t_mat>(m_num_cells, m_num_cells);
+	t_mat A_conj = tl2::create<t_mat>(m_num_cells, m_num_cells);
+	t_mat B = tl2::create<t_mat>(m_num_cells, m_num_cells);
+	t_mat C = tl2::zero<t_mat>(m_num_cells, m_num_cells);
 
 	for(std::size_t i=0; i<m_num_cells; ++i)
 	{
@@ -139,42 +141,31 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 			t_real S_i = 0.5;
 			t_real S_j = 0.5;
 			t_real prefactor = /*0.5 **/ std::sqrt(S_i*S_j);
-			t_mat A_sub = prefactor *
-				tl2::outer_noconj<t_mat, t_vec>(
-					us[i], J_sub_mQ * us_conj[j]);
-			t_mat A_conj_sub = tl2::conj(prefactor *
-				tl2::outer_noconj<t_mat, t_vec>(
-					us[i], J_sub_Q * us_conj[j]));
-			t_mat B_sub = prefactor *
-				tl2::outer_noconj<t_mat, t_vec>(
-					us[i], J_sub_mQ * us[j]);
-
-			set_submat(A, A_sub, i*3, j*3);
-			set_submat(A_conj, A_conj_sub, i*3, j*3);
-			set_submat(B, B_sub, i*3, j*3);
+			A(i, j) = prefactor *
+				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us_conj[j]);
+			A_conj(i, j) = std::conj(prefactor *
+				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]));
+			B(i, j) = prefactor *
+				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us[j]);
 
 			if(i == j)
 			{
-				t_mat C_sub = tl2::zero<t_mat>(3, 3);
 				for(std::size_t k=0; k<m_num_cells; ++k)
 				{
 					// TODO: S_k
 					t_real S_k = 0.5;
 					t_mat J_sub_Q0 = submat<t_mat>(J_Q0, i*3, k*3, 3, 3);
-					C_sub += S_k * tl2::outer_noconj<t_mat, t_vec>(
-						vs[i], J_sub_Q0 * vs[k]);
+					C(i, j) += S_k * tl2::inner_noconj<t_vec>(vs[i], J_sub_Q0 * vs[k]);
 				}
-
-				set_submat(C, C_sub, i*3, j*3);
 			}
 		}
 	}
 
-	t_mat H = tl2::zero<t_mat>(m_num_cells*3*2, m_num_cells*3*2);
+	t_mat H = tl2::zero<t_mat>(m_num_cells*2, m_num_cells*2);
 	set_submat(H, A - C, 0, 0);
-	set_submat(H, B, 0, m_num_cells*3);
-	set_submat(H, tl2::herm(B), m_num_cells*3, 0);
-	set_submat(H, A_conj - C, m_num_cells*3, m_num_cells*3);
+	set_submat(H, B, 0, m_num_cells);
+	set_submat(H, tl2::herm(B), m_num_cells, 0);
+	set_submat(H, A_conj - C, m_num_cells, m_num_cells);
 
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
