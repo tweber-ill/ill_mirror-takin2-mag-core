@@ -83,10 +83,11 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	constexpr const t_cplx imag{0., 1.};
 	constexpr const t_real twopi = t_real(2)*tl2::pi<t_real>;
 
+	// TODO: us and vs are per cell, not per coupling term
 	std::vector<t_vec> us, us_conj, vs;
-	us.reserve(m_exchange_terms.size());
-	us_conj.reserve(m_exchange_terms.size());
-	vs.reserve(m_exchange_terms.size());
+	us.reserve(m_num_cells);
+	us_conj.reserve(m_num_cells);
+	vs.reserve(m_num_cells);
 
 	// formulas 12 and 14 from (Toth 2015), J(Q) and J(-Q)
 	t_mat J_Q = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
