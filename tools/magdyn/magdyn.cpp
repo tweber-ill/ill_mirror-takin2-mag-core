@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 /**
- * converts the rotation matrix rotating the local spins to ferromagnetic 
+ * converts the rotation matrix rotating the local spins to ferromagnetic
  * [001] directions into the vectors comprised of the matrix columns
- * @see equation (9) from (Toth 2015). 
+ * @see equation (9) from (Toth 2015).
  */
 static std::tuple<t_vec, t_vec> R_to_uv(const t_mat& R)
 {
@@ -76,6 +76,11 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
  */
 std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 {
+	// unit matrix for ferromagnetic case
+	const t_mat rot = tl2::unit<t_mat>(3);
+	const auto [u, v] = R_to_uv(rot);
+	const t_vec u_conj = tl2::conj(u);
+
 	// momentum
 	const t_vec Q = tl2::create<t_vec>({_h, _k, _l});
 
@@ -83,18 +88,49 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	const t_cplx imag{0., 1.};
 	const t_real twopi = t_real(2)*tl2::pi<t_real>;
 
-	// create hamiltonian of formula 25 from (Toth 2015)
-	t_mat H = tl2::zero<t_mat>(m_num_cells, m_num_cells);
-
-	// formulas 12 and 14 from (Toth 2015)
+	// formulas 12 and 14 from (Toth 2015), J(Q) and J(-Q)
+	t_mat J_Q = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
+	t_mat J_mQ = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
 	for(const ExchangeTerm& term : m_exchange_terms)
 	{
-		t_cplx contrib = term.J * 
-			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
+		t_mat J_d = tl2::diag<t_mat>(tl2::create<t_vec>({term.J, term.J, term.J}));
 
-		H(term.atom1, term.atom2) += contrib;
-		H(term.atom2, term.atom1) += std::conj(contrib);
+		t_mat contrib_Q = J_d *
+			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
+		t_mat contrib_mQ = J_d *
+			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, -Q));
+
+		for(std::size_t x_i=0; x_i<3; ++x_i)
+		{
+			for(std::size_t x_j=0; x_j<3; ++x_j)
+			{
+				J_Q(term.atom1*3 + x_i, term.atom2*3 + x_j) += contrib_Q(x_i, x_j);
+				J_Q(term.atom2*3 + x_i, term.atom1*3 + x_j) += std::conj(contrib_Q(x_j, x_i));
+
+				J_mQ(term.atom1*3 + x_i, term.atom2*3 + x_j) += contrib_mQ(x_i, x_j);
+				J_mQ(term.atom2*3 + x_i, term.atom1*3 + x_j) += std::conj(contrib_mQ(x_j, x_i));
+			}
+		}
 	}
+
+	// create hamiltonian of formula 25 and 26 from (Toth 2015)
+	t_mat A = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
+
+	for(std::size_t i=0; i<m_num_cells; ++i)
+	{
+		for(std::size_t j=0; j<m_num_cells; ++j)
+		{
+			t_mat J_sub_mQ = submat<t_mat>(J_mQ, i*3, j*3, 3, 3);
+			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
+
+			// TODO: use u_i and u_conj_j
+			// TODO: remove zero columns and rows?
+			t_mat A_sub = 0.5 * tl2::outer_noconj<t_mat, t_vec>(u, J_sub_mQ * u_conj);
+			set_submat(A, A_sub, i*3, j*3);
+		}
+	}
+
+	t_mat H = A;
 
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
