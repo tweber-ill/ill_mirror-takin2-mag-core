@@ -828,6 +828,9 @@ void MagDynDlg::CalcExchangeTerms()
  */
 void MagDynDlg::CalcDispersion()
 {
+	if(m_ignoreCalc)
+		return;
+
 	m_plot->clearPlottables();
 
 	const t_real Q_start[]
