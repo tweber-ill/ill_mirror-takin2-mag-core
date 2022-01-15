@@ -65,7 +65,10 @@ protected:
 	QMenuBar *m_menu{};
 	QLabel *m_status{};
 
+	QWidget *m_sitespanel{};
 	QWidget *m_termspanel{};
+
+	QTableWidget *m_sitestab{};
 	QTableWidget *m_termstab{};
 
 	QWidget *m_disppanel{};
@@ -84,22 +87,27 @@ protected:
 	void ShowTableContextMenu(QTableWidget *pTab, QMenu *pMenu, QMenu *pMenuNoItem, const QPoint& pt);
 	std::vector<int> GetSelectedRows(QTableWidget *pTab, bool sort_reversed = false) const;
 
-	// Fourier components table
-	void AddTabItem(int row=-1,
+	void AddSiteTabItem(int row=-1,
+		const std::string& name="n/a",
+		t_real x=0., t_real y=0., t_real z=0.,
+		t_real sx=0., t_real sy=0., t_real sz=1.);
+
+	void AddTermTabItem(int row=-1,
 		const std::string& name="n/a",
 		t_size atom_1=0, t_size atom_2=0,
 		t_real dist_x=0., t_real dist_y=0., t_real dist_z=0.,
 		t_real J=0.);
-	void DelTabItem(int begin=-2, int end=-2);
-	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
-	void TableCellEntered(const QModelIndex& idx);
-	void TableItemChanged(QTableWidgetItem *item);
+
+	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
+
+	void SitesTableItemChanged(QTableWidgetItem *item);
+	void TermsTableItemChanged(QTableWidgetItem *item);
 
 	void Load();
 	void Save();
 	void SavePlotFigure();
 
-	void CalcExchangeTerms();
+	void CalcSitesAndTerms();
 	void CalcDispersion();
 
 	void PlotMouseMove(QMouseEvent* evt);
@@ -107,7 +115,8 @@ protected:
 
 
 private:
-	int m_iCursorRow = -1;
+	int m_sites_cursor_row = -1;
+	int m_terms_cursor_row = -1;
 
 	bool m_ignoreChanges = 1;
 	bool m_ignoreCalc = 0;

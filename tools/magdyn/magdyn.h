@@ -19,13 +19,20 @@
 #include "defs.h"
 
 
+struct AtomSite
+{
+	t_vec pos{};
+	t_vec spin{};
+	t_mat rot = tl2::unit<t_mat>(3);  // default to ferromagnetic case
+};
+
+
 struct ExchangeTerm
 {
 	t_size atom1{};
 	t_size atom2{};
 	t_vec dist{};
 	t_cplx J{};
-	t_mat rot = tl2::unit<t_mat>(3);  // default to ferromagnetic case
 };
 
 
@@ -35,12 +42,14 @@ public:
 	MagDyn() = default;
 	~MagDyn() = default;
 
-	void SetNumCells(std::size_t n) { m_num_cells = n; }
-
+	void ClearAtomSites();
 	void ClearExchangeTerms();
 
+	void AddAtomSite(AtomSite&& site);
 	void AddExchangeTerm(ExchangeTerm&& term);
+
 	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
+
 	std::vector<t_real> GetEnergies(t_real h, t_real k, t_real l) const;
 	t_real GetGoldstoneEnergy() const;
 
@@ -54,7 +63,7 @@ public:
 
 
 private:
-	std::size_t m_num_cells{};
+	std::vector<AtomSite> m_sites{};
 	std::vector<ExchangeTerm> m_exchange_terms{};
 
 	t_real m_eps = 1e-6;

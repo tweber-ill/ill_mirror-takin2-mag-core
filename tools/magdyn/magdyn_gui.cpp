@@ -65,15 +65,30 @@ constexpr int g_prec = 6;
 constexpr int g_prec_gui = 3;
 
 
-// columns of exchange terms table
+/**
+ * columns of sites table
+ */
 enum : int
 {
-	COL_NAME = 0,
-	COL_ATOM1_IDX, COL_ATOM2_IDX,
-	COL_DIST_X, COL_DIST_Y, COL_DIST_Z,
-	COL_INTERACTION,
+	COL_SITE_NAME = 0,
+	COL_SITE_POS_X, COL_SITE_POS_Y, COL_SITE_POS_Z,
+	COL_SITE_SPIN_X, COL_SITE_SPIN_Y, COL_SITE_SPIN_Z,
 
-	NUM_COLS
+	NUM_SITE_COLS
+};
+
+
+/**
+ * columns of exchange terms table
+ */
+enum : int
+{
+	COL_XCH_NAME = 0,
+	COL_XCH_ATOM1_IDX, COL_XCH_ATOM2_IDX,
+	COL_XCH_DIST_X, COL_XCH_DIST_Y, COL_XCH_DIST_Z,
+	COL_XCH_INTERACTION,
+
+	NUM_XCH_COLS
 };
 
 
@@ -90,6 +105,97 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 	auto tabs = new QTabWidget(this);
 
+	// atom sites panel
+	{
+		m_sitespanel = new QWidget(this);
+
+		m_sitestab = new QTableWidget(m_sitespanel);
+		m_sitestab->setShowGrid(true);
+		m_sitestab->setSortingEnabled(true);
+		m_sitestab->setMouseTracking(true);
+		m_sitestab->setSelectionBehavior(QTableWidget::SelectRows);
+		m_sitestab->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_sitestab->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		m_sitestab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_sitestab->verticalHeader()->setVisible(false);
+
+		m_sitestab->setColumnCount(NUM_SITE_COLS);
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_NAME, new QTableWidgetItem{"Name"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_X, new QTableWidgetItem{"x"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Y, new QTableWidgetItem{"y"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Z, new QTableWidgetItem{"z"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_X, new QTableWidgetItem{"Spin x"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Y, new QTableWidgetItem{"Spin y"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Z, new QTableWidgetItem{"Spin z"});
+
+		m_sitestab->setColumnWidth(COL_SITE_NAME, 90);
+		m_sitestab->setColumnWidth(COL_SITE_POS_X, 80);
+		m_sitestab->setColumnWidth(COL_SITE_POS_Y, 80);
+		m_sitestab->setColumnWidth(COL_SITE_POS_Z, 80);
+		m_sitestab->setColumnWidth(COL_SITE_SPIN_X, 80);
+		m_sitestab->setColumnWidth(COL_SITE_SPIN_Y, 80);
+		m_sitestab->setColumnWidth(COL_SITE_SPIN_Z, 80);
+
+		QToolButton *pTabBtnAdd = new QToolButton(m_sitespanel);
+		QToolButton *pTabBtnDel = new QToolButton(m_sitespanel);
+		QToolButton *pTabBtnUp = new QToolButton(m_sitespanel);
+		QToolButton *pTabBtnDown = new QToolButton(m_sitespanel);
+
+		m_sitestab->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		pTabBtnAdd->setText("Add Atom");
+		pTabBtnDel->setText("Delete Atom");
+		pTabBtnUp->setText("Move Atom Up");
+		pTabBtnDown->setText("Move Atom Down");
+
+
+		auto pTabGrid = new QGridLayout(m_sitespanel);
+		pTabGrid->setSpacing(2);
+		pTabGrid->setContentsMargins(4,4,4,4);
+
+		int y = 0;
+		pTabGrid->addWidget(m_sitestab, y,0,1,4);
+		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
+		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
+		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+
+
+
+		// table CustomContextMenu
+		QMenu *pTabContextMenu = new QMenu(m_sitestab);
+		pTabContextMenu->addAction("Add Atom Before", this, [this]() { this->AddSiteTabItem(-2); });
+		pTabContextMenu->addAction("Add Atom After", this, [this]() { this->AddSiteTabItem(-3); });
+		pTabContextMenu->addAction("Clone Atom", this, [this]() { this->AddSiteTabItem(-4); });
+		pTabContextMenu->addAction("Delete Atom", this, [this]() { this->DelTabItem(m_sitestab); });
+
+
+		// table CustomContextMenu in case nothing is selected
+		QMenu *pTabContextMenuNoItem = new QMenu(m_sitestab);
+		pTabContextMenuNoItem->addAction("Add Atom", this, [this]() { this->AddSiteTabItem(); });
+		pTabContextMenuNoItem->addAction("Delete Atom", this, [this]() { this->DelTabItem(m_sitestab); });
+		//pTabContextMenuNoItem->addSeparator();
+
+
+		// signals
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddSiteTabItem(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(m_sitestab); });
+		connect(pTabBtnUp, &QToolButton::clicked, this, [this]() { this->MoveTabItemUp(m_sitestab); });
+		connect(pTabBtnDown, &QToolButton::clicked, this, [this]() { this->MoveTabItemDown(m_sitestab); });
+
+		connect(m_sitestab, &QTableWidget::itemChanged, this, &MagDynDlg::SitesTableItemChanged);
+		connect(m_sitestab, &QTableWidget::customContextMenuRequested, this,
+			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+			{ this->ShowTableContextMenu(m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+
+		tabs->addTab(m_sitespanel, "Atom Sites");
+	}
+
 	// exchange terms panel
 	{
 		m_termspanel = new QWidget(this);
@@ -105,22 +211,22 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
 		m_termstab->verticalHeader()->setVisible(false);
 
-		m_termstab->setColumnCount(NUM_COLS);
-		m_termstab->setHorizontalHeaderItem(COL_NAME, new QTableWidgetItem{"Name"});
-		m_termstab->setHorizontalHeaderItem(COL_ATOM1_IDX, new QTableWidgetItem{"Atom 1"});
-		m_termstab->setHorizontalHeaderItem(COL_ATOM2_IDX, new QTableWidgetItem{"Atom 2"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_X, new QTableWidgetItem{"Cell Δx"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_Y, new QTableWidgetItem{"Cell Δy"});
-		m_termstab->setHorizontalHeaderItem(COL_DIST_Z, new QTableWidgetItem{"Cell Δz"});
-		m_termstab->setHorizontalHeaderItem(COL_INTERACTION, new QTableWidgetItem{"Bond J"});
+		m_termstab->setColumnCount(NUM_XCH_COLS);
+		m_termstab->setHorizontalHeaderItem(COL_XCH_NAME, new QTableWidgetItem{"Name"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_ATOM1_IDX, new QTableWidgetItem{"Atom 1"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_ATOM2_IDX, new QTableWidgetItem{"Atom 2"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_X, new QTableWidgetItem{"Cell Δx"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Y, new QTableWidgetItem{"Cell Δy"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Z, new QTableWidgetItem{"Cell Δz"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_INTERACTION, new QTableWidgetItem{"Bond J"});
 
-		m_termstab->setColumnWidth(COL_NAME, 90);
-		m_termstab->setColumnWidth(COL_ATOM1_IDX, 80);
-		m_termstab->setColumnWidth(COL_ATOM2_IDX, 80);
-		m_termstab->setColumnWidth(COL_DIST_X, 80);
-		m_termstab->setColumnWidth(COL_DIST_Y, 80);
-		m_termstab->setColumnWidth(COL_DIST_Z, 80);
-		m_termstab->setColumnWidth(COL_INTERACTION, 80);
+		m_termstab->setColumnWidth(COL_XCH_NAME, 90);
+		m_termstab->setColumnWidth(COL_XCH_ATOM1_IDX, 80);
+		m_termstab->setColumnWidth(COL_XCH_ATOM2_IDX, 80);
+		m_termstab->setColumnWidth(COL_XCH_DIST_X, 80);
+		m_termstab->setColumnWidth(COL_XCH_DIST_Y, 80);
+		m_termstab->setColumnWidth(COL_XCH_DIST_Z, 80);
+		m_termstab->setColumnWidth(COL_XCH_INTERACTION, 80);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_termspanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_termspanel);
@@ -157,28 +263,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
-		pTabContextMenu->addAction("Add Term Before", this, [this]() { this->AddTabItem(-2); });
-		pTabContextMenu->addAction("Add Term After", this, [this]() { this->AddTabItem(-3); });
-		pTabContextMenu->addAction("Clone Term", this, [this]() { this->AddTabItem(-4); });
-		pTabContextMenu->addAction("Delete Term", this, [this]() { this->DelTabItem(); });
+		pTabContextMenu->addAction("Add Term Before", this, [this]() { this->AddTermTabItem(-2); });
+		pTabContextMenu->addAction("Add Term After", this, [this]() { this->AddTermTabItem(-3); });
+		pTabContextMenu->addAction("Clone Term", this, [this]() { this->AddTermTabItem(-4); });
+		pTabContextMenu->addAction("Delete Term", this, [this]() { this->DelTabItem(m_termstab); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_termstab);
-		pTabContextMenuNoItem->addAction("Add Term", this, [this]() { this->AddTabItem(); });
-		pTabContextMenuNoItem->addAction("Delete Term", this, [this]() { this->DelTabItem(); });
+		pTabContextMenuNoItem->addAction("Add Term", this, [this]() { this->AddTermTabItem(); });
+		pTabContextMenuNoItem->addAction("Delete Term", this, [this]() { this->DelTabItem(m_termstab); });
 		//pTabContextMenuNoItem->addSeparator();
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(); });
+		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTermTabItem(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(m_termstab); });
 		connect(pTabBtnUp, &QToolButton::clicked, this, [this]() { this->MoveTabItemUp(m_termstab); });
 		connect(pTabBtnDown, &QToolButton::clicked, this, [this]() { this->MoveTabItemDown(m_termstab); });
 
-		connect(m_termstab, &QTableWidget::currentCellChanged, this, &MagDynDlg::TableCurCellChanged);
-		connect(m_termstab, &QTableWidget::entered, this, &MagDynDlg::TableCellEntered);
-		connect(m_termstab, &QTableWidget::itemChanged, this, &MagDynDlg::TableItemChanged);
+		connect(m_termstab, &QTableWidget::itemChanged, this, &MagDynDlg::TermsTableItemChanged);
 		connect(m_termstab, &QTableWidget::customContextMenuRequested, this,
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
@@ -363,7 +467,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(acNew, &QAction::triggered, this,  [this]()
 		{
 			// clear old tables
-			DelTabItem(-1);
+			DelTabItem(m_sitestab, -1);
+			DelTabItem(m_termstab, -1);
 		});
 
 		connect(acLoad, &QAction::triggered, this, &MagDynDlg::Load);
@@ -397,7 +502,62 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 }
 
 
-void MagDynDlg::AddTabItem(int row,
+/**
+ * add an atom site
+ */
+void MagDynDlg::AddSiteTabItem(int row,
+	const std::string& name,
+	t_real x, t_real y, t_real z,
+	t_real sx, t_real sy, t_real sz)
+{
+	bool bclone = 0;
+	m_ignoreChanges = 1;
+
+	if(row == -1)	// append to end of table
+		row = m_sitestab->rowCount();
+	else if(row == -2 && m_sites_cursor_row >= 0)	// use row from member variable
+		row = m_sites_cursor_row;
+	else if(row == -3 && m_sites_cursor_row >= 0)	// use row from member variable +1
+		row = m_sites_cursor_row + 1;
+	else if(row == -4 && m_sites_cursor_row >= 0)	// use row from member variable +1
+	{
+		row = m_sites_cursor_row + 1;
+		bclone = 1;
+	}
+
+	m_sitestab->setSortingEnabled(false);
+	m_sitestab->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<NUM_SITE_COLS; ++thecol)
+			m_sitestab->setItem(row, thecol, m_sitestab->item(m_sites_cursor_row, thecol)->clone());
+	}
+	else
+	{
+		m_sitestab->setItem(row, COL_SITE_NAME, new QTableWidgetItem(name.c_str()));
+		m_sitestab->setItem(row, COL_SITE_POS_X, new NumericTableWidgetItem<t_real>(x));
+		m_sitestab->setItem(row, COL_SITE_POS_Y, new NumericTableWidgetItem<t_real>(y));
+		m_sitestab->setItem(row, COL_SITE_POS_Z, new NumericTableWidgetItem<t_real>(z));
+		m_sitestab->setItem(row, COL_SITE_SPIN_X, new NumericTableWidgetItem<t_real>(sx));
+		m_sitestab->setItem(row, COL_SITE_SPIN_Y, new NumericTableWidgetItem<t_real>(sy));
+		m_sitestab->setItem(row, COL_SITE_SPIN_Z, new NumericTableWidgetItem<t_real>(sz));
+	}
+
+	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
+	m_sitestab->setCurrentCell(row, 0);
+
+	m_sitestab->setSortingEnabled(/*sorting*/ true);
+
+	m_ignoreChanges = 0;
+	CalcSitesAndTerms();
+}
+
+
+/**
+ * add an exchange term
+ */
+void MagDynDlg::AddTermTabItem(int row,
 	const std::string& name,
 	t_size atom_1, t_size atom_2,
 	t_real dist_x, t_real dist_y, t_real dist_z,
@@ -408,34 +568,33 @@ void MagDynDlg::AddTabItem(int row,
 
 	if(row == -1)	// append to end of table
 		row = m_termstab->rowCount();
-	else if(row == -2 && m_iCursorRow >= 0)	// use row from member variable
-		row = m_iCursorRow;
-	else if(row == -3 && m_iCursorRow >= 0)	// use row from member variable +1
-		row = m_iCursorRow + 1;
-	else if(row == -4 && m_iCursorRow >= 0)	// use row from member variable +1
+	else if(row == -2 && m_terms_cursor_row >= 0)	// use row from member variable
+		row = m_terms_cursor_row;
+	else if(row == -3 && m_terms_cursor_row >= 0)	// use row from member variable +1
+		row = m_terms_cursor_row + 1;
+	else if(row == -4 && m_terms_cursor_row >= 0)	// use row from member variable +1
 	{
-		row = m_iCursorRow + 1;
+		row = m_terms_cursor_row + 1;
 		bclone = 1;
 	}
 
-	//bool sorting = m_termstab->isSortingEnabled();
 	m_termstab->setSortingEnabled(false);
 	m_termstab->insertRow(row);
 
 	if(bclone)
 	{
-		for(int thecol=0; thecol<NUM_COLS; ++thecol)
-			m_termstab->setItem(row, thecol, m_termstab->item(m_iCursorRow, thecol)->clone());
+		for(int thecol=0; thecol<NUM_XCH_COLS; ++thecol)
+			m_termstab->setItem(row, thecol, m_termstab->item(m_terms_cursor_row, thecol)->clone());
 	}
 	else
 	{
-		m_termstab->setItem(row, COL_NAME, new QTableWidgetItem(name.c_str()));
-		m_termstab->setItem(row, COL_ATOM1_IDX, new NumericTableWidgetItem<t_size>(atom_1));
-		m_termstab->setItem(row, COL_ATOM2_IDX, new NumericTableWidgetItem<t_size>(atom_2));
-		m_termstab->setItem(row, COL_DIST_X, new NumericTableWidgetItem<t_real>(dist_x));
-		m_termstab->setItem(row, COL_DIST_Y, new NumericTableWidgetItem<t_real>(dist_y));
-		m_termstab->setItem(row, COL_DIST_Z, new NumericTableWidgetItem<t_real>(dist_z));
-		m_termstab->setItem(row, COL_INTERACTION, new NumericTableWidgetItem<t_real>(J));
+		m_termstab->setItem(row, COL_XCH_NAME, new QTableWidgetItem(name.c_str()));
+		m_termstab->setItem(row, COL_XCH_ATOM1_IDX, new NumericTableWidgetItem<t_size>(atom_1));
+		m_termstab->setItem(row, COL_XCH_ATOM2_IDX, new NumericTableWidgetItem<t_size>(atom_2));
+		m_termstab->setItem(row, COL_XCH_DIST_X, new NumericTableWidgetItem<t_real>(dist_x));
+		m_termstab->setItem(row, COL_XCH_DIST_Y, new NumericTableWidgetItem<t_real>(dist_y));
+		m_termstab->setItem(row, COL_XCH_DIST_Z, new NumericTableWidgetItem<t_real>(dist_z));
+		m_termstab->setItem(row, COL_XCH_INTERACTION, new NumericTableWidgetItem<t_real>(J));
 	}
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
@@ -444,37 +603,37 @@ void MagDynDlg::AddTabItem(int row,
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreChanges = 0;
-	CalcExchangeTerms();
+	CalcSitesAndTerms();
 }
 
 
-void MagDynDlg::DelTabItem(int begin, int end)
+void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
 	m_ignoreChanges = 1;
 
 	// if nothing is selected, clear all items
-	if(begin == -1 || m_termstab->selectedItems().count() == 0)
+	if(begin == -1 || pTab->selectedItems().count() == 0)
 	{
-		m_termstab->clearContents();
-		m_termstab->setRowCount(0);
+		pTab->clearContents();
+		pTab->setRowCount(0);
 	}
 	else if(begin == -2)	// clear selected
 	{
-		for(int row : GetSelectedRows(m_termstab, true))
+		for(int row : GetSelectedRows(pTab, true))
 		{
-			m_termstab->removeRow(row);
+			pTab->removeRow(row);
 		}
 	}
 	else if(begin >= 0 && end >= 0)		// clear given range
 	{
 		for(int row=end-1; row>=begin; --row)
 		{
-			m_termstab->removeRow(row);
+			pTab->removeRow(row);
 		}
 	}
 
 	m_ignoreChanges = 0;
-	CalcExchangeTerms();
+	CalcSitesAndTerms();
 }
 
 
@@ -484,7 +643,7 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 
 	pTab->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(m_termstab, false);
+	auto selected = GetSelectedRows(pTab, false);
 	for(int row : selected)
 	{
 		if(row == 0)
@@ -511,6 +670,7 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 	}
 
 	m_ignoreChanges = 0;
+	CalcSitesAndTerms();
 }
 
 
@@ -520,7 +680,7 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 
 	pTab->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(m_termstab, true);
+	auto selected = GetSelectedRows(pTab, true);
 	for(int row : selected)
 	{
 		if(row == pTab->rowCount()-1)
@@ -547,6 +707,7 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 	}
 
 	m_ignoreChanges = 0;
+	CalcSitesAndTerms();
 }
 
 
@@ -574,27 +735,22 @@ std::vector<int> MagDynDlg::GetSelectedRows(
 
 
 /**
- * selected a new row
+ * item contents changed
  */
-void MagDynDlg::TableCurCellChanged(
-	int /*rowNew*/, int /*colNew*/, int /*rowOld*/, int /*colOld*/)
-{}
-
-
-/**
- * hovered over new row
- */
-void MagDynDlg::TableCellEntered(const QModelIndex& /*idx*/)
-{}
+void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
+{
+	if(!m_ignoreChanges)
+		CalcSitesAndTerms();
+}
 
 
 /**
  * item contents changed
  */
-void MagDynDlg::TableItemChanged(QTableWidgetItem * /*item*/)
+void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 {
 	if(!m_ignoreChanges)
-		CalcExchangeTerms();
+		CalcSitesAndTerms();
 }
 
 
@@ -605,7 +761,11 @@ void MagDynDlg::ShowTableContextMenu(
 
 	if(const auto* item = pTab->itemAt(pt); item)
 	{
-		m_iCursorRow = item->row();
+		if(pTab == m_termstab)
+			m_terms_cursor_row = item->row();
+		else if(pTab == m_sitestab)
+			m_sites_cursor_row = item->row();
+
 		ptGlob.setY(ptGlob.y() + pMenu->sizeHint().height()/2);
 		pMenu->popup(ptGlob);
 	}
@@ -664,21 +824,43 @@ void MagDynDlg::Load()
 			m_num_points->setValue(*optVal);
 
 		// clear old tables
-		DelTabItem(-1);
-		// exchange terms
-		if(auto nuclei = node.get_child_optional("magdyn.exchange_terms"); nuclei)
-		{
-			for(const auto &nucl : *nuclei)
-			{
-				auto optName = nucl.second.get<std::string>("name", "n/a");
-				auto optAtom1 = nucl.second.get<t_size>("atom_1_index", 0);
-				auto optAtom2 = nucl.second.get<t_size>("atom_2_index", 0);
-				auto optDistX = nucl.second.get<t_real>("distance_x", 0.);
-				auto optDistY = nucl.second.get<t_real>("distance_y", 0.);
-				auto optDistZ = nucl.second.get<t_real>("distance_z", 0.);
-				auto optInteraction = nucl.second.get<t_real>("interaction", 0.);
+		DelTabItem(m_sitestab, -1);
+		DelTabItem(m_termstab, -1);
 
-				AddTabItem(-1,
+		// atom sites
+		if(auto sites = node.get_child_optional("magdyn.atom_sites"); sites)
+		{
+			for(const auto &site : *sites)
+			{
+				auto optName = site.second.get<std::string>("name", "n/a");
+				auto optPosX = site.second.get<t_real>("position_x", 0.);
+				auto optPosY = site.second.get<t_real>("position_y", 0.);
+				auto optPosZ = site.second.get<t_real>("position_z", 0.);
+				auto optSpinX = site.second.get<t_real>("spin_x", 0.);
+				auto optSpinY = site.second.get<t_real>("spin_y", 0.);
+				auto optSpinZ = site.second.get<t_real>("spin_z", 1.);
+
+				AddSiteTabItem(-1,
+					optName,
+					optPosX, optPosY, optPosZ,
+					optSpinX, optSpinY, optSpinZ);
+			}
+		}
+
+		// exchange terms
+		if(auto terms = node.get_child_optional("magdyn.exchange_terms"); terms)
+		{
+			for(const auto &term : *terms)
+			{
+				auto optName = term.second.get<std::string>("name", "n/a");
+				auto optAtom1 = term.second.get<t_size>("atom_1_index", 0);
+				auto optAtom2 = term.second.get<t_size>("atom_2_index", 0);
+				auto optDistX = term.second.get<t_real>("distance_x", 0.);
+				auto optDistY = term.second.get<t_real>("distance_y", 0.);
+				auto optDistZ = term.second.get<t_real>("distance_z", 0.);
+				auto optInteraction = term.second.get<t_real>("interaction", 0.);
+
+				AddTermTabItem(-1,
 					optName, optAtom1, optAtom2,
 					optDistX, optDistY, optDistZ,
 					optInteraction);
@@ -692,7 +874,7 @@ void MagDynDlg::Load()
 
 	// recalculate
 	m_ignoreCalc = 0;
-	CalcExchangeTerms();
+	CalcSitesAndTerms();
 }
 
 
@@ -721,6 +903,31 @@ void MagDynDlg::Save()
 	node.put<t_real>("magdyn.config.l_end", m_spin_q_end[2]->value());
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 
+	// atom sites
+	for(int row=0; row<m_sitestab->rowCount(); ++row)
+	{
+		t_real pos[3]{0., 0., 0.};
+		t_real spin[3]{0., 0., 1.};
+
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_X)->text().toStdString()} >> pos[0];
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Y)->text().toStdString()} >> pos[1];
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Z)->text().toStdString()} >> pos[2];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_X)->text().toStdString()} >> spin[0];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Y)->text().toStdString()} >> spin[1];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Z)->text().toStdString()} >> spin[2];
+
+		pt::ptree itemNode;
+		itemNode.put<std::string>("name", m_sitestab->item(row, COL_SITE_NAME)->text().toStdString());
+		itemNode.put<t_real>("position_x", pos[0]);
+		itemNode.put<t_real>("position_y", pos[1]);
+		itemNode.put<t_real>("position_z", pos[2]);
+		itemNode.put<t_real>("spin_x", spin[0]);
+		itemNode.put<t_real>("spin_y", spin[1]);
+		itemNode.put<t_real>("spin_z", spin[2]);
+
+		node.add_child("magdyn.atom_sites.site", itemNode);
+	}
+
 	// exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
@@ -729,15 +936,15 @@ void MagDynDlg::Save()
 		t_real dist[3]{0., 0., 0.};
 		t_real J = 0.;
 
-		std::istringstream{m_termstab->item(row, COL_ATOM1_IDX)->text().toStdString()} >> atom_1_idx;
-		std::istringstream{m_termstab->item(row, COL_ATOM2_IDX)->text().toStdString()} >> atom_2_idx;
-		std::istringstream{m_termstab->item(row, COL_DIST_X)->text().toStdString()} >> dist[0];
-		std::istringstream{m_termstab->item(row, COL_DIST_Y)->text().toStdString()} >> dist[1];
-		std::istringstream{m_termstab->item(row, COL_DIST_Z)->text().toStdString()} >> dist[2];
-		std::istringstream{m_termstab->item(row, COL_INTERACTION)->text().toStdString()} >> J;
+		std::istringstream{m_termstab->item(row, COL_XCH_ATOM1_IDX)->text().toStdString()} >> atom_1_idx;
+		std::istringstream{m_termstab->item(row, COL_XCH_ATOM2_IDX)->text().toStdString()} >> atom_2_idx;
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_X)->text().toStdString()} >> dist[0];
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Y)->text().toStdString()} >> dist[1];
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Z)->text().toStdString()} >> dist[2];
+		std::istringstream{m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString()} >> J;
 
 		pt::ptree itemNode;
-		itemNode.put<std::string>("name", m_termstab->item(row, COL_NAME)->text().toStdString());
+		itemNode.put<std::string>("name", m_termstab->item(row, COL_XCH_NAME)->text().toStdString());
 		itemNode.put<t_size>("atom_1_index", atom_1_idx);
 		itemNode.put<t_size>("atom_2_index", atom_2_idx);
 		itemNode.put<t_real>("distance_x", dist[0]);
@@ -779,29 +986,60 @@ void MagDynDlg::SavePlotFigure()
 
 
 /**
- * get the exchange terms from the table
+ * get the sites and exchange terms from the table
  */
-void MagDynDlg::CalcExchangeTerms()
+void MagDynDlg::CalcSitesAndTerms()
 {
 	if(m_ignoreCalc)
 		return;
 
+	m_dyn.ClearAtomSites();
 	m_dyn.ClearExchangeTerms();
-	t_size num_cells = 0;
 
+	// atom sites
+	for(int row=0; row<m_sitestab->rowCount(); ++row)
+	{
+		auto *name = m_sitestab->item(row, COL_SITE_NAME);
+		auto *pos_x = m_sitestab->item(row, COL_SITE_POS_X);
+		auto *pos_y = m_sitestab->item(row, COL_SITE_POS_Y);
+		auto *pos_z = m_sitestab->item(row, COL_SITE_POS_Z);
+		auto *spin_x = m_sitestab->item(row, COL_SITE_SPIN_X);
+		auto *spin_y = m_sitestab->item(row, COL_SITE_SPIN_Y);
+		auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
+
+		if(!name || !pos_x || !pos_y || !pos_z || !spin_x || !spin_y || !spin_z)
+		{
+			std::cerr << "Invalid entry in sites table row " << row << "." << std::endl;
+			continue;
+		}
+
+		AtomSite site;
+		site.pos = tl2::zero<t_vec>(3);
+		site.spin = tl2::zero<t_vec>(3);
+		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
+		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
+		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
+		std::istringstream{spin_x->text().toStdString()} >> site.spin[0];
+		std::istringstream{spin_y->text().toStdString()} >> site.spin[1];
+		std::istringstream{spin_z->text().toStdString()} >> site.spin[2];
+
+		m_dyn.AddAtomSite(std::move(site));
+	}
+
+	// exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
-		auto *name = m_termstab->item(row, COL_NAME);
-		auto *atom_1_idx = m_termstab->item(row, COL_ATOM1_IDX);
-		auto *atom_2_idx = m_termstab->item(row, COL_ATOM2_IDX);
-		auto *dist_x = m_termstab->item(row, COL_DIST_X);
-		auto *dist_y = m_termstab->item(row, COL_DIST_Y);
-		auto *dist_z = m_termstab->item(row, COL_DIST_Z);
-		auto *interaction = m_termstab->item(row, COL_INTERACTION);
+		auto *name = m_termstab->item(row, COL_XCH_NAME);
+		auto *atom_1_idx = m_termstab->item(row, COL_XCH_ATOM1_IDX);
+		auto *atom_2_idx = m_termstab->item(row, COL_XCH_ATOM2_IDX);
+		auto *dist_x = m_termstab->item(row, COL_XCH_DIST_X);
+		auto *dist_y = m_termstab->item(row, COL_XCH_DIST_Y);
+		auto *dist_z = m_termstab->item(row, COL_XCH_DIST_Z);
+		auto *interaction = m_termstab->item(row, COL_XCH_INTERACTION);
 
 		if(!name || !atom_1_idx || !atom_2_idx || !dist_x || !dist_y || !dist_z || !interaction)
 		{
-			std::cerr << "Invalid entry in row " << row << "." << std::endl;
+			std::cerr << "Invalid entry in terms table row " << row << "." << std::endl;
 			continue;
 		}
 
@@ -814,11 +1052,9 @@ void MagDynDlg::CalcExchangeTerms()
 		std::istringstream{dist_z->text().toStdString()} >> term.dist[2];
 		std::istringstream{interaction->text().toStdString()} >> term.J;
 
-		num_cells = std::max({num_cells, term.atom1, term.atom2});
 		m_dyn.AddExchangeTerm(std::move(term));
 	}
 
-	m_dyn.SetNumCells(num_cells + 1);
 	CalcDispersion();
 }
 

@@ -50,9 +50,21 @@ void MagDyn::ClearExchangeTerms()
 }
 
 
+void MagDyn::ClearAtomSites()
+{
+	m_sites.clear();
+}
+
+
 void MagDyn::AddExchangeTerm(ExchangeTerm&& term)
 {
 	m_exchange_terms.emplace_back(std::forward<ExchangeTerm&&>(term));
+}
+
+
+void MagDyn::AddAtomSite(AtomSite&& site)
+{
+	m_sites.emplace_back(std::forward<AtomSite&&>(site));
 }
 
 
@@ -76,6 +88,10 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
  */
 std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 {
+	const std::size_t num_sites = m_sites.size();
+	if(num_sites == 0)
+		return {};
+
 	// momentum
 	const t_vec Q = tl2::create<t_vec>({_h, _k, _l});
 
@@ -85,22 +101,29 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 
 	// TODO: us and vs are per cell, not per coupling term
 	std::vector<t_vec> us, us_conj, vs;
-	us.reserve(m_num_cells);
-	us_conj.reserve(m_num_cells);
-	vs.reserve(m_num_cells);
+	us.reserve(num_sites);
+	us_conj.reserve(num_sites);
+	vs.reserve(num_sites);
 
-	// formulas 12 and 14 from (Toth 2015), J(Q) and J(-Q)
-	t_mat J_Q = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	t_mat J_mQ = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	t_mat J_Q0 = tl2::zero<t_mat>(m_num_cells*3, m_num_cells*3);
-	for(const ExchangeTerm& term : m_exchange_terms)
+	for(const AtomSite& site : m_sites)
 	{
 		// spin rotation of formula 9 from (Toth 2015)
-		auto [u, v] = R_to_uv(term.rot);
+		auto [u, v] = R_to_uv(site.rot);
 		t_vec u_conj = tl2::conj(u);
 		us.emplace_back(std::move(u));
 		vs.emplace_back(std::move(v));
 		us_conj.emplace_back(std::move(u_conj));
+	}
+
+
+	// formulas 12 and 14 from (Toth 2015), J(Q) and J(-Q)
+	t_mat J_Q = tl2::zero<t_mat>(num_sites*3, num_sites*3);
+	t_mat J_mQ = tl2::zero<t_mat>(num_sites*3, num_sites*3);
+	t_mat J_Q0 = tl2::zero<t_mat>(num_sites*3, num_sites*3);
+	for(const ExchangeTerm& term : m_exchange_terms)
+	{
+		if(term.atom1 >= num_sites || term.atom2 >= num_sites)
+			continue;
 
 		t_mat J = tl2::diag<t_mat>(
 			tl2::create<t_vec>({term.J, term.J, term.J}));
@@ -124,14 +147,14 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	}
 
 	// create hamiltonian of formula 25 and 26 from (Toth 2015)
-	t_mat A = tl2::create<t_mat>(m_num_cells, m_num_cells);
-	t_mat A_conj = tl2::create<t_mat>(m_num_cells, m_num_cells);
-	t_mat B = tl2::create<t_mat>(m_num_cells, m_num_cells);
-	t_mat C = tl2::zero<t_mat>(m_num_cells, m_num_cells);
+	t_mat A = tl2::create<t_mat>(num_sites, num_sites);
+	t_mat A_conj = tl2::create<t_mat>(num_sites, num_sites);
+	t_mat B = tl2::create<t_mat>(num_sites, num_sites);
+	t_mat C = tl2::zero<t_mat>(num_sites, num_sites);
 
-	for(std::size_t i=0; i<m_num_cells; ++i)
+	for(std::size_t i=0; i<num_sites; ++i)
 	{
-		for(std::size_t j=0; j<m_num_cells; ++j)
+		for(std::size_t j=0; j<num_sites; ++j)
 		{
 			t_mat J_sub_mQ = submat<t_mat>(J_mQ, i*3, j*3, 3, 3);
 			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
@@ -150,7 +173,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 
 			if(i == j)
 			{
-				for(std::size_t k=0; k<m_num_cells; ++k)
+				for(std::size_t k=0; k<num_sites; ++k)
 				{
 					// TODO: S_k
 					t_real S_k = 0.5;
@@ -161,11 +184,11 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 		}
 	}
 
-	t_mat H = tl2::zero<t_mat>(m_num_cells*2, m_num_cells*2);
+	t_mat H = tl2::zero<t_mat>(num_sites*2, num_sites*2);
 	set_submat(H, A - C, 0, 0);
-	set_submat(H, B, 0, m_num_cells);
-	set_submat(H, tl2::herm(B), m_num_cells, 0);
-	set_submat(H, A_conj - C, m_num_cells, m_num_cells);
+	set_submat(H, B, 0, num_sites);
+	set_submat(H, tl2::herm(B), num_sites, 0);
+	set_submat(H, A_conj - C, num_sites, num_sites);
 
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
