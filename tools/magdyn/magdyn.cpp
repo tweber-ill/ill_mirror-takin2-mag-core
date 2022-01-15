@@ -98,6 +98,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	// constants: imaginary unit and 2pi
 	constexpr const t_cplx imag{0., 1.};
 	constexpr const t_real twopi = t_real(2)*tl2::pi<t_real>;
+	const t_vec_real zdir = tl2::create<t_vec_real>({0., 0., 1.});
 
 	// TODO: us and vs are per cell, not per coupling term
 	std::vector<t_vec> us, us_conj, vs;
@@ -107,8 +108,14 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 
 	for(const AtomSite& site : m_sites)
 	{
+		// rotate spin to ferromagnetic [001] direction
+		auto [spin_re, spin_im] = tl2::split_cplx<t_vec, t_vec_real>(site.spin);
+		t_mat rot = tl2::convert<t_mat>(
+			tl2::rotation<t_mat_real, t_vec_real>(
+				spin_re, zdir, zdir));
+
 		// spin rotation of formula 9 from (Toth 2015)
-		auto [u, v] = R_to_uv(site.rot);
+		auto [u, v] = R_to_uv(rot);
 		t_vec u_conj = tl2::conj(u);
 		us.emplace_back(std::move(u));
 		vs.emplace_back(std::move(v));

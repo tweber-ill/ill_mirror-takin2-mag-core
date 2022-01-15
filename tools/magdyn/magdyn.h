@@ -23,7 +23,6 @@ struct AtomSite
 {
 	t_vec pos{};
 	t_vec spin{};
-	t_mat rot = tl2::unit<t_mat>(3);  // default to ferromagnetic case
 };
 
 

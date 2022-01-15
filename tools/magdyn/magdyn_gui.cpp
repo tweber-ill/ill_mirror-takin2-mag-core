@@ -996,7 +996,7 @@ void MagDynDlg::CalcSitesAndTerms()
 	m_dyn.ClearAtomSites();
 	m_dyn.ClearExchangeTerms();
 
-	// atom sites
+	// get atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
 	{
 		auto *name = m_sitestab->item(row, COL_SITE_NAME);
@@ -1026,7 +1026,7 @@ void MagDynDlg::CalcSitesAndTerms()
 		m_dyn.AddAtomSite(std::move(site));
 	}
 
-	// exchange terms
+	// get exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
 		auto *name = m_termstab->item(row, COL_XCH_NAME);

@@ -19,6 +19,9 @@ using t_size = std::size_t;
 using t_real = double;
 using t_cplx = std::complex<t_real>;
 
+using t_vec_real = tl2::vec<t_real, std::vector>;
+using t_mat_real = tl2::mat<t_real, std::vector>;
+
 using t_vec = tl2::vec<t_cplx, std::vector>;
 using t_mat = tl2::mat<t_cplx, std::vector>;
 
