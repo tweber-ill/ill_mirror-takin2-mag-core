@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
@@ -209,20 +210,31 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setSelectionMode(QTableWidget::ContiguousSelection);
 		m_termstab->setContextMenuPolicy(Qt::CustomContextMenu);
 
-		m_termstab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_termstab->verticalHeader()->setDefaultSectionSize(
+			fontMetrics().lineSpacing() + 4);
 		m_termstab->verticalHeader()->setVisible(false);
 
 		m_termstab->setColumnCount(NUM_XCH_COLS);
-		m_termstab->setHorizontalHeaderItem(COL_XCH_NAME, new QTableWidgetItem{"Name"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_ATOM1_IDX, new QTableWidgetItem{"Atom 1"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_ATOM2_IDX, new QTableWidgetItem{"Atom 2"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_X, new QTableWidgetItem{"Cell Δx"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Y, new QTableWidgetItem{"Cell Δy"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Z, new QTableWidgetItem{"Cell Δz"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_INTERACTION, new QTableWidgetItem{"Bond J"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_X, new QTableWidgetItem{"DMI x"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_Y, new QTableWidgetItem{"DMI y"});
-		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_Z, new QTableWidgetItem{"DMI z"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_NAME, new QTableWidgetItem{"Name"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_ATOM1_IDX, new QTableWidgetItem{"Atom 1"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_ATOM2_IDX, new QTableWidgetItem{"Atom 2"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DIST_X, new QTableWidgetItem{"Cell Δx"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DIST_Y, new QTableWidgetItem{"Cell Δy"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DIST_Z, new QTableWidgetItem{"Cell Δz"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_INTERACTION, new QTableWidgetItem{"Bond J"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DMI_X, new QTableWidgetItem{"DMI x"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DMI_Y, new QTableWidgetItem{"DMI y"});
+		m_termstab->setHorizontalHeaderItem(
+			COL_XCH_DMI_Z, new QTableWidgetItem{"DMI z"});
 
 		m_termstab->setColumnWidth(COL_XCH_NAME, 90);
 		m_termstab->setColumnWidth(COL_XCH_ATOM1_IDX, 80);
@@ -240,11 +252,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *pTabBtnUp = new QToolButton(m_termspanel);
 		QToolButton *pTabBtnDown = new QToolButton(m_termspanel);
 
-		m_termstab->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_termstab->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		pTabBtnAdd->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		pTabBtnAdd->setText("Add Term");
 		pTabBtnDel->setText("Delete Term");
@@ -270,26 +287,37 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
-		pTabContextMenu->addAction("Add Term Before", this, [this]() { this->AddTermTabItem(-2); });
-		pTabContextMenu->addAction("Add Term After", this, [this]() { this->AddTermTabItem(-3); });
-		pTabContextMenu->addAction("Clone Term", this, [this]() { this->AddTermTabItem(-4); });
-		pTabContextMenu->addAction("Delete Term", this, [this]() { this->DelTabItem(m_termstab); });
+		pTabContextMenu->addAction("Add Term Before", this,
+			[this]() { this->AddTermTabItem(-2); });
+		pTabContextMenu->addAction("Add Term After", this,
+			[this]() { this->AddTermTabItem(-3); });
+		pTabContextMenu->addAction("Clone Term", this,
+			[this]() { this->AddTermTabItem(-4); });
+		pTabContextMenu->addAction("Delete Term", this,
+			[this]() { this->DelTabItem(m_termstab); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_termstab);
-		pTabContextMenuNoItem->addAction("Add Term", this, [this]() { this->AddTermTabItem(); });
-		pTabContextMenuNoItem->addAction("Delete Term", this, [this]() { this->DelTabItem(m_termstab); });
+		pTabContextMenuNoItem->addAction("Add Term", this,
+			[this]() { this->AddTermTabItem(); });
+		pTabContextMenuNoItem->addAction("Delete Term", this,
+			[this]() { this->DelTabItem(m_termstab); });
 		//pTabContextMenuNoItem->addSeparator();
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTermTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(m_termstab); });
-		connect(pTabBtnUp, &QToolButton::clicked, this, [this]() { this->MoveTabItemUp(m_termstab); });
-		connect(pTabBtnDown, &QToolButton::clicked, this, [this]() { this->MoveTabItemDown(m_termstab); });
+		connect(pTabBtnAdd, &QToolButton::clicked, this,
+			[this]() { this->AddTermTabItem(-1); });
+		connect(pTabBtnDel, &QToolButton::clicked, this,
+			[this]() { this->DelTabItem(m_termstab); });
+		connect(pTabBtnUp, &QToolButton::clicked, this,
+			[this]() { this->MoveTabItemUp(m_termstab); });
+		connect(pTabBtnDown, &QToolButton::clicked, this,
+			[this]() { this->MoveTabItemDown(m_termstab); });
 
-		connect(m_termstab, &QTableWidget::itemChanged, this, &MagDynDlg::TermsTableItemChanged);
+		connect(m_termstab, &QTableWidget::itemChanged,
+			this, &MagDynDlg::TermsTableItemChanged);
 		connect(m_termstab, &QTableWidget::customContextMenuRequested, this,
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
@@ -309,7 +337,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_plot->setInteraction(QCP::iRangeDrag, true);
 		m_plot->setInteraction(QCP::iRangeZoom, true);
 		m_plot->setSelectionRectMode(QCP::srmZoom);
-		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		m_plot->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		// start and stop coordinates
 		m_spin_q_start[0] = new QDoubleSpinBox(m_disppanel);
@@ -359,15 +388,18 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		int y = 0;
 		pTabGrid->addWidget(m_plot, y++,0,1,4);
-		pTabGrid->addWidget(new QLabel(QString("Starting Q:"), m_disppanel), y,0,1,1);
+		pTabGrid->addWidget(
+			new QLabel(QString("Starting Q [rlu]:"), m_disppanel), y,0,1,1);
 		pTabGrid->addWidget(m_spin_q_start[0], y,1,1,1);
 		pTabGrid->addWidget(m_spin_q_start[1], y,2,1,1);
 		pTabGrid->addWidget(m_spin_q_start[2], y++,3,1,1);
-		pTabGrid->addWidget(new QLabel(QString("Ending Q:"), m_disppanel), y,0,1,1);
+		pTabGrid->addWidget(
+			new QLabel(QString("Ending Q [rlu]:"), m_disppanel), y,0,1,1);
 		pTabGrid->addWidget(m_spin_q_end[0], y,1,1,1);
 		pTabGrid->addWidget(m_spin_q_end[1], y,2,1,1);
 		pTabGrid->addWidget(m_spin_q_end[2], y++,3,1,1);
-		pTabGrid->addWidget(new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
+		pTabGrid->addWidget(
+			new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
 		pTabGrid->addWidget(m_num_points, y,1,1,1);
 		pTabGrid->addWidget(m_use_dmi, y++,3,1,1);
 
@@ -379,7 +411,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				[this]() { this->CalcDispersion(); });
 			connect(m_spin_q_end[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-					[this]() { this->CalcDispersion(); });
+				[this]() { this->CalcDispersion(); });
 		}
 
 		connect(m_num_points,
@@ -393,6 +425,58 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			this, &MagDynDlg::PlotMouseMove);
 
 		tabs->addTab(m_disppanel, "Dispersion");
+	}
+
+
+	// hamiltonian panel
+	{
+		m_hamiltonianpanel = new QWidget(this);
+
+		// hamiltonian
+		m_hamiltonian = new QPlainTextEdit(m_hamiltonianpanel);
+		m_hamiltonian->setReadOnly(true);
+		m_hamiltonian->setWordWrapMode(QTextOption::NoWrap);
+		m_hamiltonian->setLineWrapMode(QPlainTextEdit::NoWrap);
+		m_hamiltonian->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+		// Q coordinates
+		m_spin_q[0] = new QDoubleSpinBox(m_hamiltonianpanel);
+		m_spin_q[1] = new QDoubleSpinBox(m_hamiltonianpanel);
+		m_spin_q[2] = new QDoubleSpinBox(m_hamiltonianpanel);
+
+		for(int i=0; i<3; ++i)
+		{
+			m_spin_q[i]->setDecimals(2);
+			m_spin_q[i]->setMinimum(-99);
+			m_spin_q[i]->setMaximum(+99);
+			m_spin_q[i]->setSingleStep(0.1);
+			m_spin_q[i]->setValue(0.);
+			m_spin_q[i]->setSizePolicy(
+				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		}
+
+		auto grid = new QGridLayout(m_hamiltonianpanel);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
+
+		int y = 0;
+		grid->addWidget(m_hamiltonian, y++,0,1,4);
+		grid->addWidget(new QLabel(QString("Q [rlu]:"),
+			m_hamiltonianpanel), y,0,1,1);
+		grid->addWidget(m_spin_q[0], y,1,1,1);
+		grid->addWidget(m_spin_q[1], y,2,1,1);
+		grid->addWidget(m_spin_q[2], y++,3,1,1);
+
+		// signals
+		for(int i=0; i<3; ++i)
+		{
+			connect(m_spin_q[i],
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]() { this->CalcHamiltonian(); });
+		}
+
+		tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
 	}
 
 
@@ -425,7 +509,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(labelTitle, y++,0, 1,1);
 		pGrid->addWidget(labelAuthor, y++,0, 1,1);
 		pGrid->addWidget(labelDate, y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Fixed), y++,0, 1,1);
+		pGrid->addItem(new QSpacerItem(16,16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
 		pGrid->addWidget(sep1, y++,0, 1,1);
 		pGrid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
 		pGrid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
@@ -434,7 +520,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
 		pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
 		pGrid->addWidget(sep3, y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Expanding), y++,0, 1,1);
+		pGrid->addItem(new QSpacerItem(16,16,
+			QSizePolicy::Minimum, QSizePolicy::Expanding),
+			y++,0, 1,1);
 
 		tabs->addTab(infopanel, "Infos");
 	}
@@ -494,8 +582,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(acSave, &QAction::triggered, this, &MagDynDlg::Save);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
-		connect(acSaveFigure, &QAction::triggered, this, &MagDynDlg::SavePlotFigure);
-		connect(acRescalePlot, &QAction::triggered, [this]()
+		connect(acSaveFigure, &QAction::triggered,
+			this, &MagDynDlg::SavePlotFigure);
+		connect(acRescalePlot, &QAction::triggered,
+			[this]()
 		{
 			if(!m_plot)
 				return;
@@ -550,17 +640,27 @@ void MagDynDlg::AddSiteTabItem(int row,
 	if(bclone)
 	{
 		for(int thecol=0; thecol<NUM_SITE_COLS; ++thecol)
-			m_sitestab->setItem(row, thecol, m_sitestab->item(m_sites_cursor_row, thecol)->clone());
+		{
+			m_sitestab->setItem(row, thecol,
+				m_sitestab->item(m_sites_cursor_row, thecol)->clone());
+		}
 	}
 	else
 	{
-		m_sitestab->setItem(row, COL_SITE_NAME, new QTableWidgetItem(name.c_str()));
-		m_sitestab->setItem(row, COL_SITE_POS_X, new NumericTableWidgetItem<t_real>(x));
-		m_sitestab->setItem(row, COL_SITE_POS_Y, new NumericTableWidgetItem<t_real>(y));
-		m_sitestab->setItem(row, COL_SITE_POS_Z, new NumericTableWidgetItem<t_real>(z));
-		m_sitestab->setItem(row, COL_SITE_SPIN_X, new NumericTableWidgetItem<t_real>(sx));
-		m_sitestab->setItem(row, COL_SITE_SPIN_Y, new NumericTableWidgetItem<t_real>(sy));
-		m_sitestab->setItem(row, COL_SITE_SPIN_Z, new NumericTableWidgetItem<t_real>(sz));
+		m_sitestab->setItem(row, COL_SITE_NAME,
+			new QTableWidgetItem(name.c_str()));
+		m_sitestab->setItem(row, COL_SITE_POS_X,
+			new NumericTableWidgetItem<t_real>(x));
+		m_sitestab->setItem(row, COL_SITE_POS_Y,
+			new NumericTableWidgetItem<t_real>(y));
+		m_sitestab->setItem(row, COL_SITE_POS_Z,
+			new NumericTableWidgetItem<t_real>(z));
+		m_sitestab->setItem(row, COL_SITE_SPIN_X,
+			new NumericTableWidgetItem<t_real>(sx));
+		m_sitestab->setItem(row, COL_SITE_SPIN_Y,
+			new NumericTableWidgetItem<t_real>(sy));
+		m_sitestab->setItem(row, COL_SITE_SPIN_Z,
+			new NumericTableWidgetItem<t_real>(sz));
 	}
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
@@ -608,16 +708,26 @@ void MagDynDlg::AddTermTabItem(int row,
 	}
 	else
 	{
-		m_termstab->setItem(row, COL_XCH_NAME, new QTableWidgetItem(name.c_str()));
-		m_termstab->setItem(row, COL_XCH_ATOM1_IDX, new NumericTableWidgetItem<t_size>(atom_1));
-		m_termstab->setItem(row, COL_XCH_ATOM2_IDX, new NumericTableWidgetItem<t_size>(atom_2));
-		m_termstab->setItem(row, COL_XCH_DIST_X, new NumericTableWidgetItem<t_real>(dist_x));
-		m_termstab->setItem(row, COL_XCH_DIST_Y, new NumericTableWidgetItem<t_real>(dist_y));
-		m_termstab->setItem(row, COL_XCH_DIST_Z, new NumericTableWidgetItem<t_real>(dist_z));
-		m_termstab->setItem(row, COL_XCH_INTERACTION, new NumericTableWidgetItem<t_real>(J));
-		m_termstab->setItem(row, COL_XCH_DMI_X, new NumericTableWidgetItem<t_real>(dmi_x));
-		m_termstab->setItem(row, COL_XCH_DMI_Y, new NumericTableWidgetItem<t_real>(dmi_y));
-		m_termstab->setItem(row, COL_XCH_DMI_Z, new NumericTableWidgetItem<t_real>(dmi_z));
+		m_termstab->setItem(row, COL_XCH_NAME,
+			new QTableWidgetItem(name.c_str()));
+		m_termstab->setItem(row, COL_XCH_ATOM1_IDX,
+			new NumericTableWidgetItem<t_size>(atom_1));
+		m_termstab->setItem(row, COL_XCH_ATOM2_IDX,
+			new NumericTableWidgetItem<t_size>(atom_2));
+		m_termstab->setItem(row, COL_XCH_DIST_X,
+			new NumericTableWidgetItem<t_real>(dist_x));
+		m_termstab->setItem(row, COL_XCH_DIST_Y,
+			new NumericTableWidgetItem<t_real>(dist_y));
+		m_termstab->setItem(row, COL_XCH_DIST_Z,
+			new NumericTableWidgetItem<t_real>(dist_z));
+		m_termstab->setItem(row, COL_XCH_INTERACTION,
+			new NumericTableWidgetItem<t_real>(J));
+		m_termstab->setItem(row, COL_XCH_DMI_X,
+			new NumericTableWidgetItem<t_real>(dmi_x));
+		m_termstab->setItem(row, COL_XCH_DMI_Y,
+			new NumericTableWidgetItem<t_real>(dmi_y));
+		m_termstab->setItem(row, COL_XCH_DMI_Z,
+			new NumericTableWidgetItem<t_real>(dmi_z));
 	}
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
@@ -843,6 +953,12 @@ void MagDynDlg::Load()
 			m_spin_q_end[1]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_end"))
 			m_spin_q_end[2]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.h"))
+			m_spin_q[0]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.k"))
+			m_spin_q[1]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.l"))
+			m_spin_q[2]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_size>("magdyn.config.num_Q_points"))
 			m_num_points->setValue(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.use_DMI"))
@@ -930,6 +1046,9 @@ void MagDynDlg::Save()
 	node.put<t_real>("magdyn.config.h_end", m_spin_q_end[0]->value());
 	node.put<t_real>("magdyn.config.k_end", m_spin_q_end[1]->value());
 	node.put<t_real>("magdyn.config.l_end", m_spin_q_end[2]->value());
+	node.put<t_real>("magdyn.config.h", m_spin_q[0]->value());
+	node.put<t_real>("magdyn.config.k", m_spin_q[0]->value());
+	node.put<t_real>("magdyn.config.l", m_spin_q[0]->value());
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
 
@@ -939,15 +1058,22 @@ void MagDynDlg::Save()
 		t_real pos[3]{0., 0., 0.};
 		t_real spin[3]{0., 0., 1.};
 
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_X)->text().toStdString()} >> pos[0];
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Y)->text().toStdString()} >> pos[1];
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Z)->text().toStdString()} >> pos[2];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_X)->text().toStdString()} >> spin[0];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Y)->text().toStdString()} >> spin[1];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Z)->text().toStdString()} >> spin[2];
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_X)
+			->text().toStdString()} >> pos[0];
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Y)
+			->text().toStdString()} >> pos[1];
+		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Z)
+			->text().toStdString()} >> pos[2];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_X)
+			->text().toStdString()} >> spin[0];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Y)
+			->text().toStdString()} >> spin[1];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Z)
+			->text().toStdString()} >> spin[2];
 
 		pt::ptree itemNode;
-		itemNode.put<std::string>("name", m_sitestab->item(row, COL_SITE_NAME)->text().toStdString());
+		itemNode.put<std::string>("name",
+			m_sitestab->item(row, COL_SITE_NAME)->text().toStdString());
 		itemNode.put<t_real>("position_x", pos[0]);
 		itemNode.put<t_real>("position_y", pos[1]);
 		itemNode.put<t_real>("position_z", pos[2]);
@@ -967,18 +1093,28 @@ void MagDynDlg::Save()
 		t_real J = 0.;
 		t_real dmi[3]{0., 0., 0.};
 
-		std::istringstream{m_termstab->item(row, COL_XCH_ATOM1_IDX)->text().toStdString()} >> atom_1_idx;
-		std::istringstream{m_termstab->item(row, COL_XCH_ATOM2_IDX)->text().toStdString()} >> atom_2_idx;
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_X)->text().toStdString()} >> dist[0];
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Y)->text().toStdString()} >> dist[1];
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Z)->text().toStdString()} >> dist[2];
-		std::istringstream{m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString()} >> J;
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_X)->text().toStdString()} >> dmi[0];
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Y)->text().toStdString()} >> dmi[1];
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Z)->text().toStdString()} >> dmi[2];
+		std::istringstream{m_termstab->item(row, COL_XCH_ATOM1_IDX)
+			->text().toStdString()} >> atom_1_idx;
+		std::istringstream{m_termstab->item(row, COL_XCH_ATOM2_IDX)
+			->text().toStdString()} >> atom_2_idx;
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_X)
+			->text().toStdString()} >> dist[0];
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Y)
+			->text().toStdString()} >> dist[1];
+		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Z)
+			->text().toStdString()} >> dist[2];
+		std::istringstream{m_termstab->item(row, COL_XCH_INTERACTION)
+			->text().toStdString()} >> J;
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_X)
+			->text().toStdString()} >> dmi[0];
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Y)
+			->text().toStdString()} >> dmi[1];
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Z)
+			->text().toStdString()} >> dmi[2];
 
 		pt::ptree itemNode;
-		itemNode.put<std::string>("name", m_termstab->item(row, COL_XCH_NAME)->text().toStdString());
+		itemNode.put<std::string>("name",
+			 m_termstab->item(row, COL_XCH_NAME)->text().toStdString());
 		itemNode.put<t_size>("atom_1_index", atom_1_idx);
 		itemNode.put<t_size>("atom_2_index", atom_2_idx);
 		itemNode.put<t_real>("distance_x", dist[0]);
@@ -996,11 +1132,13 @@ void MagDynDlg::Save()
 	std::ofstream ofstr{filename.toStdString()};
 	if(!ofstr)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", "Cannot open file for writing.");
+		QMessageBox::critical(this, "Magnon Dynamics",
+			"Cannot open file for writing.");
 		return;
 	}
 	ofstr.precision(g_prec);
-	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+	pt::write_xml(ofstr, node, 
+		pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 }
 
 
@@ -1013,7 +1151,8 @@ void MagDynDlg::SavePlotFigure()
 		return;
 
 	QString dirLast = m_sett->value("dir", "").toString();
-	QString filename = QFileDialog::getSaveFileName(this, "Save Figure", dirLast, "PDf Files (*.pdf *.PDF)");
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Save Figure", dirLast, "PDf Files (*.pdf *.PDF)");
 	if(filename=="")
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
@@ -1110,6 +1249,7 @@ void MagDynDlg::CalcSitesAndTerms()
 	}
 
 	CalcDispersion();
+	CalcHamiltonian();
 }
 
 
@@ -1186,7 +1326,8 @@ void MagDynDlg::CalcDispersion()
 	curve->setAntialiased(true);
 	curve->setData(qs_data, Es_data);
 
-	auto [min_E_iter, max_E_iter] = std::minmax_element(Es_data.begin(), Es_data.end());
+	auto [min_E_iter, max_E_iter] =
+		std::minmax_element(Es_data.begin(), Es_data.end());
 
 	const char* Q_label[]{ "h (rlu)", "k (rlu)", "l (rlu)" };
 	m_plot->xAxis->setLabel(Q_label[Q_idx]);
@@ -1202,6 +1343,41 @@ void MagDynDlg::CalcDispersion()
 	}
 
 	m_plot->replot();
+}
+
+
+/**
+ * calculate the hamiltonian for a single Q value
+ */
+void MagDynDlg::CalcHamiltonian()
+{
+	if(m_ignoreCalc)
+		return;
+
+	const t_real Q[]
+	{
+		m_spin_q[0]->value(),
+		m_spin_q[1]->value(),
+		m_spin_q[2]->value(),
+	};
+
+	t_mat H = m_dyn.GetHamiltonian(Q[0], Q[1], Q[2]);
+
+	std::ostringstream ostr;
+	ostr.precision(g_prec_gui);
+
+	for(std::size_t i=0; i<H.size1(); ++i)
+	{
+		for(std::size_t j=0; j<H.size2(); ++j)
+		{
+			t_cplx elem = H(i, j);
+			tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
+			ostr << std::setw(g_prec_gui*2) << std::left << elem << "\t";
+		}
+		ostr << "\n";
+	}
+
+	m_hamiltonian->setPlainText(ostr.str().c_str());
 }
 
 

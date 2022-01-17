@@ -36,6 +36,7 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 
@@ -68,6 +69,7 @@ protected:
 
 	QWidget *m_sitespanel{};
 	QWidget *m_termspanel{};
+	QWidget *m_hamiltonianpanel{};
 
 	QTableWidget *m_sitestab{};
 	QTableWidget *m_termstab{};
@@ -77,6 +79,9 @@ protected:
 	QDoubleSpinBox *m_spin_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
 	QCheckBox *m_use_dmi{};
+
+	QPlainTextEdit *m_hamiltonian{};
+	QDoubleSpinBox *m_spin_q[3]{nullptr, nullptr, nullptr};
 
 	MagDyn m_dyn{};
 	QCustomPlot *m_plot{};
@@ -112,6 +117,7 @@ protected:
 
 	void CalcSitesAndTerms();
 	void CalcDispersion();
+	void CalcHamiltonian();
 
 	void PlotMouseMove(QMouseEvent* evt);
 	virtual void closeEvent(QCloseEvent *evt) override;

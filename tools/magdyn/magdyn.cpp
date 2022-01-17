@@ -83,11 +83,11 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
 
 
 /**
- * get the energies at the given momentum
+ * get the hamiltonian at the given momentum
  * @note implements the formalism given by (Toth 2015)
  * @note first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021
  */
-std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
+t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 {
 	const std::size_t num_sites = m_sites.size();
 	if(num_sites == 0)
@@ -154,7 +154,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 		t_cplx phase_Q = std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
 		t_cplx phase_mQ = std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, -Q));
 
-		t_real factor = /*0.5*/ 1.;
+		t_real factor = 1.; //0.5;
 		add_submat<t_mat>(J_Q, factor*J*phase_Q, term.atom1*3, term.atom2*3);
 		add_submat<t_mat>(J_Q, factor*J_T*phase_mQ, term.atom2*3, term.atom1*3);
 
@@ -179,23 +179,23 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 			t_mat J_sub_mQ = submat<t_mat>(J_mQ, i*3, j*3, 3, 3);
 			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
 
-			// TODO: S_i and S_j
-			t_real S_i = 0.5;
-			t_real S_j = 0.5;
-			t_real prefactor = /*0.5 **/ std::sqrt(S_i*S_j);
-			A(i, j) = prefactor *
+			// TODO: check units of S_i and S_j
+			t_real S_i = 1.;
+			t_real S_j = 1.;
+			t_real factor = 0.5 * std::sqrt(S_i*S_j);
+			A(i, j) = factor *
 				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us_conj[j]);
-			A_conj(i, j) = std::conj(prefactor *
+			A_conj(i, j) = std::conj(factor *
 				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]));
-			B(i, j) = prefactor *
+			B(i, j) = factor *
 				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us[j]);
 
 			if(i == j)
 			{
 				for(std::size_t k=0; k<num_sites; ++k)
 				{
-					// TODO: S_k
-					t_real S_k = 0.5;
+					// TODO: check unit of S_k
+					t_real S_k = 1.;
 					t_mat J_sub_Q0 = submat<t_mat>(J_Q0, i*3, k*3, 3, 3);
 					C(i, j) += S_k * tl2::inner_noconj<t_vec>(vs[i], J_sub_Q0 * vs[k]);
 				}
@@ -209,16 +209,29 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	set_submat(H, tl2::herm(B), num_sites, 0);
 	set_submat(H, A_conj - C, num_sites, num_sites);
 
+	return H;
+}
+
+
+/**
+ * get the energies at the given momentum
+ * @note implements the formalism given by (Toth 2015)
+ * @note first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021
+ */
+std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
+{
+	t_mat H = GetHamiltonian(h, k, l);
+
 	bool is_herm = tl2::is_symm_or_herm<t_mat, t_real>(H, m_eps);
 	if(!is_herm)
 		std::cerr << "Warning: Hamiltonian is not hermitian." << std::endl;
-
 
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
 	bool only_evals = true;
 	auto [ok, evals, evecs] =
-		tl2_la::eigenvec<t_mat, t_vec, t_cplx, t_real>(H, only_evals, is_herm);
+		tl2_la::eigenvec<t_mat, t_vec, t_cplx, t_real>(
+			H, only_evals, is_herm);
 
 	std::vector<t_real> energies;
 	energies.reserve(evals.size());
@@ -235,7 +248,8 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 			continue;
 		}
 
-		energies.push_back(eval.real());
+		//if(std::abs(eval.imag()) <= m_eps)
+			energies.push_back(eval.real());
 	}
 
 	return energies;

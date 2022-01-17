@@ -50,6 +50,7 @@ public:
 
 	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
 
+	t_mat GetHamiltonian(t_real h, t_real k, t_real l) const;
 	std::vector<t_real> GetEnergies(t_real h, t_real k, t_real l) const;
 	t_real GetGoldstoneEnergy() const;
 
