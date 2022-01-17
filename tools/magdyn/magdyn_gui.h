@@ -35,6 +35,7 @@
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QMenuBar>
@@ -79,12 +80,16 @@ protected:
 	QTableWidget *m_termstab{};
 
 	QWidget *m_disppanel{};
-	QDoubleSpinBox *m_spin_q_start[3]{nullptr, nullptr, nullptr};
-	QDoubleSpinBox *m_spin_q_end[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
 
 	QTextEdit *m_hamiltonian{};
-	QDoubleSpinBox *m_spin_q[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_q[3]{nullptr, nullptr, nullptr};
+
+	QDoubleSpinBox *m_field_dir[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_field_mag{};
+	QCheckBox *m_align_spins{};
 
 	MagDyn m_dyn{};
 	QCustomPlot *m_plot{};

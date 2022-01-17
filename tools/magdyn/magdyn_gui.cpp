@@ -123,13 +123,20 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_sitestab->verticalHeader()->setVisible(false);
 
 		m_sitestab->setColumnCount(NUM_SITE_COLS);
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_NAME, new QTableWidgetItem{"Name"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_X, new QTableWidgetItem{"x"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Y, new QTableWidgetItem{"y"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Z, new QTableWidgetItem{"z"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_X, new QTableWidgetItem{"Spin x"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Y, new QTableWidgetItem{"Spin y"});
-		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Z, new QTableWidgetItem{"Spin z"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_NAME,
+			new QTableWidgetItem{"Name"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_X,
+			new QTableWidgetItem{"x"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Y,
+			new QTableWidgetItem{"y"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_POS_Z,
+			new QTableWidgetItem{"z"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_X,
+			new QTableWidgetItem{"Spin x"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Y,
+			new QTableWidgetItem{"Spin y"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Z,
+			new QTableWidgetItem{"Spin z"});
 
 		m_sitestab->setColumnWidth(COL_SITE_NAME, 90);
 		m_sitestab->setColumnWidth(COL_SITE_POS_X, 80);
@@ -157,8 +164,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		auto grid = new QGridLayout(m_sitespanel);
-		grid->setSpacing(2);
-		grid->setContentsMargins(4,4,4,4);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
 		grid->addWidget(m_sitestab, y,0,1,4);
@@ -271,8 +278,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		auto grid = new QGridLayout(m_termspanel);
-		grid->setSpacing(2);
-		grid->setContentsMargins(4,4,4,4);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
 		grid->addWidget(m_termstab, y,0,1,4);
@@ -331,6 +338,74 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	{
 		m_fieldpanel = new QWidget(this);
 
+		// field magnitude
+		m_field_mag = new QDoubleSpinBox(m_fieldpanel);
+		m_field_mag->setDecimals(2);
+		m_field_mag->setMinimum(0);
+		m_field_mag->setMaximum(+99);
+		m_field_mag->setSingleStep(0.1);
+		m_field_mag->setValue(0.);
+		m_field_mag->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		// field direction
+		m_field_dir[0] = new QDoubleSpinBox(m_fieldpanel);
+		m_field_dir[1] = new QDoubleSpinBox(m_fieldpanel);
+		m_field_dir[2] = new QDoubleSpinBox(m_fieldpanel);
+
+		// align spins along field (field-polarised state)
+		m_align_spins = new QCheckBox(
+			"Align Spins along Field Direction", m_fieldpanel);
+		m_align_spins->setChecked(false);
+
+		for(int i=0; i<3; ++i)
+		{
+			m_field_dir[i]->setDecimals(2);
+			m_field_dir[i]->setMinimum(-99);
+			m_field_dir[i]->setMaximum(+99);
+			m_field_dir[i]->setSingleStep(0.1);
+			m_field_dir[i]->setValue(i == 2 ? 1. : 0.);
+			m_field_dir[i]->setSizePolicy(
+				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		}
+		m_field_mag->setPrefix("|B| = ");
+		m_field_dir[0]->setPrefix("Bh = ");
+		m_field_dir[1]->setPrefix("Bk = ");
+		m_field_dir[2]->setPrefix("Bl = ");
+
+		auto grid = new QGridLayout(m_fieldpanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
+
+		int y = 0;
+		grid->addWidget(new QLabel(QString("Field Magnitude:"),
+			m_fieldpanel), y,0,1,1);
+		grid->addWidget(m_field_mag, y++,1,1,1);
+		grid->addWidget(new QLabel(QString("Field Direction:"),
+			m_fieldpanel), y,0,1,1);
+		grid->addWidget(m_field_dir[0], y,1,1,1);
+		grid->addWidget(m_field_dir[1], y,2,1,1);
+		grid->addWidget(m_field_dir[2], y++,3,1,1);
+		grid->addWidget(m_align_spins, y++,0,1,2);
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Expanding),
+			y++,0,1,4);
+
+		// signals
+		connect(m_field_mag,
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+			[this]() { this->CalcSitesAndTerms(); });
+
+		for(int i=0; i<3; ++i)
+		{
+			connect(m_field_dir[i],
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]() { this->CalcSitesAndTerms(); });
+		}
+
+		connect(m_align_spins, &QCheckBox::toggled,
+			[this]() { this->CalcSitesAndTerms(); });
+
 		tabs->addTab(m_fieldpanel, "Field");
 	}
 
@@ -350,12 +425,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		// start and stop coordinates
-		m_spin_q_start[0] = new QDoubleSpinBox(m_disppanel);
-		m_spin_q_start[1] = new QDoubleSpinBox(m_disppanel);
-		m_spin_q_start[2] = new QDoubleSpinBox(m_disppanel);
-		m_spin_q_end[0] = new QDoubleSpinBox(m_disppanel);
-		m_spin_q_end[1] = new QDoubleSpinBox(m_disppanel);
-		m_spin_q_end[2] = new QDoubleSpinBox(m_disppanel);
+		m_q_start[0] = new QDoubleSpinBox(m_disppanel);
+		m_q_start[1] = new QDoubleSpinBox(m_disppanel);
+		m_q_start[2] = new QDoubleSpinBox(m_disppanel);
+		m_q_end[0] = new QDoubleSpinBox(m_disppanel);
+		m_q_end[1] = new QDoubleSpinBox(m_disppanel);
+		m_q_end[2] = new QDoubleSpinBox(m_disppanel);
 
 		// number of points in plot
 		m_num_points = new QSpinBox(m_disppanel);
@@ -367,50 +442,50 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		for(int i=0; i<3; ++i)
 		{
-			m_spin_q_start[i]->setDecimals(2);
-			m_spin_q_end[i]->setDecimals(2);
-			m_spin_q_start[i]->setMinimum(-99);
-			m_spin_q_end[i]->setMinimum(-99);
-			m_spin_q_start[i]->setMaximum(+99);
-			m_spin_q_end[i]->setMaximum(+99);
-			m_spin_q_start[i]->setSingleStep(0.1);
-			m_spin_q_end[i]->setSingleStep(0.1);
-			m_spin_q_start[i]->setValue(0.);
-			m_spin_q_end[i]->setValue(0.);
-			m_spin_q_start[i]->setSuffix(" rlu");
-			m_spin_q_end[i]->setSuffix(" rlu");
-			m_spin_q_start[i]->setSizePolicy(
+			m_q_start[i]->setDecimals(2);
+			m_q_end[i]->setDecimals(2);
+			m_q_start[i]->setMinimum(-99);
+			m_q_end[i]->setMinimum(-99);
+			m_q_start[i]->setMaximum(+99);
+			m_q_end[i]->setMaximum(+99);
+			m_q_start[i]->setSingleStep(0.1);
+			m_q_end[i]->setSingleStep(0.1);
+			m_q_start[i]->setValue(0.);
+			m_q_end[i]->setValue(0.);
+			m_q_start[i]->setSuffix(" rlu");
+			m_q_end[i]->setSuffix(" rlu");
+			m_q_start[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-			m_spin_q_end[i]->setSizePolicy(
+			m_q_end[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
-		m_spin_q_start[0]->setPrefix("h = ");
-		m_spin_q_start[1]->setPrefix("k = ");
-		m_spin_q_start[2]->setPrefix("l = ");
-		m_spin_q_end[0]->setPrefix("h = ");
-		m_spin_q_end[1]->setPrefix("k = ");
-		m_spin_q_end[2]->setPrefix("l = ");
+		m_q_start[0]->setPrefix("h = ");
+		m_q_start[1]->setPrefix("k = ");
+		m_q_start[2]->setPrefix("l = ");
+		m_q_end[0]->setPrefix("h = ");
+		m_q_end[1]->setPrefix("k = ");
+		m_q_end[2]->setPrefix("l = ");
 
-		m_spin_q_start[0]->setValue(-1.);
-		m_spin_q_end[0]->setValue(+1.);
+		m_q_start[0]->setValue(-1.);
+		m_q_end[0]->setValue(+1.);
 
 		auto grid = new QGridLayout(m_disppanel);
-		grid->setSpacing(2);
-		grid->setContentsMargins(4,4,4,4);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
 		grid->addWidget(m_plot, y++,0,1,4);
 		grid->addWidget(
 			new QLabel(QString("Starting Q:"), m_disppanel), y,0,1,1);
-		grid->addWidget(m_spin_q_start[0], y,1,1,1);
-		grid->addWidget(m_spin_q_start[1], y,2,1,1);
-		grid->addWidget(m_spin_q_start[2], y++,3,1,1);
+		grid->addWidget(m_q_start[0], y,1,1,1);
+		grid->addWidget(m_q_start[1], y,2,1,1);
+		grid->addWidget(m_q_start[2], y++,3,1,1);
 		grid->addWidget(
 			new QLabel(QString("Ending Q:"), m_disppanel), y,0,1,1);
-		grid->addWidget(m_spin_q_end[0], y,1,1,1);
-		grid->addWidget(m_spin_q_end[1], y,2,1,1);
-		grid->addWidget(m_spin_q_end[2], y++,3,1,1);
+		grid->addWidget(m_q_end[0], y,1,1,1);
+		grid->addWidget(m_q_end[1], y,2,1,1);
+		grid->addWidget(m_q_end[2], y++,3,1,1);
 		grid->addWidget(
 			new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
 		grid->addWidget(m_num_points, y++,1,1,1);
@@ -418,10 +493,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		// signals
 		for(int i=0; i<3; ++i)
 		{
-			connect(m_spin_q_start[i],
+			connect(m_q_start[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]() { this->CalcDispersion(); });
-			connect(m_spin_q_end[i],
+			connect(m_q_end[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]() { this->CalcDispersion(); });
 		}
@@ -450,42 +525,42 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		// Q coordinates
-		m_spin_q[0] = new QDoubleSpinBox(m_hamiltonianpanel);
-		m_spin_q[1] = new QDoubleSpinBox(m_hamiltonianpanel);
-		m_spin_q[2] = new QDoubleSpinBox(m_hamiltonianpanel);
+		m_q[0] = new QDoubleSpinBox(m_hamiltonianpanel);
+		m_q[1] = new QDoubleSpinBox(m_hamiltonianpanel);
+		m_q[2] = new QDoubleSpinBox(m_hamiltonianpanel);
 
 		for(int i=0; i<3; ++i)
 		{
-			m_spin_q[i]->setDecimals(2);
-			m_spin_q[i]->setMinimum(-99);
-			m_spin_q[i]->setMaximum(+99);
-			m_spin_q[i]->setSingleStep(0.1);
-			m_spin_q[i]->setValue(0.);
-			m_spin_q[i]->setSuffix(" rlu");
-			m_spin_q[i]->setSizePolicy(
+			m_q[i]->setDecimals(2);
+			m_q[i]->setMinimum(-99);
+			m_q[i]->setMaximum(+99);
+			m_q[i]->setSingleStep(0.1);
+			m_q[i]->setValue(0.);
+			m_q[i]->setSuffix(" rlu");
+			m_q[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
-		m_spin_q[0]->setPrefix("h = ");
-		m_spin_q[1]->setPrefix("k = ");
-		m_spin_q[2]->setPrefix("l = ");
+		m_q[0]->setPrefix("h = ");
+		m_q[1]->setPrefix("k = ");
+		m_q[2]->setPrefix("l = ");
 
 		auto grid = new QGridLayout(m_hamiltonianpanel);
-		grid->setSpacing(2);
-		grid->setContentsMargins(4,4,4,4);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
 		grid->addWidget(m_hamiltonian, y++,0,1,4);
 		grid->addWidget(new QLabel(QString("Q:"),
 			m_hamiltonianpanel), y,0,1,1);
-		grid->addWidget(m_spin_q[0], y,1,1,1);
-		grid->addWidget(m_spin_q[1], y,2,1,1);
-		grid->addWidget(m_spin_q[2], y++,3,1,1);
+		grid->addWidget(m_q[0], y,1,1,1);
+		grid->addWidget(m_q[1], y,2,1,1);
+		grid->addWidget(m_q[2], y++,3,1,1);
 
 		// signals
 		for(int i=0; i<3; ++i)
 		{
-			connect(m_spin_q[i],
+			connect(m_q[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]() { this->CalcHamiltonian(); });
 		}
@@ -497,9 +572,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	// info panel
 	{
 		auto infopanel = new QWidget(this);
-		auto pGrid = new QGridLayout(infopanel);
-		pGrid->setSpacing(4);
-		pGrid->setContentsMargins(4,4,4,4);
+		auto grid = new QGridLayout(infopanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
 
 		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
 		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
@@ -521,21 +596,21 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		labelDate->setAlignment(Qt::AlignHCenter);
 
 		int y = 0;
-		pGrid->addWidget(labelTitle, y++,0, 1,1);
-		pGrid->addWidget(labelAuthor, y++,0, 1,1);
-		pGrid->addWidget(labelDate, y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16,
+		grid->addWidget(labelTitle, y++,0, 1,1);
+		grid->addWidget(labelAuthor, y++,0, 1,1);
+		grid->addWidget(labelDate, y++,0, 1,1);
+		grid->addItem(new QSpacerItem(16,16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		pGrid->addWidget(sep1, y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Build Date: ") + QString(__DATE__) + ", " + QString(__TIME__) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(sep2, y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(sep3, y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16,
+		grid->addWidget(sep1, y++,0, 1,1);
+		grid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(QString("Build Date: ") + QString(__DATE__) + ", " + QString(__TIME__) + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(sep2, y++,0, 1,1);
+		grid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(sep3, y++,0, 1,1);
+		grid->addItem(new QSpacerItem(16,16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0, 1,1);
 
@@ -550,7 +625,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	// main grid
 	auto pmainGrid = new QGridLayout(this);
 	pmainGrid->setSpacing(4);
-	pmainGrid->setContentsMargins(4,4,4,4);
+	pmainGrid->setContentsMargins(6, 6, 6, 6);
 	pmainGrid->addWidget(tabs, 0,0, 1,1);
 	pmainGrid->addWidget(m_status, 1,0,1,1);
 
@@ -977,29 +1052,39 @@ void MagDynDlg::Load()
 
 		// settings
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_start"))
-			m_spin_q_start[0]->setValue(*optVal);
+			m_q_start[0]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_start"))
-			m_spin_q_start[1]->setValue(*optVal);
+			m_q_start[1]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_start"))
-			m_spin_q_start[2]->setValue(*optVal);
+			m_q_start[2]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_end"))
-			m_spin_q_end[0]->setValue(*optVal);
+			m_q_end[0]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_end"))
-			m_spin_q_end[1]->setValue(*optVal);
+			m_q_end[1]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_end"))
-			m_spin_q_end[2]->setValue(*optVal);
+			m_q_end[2]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.h"))
-			m_spin_q[0]->setValue(*optVal);
+			m_q[0]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.k"))
-			m_spin_q[1]->setValue(*optVal);
+			m_q[1]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_real>("magdyn.config.l"))
-			m_spin_q[2]->setValue(*optVal);
+			m_q[2]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_size>("magdyn.config.num_Q_points"))
 			m_num_points->setValue(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.use_DMI"))
 			m_use_dmi->setChecked(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.use_field"))
 			m_use_field->setChecked(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_h"))
+			m_field_dir[0]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_k"))
+			m_field_dir[1]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_l"))
+			m_field_dir[2]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_mag"))
+			m_field_mag->setValue(*optVal);
+		if(auto optVal = node.get_optional<bool>("magdyn.config.field_polarise"))
+			m_align_spins->setChecked(*optVal);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -1077,18 +1162,23 @@ void MagDynDlg::Save()
 	node.put<std::string>("magdyn.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 
 	// settings
-	node.put<t_real>("magdyn.config.h_start", m_spin_q_start[0]->value());
-	node.put<t_real>("magdyn.config.k_start", m_spin_q_start[1]->value());
-	node.put<t_real>("magdyn.config.l_start", m_spin_q_start[2]->value());
-	node.put<t_real>("magdyn.config.h_end", m_spin_q_end[0]->value());
-	node.put<t_real>("magdyn.config.k_end", m_spin_q_end[1]->value());
-	node.put<t_real>("magdyn.config.l_end", m_spin_q_end[2]->value());
-	node.put<t_real>("magdyn.config.h", m_spin_q[0]->value());
-	node.put<t_real>("magdyn.config.k", m_spin_q[0]->value());
-	node.put<t_real>("magdyn.config.l", m_spin_q[0]->value());
+	node.put<t_real>("magdyn.config.h_start", m_q_start[0]->value());
+	node.put<t_real>("magdyn.config.k_start", m_q_start[1]->value());
+	node.put<t_real>("magdyn.config.l_start", m_q_start[2]->value());
+	node.put<t_real>("magdyn.config.h_end", m_q_end[0]->value());
+	node.put<t_real>("magdyn.config.k_end", m_q_end[1]->value());
+	node.put<t_real>("magdyn.config.l_end", m_q_end[2]->value());
+	node.put<t_real>("magdyn.config.h", m_q[0]->value());
+	node.put<t_real>("magdyn.config.k", m_q[1]->value());
+	node.put<t_real>("magdyn.config.l", m_q[2]->value());
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
 	node.put<bool>("magdyn.config.use_field", m_use_field->isChecked());
+	node.put<t_real>("magdyn.config.field_dir_h", m_field_dir[0]->value());
+	node.put<t_real>("magdyn.config.field_dir_k", m_field_dir[1]->value());
+	node.put<t_real>("magdyn.config.field_dir_l", m_field_dir[2]->value());
+	node.put<t_real>("magdyn.config.field_mag", m_field_mag->value());
+	node.put<bool>("magdyn.config.field_polarise", m_align_spins->isChecked());
 
 	// atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
@@ -1235,9 +1325,23 @@ void MagDynDlg::CalcSitesAndTerms()
 		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
 		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
 		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
-		std::istringstream{spin_x->text().toStdString()} >> site.spin[0];
-		std::istringstream{spin_y->text().toStdString()} >> site.spin[1];
-		std::istringstream{spin_z->text().toStdString()} >> site.spin[2];
+
+		// align spins along external field?
+		if(m_align_spins->isChecked())
+		{
+			site.spin[0] = m_field_dir[0]->value();
+			site.spin[1] = m_field_dir[1]->value();
+			site.spin[2] = m_field_dir[2]->value();
+		}
+		else
+		{
+			std::istringstream{spin_x->text().toStdString()}
+				>> site.spin[0];
+			std::istringstream{spin_y->text().toStdString()}
+				>> site.spin[1];
+			std::istringstream{spin_z->text().toStdString()}
+				>> site.spin[2];
+		}
 
 		m_dyn.AddAtomSite(std::move(site));
 	}
@@ -1303,16 +1407,16 @@ void MagDynDlg::CalcDispersion()
 
 	const t_real Q_start[]
 	{
-		m_spin_q_start[0]->value(),
-		m_spin_q_start[1]->value(),
-		m_spin_q_start[2]->value(),
+		m_q_start[0]->value(),
+		m_q_start[1]->value(),
+		m_q_start[2]->value(),
 	};
 
 	const t_real Q_end[]
 	{
-		m_spin_q_end[0]->value(),
-		m_spin_q_end[1]->value(),
-		m_spin_q_end[2]->value(),
+		m_q_end[0]->value(),
+		m_q_end[1]->value(),
+		m_q_end[2]->value(),
 	};
 
 	const t_real Q_range[]
@@ -1396,9 +1500,9 @@ void MagDynDlg::CalcHamiltonian()
 
 	const t_real Q[]
 	{
-		m_spin_q[0]->value(),
-		m_spin_q[1]->value(),
-		m_spin_q[2]->value(),
+		m_q[0]->value(),
+		m_q[1]->value(),
+		m_q[2]->value(),
 	};
 
 	t_mat H = m_dyn.GetHamiltonian(Q[0], Q[1], Q[2]);
