@@ -101,7 +101,6 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	constexpr const t_real twopi = t_real(2)*tl2::pi<t_real>;
 	const t_vec_real zdir = tl2::create<t_vec_real>({0., 0., 1.});
 
-	// TODO: us and vs are per cell, not per coupling term
 	std::vector<t_vec> us, us_conj, vs;
 	us.reserve(num_sites);
 	us_conj.reserve(num_sites);
@@ -124,7 +123,8 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	}
 
 
-	// formulas 12 and 14 from (Toth 2015), J(Q) and J(-Q)
+	// build the interaction matrices J(Q) and J(-Q) of
+	// formulas 12 and 14 from (Toth 2015)
 	t_mat J_Q = tl2::zero<t_mat>(num_sites*3, num_sites*3);
 	t_mat J_mQ = tl2::zero<t_mat>(num_sites*3, num_sites*3);
 	t_mat J_Q0 = tl2::zero<t_mat>(num_sites*3, num_sites*3);
@@ -138,7 +138,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 		t_mat J = tl2::diag<t_mat>(
 			tl2::create<t_vec>({term.J, term.J, term.J}));
 
-		if(term.dmi.size() >= 2)
+		if(term.dmi.size() >= 3)
 		{
 			J(0, 1) = +term.dmi[2];
 			J(0, 2) = -term.dmi[1];
@@ -149,25 +149,24 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 			J(2, 1) = -J(1, 2);
 		}
 
-		t_mat contrib_Q = J *
-			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
-		t_mat contrib_mQ = J *
-			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, -Q));
-		t_mat contrib_Q0 = J;
+		t_mat J_T = tl2::trans(J);
 
-		t_real prefactor = 1.;
+		t_cplx phase_Q = std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));
+		t_cplx phase_mQ = std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, -Q));
 
-		add_submat<t_mat>(J_Q, prefactor*contrib_Q, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_Q, prefactor*tl2::conj(contrib_Q), term.atom2*3, term.atom1*3);
+		t_real factor = /*0.5*/ 1.;
+		add_submat<t_mat>(J_Q, factor*J*phase_Q, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_Q, factor*J_T*phase_mQ, term.atom2*3, term.atom1*3);
 
-		add_submat<t_mat>(J_mQ, prefactor*contrib_mQ, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_mQ, prefactor*tl2::conj(contrib_mQ), term.atom2*3, term.atom1*3);
+		add_submat<t_mat>(J_mQ, factor*J*phase_mQ, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_mQ, factor*J_T*phase_Q, term.atom2*3, term.atom1*3);
 
-		add_submat<t_mat>(J_Q0, prefactor*contrib_Q0, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_Q0, prefactor*tl2::conj(contrib_Q0), term.atom2*3, term.atom1*3);
+		add_submat<t_mat>(J_Q0, factor*J, term.atom1*3, term.atom2*3);
+		add_submat<t_mat>(J_Q0, factor*J_T, term.atom2*3, term.atom1*3);
 	}
 
-	// create hamiltonian of formula 25 and 26 from (Toth 2015)
+
+	// create the hamiltonian of formula 25 and 26 from (Toth 2015)
 	t_mat A = tl2::create<t_mat>(num_sites, num_sites);
 	t_mat A_conj = tl2::create<t_mat>(num_sites, num_sites);
 	t_mat B = tl2::create<t_mat>(num_sites, num_sites);
@@ -180,7 +179,6 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 			t_mat J_sub_mQ = submat<t_mat>(J_mQ, i*3, j*3, 3, 3);
 			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
 
-			// TODO: remove zero columns and rows?
 			// TODO: S_i and S_j
 			t_real S_i = 0.5;
 			t_real S_j = 0.5;
@@ -211,10 +209,14 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 	set_submat(H, tl2::herm(B), num_sites, 0);
 	set_submat(H, A_conj - C, num_sites, num_sites);
 
+	bool is_herm = tl2::is_symm_or_herm<t_mat, t_real>(H, m_eps);
+	if(!is_herm)
+		std::cerr << "Warning: Hamiltonian is not hermitian." << std::endl;
+
+
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
 	bool only_evals = true;
-	bool is_herm = true;
 	auto [ok, evals, evecs] =
 		tl2_la::eigenvec<t_mat, t_vec, t_cplx, t_real>(H, only_evals, is_herm);
 
