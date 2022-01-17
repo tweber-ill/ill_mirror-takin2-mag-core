@@ -1,5 +1,5 @@
 /**
- * cso magnon dynamics
+ * magnon dynamics
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
  * @license GPLv3
@@ -84,7 +84,8 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
 
 /**
  * get the energies at the given momentum
- * (first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021)
+ * @note implements the formalism given by (Toth 2015)
+ * @note first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021
  */
 std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 {
@@ -132,8 +133,21 @@ std::vector<t_real> MagDyn::GetEnergies(t_real _h, t_real _k, t_real _l) const
 		if(term.atom1 >= num_sites || term.atom2 >= num_sites)
 			continue;
 
+		// exchange interaction matrix with dmi as anti-symmetric part,
+		// see (Toth 2015) p. 2
 		t_mat J = tl2::diag<t_mat>(
 			tl2::create<t_vec>({term.J, term.J, term.J}));
+
+		if(term.dmi.size() >= 2)
+		{
+			J(0, 1) = +term.dmi[2];
+			J(0, 2) = -term.dmi[1];
+			J(1, 2) = +term.dmi[0];
+
+			J(1, 0) = -J(0, 1);
+			J(2, 0) = -J(0, 2);
+			J(2, 1) = -J(1, 2);
+		}
 
 		t_mat contrib_Q = J *
 			std::exp(-imag * twopi*tl2::inner<t_vec>(term.dist, Q));

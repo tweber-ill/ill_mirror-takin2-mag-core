@@ -87,6 +87,7 @@ enum : int
 	COL_XCH_ATOM1_IDX, COL_XCH_ATOM2_IDX,
 	COL_XCH_DIST_X, COL_XCH_DIST_Y, COL_XCH_DIST_Z,
 	COL_XCH_INTERACTION,
+	COL_XCH_DMI_X, COL_XCH_DMI_Y, COL_XCH_DMI_Z,
 
 	NUM_XCH_COLS
 };
@@ -219,6 +220,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Y, new QTableWidgetItem{"Cell Δy"});
 		m_termstab->setHorizontalHeaderItem(COL_XCH_DIST_Z, new QTableWidgetItem{"Cell Δz"});
 		m_termstab->setHorizontalHeaderItem(COL_XCH_INTERACTION, new QTableWidgetItem{"Bond J"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_X, new QTableWidgetItem{"DMI x"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_Y, new QTableWidgetItem{"DMI y"});
+		m_termstab->setHorizontalHeaderItem(COL_XCH_DMI_Z, new QTableWidgetItem{"DMI z"});
 
 		m_termstab->setColumnWidth(COL_XCH_NAME, 90);
 		m_termstab->setColumnWidth(COL_XCH_ATOM1_IDX, 80);
@@ -227,6 +231,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setColumnWidth(COL_XCH_DIST_Y, 80);
 		m_termstab->setColumnWidth(COL_XCH_DIST_Z, 80);
 		m_termstab->setColumnWidth(COL_XCH_INTERACTION, 80);
+		m_termstab->setColumnWidth(COL_XCH_DMI_X, 80);
+		m_termstab->setColumnWidth(COL_XCH_DMI_Y, 80);
+		m_termstab->setColumnWidth(COL_XCH_DMI_Z, 80);
 
 		QToolButton *pTabBtnAdd = new QToolButton(m_termspanel);
 		QToolButton *pTabBtnDel = new QToolButton(m_termspanel);
@@ -295,6 +302,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	{
 		m_disppanel = new QWidget(this);
 
+		// plotter
 		m_plot = new QCustomPlot(m_disppanel);
 		m_plot->xAxis->setLabel("Q (rlu)");
 		m_plot->yAxis->setLabel("E (meV)");
@@ -303,6 +311,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_plot->setSelectionRectMode(QCP::srmZoom);
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
+		// start and stop coordinates
 		m_spin_q_start[0] = new QDoubleSpinBox(m_disppanel);
 		m_spin_q_start[1] = new QDoubleSpinBox(m_disppanel);
 		m_spin_q_start[2] = new QDoubleSpinBox(m_disppanel);
@@ -310,12 +319,18 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_spin_q_end[1] = new QDoubleSpinBox(m_disppanel);
 		m_spin_q_end[2] = new QDoubleSpinBox(m_disppanel);
 
+		// number of points in plot
 		m_num_points = new QSpinBox(m_disppanel);
 		m_num_points->setMinimum(1);
 		m_num_points->setMaximum(9999);
 		m_num_points->setValue(512);
 		m_num_points->setSizePolicy(
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		// use DMI?
+		m_use_dmi = new QCheckBox("Use DMI", m_disppanel);
+		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
+		m_use_dmi->setChecked(true);
 
 		for(int i=0; i<3; ++i)
 		{
@@ -353,7 +368,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(m_spin_q_end[1], y,2,1,1);
 		pTabGrid->addWidget(m_spin_q_end[2], y++,3,1,1);
 		pTabGrid->addWidget(new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
-		pTabGrid->addWidget(m_num_points, y++,1,1,1);
+		pTabGrid->addWidget(m_num_points, y,1,1,1);
+		pTabGrid->addWidget(m_use_dmi, y++,3,1,1);
 
 		// signals
 		for(int i=0; i<3; ++i)
@@ -369,6 +385,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_num_points,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 			[this]() { this->CalcDispersion(); });
+
+		connect(m_use_dmi, &QCheckBox::toggled,
+			[this]() { this->CalcSitesAndTerms(); });
 
 		connect(m_plot, &QCustomPlot::mouseMove,
 			this, &MagDynDlg::PlotMouseMove);
@@ -561,7 +580,8 @@ void MagDynDlg::AddTermTabItem(int row,
 	const std::string& name,
 	t_size atom_1, t_size atom_2,
 	t_real dist_x, t_real dist_y, t_real dist_z,
-	t_real J)
+	t_real J,
+	t_real dmi_x, t_real dmi_y, t_real dmi_z)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -595,6 +615,9 @@ void MagDynDlg::AddTermTabItem(int row,
 		m_termstab->setItem(row, COL_XCH_DIST_Y, new NumericTableWidgetItem<t_real>(dist_y));
 		m_termstab->setItem(row, COL_XCH_DIST_Z, new NumericTableWidgetItem<t_real>(dist_z));
 		m_termstab->setItem(row, COL_XCH_INTERACTION, new NumericTableWidgetItem<t_real>(J));
+		m_termstab->setItem(row, COL_XCH_DMI_X, new NumericTableWidgetItem<t_real>(dmi_x));
+		m_termstab->setItem(row, COL_XCH_DMI_Y, new NumericTableWidgetItem<t_real>(dmi_y));
+		m_termstab->setItem(row, COL_XCH_DMI_Z, new NumericTableWidgetItem<t_real>(dmi_z));
 	}
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
@@ -822,6 +845,8 @@ void MagDynDlg::Load()
 			m_spin_q_end[2]->setValue(*optVal);
 		if(auto optVal = node.get_optional<t_size>("magdyn.config.num_Q_points"))
 			m_num_points->setValue(*optVal);
+		if(auto optVal = node.get_optional<bool>("magdyn.config.use_DMI"))
+			m_use_dmi->setChecked(*optVal);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -859,11 +884,15 @@ void MagDynDlg::Load()
 				auto optDistY = term.second.get<t_real>("distance_y", 0.);
 				auto optDistZ = term.second.get<t_real>("distance_z", 0.);
 				auto optInteraction = term.second.get<t_real>("interaction", 0.);
+				auto optDmiX = term.second.get<t_real>("dmi_x", 0.);
+				auto optDmiY = term.second.get<t_real>("dmi_y", 0.);
+				auto optDmiZ = term.second.get<t_real>("dmi_z", 0.);
 
 				AddTermTabItem(-1,
 					optName, optAtom1, optAtom2,
 					optDistX, optDistY, optDistZ,
-					optInteraction);
+					optInteraction,
+					optDmiX, optDmiY, optDmiZ);
 			}
 		}
 	}
@@ -902,6 +931,7 @@ void MagDynDlg::Save()
 	node.put<t_real>("magdyn.config.k_end", m_spin_q_end[1]->value());
 	node.put<t_real>("magdyn.config.l_end", m_spin_q_end[2]->value());
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
+	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
 
 	// atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
@@ -935,6 +965,7 @@ void MagDynDlg::Save()
 		t_size atom_2_idx = 0;
 		t_real dist[3]{0., 0., 0.};
 		t_real J = 0.;
+		t_real dmi[3]{0., 0., 0.};
 
 		std::istringstream{m_termstab->item(row, COL_XCH_ATOM1_IDX)->text().toStdString()} >> atom_1_idx;
 		std::istringstream{m_termstab->item(row, COL_XCH_ATOM2_IDX)->text().toStdString()} >> atom_2_idx;
@@ -942,6 +973,9 @@ void MagDynDlg::Save()
 		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Y)->text().toStdString()} >> dist[1];
 		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Z)->text().toStdString()} >> dist[2];
 		std::istringstream{m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString()} >> J;
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_X)->text().toStdString()} >> dmi[0];
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Y)->text().toStdString()} >> dmi[1];
+		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Z)->text().toStdString()} >> dmi[2];
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("name", m_termstab->item(row, COL_XCH_NAME)->text().toStdString());
@@ -951,6 +985,9 @@ void MagDynDlg::Save()
 		itemNode.put<t_real>("distance_y", dist[1]);
 		itemNode.put<t_real>("distance_z", dist[2]);
 		itemNode.put<t_real>("interaction", J);
+		itemNode.put<t_real>("dmi_x", dmi[0]);
+		itemNode.put<t_real>("dmi_y", dmi[1]);
+		itemNode.put<t_real>("dmi_z", dmi[2]);
 
 		node.add_child("magdyn.exchange_terms.term", itemNode);
 	}
@@ -996,6 +1033,8 @@ void MagDynDlg::CalcSitesAndTerms()
 	m_dyn.ClearAtomSites();
 	m_dyn.ClearExchangeTerms();
 
+	bool use_dmi = m_use_dmi->isChecked();
+
 	// get atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
 	{
@@ -1036,8 +1075,13 @@ void MagDynDlg::CalcSitesAndTerms()
 		auto *dist_y = m_termstab->item(row, COL_XCH_DIST_Y);
 		auto *dist_z = m_termstab->item(row, COL_XCH_DIST_Z);
 		auto *interaction = m_termstab->item(row, COL_XCH_INTERACTION);
+		auto *dmi_x = m_termstab->item(row, COL_XCH_DMI_X);
+		auto *dmi_y = m_termstab->item(row, COL_XCH_DMI_Y);
+		auto *dmi_z = m_termstab->item(row, COL_XCH_DMI_Z);
 
-		if(!name || !atom_1_idx || !atom_2_idx || !dist_x || !dist_y || !dist_z || !interaction)
+		if(!name || !atom_1_idx || !atom_2_idx ||
+			!dist_x || !dist_y || !dist_z ||
+			!interaction || !dmi_x || !dmi_y || !dmi_z)
 		{
 			std::cerr << "Invalid entry in terms table row " << row << "." << std::endl;
 			continue;
@@ -1045,12 +1089,22 @@ void MagDynDlg::CalcSitesAndTerms()
 
 		ExchangeTerm term;
 		term.dist = tl2::zero<t_vec>(3);
+
 		std::istringstream{atom_1_idx->text().toStdString()} >> term.atom1;
 		std::istringstream{atom_2_idx->text().toStdString()} >> term.atom2;
 		std::istringstream{dist_x->text().toStdString()} >> term.dist[0];
 		std::istringstream{dist_y->text().toStdString()} >> term.dist[1];
 		std::istringstream{dist_z->text().toStdString()} >> term.dist[2];
 		std::istringstream{interaction->text().toStdString()} >> term.J;
+
+		if(use_dmi)
+		{
+			term.dmi = tl2::zero<t_vec>(3);
+
+			std::istringstream{dmi_x->text().toStdString()} >> term.dmi[0];
+			std::istringstream{dmi_y->text().toStdString()} >> term.dmi[1];
+			std::istringstream{dmi_z->text().toStdString()} >> term.dmi[2];
+		}
 
 		m_dyn.AddExchangeTerm(std::move(term));
 	}

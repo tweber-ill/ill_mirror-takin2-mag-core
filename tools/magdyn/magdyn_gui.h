@@ -35,6 +35,7 @@
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 
@@ -75,6 +76,7 @@ protected:
 	QDoubleSpinBox *m_spin_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_spin_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
+	QCheckBox *m_use_dmi{};
 
 	MagDyn m_dyn{};
 	QCustomPlot *m_plot{};
@@ -96,7 +98,8 @@ protected:
 		const std::string& name="n/a",
 		t_size atom_1=0, t_size atom_2=0,
 		t_real dist_x=0., t_real dist_y=0., t_real dist_z=0.,
-		t_real J=0.);
+		t_real J=0.,
+		t_real dmi_x=0., t_real dmi_y=0., t_real dmi_z=0.);
 
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
 
