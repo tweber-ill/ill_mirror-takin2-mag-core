@@ -433,10 +433,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_hamiltonianpanel = new QWidget(this);
 
 		// hamiltonian
-		m_hamiltonian = new QPlainTextEdit(m_hamiltonianpanel);
+		m_hamiltonian = new QTextEdit(m_hamiltonianpanel);
 		m_hamiltonian->setReadOnly(true);
 		m_hamiltonian->setWordWrapMode(QTextOption::NoWrap);
-		m_hamiltonian->setLineWrapMode(QPlainTextEdit::NoWrap);
+		m_hamiltonian->setLineWrapMode(QTextEdit::NoWrap);
 		m_hamiltonian->setSizePolicy(
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 
@@ -1354,6 +1354,8 @@ void MagDynDlg::CalcHamiltonian()
 	if(m_ignoreCalc)
 		return;
 
+	m_hamiltonian->clear();
+
 	const t_real Q[]
 	{
 		m_spin_q[0]->value(),
@@ -1365,6 +1367,7 @@ void MagDynDlg::CalcHamiltonian()
 
 	std::ostringstream ostr;
 	ostr.precision(g_prec_gui);
+	ostr << "<table style=\"border:0px\">";
 
 	for(std::size_t i=0; i<H.size1(); ++i)
 	{
@@ -1372,12 +1375,14 @@ void MagDynDlg::CalcHamiltonian()
 		{
 			t_cplx elem = H(i, j);
 			tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
-			ostr << std::setw(g_prec_gui*2) << std::left << elem << "\t";
+			ostr << "<td style=\"padding-right:8px\">" 
+				<< elem << "</td>";
 		}
-		ostr << "\n";
+		ostr << "<tr>";
 	}
+	ostr << "</table>";
 
-	m_hamiltonian->setPlainText(ostr.str().c_str());
+	m_hamiltonian->setHtml(ostr.str().c_str());
 }
 
 

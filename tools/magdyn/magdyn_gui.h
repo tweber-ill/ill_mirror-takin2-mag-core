@@ -36,7 +36,7 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QCheckBox>
-#include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 
@@ -80,7 +80,7 @@ protected:
 	QSpinBox *m_num_points{};
 	QCheckBox *m_use_dmi{};
 
-	QPlainTextEdit *m_hamiltonian{};
+	QTextEdit *m_hamiltonian{};
 	QDoubleSpinBox *m_spin_q[3]{nullptr, nullptr, nullptr};
 
 	MagDyn m_dyn{};
