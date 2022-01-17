@@ -126,7 +126,6 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	// build the interaction matrices J(Q) and J(-Q) of
 	// formulas 12 and 14 from (Toth 2015)
 	t_mat J_Q = tl2::zero<t_mat>(num_sites*3, num_sites*3);
-	t_mat J_mQ = tl2::zero<t_mat>(num_sites*3, num_sites*3);
 	t_mat J_Q0 = tl2::zero<t_mat>(num_sites*3, num_sites*3);
 	for(const ExchangeTerm& term : m_exchange_terms)
 	{
@@ -158,9 +157,6 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 		add_submat<t_mat>(J_Q, factor*J*phase_Q, term.atom1*3, term.atom2*3);
 		add_submat<t_mat>(J_Q, factor*J_T*phase_mQ, term.atom2*3, term.atom1*3);
 
-		add_submat<t_mat>(J_mQ, factor*J*phase_mQ, term.atom1*3, term.atom2*3);
-		add_submat<t_mat>(J_mQ, factor*J_T*phase_Q, term.atom2*3, term.atom1*3);
-
 		add_submat<t_mat>(J_Q0, factor*J, term.atom1*3, term.atom2*3);
 		add_submat<t_mat>(J_Q0, factor*J_T, term.atom2*3, term.atom1*3);
 	}
@@ -168,7 +164,6 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 
 	// create the hamiltonian of formula 25 and 26 from (Toth 2015)
 	t_mat A = tl2::create<t_mat>(num_sites, num_sites);
-	t_mat A_conj = tl2::create<t_mat>(num_sites, num_sites);
 	t_mat B = tl2::create<t_mat>(num_sites, num_sites);
 	t_mat C = tl2::zero<t_mat>(num_sites, num_sites);
 
@@ -176,7 +171,6 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	{
 		for(std::size_t j=0; j<num_sites; ++j)
 		{
-			t_mat J_sub_mQ = submat<t_mat>(J_mQ, i*3, j*3, 3, 3);
 			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
 
 			// TODO: check units of S_i and S_j
@@ -185,9 +179,8 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 			t_real factor = 0.5 * std::sqrt(S_i*S_j);
 			A(i, j) = factor *
 				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]);
-			A_conj(i, j) = std::conj(A(i, j));
 			B(i, j) = factor *
-				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us[j]);
+				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us[j]);
 
 			if(i == j)
 			{
@@ -209,7 +202,7 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	set_submat(H, A - C, 0, 0);
 	set_submat(H, B, 0, num_sites);
 	set_submat(H, tl2::herm(B), num_sites, 0);
-	set_submat(H, A_conj - C, num_sites, num_sites);
+	set_submat(H, tl2::conj(A) - C, num_sites, num_sites);
 
 	return H;
 }
