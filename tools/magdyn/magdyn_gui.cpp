@@ -156,16 +156,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setText("Move Atom Down");
 
 
-		auto pTabGrid = new QGridLayout(m_sitespanel);
-		pTabGrid->setSpacing(2);
-		pTabGrid->setContentsMargins(4,4,4,4);
+		auto grid = new QGridLayout(m_sitespanel);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
 
 		int y = 0;
-		pTabGrid->addWidget(m_sitestab, y,0,1,4);
-		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
-		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
-		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
-		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+		grid->addWidget(m_sitestab, y,0,1,4);
+		grid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		grid->addWidget(pTabBtnDel, y,1,1,1);
+		grid->addWidget(pTabBtnUp, y,2,1,1);
+		grid->addWidget(pTabBtnDown, y,3,1,1);
 
 
 
@@ -195,8 +195,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
-		tabs->addTab(m_sitespanel, "Atom Sites");
+		tabs->addTab(m_sitespanel, "Atoms");
 	}
+
 
 	// exchange terms panel
 	{
@@ -269,20 +270,20 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setText("Move Term Down");
 
 
-		auto pTabGrid = new QGridLayout(m_termspanel);
-		pTabGrid->setSpacing(2);
-		pTabGrid->setContentsMargins(4,4,4,4);
+		auto grid = new QGridLayout(m_termspanel);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
 
 		int y = 0;
-		pTabGrid->addWidget(m_termstab, y,0,1,4);
-		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
-		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
-		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
-		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+		grid->addWidget(m_termstab, y,0,1,4);
+		grid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		grid->addWidget(pTabBtnDel, y,1,1,1);
+		grid->addWidget(pTabBtnUp, y,2,1,1);
+		grid->addWidget(pTabBtnDown, y,3,1,1);
 
 
 		//auto sep1 = new QFrame(m_termspanel); sep1->setFrameStyle(QFrame::HLine);
-		//pTabGrid->addWidget(sep1, ++y,0, 1,4);
+		//grid->addWidget(sep1, ++y,0, 1,4);
 
 
 		// table CustomContextMenu
@@ -322,7 +323,15 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
-		tabs->addTab(m_termspanel, "Coupling Terms");
+		tabs->addTab(m_termspanel, "Couplings");
+	}
+
+
+	// external field panel
+	{
+		m_fieldpanel = new QWidget(this);
+
+		tabs->addTab(m_fieldpanel, "Field");
 	}
 
 
@@ -356,11 +365,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_num_points->setSizePolicy(
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		// use DMI?
-		m_use_dmi = new QCheckBox("Use DMI", m_disppanel);
-		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
-		m_use_dmi->setChecked(true);
-
 		for(int i=0; i<3; ++i)
 		{
 			m_spin_q_start[i]->setDecimals(2);
@@ -373,35 +377,43 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_spin_q_end[i]->setSingleStep(0.1);
 			m_spin_q_start[i]->setValue(0.);
 			m_spin_q_end[i]->setValue(0.);
+			m_spin_q_start[i]->setSuffix(" rlu");
+			m_spin_q_end[i]->setSuffix(" rlu");
 			m_spin_q_start[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 			m_spin_q_end[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
+		m_spin_q_start[0]->setPrefix("h = ");
+		m_spin_q_start[1]->setPrefix("k = ");
+		m_spin_q_start[2]->setPrefix("l = ");
+		m_spin_q_end[0]->setPrefix("h = ");
+		m_spin_q_end[1]->setPrefix("k = ");
+		m_spin_q_end[2]->setPrefix("l = ");
+
 		m_spin_q_start[0]->setValue(-1.);
 		m_spin_q_end[0]->setValue(+1.);
 
-		auto pTabGrid = new QGridLayout(m_disppanel);
-		pTabGrid->setSpacing(2);
-		pTabGrid->setContentsMargins(4,4,4,4);
+		auto grid = new QGridLayout(m_disppanel);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
 
 		int y = 0;
-		pTabGrid->addWidget(m_plot, y++,0,1,4);
-		pTabGrid->addWidget(
-			new QLabel(QString("Starting Q [rlu]:"), m_disppanel), y,0,1,1);
-		pTabGrid->addWidget(m_spin_q_start[0], y,1,1,1);
-		pTabGrid->addWidget(m_spin_q_start[1], y,2,1,1);
-		pTabGrid->addWidget(m_spin_q_start[2], y++,3,1,1);
-		pTabGrid->addWidget(
-			new QLabel(QString("Ending Q [rlu]:"), m_disppanel), y,0,1,1);
-		pTabGrid->addWidget(m_spin_q_end[0], y,1,1,1);
-		pTabGrid->addWidget(m_spin_q_end[1], y,2,1,1);
-		pTabGrid->addWidget(m_spin_q_end[2], y++,3,1,1);
-		pTabGrid->addWidget(
+		grid->addWidget(m_plot, y++,0,1,4);
+		grid->addWidget(
+			new QLabel(QString("Starting Q:"), m_disppanel), y,0,1,1);
+		grid->addWidget(m_spin_q_start[0], y,1,1,1);
+		grid->addWidget(m_spin_q_start[1], y,2,1,1);
+		grid->addWidget(m_spin_q_start[2], y++,3,1,1);
+		grid->addWidget(
+			new QLabel(QString("Ending Q:"), m_disppanel), y,0,1,1);
+		grid->addWidget(m_spin_q_end[0], y,1,1,1);
+		grid->addWidget(m_spin_q_end[1], y,2,1,1);
+		grid->addWidget(m_spin_q_end[2], y++,3,1,1);
+		grid->addWidget(
 			new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
-		pTabGrid->addWidget(m_num_points, y,1,1,1);
-		pTabGrid->addWidget(m_use_dmi, y++,3,1,1);
+		grid->addWidget(m_num_points, y++,1,1,1);
 
 		// signals
 		for(int i=0; i<3; ++i)
@@ -417,9 +429,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_num_points,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 			[this]() { this->CalcDispersion(); });
-
-		connect(m_use_dmi, &QCheckBox::toggled,
-			[this]() { this->CalcSitesAndTerms(); });
 
 		connect(m_plot, &QCustomPlot::mouseMove,
 			this, &MagDynDlg::PlotMouseMove);
@@ -452,9 +461,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_spin_q[i]->setMaximum(+99);
 			m_spin_q[i]->setSingleStep(0.1);
 			m_spin_q[i]->setValue(0.);
+			m_spin_q[i]->setSuffix(" rlu");
 			m_spin_q[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
+
+		m_spin_q[0]->setPrefix("h = ");
+		m_spin_q[1]->setPrefix("k = ");
+		m_spin_q[2]->setPrefix("l = ");
 
 		auto grid = new QGridLayout(m_hamiltonianpanel);
 		grid->setSpacing(2);
@@ -462,7 +476,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		int y = 0;
 		grid->addWidget(m_hamiltonian, y++,0,1,4);
-		grid->addWidget(new QLabel(QString("Q [rlu]:"),
+		grid->addWidget(new QLabel(QString("Q:"),
 			m_hamiltonianpanel), y,0,1,1);
 		grid->addWidget(m_spin_q[0], y,1,1,1);
 		grid->addWidget(m_spin_q[1], y,2,1,1);
@@ -480,7 +494,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	{	// info panel
+	// info panel
+	{
 		auto infopanel = new QWidget(this);
 		auto pGrid = new QGridLayout(infopanel);
 		pGrid->setSpacing(4);
@@ -561,6 +576,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		acExit->setMenuRole(QAction::QuitRole);
 
+		auto menuOptions = new QMenu("Options", m_menu);
+		m_use_dmi = new QAction("Use DMI", menuOptions);
+		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
+		m_use_dmi->setCheckable(true);
+		m_use_dmi->setChecked(true);
+		m_use_field = new QAction("Use Field", menuOptions);
+		m_use_field->setToolTip("Enables an external field.");
+		m_use_field->setCheckable(true);
+		m_use_field->setChecked(true);
+
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
@@ -571,6 +596,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuPlot->addAction(acRescalePlot);
 		menuPlot->addAction(acSaveFigure);
 
+		menuOptions->addAction(m_use_dmi);
+		menuOptions->addAction(m_use_field);
+
+		// connections
 		connect(acNew, &QAction::triggered, this,  [this]()
 		{
 			// clear old tables
@@ -594,8 +623,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_plot->replot();
 		});
 
+		connect(m_use_dmi, &QAction::toggled,
+			[this]() { this->CalcSitesAndTerms(); });
+		connect(m_use_field, &QAction::toggled,
+			[this]() { this->CalcSitesAndTerms(); });
+
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuPlot);
+		m_menu->addMenu(menuOptions);
 		pmainGrid->setMenuBar(m_menu);
 	}
 
@@ -963,6 +998,8 @@ void MagDynDlg::Load()
 			m_num_points->setValue(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.use_DMI"))
 			m_use_dmi->setChecked(*optVal);
+		if(auto optVal = node.get_optional<bool>("magdyn.config.use_field"))
+			m_use_field->setChecked(*optVal);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -1051,6 +1088,7 @@ void MagDynDlg::Save()
 	node.put<t_real>("magdyn.config.l", m_spin_q[0]->value());
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
+	node.put<bool>("magdyn.config.use_field", m_use_field->isChecked());
 
 	// atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
