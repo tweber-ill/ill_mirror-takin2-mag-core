@@ -184,9 +184,8 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 			t_real S_j = 1.;
 			t_real factor = 0.5 * std::sqrt(S_i*S_j);
 			A(i, j) = factor *
-				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us_conj[j]);
-			A_conj(i, j) = std::conj(factor *
-				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]));
+				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]);
+			A_conj(i, j) = std::conj(A(i, j));
 			B(i, j) = factor *
 				tl2::inner_noconj<t_vec>(us[i], J_sub_mQ * us[j]);
 
@@ -202,6 +201,9 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 			}
 		}
 	}
+
+	// test matrix block
+	//return A_conj - C;
 
 	t_mat H = tl2::zero<t_mat>(num_sites*2, num_sites*2);
 	set_submat(H, A - C, 0, 0);
