@@ -7,7 +7,7 @@
  * References:
  *   - (Toth 2015) S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
  *     https://doi.org/10.1088/0953-8984/27/16/166002
- *   - N. Heinsdorf, personal communication, 2021, 2022.
+ *   - (Heinsdorf 2021) N. Heinsdorf, example ferromagnetic calculation, personal communication, 2021, 2022.
  */
 
 #include <tuple>
@@ -99,7 +99,7 @@ void MagDyn::SetExternalField(const ExternalField& field)
 /**
  * get the hamiltonian at the given momentum
  * @note implements the formalism given by (Toth 2015)
- * @note first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021
+ * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
  */
 t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 {
@@ -239,11 +239,26 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 /**
  * get the energies at the given momentum
  * @note implements the formalism given by (Toth 2015)
- * @note first version was based on calculations and notes provided by N. Heinsdorf, personal communication, 2021
+ * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
  */
 std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 {
-	t_mat H = GetHamiltonian(h, k, l);
+	t_mat _H = GetHamiltonian(h, k, l);
+	const std::size_t N = _H.size1();
+
+	// formula 30 in (Toth 2015)
+	t_mat g = tl2::zero<t_mat>(N, N);
+	for(std::size_t i=0; i<N/2; ++i)
+		g(i, i) = 1.;
+	for(std::size_t i=N/2; i<N; ++i)
+		g(i, i) = -1.;
+
+	// formula 31 in (Toth 2015)
+	auto [chol_ok, C] = tl2_la::chol<t_mat>(_H);
+	t_mat Ch = tl2::herm<t_mat>(C);
+
+	// see p. 5 in (Toth 2015)
+	t_mat H = C * g * Ch;
 
 	bool is_herm = tl2::is_symm_or_herm<t_mat, t_real>(H, m_eps);
 	if(!is_herm)

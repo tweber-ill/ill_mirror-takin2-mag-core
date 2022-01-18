@@ -681,6 +681,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		auto labelDate = new QLabel("January 2022.", infopanel);
 		labelDate->setAlignment(Qt::AlignHCenter);
 
+		auto labelPaper = new QLabel(
+			"This program implements the formalism given in "
+			"<a href=\"https://doi.org/10.1088/0953-8984/27/16/166002\">this paper</a>.",
+			infopanel);
+		labelPaper->setOpenExternalLinks(true);
+
 		int y = 0;
 		grid->addWidget(labelTitle, y++,0, 1,1);
 		grid->addWidget(labelAuthor, y++,0, 1,1);
@@ -689,13 +695,32 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 		grid->addWidget(sep1, y++,0, 1,1);
-		grid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
-		grid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
-		grid->addWidget(new QLabel(QString("Build Date: ") + QString(__DATE__) + ", " + QString(__TIME__) + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Compiler: ") +
+			QString(BOOST_COMPILER) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("C++ Library: ") +
+			QString(BOOST_STDLIB) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Build Date: ") +
+			QString(__DATE__) + ", " +
+			QString(__TIME__) + ".",
+			infopanel), y++,0, 1,1);
 		grid->addWidget(sep2, y++,0, 1,1);
-		grid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
-		grid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Qt Version: ") +
+			QString(QT_VERSION_STR) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Boost Version: ") +
+			strBoost.c_str() + ".",
+			infopanel), y++,0, 1,1);
 		grid->addWidget(sep3, y++,0, 1,1);
+
+		grid->addWidget(labelPaper, y++,0, 1,1);
+
 		grid->addItem(new QSpacerItem(16,16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0, 1,1);
