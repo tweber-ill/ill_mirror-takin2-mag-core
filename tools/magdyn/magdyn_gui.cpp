@@ -175,7 +175,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(pTabBtnDown, y,3,1,1);
 
 
-
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_sitestab);
 		pTabContextMenu->addAction("Add Atom Before", this, [this]() { this->AddSiteTabItem(-2); });
@@ -289,10 +288,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(pTabBtnDown, y,3,1,1);
 
 
-		//auto sep1 = new QFrame(m_termspanel); sep1->setFrameStyle(QFrame::HLine);
-		//grid->addWidget(sep1, ++y,0, 1,4);
-
-
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
 		pTabContextMenu->addAction("Add Term Before", this,
@@ -345,6 +340,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_field_mag->setMaximum(+99);
 		m_field_mag->setSingleStep(0.1);
 		m_field_mag->setValue(0.);
+		m_field_mag->setPrefix("|B| = ");
+		m_field_mag->setSuffix(" T");
 		m_field_mag->setSizePolicy(
 			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
@@ -358,6 +355,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			"Align Spins along Field Direction", m_fieldpanel);
 		m_align_spins->setChecked(false);
 
+		// rotation axis
+		m_rot_axis[0] = new QDoubleSpinBox(m_fieldpanel);
+		m_rot_axis[1] = new QDoubleSpinBox(m_fieldpanel);
+		m_rot_axis[2] = new QDoubleSpinBox(m_fieldpanel);
+
+		// rotation angle
+		m_rot_angle = new QDoubleSpinBox(m_fieldpanel);
+		m_rot_angle->setDecimals(2);
+		m_rot_angle->setMinimum(-360);
+		m_rot_angle->setMaximum(+360);
+		m_rot_angle->setSingleStep(0.1);
+		m_rot_angle->setValue(90.);
+		m_rot_angle->setSuffix("°");
+		m_rot_angle->setSizePolicy(
+			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		QPushButton *btn_rotate = new QPushButton(
+			"Rotate Field", m_fieldpanel);
+
+
 		for(int i=0; i<3; ++i)
 		{
 			m_field_dir[i]->setDecimals(2);
@@ -367,8 +384,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_field_dir[i]->setValue(i == 2 ? 1. : 0.);
 			m_field_dir[i]->setSizePolicy(
 				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+			m_rot_axis[i]->setDecimals(2);
+			m_rot_axis[i]->setMinimum(-99);
+			m_rot_axis[i]->setMaximum(+99);
+			m_rot_axis[i]->setSingleStep(0.1);
+			m_rot_axis[i]->setValue(i == 2 ? 1. : 0.);
+			m_rot_axis[i]->setSizePolicy(
+				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
-		m_field_mag->setPrefix("|B| = ");
+
 		m_field_dir[0]->setPrefix("Bh = ");
 		m_field_dir[1]->setPrefix("Bk = ");
 		m_field_dir[2]->setPrefix("Bl = ");
@@ -387,9 +412,31 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(m_field_dir[1], y,2,1,1);
 		grid->addWidget(m_field_dir[2], y++,3,1,1);
 		grid->addWidget(m_align_spins, y++,0,1,2);
+
+		grid->addItem(new QSpacerItem(8,8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		auto sep1 = new QFrame(m_fieldpanel);
+		sep1->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep1, y++,0, 1,4);
+		grid->addItem(new QSpacerItem(8,8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addWidget(new QLabel(QString("Rotation Axis:"),
+			m_fieldpanel), y,0,1,1);
+		grid->addWidget(m_rot_axis[0], y,1,1,1);
+		grid->addWidget(m_rot_axis[1], y,2,1,1);
+		grid->addWidget(m_rot_axis[2], y++,3,1,1);
+		grid->addWidget(new QLabel(QString("Rotation Angle:"),
+			m_fieldpanel), y,0,1,1);
+		grid->addWidget(m_rot_angle, y,1,1,1);
+		grid->addWidget(btn_rotate, y++,3,1,1);
+
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0,1,4);
+
 
 		// signals
 		connect(m_field_mag,
@@ -405,6 +452,34 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(m_align_spins, &QCheckBox::toggled,
 			[this]() { this->CalcSitesAndTerms(); });
+
+		connect(btn_rotate, &QAbstractButton::clicked, [this]()
+		{
+			t_vec_real axis = tl2::create<t_vec_real>(
+			{
+				m_rot_axis[0]->value(),
+				m_rot_axis[1]->value(),
+				m_rot_axis[2]->value(),
+			});
+
+			t_vec_real B = tl2::create<t_vec_real>(
+			{
+				m_field_dir[0]->value(),
+				m_field_dir[1]->value(),
+				m_field_dir[2]->value(),
+			});
+
+			t_real angle = m_rot_angle->value() / 180.*tl2::pi<t_real>;
+
+			t_mat_real R = tl2::rotation<t_mat_real, t_vec_real>(
+				axis, angle, false);
+			B = R*B;
+			tl2::set_eps_0(B, g_eps);
+
+			m_field_dir[0]->setValue(B[0]);
+			m_field_dir[1]->setValue(B[1]);
+			m_field_dir[2]->setValue(B[2]);
+		});
 
 		tabs->addTab(m_fieldpanel, "Field");
 	}
@@ -576,9 +651,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->setSpacing(4);
 		grid->setContentsMargins(6, 6, 6, 6);
 
-		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
-		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
-		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
+		auto sep1 = new QFrame(infopanel);
+		sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(infopanel);
+		sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(infopanel);
+		sep3->setFrameStyle(QFrame::HLine);
 
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
@@ -1085,6 +1163,14 @@ void MagDynDlg::Load()
 			m_field_mag->setValue(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.field_polarise"))
 			m_align_spins->setChecked(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_h"))
+			m_rot_axis[0]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_k"))
+			m_rot_axis[1]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_l"))
+			m_rot_axis[2]->setValue(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_angle"))
+			m_rot_angle->setValue(*optVal);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -1179,6 +1265,10 @@ void MagDynDlg::Save()
 	node.put<t_real>("magdyn.config.field_dir_l", m_field_dir[2]->value());
 	node.put<t_real>("magdyn.config.field_mag", m_field_mag->value());
 	node.put<bool>("magdyn.config.field_polarise", m_align_spins->isChecked());
+	node.put<t_real>("magdyn.config.field_axis_h", m_rot_axis[0]->value());
+	node.put<t_real>("magdyn.config.field_axis_k", m_rot_axis[1]->value());
+	node.put<t_real>("magdyn.config.field_axis_l", m_rot_axis[2]->value());
+	node.put<t_real>("magdyn.config.field_angle", m_rot_angle->value());
 
 	// atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
@@ -1330,7 +1420,7 @@ void MagDynDlg::CalcSitesAndTerms()
 		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
 
 		// align spins along external field?
-		if(m_align_spins->isChecked())
+		if(m_align_spins->isChecked() && m_use_field->isChecked())
 		{
 			site.spin[0] = m_field_dir[0]->value();
 			site.spin[1] = m_field_dir[1]->value();

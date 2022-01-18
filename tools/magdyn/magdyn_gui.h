@@ -71,28 +71,36 @@ protected:
 	QAction *m_use_dmi{};
 	QAction *m_use_field{};
 
+	// panels
 	QWidget *m_sitespanel{};
 	QWidget *m_termspanel{};
 	QWidget *m_fieldpanel{};
+	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
 
+	// tables
 	QTableWidget *m_sitestab{};
 	QTableWidget *m_termstab{};
 
-	QWidget *m_disppanel{};
+	// dispersion
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
+	QCustomPlot *m_plot{};
 
+	// hamiltonian
 	QTextEdit *m_hamiltonian{};
 	QDoubleSpinBox *m_q[3]{nullptr, nullptr, nullptr};
 
+	// external magnetic field
 	QDoubleSpinBox *m_field_dir[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_field_mag{};
 	QCheckBox *m_align_spins{};
+	QDoubleSpinBox *m_rot_axis[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_rot_angle{};
 
+	// magnon dynamics calculator
 	MagDyn m_dyn{};
-	QCustomPlot *m_plot{};
 
 
 protected:
