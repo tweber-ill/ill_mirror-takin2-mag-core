@@ -1299,8 +1299,10 @@ void MagDynDlg::CalcSitesAndTerms()
 
 	m_dyn.ClearAtomSites();
 	m_dyn.ClearExchangeTerms();
+	m_dyn.ClearExternalField();
 
 	bool use_dmi = m_use_dmi->isChecked();
+
 
 	// get atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
@@ -1322,6 +1324,7 @@ void MagDynDlg::CalcSitesAndTerms()
 		AtomSite site;
 		site.pos = tl2::zero<t_vec>(3);
 		site.spin = tl2::zero<t_vec>(3);
+		site.g = -2. * tl2::unit<t_mat>(3);
 		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
 		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
 		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
@@ -1345,6 +1348,7 @@ void MagDynDlg::CalcSitesAndTerms()
 
 		m_dyn.AddAtomSite(std::move(site));
 	}
+
 
 	// get exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
@@ -1389,6 +1393,23 @@ void MagDynDlg::CalcSitesAndTerms()
 
 		m_dyn.AddExchangeTerm(std::move(term));
 	}
+
+
+	// get external field
+	if(m_use_field->isChecked())
+	{
+		ExternalField field;
+		field.dir = tl2::create<t_vec>(
+		{
+			m_field_dir[0]->value(),
+			m_field_dir[1]->value(),
+			m_field_dir[2]->value(),
+		});
+		field.mag = m_field_mag->value();
+
+		m_dyn.SetExternalField(field);
+	}
+
 
 	CalcDispersion();
 	CalcHamiltonian();
@@ -1439,7 +1460,8 @@ void MagDynDlg::CalcDispersion()
 	qs_data.reserve(num_pts*10);
 	Es_data.reserve(num_pts*10);
 
-	t_real E0 = m_dyn.GetGoldstoneEnergy();
+	bool use_goldstone = false;
+	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
 
 	for(t_size i=0; i<num_pts; ++i)
 	{

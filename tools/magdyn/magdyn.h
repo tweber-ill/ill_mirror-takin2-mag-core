@@ -21,18 +21,26 @@
 
 struct AtomSite
 {
-	t_vec pos{};
-	t_vec spin{};
+	t_vec pos{};    // atom position
+	t_vec spin{};   // spin direction
+	t_mat g{};      // g factor
 };
 
 
 struct ExchangeTerm
 {
-	t_size atom1{};
-	t_size atom2{};
-	t_vec dist{};
-	t_cplx J{};
-	t_vec dmi{};
+	t_size atom1{}; // atom 1 index
+	t_size atom2{}; // atom 2 index
+	t_vec dist{};   // distance between unit cells
+	t_cplx J{};     // Heisenberg interaction
+	t_vec dmi{};    // Dzyaloshinskij-Moriya interaction
+};
+
+
+struct ExternalField
+{
+	t_vec dir{};    // direction
+	t_real mag{};   // magnitude
 };
 
 
@@ -44,14 +52,19 @@ public:
 
 	void ClearAtomSites();
 	void ClearExchangeTerms();
+	void ClearExternalField();
 
 	void AddAtomSite(AtomSite&& site);
-	void AddExchangeTerm(ExchangeTerm&& term);
 
+	void AddExchangeTerm(ExchangeTerm&& term);
 	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
 
+	void SetExternalField(const ExternalField& field);
+
 	t_mat GetHamiltonian(t_real h, t_real k, t_real l) const;
+
 	std::vector<t_real> GetEnergies(t_real h, t_real k, t_real l) const;
+
 	t_real GetGoldstoneEnergy() const;
 
 	void SaveDispersion(const std::string& filename,
@@ -66,6 +79,7 @@ public:
 private:
 	std::vector<AtomSite> m_sites{};
 	std::vector<ExchangeTerm> m_exchange_terms{};
+	ExternalField m_field{};
 
 	t_real m_eps = 1e-6;
 	int m_prec = 6;

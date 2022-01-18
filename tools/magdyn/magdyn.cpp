@@ -17,6 +17,7 @@
 #include <iomanip>
 
 #include "magdyn.h"
+#include "tlibs2/libs/units.h"
 
 
 
@@ -56,15 +57,22 @@ void MagDyn::ClearAtomSites()
 }
 
 
-void MagDyn::AddExchangeTerm(ExchangeTerm&& term)
+void MagDyn::ClearExternalField()
 {
-	m_exchange_terms.emplace_back(std::forward<ExchangeTerm&&>(term));
+	m_field.dir.clear();
+	m_field.mag = 0.;
 }
 
 
 void MagDyn::AddAtomSite(AtomSite&& site)
 {
 	m_sites.emplace_back(std::forward<AtomSite&&>(site));
+}
+
+
+void MagDyn::AddExchangeTerm(ExchangeTerm&& term)
+{
+	m_exchange_terms.emplace_back(std::forward<ExchangeTerm&&>(term));
 }
 
 
@@ -79,6 +87,12 @@ void MagDyn::AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& dist, cons
 	};
 
 	AddExchangeTerm(std::move(term));
+}
+
+
+void MagDyn::SetExternalField(const ExternalField& field)
+{
+	m_field = field;
 }
 
 
@@ -99,6 +113,9 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	// constants: imaginary unit and 2pi
 	constexpr const t_cplx imag{0., 1.};
 	constexpr const t_real twopi = t_real(2)*tl2::pi<t_real>;
+	// bohr magneton in [meV/T]
+	constexpr const t_real muB = tl2::muB<t_real>
+		/ tl2::meV<t_real> * tl2::tesla<t_real>;
 	const t_vec_real zdir = tl2::create<t_vec_real>({0., 0., 1.});
 
 	std::vector<t_vec> us, us_conj, vs;
@@ -167,6 +184,9 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	t_mat B = tl2::create<t_mat>(num_sites, num_sites);
 	t_mat C = tl2::zero<t_mat>(num_sites, num_sites);
 
+	bool use_field = !tl2::equals_0<t_real>(m_field.mag, m_eps)
+		&& m_field.dir.size() >= 3;
+
 	for(std::size_t i=0; i<num_sites; ++i)
 	{
 		for(std::size_t j=0; j<num_sites; ++j)
@@ -192,8 +212,21 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 					C(i, j) += S_k * tl2::inner_noconj<t_vec>(vs[i], J_sub_Q0 * vs[k]);
 				}
 			}
+
+			// include external field, formula 28 from (Toth 2015)
+			if(use_field && i == j)
+			{
+				t_vec B = m_field.dir / tl2::norm<t_vec>(m_field.dir);
+				B = B * m_field.mag;
+
+				t_vec gv = m_sites[i].g * vs[i];
+				t_cplx Bgv = tl2::inner_noconj<t_vec>(B, gv);
+
+				A(i, j) -= 0.5*muB * Bgv;
+			}
 		}
 	}
+
 
 	// test matrix block
 	//return A_conj - C;

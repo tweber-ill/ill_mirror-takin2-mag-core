@@ -31,14 +31,17 @@ option(ONLY_BUILD_FINISHED "only build finished tools" TRUE)
 # cif converter
 add_subdirectory(tools/cif2xml)
 
-# polarisation tools
+# polarisation tool
 add_subdirectory(tools/pol)
 
-# nuclear and magnetic structure factors
+# nuclear and magnetic structure factor tools
 add_subdirectory(tools/structfact)
 add_subdirectory(tools/magstructfact)
 
-# molecular dynamics tools
+# magnon dynamics tool
+add_subdirectory(tools/magdyn)
+
+# molecular dynamics tool
 add_subdirectory(tools/moldyn)
 
 
