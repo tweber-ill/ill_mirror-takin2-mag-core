@@ -35,7 +35,7 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QToolButton>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -145,22 +145,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_X, 80);
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_Y, 80);
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_Z, 80);
+		m_sitestab->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-		QToolButton *pTabBtnAdd = new QToolButton(m_sitespanel);
-		QToolButton *pTabBtnDel = new QToolButton(m_sitespanel);
-		QToolButton *pTabBtnUp = new QToolButton(m_sitespanel);
-		QToolButton *pTabBtnDown = new QToolButton(m_sitespanel);
+		QPushButton *pTabBtnAdd = new QPushButton("Add Atom", m_sitespanel);
+		QPushButton *pTabBtnDel = new QPushButton("Delete Atom", m_sitespanel);
+		QPushButton *pTabBtnUp = new QPushButton("Move Atom Up", m_sitespanel);
+		QPushButton *pTabBtnDown = new QPushButton("Move Atom Down", m_sitespanel);
+		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
 
-		m_sitestab->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-
-		pTabBtnAdd->setText("Add Atom");
-		pTabBtnDel->setText("Delete Atom");
-		pTabBtnUp->setText("Move Atom Up");
-		pTabBtnDown->setText("Move Atom Down");
+		pTabBtnAdd->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 
 		auto grid = new QGridLayout(m_sitespanel);
@@ -191,10 +195,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddSiteTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { this->DelTabItem(m_sitestab); });
-		connect(pTabBtnUp, &QToolButton::clicked, this, [this]() { this->MoveTabItemUp(m_sitestab); });
-		connect(pTabBtnDown, &QToolButton::clicked, this, [this]() { this->MoveTabItemDown(m_sitestab); });
+		connect(pTabBtnAdd, &QAbstractButton::clicked, this,
+			[this]() { this->AddSiteTabItem(-1); });
+		connect(pTabBtnDel, &QAbstractButton::clicked, this,
+			[this]() { this->DelTabItem(m_sitestab); });
+		connect(pTabBtnUp, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemUp(m_sitestab); });
+		connect(pTabBtnDown, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemDown(m_sitestab); });
 
 		connect(m_sitestab, &QTableWidget::itemChanged, this, &MagDynDlg::SitesTableItemChanged);
 		connect(m_sitestab, &QTableWidget::customContextMenuRequested, this,
@@ -253,27 +261,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setColumnWidth(COL_XCH_DMI_X, 80);
 		m_termstab->setColumnWidth(COL_XCH_DMI_Y, 80);
 		m_termstab->setColumnWidth(COL_XCH_DMI_Z, 80);
+		m_termstab->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-		QToolButton *pTabBtnAdd = new QToolButton(m_termspanel);
-		QToolButton *pTabBtnDel = new QToolButton(m_termspanel);
-		QToolButton *pTabBtnUp = new QToolButton(m_termspanel);
-		QToolButton *pTabBtnDown = new QToolButton(m_termspanel);
+		QPushButton *pTabBtnAdd = new QPushButton("Add Term", m_termspanel);
+		QPushButton *pTabBtnDel = new QPushButton("Delete Term", m_termspanel);
+		QPushButton *pTabBtnUp = new QPushButton("Move Term Up", m_termspanel);
+		QPushButton *pTabBtnDown = new QPushButton("Move Term Down", m_termspanel);
+		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
 
-		m_termstab->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-		pTabBtnAdd->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDel->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnUp->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDown->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-
-		pTabBtnAdd->setText("Add Term");
-		pTabBtnDel->setText("Delete Term");
-		pTabBtnUp->setText("Move Term Up");
-		pTabBtnDown->setText("Move Term Down");
+		pTabBtnAdd->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 
 		auto grid = new QGridLayout(m_termspanel);
@@ -310,13 +317,13 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// signals
-		connect(pTabBtnAdd, &QToolButton::clicked, this,
+		connect(pTabBtnAdd, &QAbstractButton::clicked, this,
 			[this]() { this->AddTermTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this,
+		connect(pTabBtnDel, &QAbstractButton::clicked, this,
 			[this]() { this->DelTabItem(m_termstab); });
-		connect(pTabBtnUp, &QToolButton::clicked, this,
+		connect(pTabBtnUp, &QAbstractButton::clicked, this,
 			[this]() { this->MoveTabItemUp(m_termstab); });
-		connect(pTabBtnDown, &QToolButton::clicked, this,
+		connect(pTabBtnDown, &QAbstractButton::clicked, this,
 			[this]() { this->MoveTabItemDown(m_termstab); });
 
 		connect(m_termstab, &QTableWidget::itemChanged,
@@ -342,8 +349,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_field_mag->setValue(0.);
 		m_field_mag->setPrefix("|B| = ");
 		m_field_mag->setSuffix(" T");
-		m_field_mag->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_field_mag->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		// field direction
 		m_field_dir[0] = new QDoubleSpinBox(m_fieldpanel);
@@ -354,6 +361,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_align_spins = new QCheckBox(
 			"Align Spins along Field Direction", m_fieldpanel);
 		m_align_spins->setChecked(false);
+		m_align_spins->setFocusPolicy(Qt::StrongFocus);
 
 		// rotation axis
 		m_rot_axis[0] = new QDoubleSpinBox(m_fieldpanel);
@@ -368,11 +376,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_rot_angle->setSingleStep(0.1);
 		m_rot_angle->setValue(90.);
 		m_rot_angle->setSuffix("°");
-		m_rot_angle->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_rot_angle->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		QPushButton *btn_rotate = new QPushButton(
 			"Rotate Field", m_fieldpanel);
+		btn_rotate->setFocusPolicy(Qt::StrongFocus);
 
 
 		for(int i=0; i<3; ++i)
@@ -382,16 +391,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_field_dir[i]->setMaximum(+99);
 			m_field_dir[i]->setSingleStep(0.1);
 			m_field_dir[i]->setValue(i == 2 ? 1. : 0.);
-			m_field_dir[i]->setSizePolicy(
-				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_field_dir[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 			m_rot_axis[i]->setDecimals(2);
 			m_rot_axis[i]->setMinimum(-99);
 			m_rot_axis[i]->setMaximum(+99);
 			m_rot_axis[i]->setSingleStep(0.1);
 			m_rot_axis[i]->setValue(i == 2 ? 1. : 0.);
-			m_rot_axis[i]->setSizePolicy(
-				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_rot_axis[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
 		m_field_dir[0]->setPrefix("Bh = ");
@@ -496,8 +505,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_plot->setInteraction(QCP::iRangeDrag, true);
 		m_plot->setInteraction(QCP::iRangeZoom, true);
 		m_plot->setSelectionRectMode(QCP::srmZoom);
-		m_plot->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		m_plot->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		// start and stop coordinates
 		m_q_start[0] = new QDoubleSpinBox(m_disppanel);
@@ -512,8 +521,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_num_points->setMinimum(1);
 		m_num_points->setMaximum(9999);
 		m_num_points->setValue(512);
-		m_num_points->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_num_points->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		for(int i=0; i<3; ++i)
 		{
@@ -529,10 +538,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_q_end[i]->setValue(0.);
 			m_q_start[i]->setSuffix(" rlu");
 			m_q_end[i]->setSuffix(" rlu");
-			m_q_start[i]->setSizePolicy(
-				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-			m_q_end[i]->setSizePolicy(
-				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q_start[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q_end[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
 		m_q_start[0]->setPrefix("h = ");
@@ -596,8 +605,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_hamiltonian->setReadOnly(true);
 		m_hamiltonian->setWordWrapMode(QTextOption::NoWrap);
 		m_hamiltonian->setLineWrapMode(QTextEdit::NoWrap);
-		m_hamiltonian->setSizePolicy(
-			QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		m_hamiltonian->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
 		// Q coordinates
 		m_q[0] = new QDoubleSpinBox(m_hamiltonianpanel);
@@ -612,8 +621,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_q[i]->setSingleStep(0.1);
 			m_q[i]->setValue(0.);
 			m_q[i]->setSuffix(" rlu");
-			m_q[i]->setSizePolicy(
-				QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
 		m_q[0]->setPrefix("h = ");
