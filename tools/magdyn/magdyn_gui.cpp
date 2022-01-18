@@ -484,9 +484,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			B = R*B;
 			tl2::set_eps_0(B, g_eps);
 
-			m_field_dir[0]->setValue(B[0]);
-			m_field_dir[1]->setValue(B[1]);
-			m_field_dir[2]->setValue(B[2]);
+			for(int i=0; i<3; ++i)
+			{
+				m_field_dir[i]->blockSignals(true);
+				m_field_dir[i]->setValue(B[i]);
+				m_field_dir[i]->blockSignals(false);
+			}
+
+			this->CalcSitesAndTerms();
 		});
 
 		tabs->addTab(m_fieldpanel, "Field");

@@ -12,12 +12,14 @@
 
 #include <tuple>
 #include <algorithm>
+#include <numeric>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
 #include "magdyn.h"
 #include "tlibs2/libs/units.h"
+#include "tlibs2/libs/helper.h"
 
 
 
@@ -243,6 +245,8 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
  */
 std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 {
+	bool only_energies = false;
+
 	t_mat _H = GetHamiltonian(h, k, l);
 	const std::size_t N = _H.size1();
 
@@ -255,6 +259,13 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 
 	// formula 31 in (Toth 2015)
 	auto [chol_ok, C] = tl2_la::chol<t_mat>(_H);
+	if(!chol_ok)
+	{
+		std::cerr << "Warning: Cholesky decomposition failed"
+			<< " for Q = (" << h << ", " << k << ", " << l << ")."
+			<< std::endl;
+	}
+
 	t_mat Ch = tl2::herm<t_mat>(C);
 
 	// see p. 5 in (Toth 2015)
@@ -262,19 +273,30 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 
 	bool is_herm = tl2::is_symm_or_herm<t_mat, t_real>(H, m_eps);
 	if(!is_herm)
-		std::cerr << "Warning: Hamiltonian is not hermitian." << std::endl;
+	{
+		std::cerr << "Warning: Hamiltonian is not hermitian"
+			<< " for Q = (" << h << ", " << k << ", " << l << ")."
+			<< std::endl;
+	}
 
 	// eigenvalues of the hamiltonian correspond to the energies
 	// eigenvectors correspond to the spectral weights
-	bool only_evals = true;
-	auto [ok, evals, evecs] =
+	auto [evecs_ok, evals, evecs] =
 		tl2_la::eigenvec<t_mat, t_vec, t_cplx, t_real>(
-			H, only_evals, is_herm);
+			H, only_energies, is_herm);
+	if(!evecs_ok)
+	{
+		std::cerr << "Warning: Eigensystem calculation failed"
+			<< " for Q = (" << h << ", " << k << ", " << l << ")."
+			<< std::endl;
+	}
+
 
 	std::vector<t_real> energies;
 	energies.reserve(evals.size());
 
-	bool remove_duplicates = true;
+	// if we're not interested in the spectral weights, we can ignore duplicates
+	bool remove_duplicates = only_energies;
 	for(const auto& eval : evals)
 	{
 		if(remove_duplicates &&
@@ -288,6 +310,26 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 
 		//if(std::abs(eval.imag()) <= m_eps)
 			energies.push_back(eval.real());
+	}
+
+	// spectral weights
+	if(!only_energies)
+	{
+		// get the sorting of the energies
+		std::vector<std::size_t> sorting(energies.size());
+		std::iota(sorting.begin(), sorting.end(), 0);
+
+		std::stable_sort(sorting.begin(), sorting.end(),
+			[&energies](std::size_t idx1, std::size_t idx2) -> bool
+			{
+				return energies[idx1] >= energies[idx2];
+			});
+
+		energies = tl2::reorder(energies, sorting);
+		evecs = tl2::reorder(evecs, sorting);
+		evals = tl2::reorder(evals, sorting);
+
+		t_mat evec_mat = tl2::create<t_mat>(evecs);
 	}
 
 	return energies;
