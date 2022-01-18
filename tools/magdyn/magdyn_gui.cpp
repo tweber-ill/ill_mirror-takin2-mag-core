@@ -7,10 +7,10 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2022  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  * "misc" project
- * Copyright (C) 2017-2021  Tobias WEBER (privately developed).
+ * Copyright (C) 2017-2022  Tobias WEBER (privately developed).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 
 #include <QtCore/QDir>
 #include <QtGui/QFontDatabase>
-#include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QHeaderView>
@@ -1672,26 +1671,4 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 	{
 		m_sett->setValue("geo", saveGeometry());
 	}
-}
-
-
-int main(int argc, char** argv)
-{
-	try
-	{
-		tl2::set_locales();
-
-		QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
-		auto app = std::make_unique<QApplication>(argc, argv);
-		auto dlg = std::make_unique<MagDynDlg>(nullptr);
-		dlg->show();
-
-		return app->exec();
-	}
-	catch(const std::exception& ex)
-	{
-		std::cerr << ex.what() << std::endl;
-	}
-
-	return 0;
 }

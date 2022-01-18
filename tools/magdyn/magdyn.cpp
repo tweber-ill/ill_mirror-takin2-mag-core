@@ -156,13 +156,8 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 
 		if(term.dmi.size() >= 3)
 		{
-			J(0, 1) = +term.dmi[2];
-			J(0, 2) = -term.dmi[1];
-			J(1, 2) = +term.dmi[0];
-
-			J(1, 0) = -J(0, 1);
-			J(2, 0) = -J(0, 2);
-			J(2, 1) = -J(1, 2);
+			// cross product matrix
+			J += tl2::skewsymmetric<t_mat, t_vec>(-term.dmi);
 		}
 
 		t_mat J_T = tl2::trans(J);
