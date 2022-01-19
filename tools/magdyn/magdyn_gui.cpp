@@ -73,6 +73,7 @@ enum : int
 	COL_SITE_NAME = 0,
 	COL_SITE_POS_X, COL_SITE_POS_Y, COL_SITE_POS_Z,
 	COL_SITE_SPIN_X, COL_SITE_SPIN_Y, COL_SITE_SPIN_Z,
+	COL_SITE_SPIN_MAG,
 
 	NUM_SITE_COLS
 };
@@ -136,6 +137,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			new QTableWidgetItem{"Spin y"});
 		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_Z,
 			new QTableWidgetItem{"Spin z"});
+		m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_MAG,
+			new QTableWidgetItem{"Spin |S|"});
 
 		m_sitestab->setColumnWidth(COL_SITE_NAME, 90);
 		m_sitestab->setColumnWidth(COL_SITE_POS_X, 80);
@@ -144,6 +147,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_X, 80);
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_Y, 80);
 		m_sitestab->setColumnWidth(COL_SITE_SPIN_Z, 80);
+		m_sitestab->setColumnWidth(COL_SITE_SPIN_MAG, 80);
 		m_sitestab->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
@@ -776,6 +780,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_use_field->setToolTip("Enables an external field.");
 		m_use_field->setCheckable(true);
 		m_use_field->setChecked(true);
+		m_use_weights = new QAction("Use Spectral Weights", menuOptions);
+		m_use_weights->setToolTip("Enables calculation of the spin correlation function.");
+		m_use_weights->setCheckable(true);
+		m_use_weights->setChecked(false);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
@@ -789,6 +797,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
+		menuOptions->addAction(m_use_weights);
 
 		// connections
 		connect(acNew, &QAction::triggered, this,  [this]()
@@ -818,6 +827,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this]() { this->CalcSitesAndTerms(); });
 		connect(m_use_field, &QAction::toggled,
 			[this]() { this->CalcSitesAndTerms(); });
+		connect(m_use_weights, &QAction::toggled,
+			[this]() { this->CalcDispersion(); });
 
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuPlot);
@@ -843,7 +854,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 void MagDynDlg::AddSiteTabItem(int row,
 	const std::string& name,
 	t_real x, t_real y, t_real z,
-	t_real sx, t_real sy, t_real sz)
+	t_real sx, t_real sy, t_real sz,
+	t_real S)
 {
 	bool bclone = 0;
 	m_ignoreChanges = 1;
@@ -887,6 +899,8 @@ void MagDynDlg::AddSiteTabItem(int row,
 			new NumericTableWidgetItem<t_real>(sy));
 		m_sitestab->setItem(row, COL_SITE_SPIN_Z,
 			new NumericTableWidgetItem<t_real>(sz));
+		m_sitestab->setItem(row, COL_SITE_SPIN_MAG,
+			new NumericTableWidgetItem<t_real>(S));
 	}
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
@@ -1070,7 +1084,6 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 }
 
 
-
 std::vector<int> MagDynDlg::GetSelectedRows(
 	QTableWidget *pTab, bool sort_reversed) const
 {
@@ -1191,13 +1204,15 @@ void MagDynDlg::Load()
 			m_use_dmi->setChecked(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.use_field"))
 			m_use_field->setChecked(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_h"))
+		if(auto optVal = node.get_optional<bool>("magdyn.config.use_weights"))
+			m_use_weights->setChecked(*optVal);
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_h"))
 			m_field_dir[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_k"))
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_k"))
 			m_field_dir[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_dir_l"))
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_l"))
 			m_field_dir[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_mag"))
+		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_magnitude"))
 			m_field_mag->setValue(*optVal);
 		if(auto optVal = node.get_optional<bool>("magdyn.config.field_polarise"))
 			m_align_spins->setChecked(*optVal);
@@ -1226,11 +1241,13 @@ void MagDynDlg::Load()
 				auto optSpinX = site.second.get<t_real>("spin_x", 0.);
 				auto optSpinY = site.second.get<t_real>("spin_y", 0.);
 				auto optSpinZ = site.second.get<t_real>("spin_z", 1.);
+				auto optSpinMag = site.second.get<t_real>("spin_magnitude", 1.);
 
 				AddSiteTabItem(-1,
 					optName,
 					optPosX, optPosY, optPosZ,
-					optSpinX, optSpinY, optSpinZ);
+					optSpinX, optSpinY, optSpinZ,
+					optSpinMag);
 			}
 		}
 
@@ -1298,10 +1315,11 @@ void MagDynDlg::Save()
 	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
 	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
 	node.put<bool>("magdyn.config.use_field", m_use_field->isChecked());
-	node.put<t_real>("magdyn.config.field_dir_h", m_field_dir[0]->value());
-	node.put<t_real>("magdyn.config.field_dir_k", m_field_dir[1]->value());
-	node.put<t_real>("magdyn.config.field_dir_l", m_field_dir[2]->value());
-	node.put<t_real>("magdyn.config.field_mag", m_field_mag->value());
+	node.put<bool>("magdyn.config.use_weights", m_use_weights->isChecked());
+	node.put<t_real>("magdyn.config.field_direction_h", m_field_dir[0]->value());
+	node.put<t_real>("magdyn.config.field_direction_k", m_field_dir[1]->value());
+	node.put<t_real>("magdyn.config.field_direction_l", m_field_dir[2]->value());
+	node.put<t_real>("magdyn.config.field_magnitude", m_field_mag->value());
 	node.put<bool>("magdyn.config.field_polarise", m_align_spins->isChecked());
 	node.put<t_real>("magdyn.config.field_axis_h", m_rot_axis[0]->value());
 	node.put<t_real>("magdyn.config.field_axis_k", m_rot_axis[1]->value());
@@ -1313,6 +1331,7 @@ void MagDynDlg::Save()
 	{
 		t_real pos[3]{0., 0., 0.};
 		t_real spin[3]{0., 0., 1.};
+		t_real S = 1.;
 
 		std::istringstream{m_sitestab->item(row, COL_SITE_POS_X)
 			->text().toStdString()} >> pos[0];
@@ -1326,6 +1345,8 @@ void MagDynDlg::Save()
 			->text().toStdString()} >> spin[1];
 		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Z)
 			->text().toStdString()} >> spin[2];
+		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_MAG)
+			->text().toStdString()} >> S;
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("name",
@@ -1336,6 +1357,7 @@ void MagDynDlg::Save()
 		itemNode.put<t_real>("spin_x", spin[0]);
 		itemNode.put<t_real>("spin_y", spin[1]);
 		itemNode.put<t_real>("spin_z", spin[2]);
+		itemNode.put<t_real>("spin_magnitude", S);
 
 		node.add_child("magdyn.atom_sites.site", itemNode);
 	}
@@ -1442,8 +1464,9 @@ void MagDynDlg::CalcSitesAndTerms()
 		auto *spin_x = m_sitestab->item(row, COL_SITE_SPIN_X);
 		auto *spin_y = m_sitestab->item(row, COL_SITE_SPIN_Y);
 		auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
+		auto *spin_mag = m_sitestab->item(row, COL_SITE_SPIN_MAG);
 
-		if(!name || !pos_x || !pos_y || !pos_z || !spin_x || !spin_y || !spin_z)
+		if(!name || !pos_x || !pos_y || !pos_z || !spin_x || !spin_y || !spin_z || !spin_mag)
 		{
 			std::cerr << "Invalid entry in sites table row " << row << "." << std::endl;
 			continue;
@@ -1452,11 +1475,11 @@ void MagDynDlg::CalcSitesAndTerms()
 		AtomSite site;
 		site.pos = tl2::zero<t_vec>(3);
 		site.spin_dir = tl2::zero<t_vec>(3);
-		site.spin_mag = 1.;  // TODO
 		site.g = -2. * tl2::unit<t_mat>(3);
 		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
 		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
 		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
+		std::istringstream{spin_mag->text().toStdString()} >> site.spin_mag;
 
 		// align spins along external field?
 		if(m_align_spins->isChecked() && m_use_field->isChecked())
@@ -1603,7 +1626,10 @@ void MagDynDlg::CalcDispersion()
 			std::lerp(Q_start[2], Q_end[2], t_real(i)/t_real(num_pts-1)),
 		};
 
-		auto Es = m_dyn.GetEnergies(Q[0], Q[1], Q[2]);
+		auto [Es, S] = m_dyn.GetEnergies(Q[0], Q[1], Q[2],
+			!m_use_weights->isChecked());
+		//t_real weight = std::abs(tl2::trace(S).real());
+
 		for(const auto& E : Es)
 		{
 			qs_data.push_back(Q[Q_idx]);

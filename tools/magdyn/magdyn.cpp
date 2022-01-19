@@ -260,14 +260,15 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 
 
 /**
- * get the energies at the given momentum
+ * get the energies and the spin-correlation at the given momentum
  * @note implements the formalism given by (Toth 2015)
  * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
  */
-std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
+std::tuple<std::vector<t_real>, t_mat>
+MagDyn::GetEnergies(
+	t_real h, t_real k, t_real l,
+	bool only_energies) const
 {
-	bool only_energies = false;
-
 	t_mat _H = GetHamiltonian(h, k, l);
 	const std::size_t N = _H.size1();
 	const std::size_t num_sites = m_sites.size();
@@ -356,7 +357,10 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 			energies.push_back(eval.real());
 	}
 
+
 	// spectral weights
+	t_mat S = tl2::zero<t_mat>(3, 3);
+
 	if(!only_energies)
 	{
 		// momentum
@@ -406,8 +410,6 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 
 
 		// building the spin correlation function of formula 47 in (Toth 2015)
-		t_mat S = tl2::zero<t_mat>(3, 3);
-
 		for(int x_idx=0; x_idx<3; ++x_idx)
 		{
 			for(int y_idx=0; y_idx<3; ++y_idx)
@@ -460,7 +462,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 		}
 	}
 
-	return energies;
+	return std::make_tuple(energies, S);
 }
 
 
@@ -470,7 +472,7 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
  */
 t_real MagDyn::GetGoldstoneEnergy() const
 {
-	std::vector<t_real> Es = GetEnergies(0., 0., 0.);
+	auto [Es, S] = GetEnergies(0., 0., 0., true);
 	if(auto min_iter = std::min_element(Es.begin(), Es.end()); min_iter != Es.end())
 		return *min_iter;
 
@@ -502,7 +504,7 @@ void MagDyn::SaveDispersion(const std::string& filename,
 		t_real l = std::lerp(l_start, l_end, t_real(i)/t_real(num_qs-1));
 
 
-		auto Es = GetEnergies(h, k, l);
+		auto [Es, S] = GetEnergies(h, k, l, true);
 		for(const auto& E : Es)
 		{
 			ofstr

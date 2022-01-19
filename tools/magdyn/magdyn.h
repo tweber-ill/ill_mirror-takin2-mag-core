@@ -14,6 +14,7 @@
 #define __MAGDYN_H__
 
 #include <vector>
+#include <tuple>
 #include <string>
 
 #include "defs.h"
@@ -72,7 +73,9 @@ public:
 
 	t_mat GetHamiltonian(t_real h, t_real k, t_real l) const;
 
-	std::vector<t_real> GetEnergies(t_real h, t_real k, t_real l) const;
+	std::tuple<std::vector<t_real>, t_mat> GetEnergies(
+		t_real h, t_real k, t_real l,
+		bool only_energies = false) const;
 
 	t_real GetGoldstoneEnergy() const;
 

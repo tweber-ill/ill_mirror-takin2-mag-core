@@ -70,6 +70,7 @@ protected:
 
 	QAction *m_use_dmi{};
 	QAction *m_use_field{};
+	QAction *m_use_weights{};
 
 	// panels
 	QWidget *m_sitespanel{};
@@ -107,13 +108,16 @@ protected:
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
 	void MoveTabItemDown(QTableWidget *pTab);
-	void ShowTableContextMenu(QTableWidget *pTab, QMenu *pMenu, QMenu *pMenuNoItem, const QPoint& pt);
-	std::vector<int> GetSelectedRows(QTableWidget *pTab, bool sort_reversed = false) const;
+	void ShowTableContextMenu(
+		QTableWidget *pTab, QMenu *pMenu, QMenu *pMenuNoItem, const QPoint& pt);
+	std::vector<int> GetSelectedRows(
+		QTableWidget *pTab, bool sort_reversed = false) const;
 
 	void AddSiteTabItem(int row=-1,
 		const std::string& name="n/a",
 		t_real x=0., t_real y=0., t_real z=0.,
-		t_real sx=0., t_real sy=0., t_real sz=1.);
+		t_real sx=0., t_real sy=0., t_real sz=1.,
+		t_real S=1.);
 
 	void AddTermTabItem(int row=-1,
 		const std::string& name="n/a",
