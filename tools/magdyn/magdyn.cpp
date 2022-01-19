@@ -21,6 +21,7 @@
 #include "tlibs2/libs/units.h"
 #include "tlibs2/libs/helper.h"
 
+namespace pt = boost::property_tree;
 
 
 // ----------------------------------------------------------------------------
@@ -46,13 +47,29 @@ static std::tuple<t_vec, t_vec> R_to_uv(const t_mat& R)
 // ----------------------------------------------------------------------------
 
 
+/**
+ * clear all
+ */
+void MagDyn::Clear()
+{
+	ClearAtomSites();
+	ClearExchangeTerms();
+	ClearExternalField();
+}
 
+
+/**
+ * clear all couplings
+ */
 void MagDyn::ClearExchangeTerms()
 {
 	m_exchange_terms.clear();
 }
 
 
+/**
+ * clear all atom sites
+ */
 void MagDyn::ClearAtomSites()
 {
 	m_sites.clear();
@@ -60,10 +77,32 @@ void MagDyn::ClearAtomSites()
 }
 
 
+/**
+ * clear the external field settings
+ */
 void MagDyn::ClearExternalField()
 {
 	m_field.dir.clear();
 	m_field.mag = 0.;
+	m_field.align_spins = false;
+}
+
+
+const std::vector<AtomSite>& MagDyn::GetAtomSites() const
+{
+	return m_sites;
+}
+
+
+const std::vector<ExchangeTerm>& MagDyn::GetExchangeTerms() const
+{
+	return m_exchange_terms;
+}
+
+
+const ExternalField& MagDyn::GetExternalField() const
+{
+	return m_field;
 }
 
 
@@ -115,9 +154,13 @@ void MagDyn::CalcSpinRotation()
 
 	for(const AtomSite& site : m_sites)
 	{
+		const t_vec* spin_dir = &site.spin_dir;
+		if(m_field.align_spins)
+			spin_dir = &m_field.dir;
+
 		// rotate spin to ferromagnetic [001] direction
 		auto [spin_re, spin_im] =
-			tl2::split_cplx<t_vec, t_vec_real>(site.spin_dir);
+			tl2::split_cplx<t_vec, t_vec_real>(*spin_dir);
 		t_mat rot = tl2::convert<t_mat>(
 			tl2::rotation<t_mat_real, t_vec_real>(
 				spin_re, zdir, zdir));
@@ -515,4 +558,148 @@ void MagDyn::SaveDispersion(const std::string& filename,
 				<< std::endl;
 		}
 	}
+}
+
+
+/**
+ * load a configuration from a property tree
+ */
+bool MagDyn::Load(const boost::property_tree::ptree& node)
+{
+	Clear();
+
+	// atom sites
+	if(auto sites = node.get_child_optional("atom_sites"); sites)
+	{
+		for(const auto &site : *sites)
+		{
+			AtomSite atom_site;
+
+			atom_site.name = site.second.get<std::string>("name", "n/a");
+
+			atom_site.pos = tl2::create<t_vec>(
+			{
+				site.second.get<t_real>("position_x", 0.),
+				site.second.get<t_real>("position_y", 0.),
+				site.second.get<t_real>("position_z", 0.),
+			});
+
+			atom_site.spin_dir = tl2::create<t_vec>(
+			{
+				site.second.get<t_real>("spin_x", 0.),
+				site.second.get<t_real>("spin_y", 0.),
+				site.second.get<t_real>("spin_z", 1.),
+			});
+
+			atom_site.spin_mag = site.second.get<t_real>("spin_magnitude", 1.);
+			atom_site.g = -2. * tl2::unit<t_mat>(3);
+
+			m_sites.emplace_back(std::move(atom_site));
+		}
+	}
+
+	// exchange terms
+	if(auto terms = node.get_child_optional("exchange_terms"); terms)
+	{
+		for(const auto &term : *terms)
+		{
+			ExchangeTerm exchange_term;
+
+			exchange_term.name = term.second.get<std::string>("name", "n/a");
+			exchange_term.atom1 = term.second.get<t_size>("atom_1_index", 0);
+			exchange_term.atom2 = term.second.get<t_size>("atom_2_index", 0);
+
+			exchange_term.dist = tl2::create<t_vec>(
+			{
+				term.second.get<t_real>("distance_x", 0.),
+				term.second.get<t_real>("distance_y", 0.),
+				term.second.get<t_real>("distance_z", 0.),
+			});
+
+			exchange_term.J = term.second.get<t_real>("interaction", 0.);
+
+			exchange_term.dmi = tl2::create<t_vec>(
+			{
+				term.second.get<t_real>("dmi_x", 0.),
+				term.second.get<t_real>("dmi_y", 0.),
+				term.second.get<t_real>("dmi_z", 0.),
+			});
+
+			m_exchange_terms.emplace_back(std::move(exchange_term));
+		}
+	}
+
+	// external field
+	if(auto field = node.get_child_optional("field"); field)
+	{
+		m_field.dir = tl2::zero<t_vec>(3);
+		m_field.mag = 0.;
+		m_field.align_spins = false;
+
+		m_field.dir = tl2::create<t_vec>(
+		{
+			field->get<t_real>("direction_h", 0.),
+			field->get<t_real>("direction_k", 0.),
+			field->get<t_real>("direction_l", 1.),
+		});
+
+		if(auto optVal = field->get_optional<t_real>("magnitude"))
+			m_field.mag = *optVal;
+
+		if(auto optVal = field->get_optional<bool>("align_spins"))
+			m_field.align_spins = *optVal;
+	}
+
+	CalcSpinRotation();
+	return true;
+}
+
+
+/**
+ * save a configuration to a property tree
+ */
+bool MagDyn::Save(boost::property_tree::ptree& node)
+{
+	// external field
+	node.put<t_real>("field.direction_h", m_field.dir[0].real());
+	node.put<t_real>("field.direction_k", m_field.dir[1].real());
+	node.put<t_real>("field.direction_l", m_field.dir[2].real());
+	node.put<t_real>("field.magnitude", m_field.mag);
+	node.put<bool>("field.align_spins", m_field.align_spins);
+
+	// atom sites
+	for(const auto& site : GetAtomSites())
+	{
+		pt::ptree itemNode;
+		itemNode.put<std::string>("name", site.name);
+		itemNode.put<t_real>("position_x", site.pos[0].real());
+		itemNode.put<t_real>("position_y", site.pos[1].real());
+		itemNode.put<t_real>("position_z", site.pos[2].real());
+		itemNode.put<t_real>("spin_x", site.spin_dir[0].real());
+		itemNode.put<t_real>("spin_y", site.spin_dir[1].real());
+		itemNode.put<t_real>("spin_z", site.spin_dir[2].real());
+		itemNode.put<t_real>("spin_magnitude", site.spin_mag);
+
+		node.add_child("atom_sites.site", itemNode);
+	}
+
+	// exchange terms
+	for(const auto& term : GetExchangeTerms())
+	{
+		pt::ptree itemNode;
+		itemNode.put<std::string>("name", term.name);
+		itemNode.put<t_size>("atom_1_index", term.atom1);
+		itemNode.put<t_size>("atom_2_index", term.atom2);
+		itemNode.put<t_real>("distance_x", term.dist[0].real());
+		itemNode.put<t_real>("distance_y", term.dist[1].real());
+		itemNode.put<t_real>("distance_z", term.dist[2].real());
+		itemNode.put<t_real>("interaction", term.J.real());
+		itemNode.put<t_real>("dmi_x", term.dmi[0].real());
+		itemNode.put<t_real>("dmi_y", term.dmi[1].real());
+		itemNode.put<t_real>("dmi_z", term.dmi[2].real());
+
+		node.add_child("exchange_terms.term", itemNode);
+	}
+
+	return true;
 }

@@ -17,15 +17,17 @@
 #include <tuple>
 #include <string>
 
+#include <boost/property_tree/ptree.hpp>
 #include "defs.h"
 
 
 struct AtomSite
 {
-	t_vec pos{};       // atom position
-	t_vec spin_dir{};  // spin direction
-	t_real spin_mag{}; // spin magnitude
-	t_mat g{};         // g factor
+	std::string name{}; // identifier
+	t_vec pos{};        // atom position
+	t_vec spin_dir{};   // spin direction
+	t_real spin_mag{};  // spin magnitude
+	t_mat g{};          // g factor
 };
 
 
@@ -38,18 +40,20 @@ struct AtomSiteCalc
 
 struct ExchangeTerm
 {
-	t_size atom1{};    // atom 1 index
-	t_size atom2{};    // atom 2 index
-	t_vec dist{};      // distance between unit cells
-	t_cplx J{};        // Heisenberg interaction
-	t_vec dmi{};       // Dzyaloshinskij-Moriya interaction
+	std::string name{}; // identifier
+	t_size atom1{};     // atom 1 index
+	t_size atom2{};     // atom 2 index
+	t_vec dist{};       // distance between unit cells
+	t_cplx J{};         // Heisenberg interaction
+	t_vec dmi{};        // Dzyaloshinskij-Moriya interaction
 };
 
 
 struct ExternalField
 {
-	t_vec dir{};       // field direction
-	t_real mag{};      // field magnitude
+	t_vec dir{};        // field direction
+	t_real mag{};       // field magnitude
+	bool align_spins{}; // align spins along external field
 };
 
 
@@ -59,16 +63,23 @@ public:
 	MagDyn() = default;
 	~MagDyn() = default;
 
+	void Clear();
 	void ClearAtomSites();
 	void ClearExchangeTerms();
 	void ClearExternalField();
 
+	bool Load(const boost::property_tree::ptree& tree);
+	bool Save(boost::property_tree::ptree& tree);
+
+	const std::vector<AtomSite>& GetAtomSites() const;
 	void AddAtomSite(AtomSite&& site);
 	void CalcSpinRotation();
 
+	const std::vector<ExchangeTerm>& GetExchangeTerms() const;
 	void AddExchangeTerm(ExchangeTerm&& term);
 	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
 
+	const ExternalField& GetExternalField() const;
 	void SetExternalField(const ExternalField& field);
 
 	t_mat GetHamiltonian(t_real h, t_real k, t_real l) const;

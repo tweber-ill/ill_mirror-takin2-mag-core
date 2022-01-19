@@ -453,17 +453,17 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		// signals
 		connect(m_field_mag,
 			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]() { this->CalcSitesAndTerms(); });
+			[this]() { this->SyncSitesAndTerms(); });
 
 		for(int i=0; i<3; ++i)
 		{
 			connect(m_field_dir[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->CalcSitesAndTerms(); });
+				[this]() { this->SyncSitesAndTerms(); });
 		}
 
 		connect(m_align_spins, &QCheckBox::toggled,
-			[this]() { this->CalcSitesAndTerms(); });
+			[this]() { this->SyncSitesAndTerms(); });
 
 		connect(btn_rotate, &QAbstractButton::clicked, [this]()
 		{
@@ -495,7 +495,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				m_field_dir[i]->blockSignals(false);
 			}
 
-			this->CalcSitesAndTerms();
+			this->SyncSitesAndTerms();
 		});
 
 		tabs->addTab(m_fieldpanel, "Field");
@@ -824,9 +824,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		});
 
 		connect(m_use_dmi, &QAction::toggled,
-			[this]() { this->CalcSitesAndTerms(); });
+			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_field, &QAction::toggled,
-			[this]() { this->CalcSitesAndTerms(); });
+			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_weights, &QAction::toggled,
 			[this]() { this->CalcDispersion(); });
 
@@ -909,7 +909,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 	m_sitestab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreChanges = 0;
-	CalcSitesAndTerms();
+	SyncSitesAndTerms();
 }
 
 
@@ -976,7 +976,7 @@ void MagDynDlg::AddTermTabItem(int row,
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreChanges = 0;
-	CalcSitesAndTerms();
+	SyncSitesAndTerms();
 }
 
 
@@ -1006,7 +1006,7 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 	}
 
 	m_ignoreChanges = 0;
-	CalcSitesAndTerms();
+	SyncSitesAndTerms();
 }
 
 
@@ -1043,7 +1043,7 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 	}
 
 	m_ignoreChanges = 0;
-	CalcSitesAndTerms();
+	SyncSitesAndTerms();
 }
 
 
@@ -1080,7 +1080,7 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 	}
 
 	m_ignoreChanges = 0;
-	CalcSitesAndTerms();
+	SyncSitesAndTerms();
 }
 
 
@@ -1112,7 +1112,7 @@ std::vector<int> MagDynDlg::GetSelectedRows(
 void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
 {
 	if(!m_ignoreChanges)
-		CalcSitesAndTerms();
+		SyncSitesAndTerms();
 }
 
 
@@ -1122,7 +1122,7 @@ void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
 void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 {
 	if(!m_ignoreChanges)
-		CalcSitesAndTerms();
+		SyncSitesAndTerms();
 }
 
 
@@ -1159,7 +1159,8 @@ void MagDynDlg::Load()
 	try
 	{
 		QString dirLast = m_sett->value("dir", "").toString();
-		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+		QString filename = QFileDialog::getOpenFileName(
+			this, "Load File", dirLast, "XML Files (*.xml *.XML)");
 		if(filename=="" || !QFile::exists(filename))
 			return;
 		m_sett->setValue("dir", QFileInfo(filename).path());
@@ -1178,101 +1179,76 @@ void MagDynDlg::Load()
 			QMessageBox::critical(this, "Magnon Dynamics", "Unrecognised file format.");
 			return;
 		}
+		
+		const auto &magdyn = node.get_child("magdyn");
 
 		// settings
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_start"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.h_start"))
 			m_q_start[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_start"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.k_start"))
 			m_q_start[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_start"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.l_start"))
 			m_q_start[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.h_end"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.h_end"))
 			m_q_end[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.k_end"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.k_end"))
 			m_q_end[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.l_end"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.l_end"))
 			m_q_end[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.h"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.h"))
 			m_q[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.k"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.k"))
 			m_q[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.l"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.l"))
 			m_q[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_size>("magdyn.config.num_Q_points"))
+		if(auto optVal = magdyn.get_optional<t_size>("config.num_Q_points"))
 			m_num_points->setValue(*optVal);
-		if(auto optVal = node.get_optional<bool>("magdyn.config.use_DMI"))
+		if(auto optVal = magdyn.get_optional<bool>("config.use_DMI"))
 			m_use_dmi->setChecked(*optVal);
-		if(auto optVal = node.get_optional<bool>("magdyn.config.use_field"))
+		if(auto optVal = magdyn.get_optional<bool>("config.use_field"))
 			m_use_field->setChecked(*optVal);
-		if(auto optVal = node.get_optional<bool>("magdyn.config.use_weights"))
+		if(auto optVal = magdyn.get_optional<bool>("config.use_weights"))
 			m_use_weights->setChecked(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_h"))
-			m_field_dir[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_k"))
-			m_field_dir[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_direction_l"))
-			m_field_dir[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_magnitude"))
-			m_field_mag->setValue(*optVal);
-		if(auto optVal = node.get_optional<bool>("magdyn.config.field_polarise"))
-			m_align_spins->setChecked(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_h"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_h"))
 			m_rot_axis[0]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_k"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_k"))
 			m_rot_axis[1]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_axis_l"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_l"))
 			m_rot_axis[2]->setValue(*optVal);
-		if(auto optVal = node.get_optional<t_real>("magdyn.config.field_angle"))
+		if(auto optVal = magdyn.get_optional<t_real>("config.field_angle"))
 			m_rot_angle->setValue(*optVal);
+
+		m_dyn.Load(magdyn);
+
+		// external field
+		m_field_dir[0]->setValue(m_dyn.GetExternalField().dir[0].real());
+		m_field_dir[1]->setValue(m_dyn.GetExternalField().dir[1].real());
+		m_field_dir[2]->setValue(m_dyn.GetExternalField().dir[2].real());
+		m_field_mag->setValue(m_dyn.GetExternalField().mag);
+		m_align_spins->setChecked(m_dyn.GetExternalField().align_spins);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
 		DelTabItem(m_termstab, -1);
 
 		// atom sites
-		if(auto sites = node.get_child_optional("magdyn.atom_sites"); sites)
+		for(const auto &site : m_dyn.GetAtomSites())
 		{
-			for(const auto &site : *sites)
-			{
-				auto optName = site.second.get<std::string>("name", "n/a");
-				auto optPosX = site.second.get<t_real>("position_x", 0.);
-				auto optPosY = site.second.get<t_real>("position_y", 0.);
-				auto optPosZ = site.second.get<t_real>("position_z", 0.);
-				auto optSpinX = site.second.get<t_real>("spin_x", 0.);
-				auto optSpinY = site.second.get<t_real>("spin_y", 0.);
-				auto optSpinZ = site.second.get<t_real>("spin_z", 1.);
-				auto optSpinMag = site.second.get<t_real>("spin_magnitude", 1.);
-
-				AddSiteTabItem(-1,
-					optName,
-					optPosX, optPosY, optPosZ,
-					optSpinX, optSpinY, optSpinZ,
-					optSpinMag);
-			}
+			AddSiteTabItem(-1,
+				site.name,
+				site.pos[0].real(), site.pos[1].real(), site.pos[2].real(),
+				site.spin_dir[0].real(), site.spin_dir[1].real(), site.spin_dir[2].real(),
+				site.spin_mag);
 		}
 
 		// exchange terms
-		if(auto terms = node.get_child_optional("magdyn.exchange_terms"); terms)
+		for(const auto& term : m_dyn.GetExchangeTerms())
 		{
-			for(const auto &term : *terms)
-			{
-				auto optName = term.second.get<std::string>("name", "n/a");
-				auto optAtom1 = term.second.get<t_size>("atom_1_index", 0);
-				auto optAtom2 = term.second.get<t_size>("atom_2_index", 0);
-				auto optDistX = term.second.get<t_real>("distance_x", 0.);
-				auto optDistY = term.second.get<t_real>("distance_y", 0.);
-				auto optDistZ = term.second.get<t_real>("distance_z", 0.);
-				auto optInteraction = term.second.get<t_real>("interaction", 0.);
-				auto optDmiX = term.second.get<t_real>("dmi_x", 0.);
-				auto optDmiY = term.second.get<t_real>("dmi_y", 0.);
-				auto optDmiZ = term.second.get<t_real>("dmi_z", 0.);
-
-				AddTermTabItem(-1,
-					optName, optAtom1, optAtom2,
-					optDistX, optDistY, optDistZ,
-					optInteraction,
-					optDmiX, optDmiY, optDmiZ);
-			}
+			AddTermTabItem(-1,
+				term.name, term.atom1, term.atom2,
+				term.dist[0].real(), term.dist[1].real(), term.dist[2].real(),
+				term.J.real(),
+				term.dmi[0].real(), term.dmi[1].real(), term.dmi[2].real());
 		}
 	}
 	catch(const std::exception& ex)
@@ -1280,9 +1256,9 @@ void MagDynDlg::Load()
 		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
 	}
 
-	// recalculate
 	m_ignoreCalc = 0;
-	CalcSitesAndTerms();
+	CalcDispersion();
+	CalcHamiltonian();
 }
 
 
@@ -1298,113 +1274,34 @@ void MagDynDlg::Save()
 	m_sett->setValue("dir", QFileInfo(filename).path());
 
 	// properties tree
-	pt::ptree node;
-	node.put<std::string>("magdyn.meta.info", "magdyn_tool");
-	node.put<std::string>("magdyn.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+	pt::ptree magdyn;
+	
+	magdyn.put<std::string>("meta.info", "magdyn_tool");
+	magdyn.put<std::string>("meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 
 	// settings
-	node.put<t_real>("magdyn.config.h_start", m_q_start[0]->value());
-	node.put<t_real>("magdyn.config.k_start", m_q_start[1]->value());
-	node.put<t_real>("magdyn.config.l_start", m_q_start[2]->value());
-	node.put<t_real>("magdyn.config.h_end", m_q_end[0]->value());
-	node.put<t_real>("magdyn.config.k_end", m_q_end[1]->value());
-	node.put<t_real>("magdyn.config.l_end", m_q_end[2]->value());
-	node.put<t_real>("magdyn.config.h", m_q[0]->value());
-	node.put<t_real>("magdyn.config.k", m_q[1]->value());
-	node.put<t_real>("magdyn.config.l", m_q[2]->value());
-	node.put<t_size>("magdyn.config.num_Q_points", m_num_points->value());
-	node.put<bool>("magdyn.config.use_DMI", m_use_dmi->isChecked());
-	node.put<bool>("magdyn.config.use_field", m_use_field->isChecked());
-	node.put<bool>("magdyn.config.use_weights", m_use_weights->isChecked());
-	node.put<t_real>("magdyn.config.field_direction_h", m_field_dir[0]->value());
-	node.put<t_real>("magdyn.config.field_direction_k", m_field_dir[1]->value());
-	node.put<t_real>("magdyn.config.field_direction_l", m_field_dir[2]->value());
-	node.put<t_real>("magdyn.config.field_magnitude", m_field_mag->value());
-	node.put<bool>("magdyn.config.field_polarise", m_align_spins->isChecked());
-	node.put<t_real>("magdyn.config.field_axis_h", m_rot_axis[0]->value());
-	node.put<t_real>("magdyn.config.field_axis_k", m_rot_axis[1]->value());
-	node.put<t_real>("magdyn.config.field_axis_l", m_rot_axis[2]->value());
-	node.put<t_real>("magdyn.config.field_angle", m_rot_angle->value());
+	magdyn.put<t_real>("config.h_start", m_q_start[0]->value());
+	magdyn.put<t_real>("config.k_start", m_q_start[1]->value());
+	magdyn.put<t_real>("config.l_start", m_q_start[2]->value());
+	magdyn.put<t_real>("config.h_end", m_q_end[0]->value());
+	magdyn.put<t_real>("config.k_end", m_q_end[1]->value());
+	magdyn.put<t_real>("config.l_end", m_q_end[2]->value());
+	magdyn.put<t_real>("config.h", m_q[0]->value());
+	magdyn.put<t_real>("config.k", m_q[1]->value());
+	magdyn.put<t_real>("config.l", m_q[2]->value());
+	magdyn.put<t_size>("config.num_Q_points", m_num_points->value());
+	magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
+	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
+	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
+	magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
+	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
+	magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
+	magdyn.put<t_real>("config.field_angle", m_rot_angle->value());
 
-	// atom sites
-	for(int row=0; row<m_sitestab->rowCount(); ++row)
-	{
-		t_real pos[3]{0., 0., 0.};
-		t_real spin[3]{0., 0., 1.};
-		t_real S = 1.;
+	m_dyn.Save(magdyn);
 
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_X)
-			->text().toStdString()} >> pos[0];
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Y)
-			->text().toStdString()} >> pos[1];
-		std::istringstream{m_sitestab->item(row, COL_SITE_POS_Z)
-			->text().toStdString()} >> pos[2];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_X)
-			->text().toStdString()} >> spin[0];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Y)
-			->text().toStdString()} >> spin[1];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_Z)
-			->text().toStdString()} >> spin[2];
-		std::istringstream{m_sitestab->item(row, COL_SITE_SPIN_MAG)
-			->text().toStdString()} >> S;
-
-		pt::ptree itemNode;
-		itemNode.put<std::string>("name",
-			m_sitestab->item(row, COL_SITE_NAME)->text().toStdString());
-		itemNode.put<t_real>("position_x", pos[0]);
-		itemNode.put<t_real>("position_y", pos[1]);
-		itemNode.put<t_real>("position_z", pos[2]);
-		itemNode.put<t_real>("spin_x", spin[0]);
-		itemNode.put<t_real>("spin_y", spin[1]);
-		itemNode.put<t_real>("spin_z", spin[2]);
-		itemNode.put<t_real>("spin_magnitude", S);
-
-		node.add_child("magdyn.atom_sites.site", itemNode);
-	}
-
-	// exchange terms
-	for(int row=0; row<m_termstab->rowCount(); ++row)
-	{
-		t_size atom_1_idx = 0;
-		t_size atom_2_idx = 0;
-		t_real dist[3]{0., 0., 0.};
-		t_real J = 0.;
-		t_real dmi[3]{0., 0., 0.};
-
-		std::istringstream{m_termstab->item(row, COL_XCH_ATOM1_IDX)
-			->text().toStdString()} >> atom_1_idx;
-		std::istringstream{m_termstab->item(row, COL_XCH_ATOM2_IDX)
-			->text().toStdString()} >> atom_2_idx;
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_X)
-			->text().toStdString()} >> dist[0];
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Y)
-			->text().toStdString()} >> dist[1];
-		std::istringstream{m_termstab->item(row, COL_XCH_DIST_Z)
-			->text().toStdString()} >> dist[2];
-		std::istringstream{m_termstab->item(row, COL_XCH_INTERACTION)
-			->text().toStdString()} >> J;
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_X)
-			->text().toStdString()} >> dmi[0];
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Y)
-			->text().toStdString()} >> dmi[1];
-		std::istringstream{m_termstab->item(row, COL_XCH_DMI_Z)
-			->text().toStdString()} >> dmi[2];
-
-		pt::ptree itemNode;
-		itemNode.put<std::string>("name",
-			 m_termstab->item(row, COL_XCH_NAME)->text().toStdString());
-		itemNode.put<t_size>("atom_1_index", atom_1_idx);
-		itemNode.put<t_size>("atom_2_index", atom_2_idx);
-		itemNode.put<t_real>("distance_x", dist[0]);
-		itemNode.put<t_real>("distance_y", dist[1]);
-		itemNode.put<t_real>("distance_z", dist[2]);
-		itemNode.put<t_real>("interaction", J);
-		itemNode.put<t_real>("dmi_x", dmi[0]);
-		itemNode.put<t_real>("dmi_y", dmi[1]);
-		itemNode.put<t_real>("dmi_z", dmi[2]);
-
-		node.add_child("magdyn.exchange_terms.term", itemNode);
-	}
+	pt::ptree node;
+	node.put_child("magdyn", magdyn);
 
 	// save to file
 	std::ofstream ofstr{filename.toStdString()};
@@ -1440,18 +1337,34 @@ void MagDynDlg::SavePlotFigure()
 
 
 /**
- * get the sites and exchange terms from the table
+ * get the sites and exchange terms from the table to m_dyn
  */
-void MagDynDlg::CalcSitesAndTerms()
+void MagDynDlg::SyncSitesAndTerms()
 {
 	if(m_ignoreCalc)
 		return;
 
-	m_dyn.ClearAtomSites();
-	m_dyn.ClearExchangeTerms();
-	m_dyn.ClearExternalField();
+	m_dyn.Clear();
 
 	bool use_dmi = m_use_dmi->isChecked();
+
+
+	// get external field
+	if(m_use_field->isChecked())
+	{
+		ExternalField field;
+		field.dir = tl2::create<t_vec>(
+		{
+			m_field_dir[0]->value(),
+			m_field_dir[1]->value(),
+			m_field_dir[2]->value(),
+		});
+
+		field.mag = m_field_mag->value();
+		field.align_spins = m_align_spins->isChecked();
+
+		m_dyn.SetExternalField(field);
+	}
 
 
 	// get atom sites
@@ -1473,6 +1386,7 @@ void MagDynDlg::CalcSitesAndTerms()
 		}
 
 		AtomSite site;
+		site.name = name->text().toStdString();
 		site.pos = tl2::zero<t_vec>(3);
 		site.spin_dir = tl2::zero<t_vec>(3);
 		site.g = -2. * tl2::unit<t_mat>(3);
@@ -1527,6 +1441,7 @@ void MagDynDlg::CalcSitesAndTerms()
 		}
 
 		ExchangeTerm term;
+		term.name = name->text().toStdString();
 		term.dist = tl2::zero<t_vec>(3);
 
 		std::istringstream{atom_1_idx->text().toStdString()} >> term.atom1;
@@ -1549,22 +1464,6 @@ void MagDynDlg::CalcSitesAndTerms()
 	}
 
 
-	// get external field
-	if(m_use_field->isChecked())
-	{
-		ExternalField field;
-		field.dir = tl2::create<t_vec>(
-		{
-			m_field_dir[0]->value(),
-			m_field_dir[1]->value(),
-			m_field_dir[2]->value(),
-		});
-		field.mag = m_field_mag->value();
-
-		m_dyn.SetExternalField(field);
-	}
-
-
 	CalcDispersion();
 	CalcHamiltonian();
 }
@@ -1579,6 +1478,13 @@ void MagDynDlg::CalcDispersion()
 		return;
 
 	m_plot->clearPlottables();
+
+	// nothing to calculate?
+	if(m_dyn.GetAtomSites().size()==0 || m_dyn.GetExchangeTerms().size()==0)
+	{
+		m_plot->replot();
+		return;
+	}
 
 	const t_real Q_start[]
 	{

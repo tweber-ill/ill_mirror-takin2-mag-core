@@ -135,7 +135,7 @@ protected:
 	void Save();
 	void SavePlotFigure();
 
-	void CalcSitesAndTerms();
+	void SyncSitesAndTerms();
 	void CalcDispersion();
 	void CalcHamiltonian();
 
