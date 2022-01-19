@@ -21,26 +21,34 @@
 
 struct AtomSite
 {
-	t_vec pos{};    // atom position
-	t_vec spin{};   // spin direction
-	t_mat g{};      // g factor
+	t_vec pos{};       // atom position
+	t_vec spin_dir{};  // spin direction
+	t_real spin_mag{}; // spin magnitude
+	t_mat g{};         // g factor
+};
+
+
+struct AtomSiteCalc
+{
+	t_vec u{}, u_conj{};
+	t_vec v{};
 };
 
 
 struct ExchangeTerm
 {
-	t_size atom1{}; // atom 1 index
-	t_size atom2{}; // atom 2 index
-	t_vec dist{};   // distance between unit cells
-	t_cplx J{};     // Heisenberg interaction
-	t_vec dmi{};    // Dzyaloshinskij-Moriya interaction
+	t_size atom1{};    // atom 1 index
+	t_size atom2{};    // atom 2 index
+	t_vec dist{};      // distance between unit cells
+	t_cplx J{};        // Heisenberg interaction
+	t_vec dmi{};       // Dzyaloshinskij-Moriya interaction
 };
 
 
 struct ExternalField
 {
-	t_vec dir{};    // direction
-	t_real mag{};   // magnitude
+	t_vec dir{};       // field direction
+	t_real mag{};      // field magnitude
 };
 
 
@@ -55,6 +63,7 @@ public:
 	void ClearExternalField();
 
 	void AddAtomSite(AtomSite&& site);
+	void CalcSpinRotation();
 
 	void AddExchangeTerm(ExchangeTerm&& term);
 	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
@@ -80,6 +89,11 @@ private:
 	std::vector<AtomSite> m_sites{};
 	std::vector<ExchangeTerm> m_exchange_terms{};
 	ExternalField m_field{};
+
+	std::vector<AtomSiteCalc> m_sites_calc{};
+
+	std::size_t m_retries_chol = 10;
+	t_real m_eps_chol = 0.05;
 
 	t_real m_eps = 1e-6;
 	int m_prec = 6;

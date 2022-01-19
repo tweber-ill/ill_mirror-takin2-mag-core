@@ -56,6 +56,7 @@ void MagDyn::ClearExchangeTerms()
 void MagDyn::ClearAtomSites()
 {
 	m_sites.clear();
+	m_sites_calc.clear();
 }
 
 
@@ -99,7 +100,43 @@ void MagDyn::SetExternalField(const ExternalField& field)
 
 
 /**
+ * calculate the spin rotation trafo
+ */
+void MagDyn::CalcSpinRotation()
+{
+	const std::size_t num_sites = m_sites.size();
+	if(num_sites == 0)
+		return;
+
+	const t_vec_real zdir = tl2::create<t_vec_real>({0., 0., 1.});
+
+	m_sites_calc.clear();
+	m_sites_calc.reserve(num_sites);
+
+	for(const AtomSite& site : m_sites)
+	{
+		// rotate spin to ferromagnetic [001] direction
+		auto [spin_re, spin_im] =
+			tl2::split_cplx<t_vec, t_vec_real>(site.spin_dir);
+		t_mat rot = tl2::convert<t_mat>(
+			tl2::rotation<t_mat_real, t_vec_real>(
+				spin_re, zdir, zdir));
+
+		// spin rotation of formula 9 from (Toth 2015)
+		auto [u, v] = R_to_uv(rot);
+
+		AtomSiteCalc site_calc{};
+		site_calc.u_conj = std::move(tl2::conj(u));
+		site_calc.u = std::move(u);
+		site_calc.v = std::move(v);
+		m_sites_calc.emplace_back(std::move(site_calc));
+	}
+}
+
+
+/**
  * get the hamiltonian at the given momentum
+ * (CalcSpinRotation() needs to be called once before this function)
  * @note implements the formalism given by (Toth 2015)
  * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
  */
@@ -118,29 +155,6 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 	// bohr magneton in [meV/T]
 	constexpr const t_real muB = tl2::muB<t_real>
 		/ tl2::meV<t_real> * tl2::tesla<t_real>;
-	const t_vec_real zdir = tl2::create<t_vec_real>({0., 0., 1.});
-
-	std::vector<t_vec> us, us_conj, vs;
-	us.reserve(num_sites);
-	us_conj.reserve(num_sites);
-	vs.reserve(num_sites);
-
-	for(const AtomSite& site : m_sites)
-	{
-		// rotate spin to ferromagnetic [001] direction
-		auto [spin_re, spin_im] = tl2::split_cplx<t_vec, t_vec_real>(site.spin);
-		t_mat rot = tl2::convert<t_mat>(
-			tl2::rotation<t_mat_real, t_vec_real>(
-				spin_re, zdir, zdir));
-
-		// spin rotation of formula 9 from (Toth 2015)
-		auto [u, v] = R_to_uv(rot);
-		t_vec u_conj = tl2::conj(u);
-		us.emplace_back(std::move(u));
-		vs.emplace_back(std::move(v));
-		us_conj.emplace_back(std::move(u_conj));
-	}
-
 
 	// build the interaction matrices J(Q) and J(-Q) of
 	// formulas 12 and 14 from (Toth 2015)
@@ -191,22 +205,29 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 			t_mat J_sub_Q = submat<t_mat>(J_Q, i*3, j*3, 3, 3);
 
 			// TODO: check units of S_i and S_j
-			t_real S_i = 1.;
-			t_real S_j = 1.;
+			t_real S_i = m_sites[i].spin_mag;
+			t_real S_j = m_sites[j].spin_mag;
+			const t_vec& u_i = m_sites_calc[i].u;
+			const t_vec& u_j = m_sites_calc[j].u;
+			const t_vec& u_conj_j = m_sites_calc[j].u_conj;
+			const t_vec& v_i = m_sites_calc[i].v;
+
 			t_real factor = 0.5 * std::sqrt(S_i*S_j);
 			A(i, j) = factor *
-				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us_conj[j]);
+				tl2::inner_noconj<t_vec>(u_i, J_sub_Q * u_conj_j);
 			B(i, j) = factor *
-				tl2::inner_noconj<t_vec>(us[i], J_sub_Q * us[j]);
+				tl2::inner_noconj<t_vec>(u_i, J_sub_Q * u_j);
 
 			if(i == j)
 			{
 				for(std::size_t k=0; k<num_sites; ++k)
 				{
 					// TODO: check unit of S_k
-					t_real S_k = 1.;
+					t_real S_k = m_sites[k].spin_mag;
+					const t_vec& v_k = m_sites_calc[k].v;
+
 					t_mat J_sub_Q0 = submat<t_mat>(J_Q0, i*3, k*3, 3, 3);
-					C(i, j) += S_k * tl2::inner_noconj<t_vec>(vs[i], J_sub_Q0 * vs[k]);
+					C(i, j) += S_k * tl2::inner_noconj<t_vec>(v_i, J_sub_Q0 * v_k);
 				}
 			}
 
@@ -216,7 +237,7 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
 				t_vec B = m_field.dir / tl2::norm<t_vec>(m_field.dir);
 				B = B * m_field.mag;
 
-				t_vec gv = m_sites[i].g * vs[i];
+				t_vec gv = m_sites[i].g * v_i;
 				t_cplx Bgv = tl2::inner_noconj<t_vec>(B, gv);
 
 				A(i, j) -= 0.5*muB * Bgv;
@@ -249,6 +270,11 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 
 	t_mat _H = GetHamiltonian(h, k, l);
 	const std::size_t N = _H.size1();
+	const std::size_t num_sites = m_sites.size();
+
+	// constants: imaginary unit and 2pi
+	constexpr const t_cplx imag{0., 1.};
+	constexpr const t_real twopi = t_real(2)*tl2::pi<t_real>;
 
 	// formula 30 in (Toth 2015)
 	t_mat g = tl2::zero<t_mat>(N, N);
@@ -258,12 +284,30 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 		g(i, i) = -1.;
 
 	// formula 31 in (Toth 2015)
-	auto [chol_ok, C] = tl2_la::chol<t_mat>(_H);
-	if(!chol_ok)
+	t_mat C;
+	for(std::size_t retry=0; retry<m_retries_chol; ++retry)
 	{
-		std::cerr << "Warning: Cholesky decomposition failed"
-			<< " for Q = (" << h << ", " << k << ", " << l << ")."
-			<< std::endl;
+		auto [chol_ok, _C] = tl2_la::chol<t_mat>(_H);
+
+		if(chol_ok)
+		{
+			C = _C;
+			break;
+		}
+		else
+		{
+			// try forcing the hamilton to be positive definite
+			for(std::size_t i=0; i<N; ++i)
+				_H(i, i) += m_eps_chol;
+		}
+
+		if(!chol_ok && retry == m_retries_chol-1)
+		{
+			std::cerr << "Warning: Cholesky decomposition failed"
+				<< " for Q = (" << h << ", " << k << ", " << l << ")."
+				<< std::endl;
+			C = _C;
+		}
 	}
 
 	t_mat Ch = tl2::herm<t_mat>(C);
@@ -315,6 +359,9 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 	// spectral weights
 	if(!only_energies)
 	{
+		// momentum
+		const t_vec Q = tl2::create<t_vec>({h, k, l});
+
 		// get the sorting of the energies
 		std::vector<std::size_t> sorting(energies.size());
 		std::iota(sorting.begin(), sorting.end(), 0);
@@ -330,6 +377,87 @@ std::vector<t_real> MagDyn::GetEnergies(t_real h, t_real k, t_real l) const
 		evals = tl2::reorder(evals, sorting);
 
 		t_mat evec_mat = tl2::create<t_mat>(evecs);
+		t_mat evec_mat_herm = tl2::herm(evec_mat);
+
+		// formula 32 in (Toth 2015)
+		t_mat L = evec_mat_herm * H * evec_mat;
+		t_mat E = g*L;
+
+		// re-create energies, to be consistent with the weights
+		energies.clear();
+		for(std::size_t i=0; i<L.size1(); ++i)
+			energies.push_back(L(i,i).real());
+
+		t_mat E_sqrt = E;
+		for(std::size_t i=0; i<E.size1(); ++i)
+			E_sqrt(i, i) = std::sqrt(std::abs(E_sqrt(i, i)));
+
+		auto [C_inv, inv_ok] = tl2::inv(C);
+		if(!inv_ok)
+		{
+			std::cerr << "Warning: Inversion failed"
+				<< " for Q = (" << h << ", " << k << ", " << l << ")."
+				<< std::endl;
+		}
+
+		// formula 34 in (Toth 2015)
+		t_mat trafo = C_inv * evec_mat * E_sqrt;
+		t_mat trafo_herm = tl2::herm(trafo);
+
+
+		// building the spin correlation function of formula 47 in (Toth 2015)
+		t_mat S = tl2::zero<t_mat>(3, 3);
+
+		for(int x_idx=0; x_idx<3; ++x_idx)
+		{
+			for(int y_idx=0; y_idx<3; ++y_idx)
+			{
+				// formulas 44 in (Toth 2015)
+				t_mat V = tl2::create<t_mat>(num_sites, num_sites);
+				t_mat W = tl2::create<t_mat>(num_sites, num_sites);
+				t_mat Y = tl2::create<t_mat>(num_sites, num_sites);
+				t_mat Z = tl2::create<t_mat>(num_sites, num_sites);
+
+				for(std::size_t i=0; i<num_sites; ++i)
+				{
+					for(std::size_t j=0; j<num_sites; ++j)
+					{
+						const t_vec& pos_i = m_sites[i].pos;
+						const t_vec& pos_j = m_sites[j].pos;
+						t_real S_i = m_sites[i].spin_mag;
+						t_real S_j = m_sites[j].spin_mag;
+
+						const t_vec& u_i = m_sites_calc[i].u;
+						const t_vec& u_j = m_sites_calc[j].u;
+						const t_vec& u_conj_i = m_sites_calc[i].u_conj;
+						const t_vec& u_conj_j = m_sites_calc[j].u_conj;
+
+						t_cplx phase = std::sqrt(S_i*S_j) * std::exp(
+							imag * twopi * 
+							tl2::inner<t_vec>(
+								(pos_i - pos_j), Q));
+
+						V(i, j) = phase * u_conj_i[x_idx] * u_conj_j[y_idx];
+						W(i, j) = phase * u_conj_i[x_idx] * u_j[y_idx];
+						Y(i, j) = phase * u_i[x_idx] * u_conj_j[y_idx];
+						Z(i, j) = phase * u_i[x_idx] * u_j[y_idx];
+					}
+				}
+
+				// formula 47 in (Toth 2015)
+				t_mat M = tl2::create<t_mat>(num_sites*2, num_sites*2);
+				set_submat(M, Y, 0, 0);
+				set_submat(M, V, num_sites, 0);
+				set_submat(M, Z, 0, num_sites);
+				set_submat(M, W, num_sites, num_sites);
+
+				t_mat M_trafo = trafo_herm * M * trafo;
+
+				for(std::size_t i=0; i<M_trafo.size1(); ++i)
+					S(x_idx, y_idx) += M_trafo(i, i);
+				S(x_idx, y_idx) /= t_real(M_trafo.size1());
+			}
+		}
 	}
 
 	return energies;

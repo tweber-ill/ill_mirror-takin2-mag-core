@@ -1451,7 +1451,8 @@ void MagDynDlg::CalcSitesAndTerms()
 
 		AtomSite site;
 		site.pos = tl2::zero<t_vec>(3);
-		site.spin = tl2::zero<t_vec>(3);
+		site.spin_dir = tl2::zero<t_vec>(3);
+		site.spin_mag = 1.;  // TODO
 		site.g = -2. * tl2::unit<t_mat>(3);
 		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
 		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
@@ -1460,22 +1461,24 @@ void MagDynDlg::CalcSitesAndTerms()
 		// align spins along external field?
 		if(m_align_spins->isChecked() && m_use_field->isChecked())
 		{
-			site.spin[0] = m_field_dir[0]->value();
-			site.spin[1] = m_field_dir[1]->value();
-			site.spin[2] = m_field_dir[2]->value();
+			site.spin_dir[0] = m_field_dir[0]->value();
+			site.spin_dir[1] = m_field_dir[1]->value();
+			site.spin_dir[2] = m_field_dir[2]->value();
 		}
 		else
 		{
 			std::istringstream{spin_x->text().toStdString()}
-				>> site.spin[0];
+				>> site.spin_dir[0];
 			std::istringstream{spin_y->text().toStdString()}
-				>> site.spin[1];
+				>> site.spin_dir[1];
 			std::istringstream{spin_z->text().toStdString()}
-				>> site.spin[2];
+				>> site.spin_dir[2];
 		}
 
 		m_dyn.AddAtomSite(std::move(site));
 	}
+
+	m_dyn.CalcSpinRotation();
 
 
 	// get exchange terms
