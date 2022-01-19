@@ -564,7 +564,7 @@ void MagDyn::SaveDispersion(const std::string& filename,
 /**
  * load a configuration from a property tree
  */
-bool MagDyn::Load(const boost::property_tree::ptree& node)
+bool MagDyn::Load(const pt::ptree& node)
 {
 	Clear();
 
@@ -658,7 +658,7 @@ bool MagDyn::Load(const boost::property_tree::ptree& node)
 /**
  * save a configuration to a property tree
  */
-bool MagDyn::Save(boost::property_tree::ptree& node)
+bool MagDyn::Save(pt::ptree& node)
 {
 	// external field
 	node.put<t_real>("field.direction_h", m_field.dir[0].real());
