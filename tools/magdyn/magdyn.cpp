@@ -138,6 +138,14 @@ void MagDyn::SetExternalField(const ExternalField& field)
 }
 
 
+void MagDyn::SetBraggPeak(t_real h, t_real k, t_real l)
+{
+	m_bragg = tl2::create<t_vec>({h, k, l});
+
+	// call CalcSpinRotation() afterwards to calculate projector
+}
+
+
 /**
  * calculate the spin rotation trafo
  */
@@ -152,21 +160,43 @@ void MagDyn::CalcSpinRotation()
 	m_sites_calc.clear();
 	m_sites_calc.reserve(num_sites);
 
+	// rotate field to [001] direction
+	auto [field_re, field_im] =
+		tl2::split_cplx<t_vec, t_vec_real>(m_field.dir);
+	m_rot_field = tl2::convert<t_mat>(
+		tl2::rotation<t_mat_real, t_vec_real>(
+			field_re, zdir, zdir));
+
+	if(m_bragg.size() == 3)
+	{
+		// calculate orthogonal projector for magnetic neutron scattering
+		t_vec bragg_rot = m_rot_field * m_bragg;
+		m_proj_neutron = tl2::ortho_projector<t_mat, t_vec>(
+			bragg_rot, false);
+	}
+	else
+	{
+		// no bragg peak given -> don't project
+		m_proj_neutron = tl2::unit<t_mat>(3);
+	}
+
+
 	for(const AtomSite& site : m_sites)
 	{
-		const t_vec* spin_dir = &site.spin_dir;
-		if(m_field.align_spins)
-			spin_dir = &m_field.dir;
-
-		// rotate spin to ferromagnetic [001] direction
+		// rotate local spin to ferromagnetic [001] direction
 		auto [spin_re, spin_im] =
-			tl2::split_cplx<t_vec, t_vec_real>(*spin_dir);
+			tl2::split_cplx<t_vec, t_vec_real>(site.spin_dir);
 		t_mat rot = tl2::convert<t_mat>(
 			tl2::rotation<t_mat_real, t_vec_real>(
 				spin_re, zdir, zdir));
 
 		// spin rotation of formula 9 from (Toth 2015)
-		auto [u, v] = R_to_uv(rot);
+		t_vec u, v;
+
+		if(m_field.align_spins)
+			std::tie(u, v) = R_to_uv(m_rot_field);
+		else
+			std::tie(u, v) = R_to_uv(rot);
 
 		AtomSiteCalc site_calc{};
 		site_calc.u_conj = std::move(tl2::conj(u));

@@ -73,11 +73,14 @@ public:
 
 	const std::vector<AtomSite>& GetAtomSites() const;
 	void AddAtomSite(AtomSite&& site);
+
+	void SetBraggPeak(t_real h, t_real k, t_real l);
 	void CalcSpinRotation();
 
 	const std::vector<ExchangeTerm>& GetExchangeTerms() const;
 	void AddExchangeTerm(ExchangeTerm&& term);
-	void AddExchangeTerm(t_size atom1, t_size atom2, const t_vec& cell, const t_cplx& J);
+	void AddExchangeTerm(t_size atom1, t_size atom2,
+		const t_vec& cell, const t_cplx& J);
 
 	const ExternalField& GetExternalField() const;
 	void SetExternalField(const ExternalField& field);
@@ -102,9 +105,16 @@ public:
 private:
 	std::vector<AtomSite> m_sites{};
 	std::vector<ExchangeTerm> m_exchange_terms{};
-	ExternalField m_field{};
-
 	std::vector<AtomSiteCalc> m_sites_calc{};
+
+	// external field
+	ExternalField m_field{};
+	// matrix to rotate field into the [001] direction
+	t_mat m_rot_field = tl2::unit<t_mat>(3);
+
+	t_vec m_bragg{};
+	// orthogonal projector for magnetic neutron scattering
+	t_mat m_proj_neutron = tl2::unit<t_mat>(3);
 
 	std::size_t m_retries_chol = 10;
 	t_real m_eps_chol = 0.05;
