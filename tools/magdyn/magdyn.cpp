@@ -401,10 +401,10 @@ MagDyn::GetEnergies(t_mat _H, t_real h, t_real k, t_real l, bool only_energies) 
 		}
 	}
 
-	t_mat Ch = tl2::herm<t_mat>(C);
+	t_mat C_herm = tl2::herm<t_mat>(C);
 
 	// see p. 5 in (Toth 2015)
-	t_mat H = C * g * Ch;
+	t_mat H = C * g * C_herm;
 
 	bool is_herm = tl2::is_symm_or_herm<t_mat, t_real>(H, m_eps);
 	if(!is_herm)
@@ -497,9 +497,13 @@ MagDyn::GetEnergies(t_mat _H, t_real h, t_real k, t_real l, bool only_energies) 
 		// formula 34 in (Toth 2015)
 		t_mat trafo = C_inv * evec_mat * E_sqrt;
 		t_mat trafo_herm = tl2::herm(trafo);
+
 		/*using namespace tl2_ops;
 		tl2::set_eps_0<t_mat, t_real>(trafo, m_eps);
-		std::cout << "Trafo: " << trafo << " for Q = (" << h << ", " << k << ", " << l << ")." << std::endl;*/
+		std::cout << "trafo: " << trafo << " for Q = (" << h << ", " << k << ", " << l << ")." << std::endl;
+		t_mat D = trafo_herm * _H * trafo;
+		tl2::set_eps_0<t_mat, t_real>(D, m_eps);
+		std::cout << "D: " << D << std::endl;*/
 
 
 		// building the spin correlation function of formula 47 in (Toth 2015)
