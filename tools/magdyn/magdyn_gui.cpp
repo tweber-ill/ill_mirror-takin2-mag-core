@@ -1312,7 +1312,7 @@ void MagDynDlg::Save()
 		return;
 	}
 	ofstr.precision(g_prec);
-	pt::write_xml(ofstr, node, 
+	pt::write_xml(ofstr, node,
 		pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 }
 
@@ -1617,10 +1617,47 @@ void MagDynDlg::CalcHamiltonian()
 	bool only_energies = !m_use_weights->isChecked();
 	auto [Es, S] = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
 
-	ostr << "<p><h3>Energies</h3>";
+	// split into positive and negative energies
+	std::vector<t_real> Es_neg, Es_pos;
 	for(t_real E : Es)
-		ostr << E << " meV, ";
-	ostr << "</p>";
+	{
+		if(E < 0.)
+			Es_neg.push_back(E);
+		else
+			Es_pos.push_back(E);
+	}
+
+	std::stable_sort(Es_neg.begin(), Es_neg.end(),
+		[](t_real E1, t_real E2) -> bool
+	{
+		return std::abs(E1) < std::abs(E2);
+	});
+
+	std::stable_sort(Es_pos.begin(), Es_pos.end(),
+		[](t_real E1, t_real E2) -> bool
+	{
+		return std::abs(E1) < std::abs(E2);
+	});
+
+	ostr << "<p><h3>Energies</h3>";
+	ostr << "<table style=\"border:0px\">";
+	ostr << "<tr>";
+	ostr << "<td style=\"padding-right:8px\">creation</td>";
+	for(t_real E : Es_pos)
+	{
+		ostr << "<td style=\"padding-right:8px\">"
+			<< E << " meV" << "</td>";
+	}
+	ostr << "</tr>";
+	ostr << "<tr>";
+	ostr << "<td style=\"padding-right:8px\">annihilation</td>";
+	for(t_real E : Es_neg)
+	{
+		ostr << "<td style=\"padding-right:8px\">"
+			<< E << " meV" << "</td>";
+	}
+	ostr << "</tr>";
+	ostr << "</table></p>";
 
 	if(!only_energies)
 	{

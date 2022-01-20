@@ -160,17 +160,24 @@ void MagDyn::CalcSpinRotation()
 	m_sites_calc.clear();
 	m_sites_calc.reserve(num_sites);
 
-	// rotate field to [001] direction
-	auto [field_re, field_im] =
-		tl2::split_cplx<t_vec, t_vec_real>(m_field.dir);
-	m_rot_field = tl2::convert<t_mat>(
-		tl2::rotation<t_mat_real, t_vec_real>(
-			field_re, zdir, zdir));
+	bool use_field = !tl2::equals_0<t_real>(m_field.mag, m_eps)
+		&& m_field.dir.size() >= 3;
+
+	if(use_field)
+	{
+		// rotate field to [001] direction
+		auto [field_re, field_im] =
+			tl2::split_cplx<t_vec, t_vec_real>(m_field.dir);
+		m_rot_field = tl2::convert<t_mat>(
+			tl2::rotation<t_mat_real, t_vec_real>(
+				field_re, zdir, zdir));
+	}
 
 	if(m_bragg.size() == 3)
 	{
 		// calculate orthogonal projector for magnetic neutron scattering
-		t_vec bragg_rot = m_rot_field * m_bragg;
+		t_vec bragg_rot = use_field ? m_rot_field * m_bragg : m_bragg;
+
 		m_proj_neutron = tl2::ortho_projector<t_mat, t_vec>(
 			bragg_rot, false);
 	}
