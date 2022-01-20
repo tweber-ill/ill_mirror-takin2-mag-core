@@ -828,7 +828,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_use_field, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_weights, &QAction::toggled,
-			[this]() { this->CalcDispersion(); });
+			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuPlot);
@@ -1179,7 +1179,7 @@ void MagDynDlg::Load()
 			QMessageBox::critical(this, "Magnon Dynamics", "Unrecognised file format.");
 			return;
 		}
-		
+
 		const auto &magdyn = node.get_child("magdyn");
 
 		// settings
@@ -1275,7 +1275,7 @@ void MagDynDlg::Save()
 
 	// properties tree
 	pt::ptree magdyn;
-	
+
 	magdyn.put<std::string>("meta.info", "magdyn_tool");
 	magdyn.put<std::string>("meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 
@@ -1590,24 +1590,57 @@ void MagDynDlg::CalcHamiltonian()
 		m_q[2]->value(),
 	};
 
-	t_mat H = m_dyn.GetHamiltonian(Q[0], Q[1], Q[2]);
-
 	std::ostringstream ostr;
 	ostr.precision(g_prec_gui);
+
+	// get hamiltonian
+	t_mat H = m_dyn.GetHamiltonian(Q[0], Q[1], Q[2]);
+
+	ostr << "<p><h3>Hamiltonian</h3>";
 	ostr << "<table style=\"border:0px\">";
 
 	for(std::size_t i=0; i<H.size1(); ++i)
 	{
+		ostr << "<tr>";
 		for(std::size_t j=0; j<H.size2(); ++j)
 		{
 			t_cplx elem = H(i, j);
 			tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
-			ostr << "<td style=\"padding-right:8px\">" 
+			ostr << "<td style=\"padding-right:8px\">"
 				<< elem << "</td>";
 		}
-		ostr << "<tr>";
+		ostr << "</tr>";
 	}
-	ostr << "</table>";
+	ostr << "</table></p>";
+
+	// get energies and correlation function
+	bool only_energies = !m_use_weights->isChecked();
+	auto [Es, S] = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
+
+	ostr << "<p><h3>Energies</h3>";
+	for(t_real E : Es)
+		ostr << E << " meV, ";
+	ostr << "</p>";
+
+	if(!only_energies)
+	{
+		ostr << "<p><h3>Spin-spin correlation</h3>";
+		ostr << "<table style=\"border:0px\">";
+
+		for(std::size_t i=0; i<S.size1(); ++i)
+		{
+			ostr << "<tr>";
+			for(std::size_t j=0; j<S.size2(); ++j)
+			{
+				t_cplx elem = S(i, j);
+				tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
+				ostr << "<td style=\"padding-right:8px\">"
+					<< elem << "</td>";
+			}
+			ostr << "</tr>";
+		}
+		ostr << "</table></p>";
+	}
 
 	m_hamiltonian->setHtml(ostr.str().c_str());
 }

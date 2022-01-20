@@ -338,11 +338,21 @@ t_mat MagDyn::GetHamiltonian(t_real _h, t_real _k, t_real _l) const
  * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
  */
 std::tuple<std::vector<t_real>, t_mat>
-MagDyn::GetEnergies(
-	t_real h, t_real k, t_real l,
-	bool only_energies) const
+MagDyn::GetEnergies(t_real h, t_real k, t_real l, bool only_energies) const
 {
-	t_mat _H = GetHamiltonian(h, k, l);
+	t_mat H = GetHamiltonian(h, k, l);
+	return GetEnergies(H, h, k, l, only_energies);
+}
+
+
+/**
+ * get the energies and the spin-correlation at the given momentum
+ * @note implements the formalism given by (Toth 2015)
+ * @note a first version for a simplified ferromagnetic dispersion was based on (Heinsdorf 2021)
+ */
+std::tuple<std::vector<t_real>, t_mat>
+MagDyn::GetEnergies(t_mat _H, t_real h, t_real k, t_real l, bool only_energies) const
+{
 	const std::size_t N = _H.size1();
 	const std::size_t num_sites = m_sites.size();
 
@@ -378,8 +388,8 @@ MagDyn::GetEnergies(
 		if(!chol_ok && retry == m_retries_chol-1)
 		{
 			std::cerr << "Warning: Cholesky decomposition failed"
-				<< " for Q = (" << h << ", " << k << ", " << l << ")."
-				<< std::endl;
+				<< " for Q = (" << h << ", " << k << ", " << l << ")"
+				<< "." << std::endl;
 			C = _C;
 		}
 	}
@@ -393,8 +403,8 @@ MagDyn::GetEnergies(
 	if(!is_herm)
 	{
 		std::cerr << "Warning: Hamiltonian is not hermitian"
-			<< " for Q = (" << h << ", " << k << ", " << l << ")."
-			<< std::endl;
+			<< " for Q = (" << h << ", " << k << ", " << l << ")"
+			<< "." << std::endl;
 	}
 
 	// eigenvalues of the hamiltonian correspond to the energies
@@ -405,8 +415,8 @@ MagDyn::GetEnergies(
 	if(!evecs_ok)
 	{
 		std::cerr << "Warning: Eigensystem calculation failed"
-			<< " for Q = (" << h << ", " << k << ", " << l << ")."
-			<< std::endl;
+			<< " for Q = (" << h << ", " << k << ", " << l << ")"
+			<< "." << std::endl;
 	}
 
 
@@ -473,8 +483,8 @@ MagDyn::GetEnergies(
 		if(!inv_ok)
 		{
 			std::cerr << "Warning: Inversion failed"
-				<< " for Q = (" << h << ", " << k << ", " << l << ")."
-				<< std::endl;
+				<< " for Q = (" << h << ", " << k << ", " << l << ")"
+				<< "." << std::endl;
 		}
 
 		// formula 34 in (Toth 2015)
@@ -508,7 +518,7 @@ MagDyn::GetEnergies(
 						const t_vec& u_conj_j = m_sites_calc[j].u_conj;
 
 						t_cplx phase = std::sqrt(S_i*S_j) * std::exp(
-							imag * twopi * 
+							imag * twopi *
 							tl2::inner<t_vec>(
 								(pos_i - pos_j), Q));
 

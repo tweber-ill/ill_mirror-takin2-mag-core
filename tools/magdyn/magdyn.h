@@ -88,6 +88,10 @@ public:
 	t_mat GetHamiltonian(t_real h, t_real k, t_real l) const;
 
 	std::tuple<std::vector<t_real>, t_mat> GetEnergies(
+		t_mat H, t_real h, t_real k, t_real l,
+		bool only_energies = false) const;
+
+	std::tuple<std::vector<t_real>, t_mat> GetEnergies(
 		t_real h, t_real k, t_real l,
 		bool only_energies = false) const;
 
