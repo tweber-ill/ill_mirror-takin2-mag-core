@@ -1645,6 +1645,7 @@ void MagDynDlg::CalcHamiltonian()
 	ostr << "<td style=\"padding-right:8px\">creation</td>";
 	for(t_real E : Es_pos)
 	{
+		tl2::set_eps_0(E);
 		ostr << "<td style=\"padding-right:8px\">"
 			<< E << " meV" << "</td>";
 	}
@@ -1653,6 +1654,7 @@ void MagDynDlg::CalcHamiltonian()
 	ostr << "<td style=\"padding-right:8px\">annihilation</td>";
 	for(t_real E : Es_neg)
 	{
+		tl2::set_eps_0(E);
 		ostr << "<td style=\"padding-right:8px\">"
 			<< E << " meV" << "</td>";
 	}
