@@ -2,7 +2,7 @@
  * type definitions
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
- * @license GPLv3
+ * @license see 'LICENSE' file
  */
 
 #ifndef __DEFS_H__

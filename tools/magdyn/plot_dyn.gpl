@@ -4,7 +4,7 @@
 # plots dispersion curves
 # @author Tobias Weber <tweber@ill.fr>
 # @date jan-2022
-# @license GPLv3
+# @license GPLv3, see 'LICENSE' file
 #
 
 # 1: pdf, 2: png, others: screen

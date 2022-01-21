@@ -2,7 +2,7 @@
  * magnon dynamics
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
- * @license GPLv3
+ * @license see 'LICENSE' file
  *
  * References:
  *   - (Toth 2015) S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):

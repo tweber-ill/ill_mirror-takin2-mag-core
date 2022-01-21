@@ -2,7 +2,7 @@
  * magnon dynamics
  * @author Tobias Weber <tweber@ill.fr>
  * @date jan-2022
- * @license GPLv3
+ * @license see 'LICENSE' file
  *
  * References:
  *   - (Toth 2015) S. Toth and B. Lake, J. Phys.: Condens. Matter 27 166002 (2015):
@@ -561,7 +561,7 @@ MagDyn::GetEnergies(t_mat _H, t_real h, t_real k, t_real l, bool only_energies) 
 				tl2::set_eps_0<t_mat, t_real>(W, m_eps);
 				tl2::set_eps_0<t_mat, t_real>(Y, m_eps);
 				tl2::set_eps_0<t_mat, t_real>(Z, m_eps);
-				std::cout << "x_idx=" << x_idx << ", yidx=" << y_idx;
+				std::cout << "x_idx=" << x_idx << ", y_idx=" << y_idx;
 				std::cout << ", Q = (" << h << ", " << k << ", " << l << ")." << std::endl;
 				std::cout << "V=" << V << std::endl;
 				std::cout << "W=" << W << std::endl;
