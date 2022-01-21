@@ -386,6 +386,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		btn_rotate->setFocusPolicy(Qt::StrongFocus);
 
 
+		// TODO: move to its own tab, because it's not field related
+		m_bragg[0] = new QDoubleSpinBox(m_fieldpanel);
+		m_bragg[1] = new QDoubleSpinBox(m_fieldpanel);
+		m_bragg[2] = new QDoubleSpinBox(m_fieldpanel);
+
+
 		for(int i=0; i<3; ++i)
 		{
 			m_field_dir[i]->setDecimals(2);
@@ -402,6 +408,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_rot_axis[i]->setSingleStep(0.1);
 			m_rot_axis[i]->setValue(i == 2 ? 1. : 0.);
 			m_rot_axis[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+			m_bragg[i]->setDecimals(2);
+			m_bragg[i]->setMinimum(-99);
+			m_bragg[i]->setMaximum(+99);
+			m_bragg[i]->setSingleStep(0.1);
+			m_bragg[i]->setValue(i == 0 ? 1. : 0.);
+			m_bragg[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
@@ -424,13 +438,13 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(m_field_dir[2], y++,3,1,1);
 		grid->addWidget(m_align_spins, y++,0,1,2);
 
-		grid->addItem(new QSpacerItem(8,8,
+		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 		auto sep1 = new QFrame(m_fieldpanel);
 		sep1->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep1, y++,0, 1,4);
-		grid->addItem(new QSpacerItem(8,8,
+		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 
@@ -445,6 +459,22 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(btn_rotate, y++,3,1,1);
 
 		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		auto sep2 = new QFrame(m_fieldpanel);
+		sep2->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep2, y++,0, 1,4);
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addWidget(new QLabel(QString("Bragg Peak:"),
+			m_fieldpanel), y,0,1,1);
+		grid->addWidget(m_bragg[0], y,1,1,1);
+		grid->addWidget(m_bragg[1], y,2,1,1);
+		grid->addWidget(m_bragg[2], y++,3,1,1);
+
+		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0,1,4);
 
@@ -457,6 +487,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		for(int i=0; i<3; ++i)
 		{
 			connect(m_field_dir[i],
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]() { this->SyncSitesAndTerms(); });
+
+			connect(m_bragg[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]() { this->SyncSitesAndTerms(); });
 		}
@@ -1226,6 +1260,15 @@ void MagDynDlg::Load()
 		m_field_mag->setValue(m_dyn.GetExternalField().mag);
 		m_align_spins->setChecked(m_dyn.GetExternalField().align_spins);
 
+		// bragg peak
+		const t_vec& bragg = m_dyn.GetBraggPeak();
+		if(bragg.size() == 3)
+		{
+			m_bragg[0]->setValue(bragg[0].real());
+			m_bragg[1]->setValue(bragg[1].real());
+			m_bragg[2]->setValue(bragg[2].real());
+		}
+
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
 		DelTabItem(m_termstab, -1);
@@ -1363,6 +1406,19 @@ void MagDynDlg::SyncSitesAndTerms()
 		field.align_spins = m_align_spins->isChecked();
 
 		m_dyn.SetExternalField(field);
+	}
+
+
+	// get bragg peak
+	{
+		const t_real bragg[]
+		{
+			m_bragg[0]->value(),
+			m_bragg[1]->value(),
+			m_bragg[2]->value(),
+		};
+
+		m_dyn.SetBraggPeak(bragg[0], bragg[1], bragg[2]);
 	}
 
 
@@ -1690,19 +1746,23 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<p><h3>Spectrum</h3>";
 		ostr << "<table style=\"border:0px\">";
 		ostr << "<tr>";
-		ostr << "<th style=\"padding-right:16px\">Energy</td>";
-		ostr << "<th style=\"padding-right:16px\">Correlation</td>";
+		ostr << "<th style=\"padding-right:16px\">Energy E</td>";
+		ostr << "<th style=\"padding-right:16px\">Correlation S(Q, E)</td>";
+		ostr << "<th style=\"padding-right:16px\">Neutron S_perp(Q, E)</td>";
 		ostr << "</tr>";
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
 			ostr << "<tr>";
 			t_real E = std::get<0>(E_and_S);
 			const t_mat& S = std::get<1>(E_and_S);
+			const t_mat& S_perp = std::get<2>(E_and_S);
 			tl2::set_eps_0(E);
 
+			// E
 			ostr << "<td style=\"padding-right:16px\">"
 				<< E << " meV" << "</td>";
 
+			// S(Q, E)
 			ostr << "<td style=\"padding-right:16px\">";
 			ostr << "<table style=\"border:0px\">";
 			for(std::size_t i=0; i<S.size1(); ++i)
@@ -1713,7 +1773,25 @@ void MagDynDlg::CalcHamiltonian()
 					t_cplx elem = S(i, j);
 					tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
 					ostr << "<td style=\"padding-right:8px\">"
-					<< elem << "</td>";
+						<< elem << "</td>";
+				}
+				ostr << "</tr>";
+			}
+			ostr << "</table>";
+			ostr << "</td>";
+
+			// S_perp(Q, E)
+			ostr << "<td style=\"padding-right:16px\">";
+			ostr << "<table style=\"border:0px\">";
+			for(std::size_t i=0; i<S_perp.size1(); ++i)
+			{
+				ostr << "<tr>";
+				for(std::size_t j=0; j<S_perp.size2(); ++j)
+				{
+					t_cplx elem = S_perp(i, j);
+					tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
+					ostr << "<td style=\"padding-right:8px\">"
+						<< elem << "</td>";
 				}
 				ostr << "</tr>";
 			}
