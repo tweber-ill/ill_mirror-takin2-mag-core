@@ -1748,7 +1748,8 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<tr>";
 		ostr << "<th style=\"padding-right:16px\">Energy E</td>";
 		ostr << "<th style=\"padding-right:16px\">Correlation S(Q, E)</td>";
-		ostr << "<th style=\"padding-right:16px\">Neutron S_perp(Q, E)</td>";
+		ostr << "<th style=\"padding-right:16px\">Neutron S⟂(Q, E)</td>";
+		ostr << "<th style=\"padding-right:16px\">Weight</td>";
 		ostr << "</tr>";
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
@@ -1756,7 +1757,9 @@ void MagDynDlg::CalcHamiltonian()
 			t_real E = std::get<0>(E_and_S);
 			const t_mat& S = std::get<1>(E_and_S);
 			const t_mat& S_perp = std::get<2>(E_and_S);
+			t_real weight = tl2::trace<t_mat>(S_perp).real();
 			tl2::set_eps_0(E);
+			tl2::set_eps_0(weight);
 
 			// E
 			ostr << "<td style=\"padding-right:16px\">"
@@ -1797,6 +1800,9 @@ void MagDynDlg::CalcHamiltonian()
 			}
 			ostr << "</table>";
 			ostr << "</td>";
+
+			// tr(S_perp(Q, E))
+			ostr << "<td style=\"padding-right:16px\">" << weight << "</td>";
 
 			ostr << "</tr>";
 		}
