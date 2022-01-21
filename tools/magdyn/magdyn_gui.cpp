@@ -1653,7 +1653,7 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<p><h3>Energies</h3>";
 		ostr << "<table style=\"border:0px\">";
 		ostr << "<tr>";
-		ostr << "<th style=\"padding-right:8px\">creation</th>";
+		ostr << "<th style=\"padding-right:8px\">Creation</th>";
 		for(const t_E_and_S& E_and_S : Es_pos)
 		{
 			t_real E = std::get<0>(E_and_S);
@@ -1665,7 +1665,7 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "</tr>";
 
 		ostr << "<tr>";
-		ostr << "<th style=\"padding-right:8px\">annihilation</th>";
+		ostr << "<th style=\"padding-right:8px\">Annihilation</th>";
 		for(const t_E_and_S& E_and_S : Es_neg)
 		{
 			t_real E = std::get<0>(E_and_S);
@@ -1687,11 +1687,11 @@ void MagDynDlg::CalcHamiltonian()
 			return E1 < E2;
 		});
 
-		ostr << "<p><h3>Spektrum</h3>";
+		ostr << "<p><h3>Spectrum</h3>";
 		ostr << "<table style=\"border:0px\">";
 		ostr << "<tr>";
-		ostr << "<th style=\"padding-right:8px\">energy</td>";
-		ostr << "<th style=\"padding-right:8px\">correlation</td>";
+		ostr << "<th style=\"padding-right:16px\">Energy</td>";
+		ostr << "<th style=\"padding-right:16px\">Correlation</td>";
 		ostr << "</tr>";
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
@@ -1700,10 +1700,10 @@ void MagDynDlg::CalcHamiltonian()
 			const t_mat& S = std::get<1>(E_and_S);
 			tl2::set_eps_0(E);
 
-			ostr << "<td style=\"padding-right:8px\">"
+			ostr << "<td style=\"padding-right:16px\">"
 				<< E << " meV" << "</td>";
 
-			ostr << "<td style=\"padding-right:8px\">";
+			ostr << "<td style=\"padding-right:16px\">";
 			ostr << "<table style=\"border:0px\">";
 			for(std::size_t i=0; i<S.size1(); ++i)
 			{
@@ -1724,11 +1724,6 @@ void MagDynDlg::CalcHamiltonian()
 		}
 		ostr << "</table></p>";
 	}
-
-	/*if(!only_energies)
-	{
-		ostr << "<p><h3>Spin-spin correlation</h3>";
-	}*/
 
 	m_hamiltonian->setHtml(ostr.str().c_str());
 }
