@@ -53,7 +53,6 @@ namespace pt = boost::property_tree;
 #include <boost/algorithm/string/replace.hpp>
 namespace algo = boost::algorithm;
 
-#include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/helper.h"

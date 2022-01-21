@@ -47,10 +47,10 @@
 #include <sstream>
 
 #include "tlibs2/libs/maths.h"
+#include "tlibs2/libs/magdyn.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 
-#include "magdyn.h"
-
+using namespace tl2_mag;
 
 
 class MagDynDlg : public QDialog
