@@ -1531,12 +1531,14 @@ void MagDynDlg::CalcDispersion()
 			std::lerp(Q_start[2], Q_end[2], t_real(i)/t_real(num_pts-1)),
 		};
 
-		auto [Es, S] = m_dyn.GetEnergies(Q[0], Q[1], Q[2],
+		auto energies_and_correlations = m_dyn.GetEnergies(Q[0], Q[1], Q[2],
 			!m_use_weights->isChecked());
 		//t_real weight = std::abs(tl2::trace(S).real());
 
-		for(const auto& E : Es)
+		for(const auto& E_and_S : energies_and_correlations)
 		{
+			t_real E = std::get<0>(E_and_S);
+
 			qs_data.push_back(Q[Q_idx]);
 			Es_data.push_back(E - E0);
 		}
@@ -1612,73 +1614,121 @@ void MagDynDlg::CalcHamiltonian()
 	}
 	ostr << "</table></p>";
 
-	// get energies and correlation function
+
+	// get energies and correlation functions
 	bool only_energies = !m_use_weights->isChecked();
-	auto [Es, S] = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
+	auto energies_and_correlations = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
+	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
 
-	// split into positive and negative energies
-	std::vector<t_real> Es_neg, Es_pos;
-	for(t_real E : Es)
+	if(only_energies)
 	{
-		if(E < 0.)
-			Es_neg.push_back(E);
-		else
-			Es_pos.push_back(E);
-	}
+		// split into positive and negative energies
+		std::vector<t_E_and_S> Es_neg, Es_pos;
+		for(const t_E_and_S& E_and_S : energies_and_correlations)
+		{
+			t_real E = std::get<0>(E_and_S);
 
-	std::stable_sort(Es_neg.begin(), Es_neg.end(),
-		[](t_real E1, t_real E2) -> bool
-	{
-		return std::abs(E1) < std::abs(E2);
-	});
+			if(E < 0.)
+				Es_neg.push_back(E_and_S);
+			else
+				Es_pos.push_back(E_and_S);
+		}
 
-	std::stable_sort(Es_pos.begin(), Es_pos.end(),
-		[](t_real E1, t_real E2) -> bool
-	{
-		return std::abs(E1) < std::abs(E2);
-	});
+		std::stable_sort(Es_neg.begin(), Es_neg.end(),
+			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
+		{
+			t_real E1 = std::get<0>(E_and_S_1);
+			t_real E2 = std::get<0>(E_and_S_2);
+			return std::abs(E1) < std::abs(E2);
+		});
 
-	ostr << "<p><h3>Energies</h3>";
-	ostr << "<table style=\"border:0px\">";
-	ostr << "<tr>";
-	ostr << "<td style=\"padding-right:8px\">creation</td>";
-	for(t_real E : Es_pos)
-	{
-		tl2::set_eps_0(E);
-		ostr << "<td style=\"padding-right:8px\">"
-			<< E << " meV" << "</td>";
-	}
-	ostr << "</tr>";
-	ostr << "<tr>";
-	ostr << "<td style=\"padding-right:8px\">annihilation</td>";
-	for(t_real E : Es_neg)
-	{
-		tl2::set_eps_0(E);
-		ostr << "<td style=\"padding-right:8px\">"
-			<< E << " meV" << "</td>";
-	}
-	ostr << "</tr>";
-	ostr << "</table></p>";
+		std::stable_sort(Es_pos.begin(), Es_pos.end(),
+			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
+		{
+			t_real E1 = std::get<0>(E_and_S_1);
+			t_real E2 = std::get<0>(E_and_S_2);
+			return std::abs(E1) < std::abs(E2);
+		});
 
-	if(!only_energies)
-	{
-		ostr << "<p><h3>Spin-spin correlation</h3>";
+		ostr << "<p><h3>Energies</h3>";
 		ostr << "<table style=\"border:0px\">";
+		ostr << "<tr>";
+		ostr << "<th style=\"padding-right:8px\">creation</th>";
+		for(const t_E_and_S& E_and_S : Es_pos)
+		{
+			t_real E = std::get<0>(E_and_S);
+			tl2::set_eps_0(E);
 
-		for(std::size_t i=0; i<S.size1(); ++i)
+			ostr << "<td style=\"padding-right:8px\">"
+				<< E << " meV" << "</td>";
+		}
+		ostr << "</tr>";
+
+		ostr << "<tr>";
+		ostr << "<th style=\"padding-right:8px\">annihilation</th>";
+		for(const t_E_and_S& E_and_S : Es_neg)
+		{
+			t_real E = std::get<0>(E_and_S);
+			tl2::set_eps_0(E);
+
+			ostr << "<td style=\"padding-right:8px\">"
+				<< E << " meV" << "</td>";
+		}
+		ostr << "</tr>";
+		ostr << "</table></p>";
+	}
+	else
+	{
+		std::stable_sort(energies_and_correlations.begin(), energies_and_correlations.end(),
+			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
+		{
+			t_real E1 = std::get<0>(E_and_S_1);
+			t_real E2 = std::get<0>(E_and_S_2);
+			return E1 < E2;
+		});
+
+		ostr << "<p><h3>Spektrum</h3>";
+		ostr << "<table style=\"border:0px\">";
+		ostr << "<tr>";
+		ostr << "<th style=\"padding-right:8px\">energy</td>";
+		ostr << "<th style=\"padding-right:8px\">correlation</td>";
+		ostr << "</tr>";
+		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
 			ostr << "<tr>";
-			for(std::size_t j=0; j<S.size2(); ++j)
+			t_real E = std::get<0>(E_and_S);
+			const t_mat& S = std::get<1>(E_and_S);
+			tl2::set_eps_0(E);
+
+			ostr << "<td style=\"padding-right:8px\">"
+				<< E << " meV" << "</td>";
+
+			ostr << "<td style=\"padding-right:8px\">";
+			ostr << "<table style=\"border:0px\">";
+			for(std::size_t i=0; i<S.size1(); ++i)
 			{
-				t_cplx elem = S(i, j);
-				tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
-				ostr << "<td style=\"padding-right:8px\">"
+				ostr << "<tr>";
+				for(std::size_t j=0; j<S.size2(); ++j)
+				{
+					t_cplx elem = S(i, j);
+					tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
+					ostr << "<td style=\"padding-right:8px\">"
 					<< elem << "</td>";
+				}
+				ostr << "</tr>";
 			}
+			ostr << "</table>";
+			ostr << "</td>";
+
 			ostr << "</tr>";
 		}
 		ostr << "</table></p>";
 	}
+
+	/*if(!only_energies)
+	{
+		ostr << "<p><h3>Spin-spin correlation</h3>";
+	}*/
 
 	m_hamiltonian->setHtml(ostr.str().c_str());
 }
