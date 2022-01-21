@@ -57,6 +57,8 @@ namespace algo = boost::algorithm;
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/helper.h"
 
+#include "graph.h"
+
 using namespace tl2_ops;
 
 constexpr t_real g_eps = 1e-6;
@@ -565,22 +567,33 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_num_points->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
+		// scaling factor for weights
+		m_weight_scale = new QDoubleSpinBox(m_disppanel);
+		m_weight_scale->setDecimals(2);
+		m_weight_scale->setMinimum(0);
+		m_weight_scale->setMaximum(+99);
+		m_weight_scale->setSingleStep(0.1);
+		m_weight_scale->setValue(1.);
+		m_weight_scale->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+
 		for(int i=0; i<3; ++i)
 		{
 			m_q_start[i]->setDecimals(2);
-			m_q_end[i]->setDecimals(2);
 			m_q_start[i]->setMinimum(-99);
-			m_q_end[i]->setMinimum(-99);
 			m_q_start[i]->setMaximum(+99);
-			m_q_end[i]->setMaximum(+99);
 			m_q_start[i]->setSingleStep(0.1);
-			m_q_end[i]->setSingleStep(0.1);
 			m_q_start[i]->setValue(0.);
-			m_q_end[i]->setValue(0.);
 			m_q_start[i]->setSuffix(" rlu");
-			m_q_end[i]->setSuffix(" rlu");
 			m_q_start[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+			m_q_end[i]->setDecimals(2);
+			m_q_end[i]->setMinimum(-99);
+			m_q_end[i]->setMaximum(+99);
+			m_q_end[i]->setSingleStep(0.1);
+			m_q_end[i]->setValue(0.);
+			m_q_end[i]->setSuffix(" rlu");
 			m_q_end[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
@@ -613,7 +626,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(m_q_end[2], y++,3,1,1);
 		grid->addWidget(
 			new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
-		grid->addWidget(m_num_points, y++,1,1,1);
+		grid->addWidget(m_num_points, y,1,1,1);
+		grid->addWidget(
+			new QLabel(QString("Weight Scale:"), m_disppanel), y,2,1,1);
+		grid->addWidget(m_weight_scale, y++,3,1,1);
 
 		// signals
 		for(int i=0; i<3; ++i)
@@ -628,6 +644,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(m_num_points,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+			[this]() { this->CalcDispersion(); });
+
+		connect(m_weight_scale,
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 			[this]() { this->CalcDispersion(); });
 
 		connect(m_plot, &QCustomPlot::mouseMove,
@@ -1236,6 +1256,8 @@ void MagDynDlg::Load()
 			m_q[2]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_size>("config.num_Q_points"))
 			m_num_points->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.weight_scale"))
+			m_weight_scale->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_DMI"))
 			m_use_dmi->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_field"))
@@ -1332,6 +1354,7 @@ void MagDynDlg::Save()
 	magdyn.put<t_real>("config.k", m_q[1]->value());
 	magdyn.put<t_real>("config.l", m_q[2]->value());
 	magdyn.put<t_size>("config.num_Q_points", m_num_points->value());
+	magdyn.put<t_size>("config.weight_scale", m_weight_scale->value());
 	magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
 	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
 	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
@@ -1571,12 +1594,17 @@ void MagDynDlg::CalcDispersion()
 
 	t_size num_pts = m_num_points->value();
 
-	QVector<t_real> qs_data, Es_data;
+	QVector<t_real> qs_data, Es_data, ws_data;
 	qs_data.reserve(num_pts*10);
 	Es_data.reserve(num_pts*10);
+	ws_data.reserve(num_pts*10);
+
+	t_real weight_scale = m_weight_scale->value();;
 
 	bool use_goldstone = false;
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
+
+	bool only_energies = !m_use_weights->isChecked();
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
@@ -1597,18 +1625,30 @@ void MagDynDlg::CalcDispersion()
 
 			qs_data.push_back(Q[Q_idx]);
 			Es_data.push_back(E - E0);
+
+			// weights
+			if(!only_energies)
+			{
+				const t_mat& S_perp = std::get<2>(E_and_S);
+				t_real weight = tl2::trace<t_mat>(S_perp).real();
+				ws_data.push_back(weight * weight_scale);
+			}
 		}
 	}
 
-	QCPCurve *curve = new QCPCurve(m_plot->xAxis, m_plot->yAxis);
-	QPen pen = curve->pen();
+	//m_plot->addGraph();
+	GraphWithWeights *graph = new GraphWithWeights(
+		m_plot->xAxis, m_plot->yAxis);
+	QPen pen = graph->pen();
 	pen.setColor(QColor(0xff, 0x00, 0x00));
 	pen.setWidthF(1.);
-	curve->setPen(pen);
-	curve->setLineStyle(QCPCurve::lsNone);
-	curve->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2.));
-	curve->setAntialiased(true);
-	curve->setData(qs_data, Es_data);
+	/*m_plot->graph(0)*/graph->setPen(pen);
+	graph->setLineStyle(QCPGraph::lsNone);
+	graph->setScatterStyle(QCPScatterStyle(
+		QCPScatterStyle::ssCircle, weight_scale));
+	graph->setAntialiased(true);
+	graph->setData(qs_data, Es_data, true /*already sorted*/);
+	graph->SetWeights(ws_data);
 
 	auto [min_E_iter, max_E_iter] =
 		std::minmax_element(Es_data.begin(), Es_data.end());

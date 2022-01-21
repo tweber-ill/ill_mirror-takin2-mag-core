@@ -79,7 +79,7 @@ include_directories(
 
 
 add_executable(takin_magdyn
-	main.cpp
+	main.cpp graph.h
 	magdyn_gui.cpp magdyn_gui.h
 	../../tlibs2/libs/magdyn.h
 )

@@ -29,7 +29,6 @@
 #ifndef __MAG_DYN_GUI_H__
 #define __MAG_DYN_GUI_H__
 
-
 #include <QtCore/QSettings>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTableWidget>
@@ -84,10 +83,11 @@ protected:
 	QTableWidget *m_termstab{};
 
 	// dispersion
+	QCustomPlot *m_plot{};
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
-	QCustomPlot *m_plot{};
+	QDoubleSpinBox *m_weight_scale{};
 
 	// hamiltonian
 	QTextEdit *m_hamiltonian{};
