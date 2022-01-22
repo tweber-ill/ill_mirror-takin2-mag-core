@@ -1642,10 +1642,11 @@ void MagDynDlg::CalcDispersion()
 	QPen pen = graph->pen();
 	pen.setColor(QColor(0xff, 0x00, 0x00));
 	pen.setWidthF(1.);
-	/*m_plot->graph(0)*/graph->setPen(pen);
+	graph->setPen(pen);
+	graph->setBrush(QBrush(pen.color(), Qt::SolidPattern));
 	graph->setLineStyle(QCPGraph::lsNone);
 	graph->setScatterStyle(QCPScatterStyle(
-		QCPScatterStyle::ssCircle, weight_scale));
+		QCPScatterStyle::ssDisc, weight_scale));
 	graph->setAntialiased(true);
 	graph->setData(qs_data, Es_data, true /*already sorted*/);
 	graph->SetWeights(ws_data);

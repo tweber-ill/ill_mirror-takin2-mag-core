@@ -12,6 +12,9 @@
 #include <QtCore/QVector>
 
 
+/**
+ * a graph with weight factors per data point
+ */
 class GraphWithWeights : public QCPGraph
 {
 public:
@@ -59,12 +62,14 @@ public:
 		// iterate all data points
 		for(int idx=0; idx<num_points; ++idx)
 		{
-			// set symbol sizes per point
+			// data point and its weight factor
+			const QPointF& pt = points[idx];
 			qreal weight = has_weights ? m_weights[idx] : size_saved;
+
+			// set symbol sizes per point
 			style.setSize(weight);
 
 			// draw the symbol with the modified size
-			const QPointF& pt = points[idx];
 			style.drawShape(paint, pt);
 			//paint->drawEllipse(pt, weight, weight);
 		}
