@@ -340,12 +340,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	// external field panel
+	// sample environment panel
 	{
-		m_fieldpanel = new QWidget(this);
+		m_samplepanel = new QWidget(this);
 
 		// field magnitude
-		m_field_mag = new QDoubleSpinBox(m_fieldpanel);
+		m_field_mag = new QDoubleSpinBox(m_samplepanel);
 		m_field_mag->setDecimals(2);
 		m_field_mag->setMinimum(0);
 		m_field_mag->setMaximum(+99);
@@ -357,23 +357,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		// field direction
-		m_field_dir[0] = new QDoubleSpinBox(m_fieldpanel);
-		m_field_dir[1] = new QDoubleSpinBox(m_fieldpanel);
-		m_field_dir[2] = new QDoubleSpinBox(m_fieldpanel);
+		m_field_dir[0] = new QDoubleSpinBox(m_samplepanel);
+		m_field_dir[1] = new QDoubleSpinBox(m_samplepanel);
+		m_field_dir[2] = new QDoubleSpinBox(m_samplepanel);
 
 		// align spins along field (field-polarised state)
 		m_align_spins = new QCheckBox(
-			"Align Spins along Field Direction", m_fieldpanel);
+			"Align Spins along Field Direction", m_samplepanel);
 		m_align_spins->setChecked(false);
 		m_align_spins->setFocusPolicy(Qt::StrongFocus);
 
 		// rotation axis
-		m_rot_axis[0] = new QDoubleSpinBox(m_fieldpanel);
-		m_rot_axis[1] = new QDoubleSpinBox(m_fieldpanel);
-		m_rot_axis[2] = new QDoubleSpinBox(m_fieldpanel);
+		m_rot_axis[0] = new QDoubleSpinBox(m_samplepanel);
+		m_rot_axis[1] = new QDoubleSpinBox(m_samplepanel);
+		m_rot_axis[2] = new QDoubleSpinBox(m_samplepanel);
 
 		// rotation angle
-		m_rot_angle = new QDoubleSpinBox(m_fieldpanel);
+		m_rot_angle = new QDoubleSpinBox(m_samplepanel);
 		m_rot_angle->setDecimals(2);
 		m_rot_angle->setMinimum(-360);
 		m_rot_angle->setMaximum(+360);
@@ -384,15 +384,25 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		QPushButton *btn_rotate = new QPushButton(
-			"Rotate Field", m_fieldpanel);
+			"Rotate Field", m_samplepanel);
 		btn_rotate->setFocusPolicy(Qt::StrongFocus);
 
+		// bragg peak
+		m_bragg[0] = new QDoubleSpinBox(m_samplepanel);
+		m_bragg[1] = new QDoubleSpinBox(m_samplepanel);
+		m_bragg[2] = new QDoubleSpinBox(m_samplepanel);
 
-		// TODO: move to its own tab, because it's not field related
-		m_bragg[0] = new QDoubleSpinBox(m_fieldpanel);
-		m_bragg[1] = new QDoubleSpinBox(m_fieldpanel);
-		m_bragg[2] = new QDoubleSpinBox(m_fieldpanel);
-
+		// temperature
+		m_temperature = new QDoubleSpinBox(m_samplepanel);
+		m_temperature->setDecimals(2);
+		m_temperature->setMinimum(0);
+		m_temperature->setMaximum(+999);
+		m_temperature->setSingleStep(0.1);
+		m_temperature->setValue(300.);
+		m_temperature->setPrefix("T = ");
+		m_temperature->setSuffix(" K");
+		m_temperature->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		for(int i=0; i<3; ++i)
 		{
@@ -425,16 +435,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_field_dir[1]->setPrefix("Bk = ");
 		m_field_dir[2]->setPrefix("Bl = ");
 
-		auto grid = new QGridLayout(m_fieldpanel);
+		auto grid = new QGridLayout(m_samplepanel);
 		grid->setSpacing(4);
 		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
 		grid->addWidget(new QLabel(QString("Field Magnitude:"),
-			m_fieldpanel), y,0,1,1);
+			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_field_mag, y++,1,1,1);
 		grid->addWidget(new QLabel(QString("Field Direction:"),
-			m_fieldpanel), y,0,1,1);
+			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_field_dir[0], y,1,1,1);
 		grid->addWidget(m_field_dir[1], y,2,1,1);
 		grid->addWidget(m_field_dir[2], y++,3,1,1);
@@ -443,7 +453,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		auto sep1 = new QFrame(m_fieldpanel);
+		auto sep1 = new QFrame(m_samplepanel);
 		sep1->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep1, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(8, 8,
@@ -451,19 +461,19 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			y++,0, 1,1);
 
 		grid->addWidget(new QLabel(QString("Rotation Axis:"),
-			m_fieldpanel), y,0,1,1);
+			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_rot_axis[0], y,1,1,1);
 		grid->addWidget(m_rot_axis[1], y,2,1,1);
 		grid->addWidget(m_rot_axis[2], y++,3,1,1);
 		grid->addWidget(new QLabel(QString("Rotation Angle:"),
-			m_fieldpanel), y,0,1,1);
+			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_rot_angle, y,1,1,1);
 		grid->addWidget(btn_rotate, y++,3,1,1);
 
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		auto sep2 = new QFrame(m_fieldpanel);
+		auto sep2 = new QFrame(m_samplepanel);
 		sep2->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep2, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(16, 16,
@@ -471,10 +481,24 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			y++,0, 1,1);
 
 		grid->addWidget(new QLabel(QString("Bragg Peak:"),
-			m_fieldpanel), y,0,1,1);
+			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_bragg[0], y,1,1,1);
 		grid->addWidget(m_bragg[1], y,2,1,1);
 		grid->addWidget(m_bragg[2], y++,3,1,1);
+
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		auto sep3 = new QFrame(m_samplepanel);
+		sep3->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep3, y++,0, 1,4);
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addWidget(new QLabel(QString("Temperature:"),
+			m_samplepanel), y,0,1,1);
+		grid->addWidget(m_temperature, y++,1,1,1);
 
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
@@ -496,6 +520,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]() { this->SyncSitesAndTerms(); });
 		}
+
+		connect(m_temperature,
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+			[this]() { this->SyncSitesAndTerms(); });
 
 		connect(m_align_spins, &QCheckBox::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
@@ -533,7 +561,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			this->SyncSitesAndTerms();
 		});
 
-		tabs->addTab(m_fieldpanel, "Field");
+		tabs->addTab(m_samplepanel, "Sample");
 	}
 
 
@@ -829,10 +857,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
 		m_use_dmi->setCheckable(true);
 		m_use_dmi->setChecked(true);
-		m_use_field = new QAction("Use Field", menuOptions);
+		m_use_field = new QAction("Use External Field", menuOptions);
 		m_use_field->setToolTip("Enables an external field.");
 		m_use_field->setCheckable(true);
 		m_use_field->setChecked(true);
+		m_use_temperature = new QAction("Use Bose Factor", menuOptions);
+		m_use_temperature->setToolTip("Enables the Bose factor.");
+		m_use_temperature->setCheckable(true);
+		m_use_temperature->setChecked(true);
 		m_use_weights = new QAction("Use Spectral Weights", menuOptions);
 		m_use_weights->setToolTip("Enables calculation of the spin correlation function.");
 		m_use_weights->setCheckable(true);
@@ -850,6 +882,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
+		menuOptions->addAction(m_use_temperature);
 		menuOptions->addAction(m_use_weights);
 
 		// connections
@@ -879,6 +912,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_use_dmi, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_field, &QAction::toggled,
+			[this]() { this->SyncSitesAndTerms(); });
+		connect(m_use_temperature, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_weights, &QAction::toggled,
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
@@ -1262,6 +1297,8 @@ void MagDynDlg::Load()
 			m_use_dmi->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_field"))
 			m_use_field->setChecked(*optVal);
+		if(auto optVal = magdyn.get_optional<bool>("config.use_temperature"))
+			m_use_temperature->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_weights"))
 			m_use_weights->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_h"))
@@ -1290,6 +1327,11 @@ void MagDynDlg::Load()
 			m_bragg[1]->setValue(bragg[1].real());
 			m_bragg[2]->setValue(bragg[2].real());
 		}
+
+		// temperature
+		t_real temp = m_dyn.GetTemperature();
+		if(temp >= 0.)
+			m_temperature->setValue(temp);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -1357,6 +1399,7 @@ void MagDynDlg::Save()
 	magdyn.put<t_size>("config.weight_scale", m_weight_scale->value());
 	magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
 	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
+	magdyn.put<bool>("config.use_temperature", m_use_temperature->isChecked());
 	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
 	magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
 	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
@@ -1442,6 +1485,14 @@ void MagDynDlg::SyncSitesAndTerms()
 		};
 
 		m_dyn.SetBraggPeak(bragg[0], bragg[1], bragg[2]);
+	}
+
+
+	// get temperature
+	if(m_use_temperature->isChecked())
+	{
+		t_real temp = m_temperature->value();
+		m_dyn.SetTemperature(temp);
 	}
 
 

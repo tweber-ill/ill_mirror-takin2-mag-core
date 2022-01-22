@@ -69,12 +69,13 @@ protected:
 
 	QAction *m_use_dmi{};
 	QAction *m_use_field{};
+	QAction *m_use_temperature{};
 	QAction *m_use_weights{};
 
 	// panels
 	QWidget *m_sitespanel{};
 	QWidget *m_termspanel{};
-	QWidget *m_fieldpanel{};
+	QWidget *m_samplepanel{};
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
 
@@ -102,6 +103,9 @@ protected:
 
 	// bragg peak
 	QDoubleSpinBox *m_bragg[3]{nullptr, nullptr, nullptr};
+
+	// temperature
+	QDoubleSpinBox *m_temperature{};
 
 	// magnon dynamics calculator
 	MagDyn m_dyn{};
