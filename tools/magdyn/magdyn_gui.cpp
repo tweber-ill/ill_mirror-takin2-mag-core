@@ -58,6 +58,7 @@ namespace algo = boost::algorithm;
 #include "tlibs2/libs/helper.h"
 
 #include "graph.h"
+#include "../structfact/loadcif.h"
 
 using namespace tl2_ops;
 
@@ -156,10 +157,15 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		QPushButton *pTabBtnDel = new QPushButton("Delete Atom", m_sitespanel);
 		QPushButton *pTabBtnUp = new QPushButton("Move Atom Up", m_sitespanel);
 		QPushButton *pTabBtnDown = new QPushButton("Move Atom Down", m_sitespanel);
+
+		m_comboSG = new QComboBox(m_sitespanel);
+		QPushButton *pTabBtnSG = new QPushButton("Generate", m_sitespanel);
+
 		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnSG->setFocusPolicy(Qt::StrongFocus);
 
 		pTabBtnAdd->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -169,6 +175,17 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 		pTabBtnDown->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnSG->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		// get space groups and symops
+		auto spacegroups = get_sgs<t_mat_real>();
+		m_SGops.reserve(spacegroups.size());
+		for(auto [sgnum, descr, ops] : spacegroups)
+		{
+			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
+			m_SGops.emplace_back(std::move(ops));
+		}
 
 
 		auto grid = new QGridLayout(m_sitespanel);
@@ -181,20 +198,41 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(pTabBtnDel, y,1,1,1);
 		grid->addWidget(pTabBtnUp, y,2,1,1);
 		grid->addWidget(pTabBtnDown, y,3,1,1);
+		grid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
+		grid->addWidget(m_comboSG, y,1,1,2);
+		grid->addWidget(pTabBtnSG, y,3,1,1);
 
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_sitestab);
-		pTabContextMenu->addAction("Add Atom Before", this, [this]() { this->AddSiteTabItem(-2); });
-		pTabContextMenu->addAction("Add Atom After", this, [this]() { this->AddSiteTabItem(-3); });
-		pTabContextMenu->addAction("Clone Atom", this, [this]() { this->AddSiteTabItem(-4); });
-		pTabContextMenu->addAction("Delete Atom", this, [this]() { this->DelTabItem(m_sitestab); });
+		pTabContextMenu->addAction("Add Atom Before", this, [this]()
+		{
+			this->AddSiteTabItem(-2);
+		});
+		pTabContextMenu->addAction("Add Atom After", this, [this]()
+		{
+			this->AddSiteTabItem(-3);
+		});
+		pTabContextMenu->addAction("Clone Atom", this, [this]()
+		{
+			this->AddSiteTabItem(-4);
+		});
+		pTabContextMenu->addAction("Delete Atom", this, [this]()
+		{
+			this->DelTabItem(m_sitestab);
+		});
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_sitestab);
-		pTabContextMenuNoItem->addAction("Add Atom", this, [this]() { this->AddSiteTabItem(); });
-		pTabContextMenuNoItem->addAction("Delete Atom", this, [this]() { this->DelTabItem(m_sitestab); });
+		pTabContextMenuNoItem->addAction("Add Atom", this, [this]()
+		{
+			this->AddSiteTabItem();
+		});
+		pTabContextMenuNoItem->addAction("Delete Atom", this, [this]()
+		{
+			this->DelTabItem(m_sitestab);
+		});
 		//pTabContextMenuNoItem->addSeparator();
 
 
@@ -207,11 +245,17 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this]() { this->MoveTabItemUp(m_sitestab); });
 		connect(pTabBtnDown, &QAbstractButton::clicked, this,
 			[this]() { this->MoveTabItemDown(m_sitestab); });
+		connect(pTabBtnSG, &QAbstractButton::clicked,
+			this, &MagDynDlg::GenerateFromSG);
 
-		connect(m_sitestab, &QTableWidget::itemChanged, this, &MagDynDlg::SitesTableItemChanged);
+		connect(m_sitestab, &QTableWidget::itemChanged,
+			this, &MagDynDlg::SitesTableItemChanged);
 		connect(m_sitestab, &QTableWidget::customContextMenuRequested, this,
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
-			{ this->ShowTableContextMenu(m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+		{
+			this->ShowTableContextMenu(
+				m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt);
+		});
 
 		tabs->addTab(m_sitespanel, "Atoms");
 	}
@@ -943,7 +987,93 @@ void MagDynDlg::Clear()
 
 	m_dyn.Clear();
 
+	// set some defaults
+	m_comboSG->setCurrentIndex(0);
+
 	m_ignoreCalc = false;
+}
+
+
+/**
+ * generate atom sites form the space group symmetries
+ */
+void MagDynDlg::GenerateFromSG()
+{
+	m_ignoreCalc = 1;
+
+	try
+	{
+		// symops of current space group
+		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
+		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
+		{
+			QMessageBox::critical(this, "Magnon Dynamics",
+				"Invalid space group selected.");
+			m_ignoreCalc = 0;
+			return;
+		}
+
+		const auto& ops = m_SGops[sgidx];
+		std::vector<std::tuple<
+			std::string,
+			t_real, t_real, t_real, // position
+			t_real, t_real, t_real, // spin direction
+			t_real                  // spin magnitude
+			>> generatedsites;
+
+		// iterate sites
+		int orgRowCnt = m_sitestab->rowCount();
+		for(int row=0; row<orgRowCnt; ++row)
+		{
+			auto *name = m_sitestab->item(row, COL_SITE_NAME);
+			auto *pos_x = m_sitestab->item(row, COL_SITE_POS_X);
+			auto *pos_y = m_sitestab->item(row, COL_SITE_POS_Y);
+			auto *pos_z = m_sitestab->item(row, COL_SITE_POS_Z);
+			auto *spin_x = m_sitestab->item(row, COL_SITE_SPIN_X);
+			auto *spin_y = m_sitestab->item(row, COL_SITE_SPIN_Y);
+			auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
+			auto *spin_mag = m_sitestab->item(row, COL_SITE_SPIN_MAG);
+
+			t_real x{}, y{}, z{}, sx{}, sy{}, sz{}, S;
+			std::string ident = name->text().toStdString();
+			std::istringstream{pos_x->text().toStdString()} >> x;
+			std::istringstream{pos_y->text().toStdString()} >> y;
+			std::istringstream{pos_z->text().toStdString()} >> z;
+			std::istringstream{spin_x->text().toStdString()} >> sx;
+			std::istringstream{spin_y->text().toStdString()} >> sy;
+			std::istringstream{spin_z->text().toStdString()} >> sz;
+			std::istringstream{spin_mag->text().toStdString()} >> S;
+
+			t_vec_real sitepos = tl2::create<t_vec_real>({x, y, z, 1});
+			auto newsitepos = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
+				sitepos, ops, g_eps);
+
+			for(const auto& newsite : newsitepos)
+			{
+				generatedsites.emplace_back(std::make_tuple(
+					ident, newsite[0], newsite[1], newsite[2],
+					sx, sy, sz, S));
+			}
+		}
+
+		// remove original sites
+		DelTabItem(m_sitestab, -1);
+
+		// add new sites
+		for(const auto& site : generatedsites)
+		{
+			std::apply(&MagDynDlg::AddSiteTabItem,
+				std::tuple_cat(std::make_tuple(this, -1), site));
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "MagnonDynamics", ex.what());
+	}
+
+	m_ignoreCalc = 0;
+	CalcDispersion();
+	CalcHamiltonian();
 }
 
 
@@ -1322,6 +1452,8 @@ void MagDynDlg::Load()
 			m_rot_axis[2]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_angle"))
 			m_rot_angle->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<int>("config.spacegroup_index"))
+			m_comboSG->setCurrentIndex(*optVal);
 
 		m_dyn.Load(magdyn);
 
@@ -1418,7 +1550,7 @@ void MagDynDlg::Save()
 	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
 	magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
 	magdyn.put<t_real>("config.field_angle", m_rot_angle->value());
-
+	magdyn.put<t_real>("config.spacegroup_index", m_comboSG->currentIndex());
 	m_dyn.Save(magdyn);
 
 	pt::ptree node;
@@ -1518,9 +1650,11 @@ void MagDynDlg::SyncSitesAndTerms()
 		auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
 		auto *spin_mag = m_sitestab->item(row, COL_SITE_SPIN_MAG);
 
-		if(!name || !pos_x || !pos_y || !pos_z || !spin_x || !spin_y || !spin_z || !spin_mag)
+		if(!name || !pos_x || !pos_y || !pos_z || 
+			!spin_x || !spin_y || !spin_z || !spin_mag)
 		{
-			std::cerr << "Invalid entry in sites table row " << row << "." << std::endl;
+			std::cerr << "Invalid entry in sites table row "
+				<< row << "." << std::endl;
 			continue;
 		}
 

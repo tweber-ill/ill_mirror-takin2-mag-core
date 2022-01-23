@@ -169,7 +169,9 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// get space groups and symops
-		for(auto [sgnum, descr, ops] : get_sgs<t_mat>())
+		auto spacegroups = get_sgs<t_mat>();
+		m_SGops.reserve(spacegroups.size());
+		for(auto [sgnum, descr, ops] : spacegroups)
 		{
 			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
 			m_SGops.emplace_back(std::move(ops));
@@ -187,7 +189,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
 		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
 
-		pTabGrid->addWidget(new QLabel("Space Groups:"), ++y,0,1,1);
+		pTabGrid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
 		pTabGrid->addWidget(m_comboSG, y,1,1,2);
 		pTabGrid->addWidget(pTabBtnSG, y,3,1,1);
 
@@ -1574,10 +1576,11 @@ void StructFactDlg::GenerateFromSG()
 		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
 		{
 			QMessageBox::critical(this, "Structure Factors", "Invalid space group selected.");
+			m_ignoreCalc = 0;
 			return;
 		}
 
-		auto ops = m_SGops[sgidx];
+		const auto& ops = m_SGops[sgidx];
 		std::vector<std::tuple<std::string, t_real, t_real, t_real, t_real, t_real, t_real, std::string>> generatednuclei;
 
 		// iterate nuclei

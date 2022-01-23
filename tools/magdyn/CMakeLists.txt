@@ -75,6 +75,8 @@ endif()
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
+	"ext" "ext/gemmi/include" "ext/gemmi/third_party"
+	"../../ext/gemmi/include" "../../ext/gemmi/third_party"
 )
 
 

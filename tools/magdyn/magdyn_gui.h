@@ -35,6 +35,7 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QMenuBar>
@@ -83,6 +84,10 @@ protected:
 	QTableWidget *m_sitestab{};
 	QTableWidget *m_termstab{};
 
+	//sites
+	QComboBox *m_comboSG{};
+	std::vector<std::vector<t_mat_real>> m_SGops;
+
 	// dispersion
 	QCustomPlot *m_plot{};
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
@@ -112,8 +117,6 @@ protected:
 
 
 protected:
-	void Clear();
-
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
 	void MoveTabItemDown(QTableWidget *pTab);
@@ -140,9 +143,12 @@ protected:
 	void SitesTableItemChanged(QTableWidgetItem *item);
 	void TermsTableItemChanged(QTableWidgetItem *item);
 
+	void Clear();
 	void Load();
 	void Save();
 	void SavePlotFigure();
+
+	void GenerateFromSG();
 
 	void SyncSitesAndTerms();
 	void CalcDispersion();
