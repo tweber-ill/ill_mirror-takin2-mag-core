@@ -165,6 +165,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+		m_comboSG->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnSG->setFocusPolicy(Qt::StrongFocus);
 
 		pTabBtnAdd->setSizePolicy(QSizePolicy{
