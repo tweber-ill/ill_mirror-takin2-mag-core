@@ -886,13 +886,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuOptions->addAction(m_use_weights);
 
 		// connections
-		connect(acNew, &QAction::triggered, this,  [this]()
-		{
-			// clear old tables
-			DelTabItem(m_sitestab, -1);
-			DelTabItem(m_termstab, -1);
-		});
-
+		connect(acNew, &QAction::triggered, this, &MagDynDlg::Clear);
 		connect(acLoad, &QAction::triggered, this, &MagDynDlg::Load);
 		connect(acSave, &QAction::triggered, this, &MagDynDlg::Save);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
@@ -931,8 +925,25 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	else
 		resize(600, 500);
 
+	m_ignoreTableChanges = 0;
+}
 
-	m_ignoreChanges = 0;
+
+void MagDynDlg::Clear()
+{
+	m_ignoreCalc = true;
+
+	// clear old tables
+	DelTabItem(m_sitestab, -1);
+	DelTabItem(m_termstab, -1);
+
+	m_plot->clearPlottables();
+	m_plot->replot();
+	m_hamiltonian->clear();
+
+	m_dyn.Clear();
+
+	m_ignoreCalc = false;
 }
 
 
@@ -946,7 +957,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 	t_real S)
 {
 	bool bclone = 0;
-	m_ignoreChanges = 1;
+	m_ignoreTableChanges = 1;
 
 	if(row == -1)	// append to end of table
 		row = m_sitestab->rowCount();
@@ -996,7 +1007,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 
 	m_sitestab->setSortingEnabled(/*sorting*/ true);
 
-	m_ignoreChanges = 0;
+	m_ignoreTableChanges = 0;
 	SyncSitesAndTerms();
 }
 
@@ -1012,7 +1023,7 @@ void MagDynDlg::AddTermTabItem(int row,
 	t_real dmi_x, t_real dmi_y, t_real dmi_z)
 {
 	bool bclone = 0;
-	m_ignoreChanges = 1;
+	m_ignoreTableChanges = 1;
 
 	if(row == -1)	// append to end of table
 		row = m_termstab->rowCount();
@@ -1063,14 +1074,14 @@ void MagDynDlg::AddTermTabItem(int row,
 
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
-	m_ignoreChanges = 0;
+	m_ignoreTableChanges = 0;
 	SyncSitesAndTerms();
 }
 
 
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
-	m_ignoreChanges = 1;
+	m_ignoreTableChanges = 1;
 
 	// if nothing is selected, clear all items
 	if(begin == -1 || pTab->selectedItems().count() == 0)
@@ -1093,15 +1104,14 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 		}
 	}
 
-	m_ignoreChanges = 0;
+	m_ignoreTableChanges = 0;
 	SyncSitesAndTerms();
 }
 
 
 void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 {
-	m_ignoreChanges = 1;
-
+	m_ignoreTableChanges = 1;
 	pTab->setSortingEnabled(false);
 
 	auto selected = GetSelectedRows(pTab, false);
@@ -1130,15 +1140,14 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 		   }
 	}
 
-	m_ignoreChanges = 0;
+	m_ignoreTableChanges = 0;
 	SyncSitesAndTerms();
 }
 
 
 void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 {
-	m_ignoreChanges = 1;
-
+	m_ignoreTableChanges = 1;
 	pTab->setSortingEnabled(false);
 
 	auto selected = GetSelectedRows(pTab, true);
@@ -1167,7 +1176,7 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 		   }
 	}
 
-	m_ignoreChanges = 0;
+	m_ignoreTableChanges = 0;
 	SyncSitesAndTerms();
 }
 
@@ -1199,8 +1208,10 @@ std::vector<int> MagDynDlg::GetSelectedRows(
  */
 void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
 {
-	if(!m_ignoreChanges)
-		SyncSitesAndTerms();
+	if(m_ignoreTableChanges)
+		return;
+
+	SyncSitesAndTerms();
 }
 
 
@@ -1209,8 +1220,10 @@ void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
  */
 void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 {
-	if(!m_ignoreChanges)
-		SyncSitesAndTerms();
+	if(m_ignoreTableChanges)
+		return;
+
+	SyncSitesAndTerms();
 }
 
 
@@ -1454,8 +1467,8 @@ void MagDynDlg::SyncSitesAndTerms()
 
 	m_dyn.Clear();
 
+	// dmi
 	bool use_dmi = m_use_dmi->isChecked();
-
 
 	// get external field
 	if(m_use_field->isChecked())
@@ -1474,7 +1487,6 @@ void MagDynDlg::SyncSitesAndTerms()
 		m_dyn.SetExternalField(field);
 	}
 
-
 	// get bragg peak
 	{
 		const t_real bragg[]
@@ -1487,14 +1499,12 @@ void MagDynDlg::SyncSitesAndTerms()
 		m_dyn.SetBraggPeak(bragg[0], bragg[1], bragg[2]);
 	}
 
-
 	// get temperature
 	if(m_use_temperature->isChecked())
 	{
 		t_real temp = m_temperature->value();
 		m_dyn.SetTemperature(temp);
 	}
-
 
 	// get atom sites
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
@@ -1546,7 +1556,6 @@ void MagDynDlg::SyncSitesAndTerms()
 
 	m_dyn.CalcSpinRotation();
 
-
 	// get exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
@@ -1591,7 +1600,6 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		m_dyn.AddExchangeTerm(std::move(term));
 	}
-
 
 	CalcDispersion();
 	CalcHamiltonian();

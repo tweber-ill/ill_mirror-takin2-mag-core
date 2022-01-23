@@ -112,6 +112,8 @@ protected:
 
 
 protected:
+	void Clear();
+
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
 	void MoveTabItemDown(QTableWidget *pTab);
@@ -154,7 +156,7 @@ private:
 	int m_sites_cursor_row = -1;
 	int m_terms_cursor_row = -1;
 
-	bool m_ignoreChanges = 1;
+	bool m_ignoreTableChanges = 1;
 	bool m_ignoreCalc = 0;
 };
 
