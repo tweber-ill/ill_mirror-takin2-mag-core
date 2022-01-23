@@ -82,7 +82,7 @@ get_cif_atoms(gemmi::cif::Block& block)
 	const char* loopNames[] =
 	{
 		"_type_symbol",
-		"_symbol"
+		"_symbol",
 		"_site_label",
 		"_label",
 	};
