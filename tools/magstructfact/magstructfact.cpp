@@ -572,9 +572,8 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetRenderer()->SetCoordMax(1.);
-				m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
-
+				m_plot->GetRenderer()->GetCamera().SetDist(5.);
+				m_plot->GetRenderer()->GetCamera().UpdateTransformation();
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
 				auto comboCoordSys = new QComboBox(/*m_dlgPlot*/ this);
@@ -634,9 +633,8 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_plotSC->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plotSC->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plotSC->GetRenderer()->SetCoordMax(1.);
-				m_plotSC->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-1.5,  0,0,0,1}),
-					tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
-
+				m_plotSC->GetRenderer()->GetCamera().SetDist(5.);
+				m_plotSC->GetRenderer()->GetCamera().UpdateTransformation();
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlotSC*/ this);
 				auto comboCoordSys = new QComboBox(/*m_dlgPlotSC*/ this);

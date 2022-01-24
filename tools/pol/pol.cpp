@@ -458,8 +458,8 @@ public:
 		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetRenderer()->SetCoordMax(5.);
-		m_plot->GetRenderer()->SetCamBase(tl2::create<t_mat_gl>({1,0,0,0,  0,0,1,0,  0,-1,0,-5,  0,0,0,1}),
-			tl2::create<t_vec_gl>({1,0,0,0}), tl2::create<t_vec_gl>({0,0,1,0}));
+		m_plot->GetRenderer()->GetCamera().SetDist(5.);
+		m_plot->GetRenderer()->GetCamera().UpdateTransformation();
 
 		CalcPol();
 	}
