@@ -1815,16 +1815,19 @@ void MagDynDlg::CalcDispersion()
 
 		for(const auto& E_and_S : energies_and_correlations)
 		{
-			t_real E = std::get<0>(E_and_S);
+			t_real E = E_and_S.E - E0;
+			if(std::isnan(E) || std::isinf(E))
+				continue;
 
 			qs_data.push_back(Q[Q_idx]);
-			Es_data.push_back(E - E0);
+			Es_data.push_back(E);
 
 			// weights
 			if(!only_energies)
 			{
-				const t_mat& S_perp = std::get<2>(E_and_S);
-				t_real weight = tl2::trace<t_mat>(S_perp).real();
+				t_real weight = E_and_S.weight;
+				if(std::isnan(weight) || std::isinf(weight))
+					weight = 0.;
 				ws_data.push_back(weight * weight_scale);
 			}
 		}
@@ -1914,10 +1917,10 @@ void MagDynDlg::CalcHamiltonian()
 	if(only_energies)
 	{
 		// split into positive and negative energies
-		std::vector<t_E_and_S> Es_neg, Es_pos;
+		std::vector<EnergyAndWeight> Es_neg, Es_pos;
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
-			t_real E = std::get<0>(E_and_S);
+			t_real E = E_and_S.E;
 
 			if(E < 0.)
 				Es_neg.push_back(E_and_S);
@@ -1928,16 +1931,16 @@ void MagDynDlg::CalcHamiltonian()
 		std::stable_sort(Es_neg.begin(), Es_neg.end(),
 			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
 		{
-			t_real E1 = std::get<0>(E_and_S_1);
-			t_real E2 = std::get<0>(E_and_S_2);
+			t_real E1 = E_and_S_1.E;
+			t_real E2 = E_and_S_2.E;
 			return std::abs(E1) < std::abs(E2);
 		});
 
 		std::stable_sort(Es_pos.begin(), Es_pos.end(),
 			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
 		{
-			t_real E1 = std::get<0>(E_and_S_1);
-			t_real E2 = std::get<0>(E_and_S_2);
+			t_real E1 = E_and_S_1.E;
+			t_real E2 = E_and_S_2.E;
 			return std::abs(E1) < std::abs(E2);
 		});
 
@@ -1947,7 +1950,7 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<th style=\"padding-right:8px\">Creation</th>";
 		for(const t_E_and_S& E_and_S : Es_pos)
 		{
-			t_real E = std::get<0>(E_and_S);
+			t_real E = E_and_S.E;
 			tl2::set_eps_0(E);
 
 			ostr << "<td style=\"padding-right:8px\">"
@@ -1959,7 +1962,7 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<th style=\"padding-right:8px\">Annihilation</th>";
 		for(const t_E_and_S& E_and_S : Es_neg)
 		{
-			t_real E = std::get<0>(E_and_S);
+			t_real E = E_and_S.E;
 			tl2::set_eps_0(E);
 
 			ostr << "<td style=\"padding-right:8px\">"
@@ -1973,8 +1976,8 @@ void MagDynDlg::CalcHamiltonian()
 		std::stable_sort(energies_and_correlations.begin(), energies_and_correlations.end(),
 			[](const t_E_and_S& E_and_S_1, const t_E_and_S& E_and_S_2) -> bool
 		{
-			t_real E1 = std::get<0>(E_and_S_1);
-			t_real E2 = std::get<0>(E_and_S_2);
+			t_real E1 = E_and_S_1.E;
+			t_real E2 = E_and_S_2.E;
 			return E1 < E2;
 		});
 
@@ -1989,10 +1992,10 @@ void MagDynDlg::CalcHamiltonian()
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
 			ostr << "<tr>";
-			t_real E = std::get<0>(E_and_S);
-			const t_mat& S = std::get<1>(E_and_S);
-			const t_mat& S_perp = std::get<2>(E_and_S);
-			t_real weight = tl2::trace<t_mat>(S_perp).real();
+			t_real E = E_and_S.E;
+			const t_mat& S = E_and_S.S;
+			const t_mat& S_perp = E_and_S.S_perp;
+			t_real weight = E_and_S.weight;
 			tl2::set_eps_0(E);
 			tl2::set_eps_0(weight);
 
