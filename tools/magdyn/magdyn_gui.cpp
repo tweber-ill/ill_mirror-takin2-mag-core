@@ -800,6 +800,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		sep2->setFrameStyle(QFrame::HLine);
 		auto sep3 = new QFrame(infopanel);
 		sep3->setFrameStyle(QFrame::HLine);
+		auto sep4 = new QFrame(infopanel);
+		sep4->setFrameStyle(QFrame::HLine);
 
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
@@ -822,14 +824,25 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			infopanel);
 		labelPaper->setOpenExternalLinks(true);
 
+		// renderer infos
+		for(int i=0; i<4; ++i)
+		{
+			m_labelGlInfos[i] = new QLabel("", infopanel);
+			m_labelGlInfos[i]->setSizePolicy(
+				QSizePolicy::Ignored,
+				m_labelGlInfos[i]->sizePolicy().verticalPolicy());
+		}
+
 		int y = 0;
 		grid->addWidget(labelTitle, y++,0, 1,1);
 		grid->addWidget(labelAuthor, y++,0, 1,1);
 		grid->addWidget(labelDate, y++,0, 1,1);
+
 		grid->addItem(new QSpacerItem(16,16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 		grid->addWidget(sep1, y++,0, 1,1);
+
 		grid->addWidget(new QLabel(
 			QString("Compiler: ") +
 			QString(BOOST_COMPILER) + ".",
@@ -843,7 +856,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QString(__DATE__) + ", " +
 			QString(__TIME__) + ".",
 			infopanel), y++,0, 1,1);
+
 		grid->addWidget(sep2, y++,0, 1,1);
+
 		grid->addWidget(new QLabel(
 			QString("Qt Version: ") +
 			QString(QT_VERSION_STR) + ".",
@@ -852,9 +867,15 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QString("Boost Version: ") +
 			strBoost.c_str() + ".",
 			infopanel), y++,0, 1,1);
+
 		grid->addWidget(sep3, y++,0, 1,1);
 
 		grid->addWidget(labelPaper, y++,0, 1,1);
+
+		grid->addWidget(sep4, y++,0, 1,1);
+
+		for(int i=0; i<4; ++i)
+			grid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
 
 		grid->addItem(new QSpacerItem(16,16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
@@ -886,9 +907,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		auto acSave = new QAction("Save...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
 
-		auto menuPlot = new QMenu("Plot", m_menu);
-		auto acSaveFigure = new QAction("Save Figure...", menuPlot);
-		auto acRescalePlot = new QAction("Rescale Axes", menuPlot);
+		auto menuView = new QMenu("View", m_menu);
+		auto acStructView = new QAction("Show Structure...", menuView);
+		auto acSaveFigure = new QAction("Save Dispersion Figure...", menuView);
+		auto acRescalePlot = new QAction("Rescale Dispersion Axes", menuView);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -926,8 +948,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 
-		menuPlot->addAction(acRescalePlot);
-		menuPlot->addAction(acSaveFigure);
+		menuView->addAction(acStructView);
+		menuView->addSeparator();
+		menuView->addAction(acRescalePlot);
+		menuView->addAction(acSaveFigure);
 
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
@@ -953,6 +977,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_plot->replot();
 		});
 
+		connect(acStructView, &QAction::triggered,
+			this, &MagDynDlg::ShowStructurePlot);
+
 		connect(m_use_dmi, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_field, &QAction::toggled,
@@ -965,7 +992,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
 		m_menu->addMenu(menuFile);
-		m_menu->addMenu(menuPlot);
+		m_menu->addMenu(menuView);
 		m_menu->addMenu(menuOptions);
 		pmainGrid->setMenuBar(m_menu);
 	}
@@ -1181,7 +1208,10 @@ void MagDynDlg::AddTermTabItem(int row,
 	if(bclone)
 	{
 		for(int thecol=0; thecol<NUM_XCH_COLS; ++thecol)
-			m_termstab->setItem(row, thecol, m_termstab->item(m_terms_cursor_row, thecol)->clone());
+		{
+			m_termstab->setItem(row, thecol,
+				m_termstab->item(m_terms_cursor_row, thecol)->clone());
+		}
 	}
 	else
 	{
@@ -1520,6 +1550,8 @@ void MagDynDlg::Load()
 	m_ignoreCalc = 0;
 	CalcDispersion();
 	CalcHamiltonian();
+
+	StructPlotSync();
 }
 
 
@@ -1601,7 +1633,8 @@ void MagDynDlg::SavePlotFigure()
 
 
 /**
- * get the sites and exchange terms from the table to m_dyn
+ * get the sites and exchange terms from the table
+ * and transfer them to the dynamics calculator
  */
 void MagDynDlg::SyncSitesAndTerms()
 {
@@ -1748,6 +1781,8 @@ void MagDynDlg::SyncSitesAndTerms()
 
 	CalcDispersion();
 	CalcHamiltonian();
+
+	StructPlotSync();
 }
 
 
@@ -2090,8 +2125,177 @@ void MagDynDlg::PlotMouseMove(QMouseEvent* evt)
 
 void MagDynDlg::closeEvent(QCloseEvent *)
 {
-	if(m_sett)
+	if(!m_sett)
+		return;
+
+	m_sett->setValue("geo", saveGeometry());
+
+	if(m_structplot_dlg)
+		m_sett->setValue("geo_struct_view", m_structplot_dlg->saveGeometry());
+}
+
+
+/**
+ * show the 3d view of the atomic structure
+ */
+void MagDynDlg::ShowStructurePlot()
+{
+	// plot widget
+	if(!m_structplot_dlg)
 	{
-		m_sett->setValue("geo", saveGeometry());
+		m_structplot_dlg = new QDialog(this);
+		m_structplot_dlg->setWindowTitle("Unit Cell");
+
+		m_structplot = new tl2::GlPlot(this);
+		m_structplot->GetRenderer()->SetLight(
+			0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
+		m_structplot->GetRenderer()->SetLight(
+			1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
+		m_structplot->GetRenderer()->SetCoordMax(1.);
+		m_structplot->GetRenderer()->GetCamera().SetDist(1.5);
+		m_structplot->GetRenderer()->GetCamera().UpdateTransformation();
+		m_structplot->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+		m_structplot_status = new QLabel(this);
+
+		auto grid = new QGridLayout(m_structplot_dlg);
+		grid->setSpacing(2);
+		grid->setContentsMargins(4,4,4,4);
+		grid->addWidget(m_structplot, 0,0,1,2);
+		grid->addWidget(m_structplot_status, 1,0,1,2);
+
+		connect(m_structplot, &tl2::GlPlot::AfterGLInitialisation,
+			this, &MagDynDlg::StructPlotAfterGLInitialisation);
+		connect(m_structplot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection,
+			this, &MagDynDlg::StructPlotPickerIntersection);
+		connect(m_structplot, &tl2::GlPlot::MouseDown,
+			this, &MagDynDlg::StructPlotMouseDown);
+		connect(m_structplot, &tl2::GlPlot::MouseUp,
+			this, &MagDynDlg::StructPlotMouseUp);
+
+		if(m_sett && m_sett->contains("geo_struct_view"))
+			m_structplot_dlg->restoreGeometry(
+				m_sett->value("geo_struct_view").toByteArray());
+		else
+			m_structplot_dlg->resize(500, 500);
 	}
+
+	m_structplot_dlg->show();
+	m_structplot_dlg->raise();
+	m_structplot_dlg->focusWidget();
+}
+
+
+/**
+ * structure plot picker intersection
+ */
+void MagDynDlg::StructPlotPickerIntersection(
+        const t_vec3_gl* pos, std::size_t objIdx,
+        [[maybe_unused]] const t_vec3_gl* posSphere)
+{
+	if(!pos)
+		return;
+
+	// TODO
+	m_structplot_status->setText(QString("Object %1").arg(objIdx));
+}
+
+
+/**
+ * structure plot mouse button pressed
+ */
+void MagDynDlg::StructPlotMouseDown(
+	[[maybe_unused]] bool left,
+	[[maybe_unused]] bool mid,
+	[[maybe_unused]] bool right)
+{
+}
+
+
+/**
+ * structure plot mouse button released
+ */
+void MagDynDlg::StructPlotMouseUp(
+	[[maybe_unused]] bool left,
+	[[maybe_unused]] bool mid,
+	[[maybe_unused]] bool right)
+{
+}
+
+
+/**
+ * after structure plot initialisation
+ */
+void MagDynDlg::StructPlotAfterGLInitialisation()
+{
+	if(!m_structplot)
+		return;
+
+	// reference sphere for linked objects
+	m_structplot_sphere = m_structplot->GetRenderer()->AddSphere(
+		0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_structplot->GetRenderer()->SetObjectVisible(
+		m_structplot_sphere, false);
+
+	// GL device info
+	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
+		= m_structplot->GetRenderer()->GetGlDescr();
+	m_labelGlInfos[0]->setText(
+		QString("GL Version: %1.").arg(strGlVer.c_str()));
+	m_labelGlInfos[1]->setText(
+		QString("GL Shader Version: %1.").arg(strGlShaderVer.c_str()));
+	m_labelGlInfos[2]->setText(
+		QString("GL Vendor: %1.").arg(strGlVendor.c_str()));
+	m_labelGlInfos[3]->setText(
+		QString("GL Device: %1.").arg(strGlRenderer.c_str()));
+
+	StructPlotSync();
+}
+
+
+/**
+ * get the sites and exchange terms and
+ * transfer them to the structure plotter
+ */
+void MagDynDlg::StructPlotSync()
+{
+	if(!m_structplot)
+		return;
+
+	const auto& sites = m_dyn.GetAtomSites();
+
+
+	// clear old atoms
+	for(std::size_t atom_idx : m_structplot_atoms)
+	{
+		m_structplot->GetRenderer()->RemoveObject(atom_idx);
+	}
+
+	m_structplot_atoms.clear();
+	m_structplot_atoms.reserve(sites.size());
+
+	// add atoms
+	for(const auto& site : sites)
+	{
+		t_real_gl rgb[3]{1., 0., 0.};
+		t_real_gl scale = 1.;
+
+		std::size_t obj = m_structplot->GetRenderer()->AddLinkedObject(
+			m_structplot_sphere, 0,0,0, rgb[0],rgb[1],rgb[2],1);
+
+		m_structplot_atoms.push_back(obj);
+
+		m_structplot->GetRenderer()->SetObjectMatrix(obj,
+			tl2::hom_translation<t_mat_gl>(
+				t_real_gl(site.pos[0].real()),
+				t_real_gl(site.pos[1].real()),
+				t_real_gl(site.pos[2].real())) *
+			tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
+
+		m_structplot->GetRenderer()->SetObjectLabel(
+			obj, site.name);
+	}
+
+	m_structplot->update();
 }

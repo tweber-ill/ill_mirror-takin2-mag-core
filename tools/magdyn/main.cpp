@@ -27,6 +27,7 @@
  */
 
 #include "magdyn_gui.h"
+#include "tlibs2/libs/qt/gl.h"
 #include "tlibs2/libs/helper.h"
 
 #include <QtWidgets/QApplication>
@@ -39,6 +40,7 @@ int main(int argc, char** argv)
 {
 	try
 	{
+		tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 		tl2::set_locales();
 
 		QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");

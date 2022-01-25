@@ -572,7 +572,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetRenderer()->SetCoordMax(1.);
-				m_plot->GetRenderer()->GetCamera().SetDist(5.);
+				m_plot->GetRenderer()->GetCamera().SetDist(1.5);
 				m_plot->GetRenderer()->GetCamera().UpdateTransformation();
 
 				auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);

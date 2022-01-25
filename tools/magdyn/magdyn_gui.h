@@ -49,8 +49,15 @@
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
+#include "tlibs2/libs/qt/glplot.h"
 
 using namespace tl2_mag;
+
+using t_real_gl = tl2::t_real_gl;
+using t_vec2_gl = tl2::t_vec2_gl;
+using t_vec3_gl = tl2::t_vec3_gl;
+using t_vec_gl = tl2::t_vec_gl;
+using t_mat_gl = tl2::t_mat_gl;
 
 
 class MagDynDlg : public QDialog
@@ -116,6 +123,14 @@ protected:
 	// magnon dynamics calculator
 	MagDyn m_dyn{};
 
+	// structure plotter
+	QDialog *m_structplot_dlg{};
+	QLabel *m_structplot_status{};
+	QLabel *m_labelGlInfos[4]{nullptr, nullptr, nullptr, nullptr};
+	tl2::GlPlot *m_structplot{};
+	std::size_t m_structplot_sphere = 0;
+	std::vector<std::size_t> m_structplot_atoms;
+
 
 protected:
 	// general table operations
@@ -156,7 +171,18 @@ protected:
 	void CalcHamiltonian();
 
 	void PlotMouseMove(QMouseEvent* evt);
+
 	virtual void closeEvent(QCloseEvent *evt) override;
+
+	// structure plotter
+	void ShowStructurePlot();
+	void StructPlotMouseDown(bool left, bool mid, bool right);
+	void StructPlotMouseUp(bool left, bool mid, bool right);
+	void StructPlotPickerIntersection(
+		const t_vec3_gl* pos, std::size_t objIdx,
+		const t_vec3_gl* posSphere);
+	void StructPlotAfterGLInitialisation();
+	void StructPlotSync();
 
 
 private:

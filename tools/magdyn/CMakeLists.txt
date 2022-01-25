@@ -61,7 +61,7 @@ else()
 	message("Lapacke disabled.")
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -84,6 +84,8 @@ add_executable(takin_magdyn
 	main.cpp graph.h
 	magdyn_gui.cpp magdyn_gui.h
 	../../tlibs2/libs/magdyn.h
+	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
+	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h
 )
 
 
@@ -96,7 +98,7 @@ endif()
 
 
 target_link_libraries(takin_magdyn
-	Qt5::Core Qt5::Gui Qt5::Widgets
+	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
 	"${Lapacke_LIBRARIES}")
