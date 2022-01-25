@@ -2194,11 +2194,18 @@ void MagDynDlg::StructPlotPickerIntersection(
         const t_vec3_gl* pos, std::size_t objIdx,
         [[maybe_unused]] const t_vec3_gl* posSphere)
 {
+	m_structplot_status->setText("");
 	if(!pos)
 		return;
 
+	auto iter_atoms = m_structplot_atoms.find(objIdx);
+	if(iter_atoms == m_structplot_atoms.end())
+		return;
+
+	const std::string& ident = iter_atoms->second->name;
+
 	// TODO
-	m_structplot_status->setText(QString("Object %1").arg(objIdx));
+	m_structplot_status->setText(ident.c_str());
 }
 
 
@@ -2238,6 +2245,12 @@ void MagDynDlg::StructPlotAfterGLInitialisation()
 	m_structplot->GetRenderer()->SetObjectVisible(
 		m_structplot_sphere, false);
 
+	// reference arrow for linked objects
+	m_structplot_arrow = m_structplot->GetRenderer()->AddArrow(
+		0.015, 0.25, 0.,0.,0.5,  1.,1.,1.,1.);
+	m_structplot->GetRenderer()->SetObjectVisible(
+		m_structplot_arrow, false);
+
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
 		= m_structplot->GetRenderer()->GetGlDescr();
@@ -2267,13 +2280,13 @@ void MagDynDlg::StructPlotSync()
 
 
 	// clear old atoms
-	for(std::size_t atom_idx : m_structplot_atoms)
+	for(const auto& [atom_idx, atom_site] : m_structplot_atoms)
 	{
 		m_structplot->GetRenderer()->RemoveObject(atom_idx);
 	}
 
 	m_structplot_atoms.clear();
-	m_structplot_atoms.reserve(sites.size());
+
 
 	// add atoms
 	for(const auto& site : sites)
@@ -2282,19 +2295,42 @@ void MagDynDlg::StructPlotSync()
 		t_real_gl scale = 1.;
 
 		std::size_t obj = m_structplot->GetRenderer()->AddLinkedObject(
-			m_structplot_sphere, 0,0,0, rgb[0],rgb[1],rgb[2],1);
+			m_structplot_sphere, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
 
-		m_structplot_atoms.push_back(obj);
+		std::size_t arrow = m_structplot->GetRenderer()->AddLinkedObject(
+			m_structplot_arrow, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
+
+		m_structplot_atoms.insert(std::make_pair(obj, &site));
+		m_structplot_atoms.insert(std::make_pair(arrow, &site));
+
+		t_vec_gl pos_vec = tl2::create<t_vec_gl>({
+			t_real_gl(site.pos[0].real()),
+			t_real_gl(site.pos[1].real()),
+			t_real_gl(site.pos[2].real()),
+		});
+
+		t_vec_gl spin_vec = tl2::create<t_vec_gl>({
+			t_real_gl(site.spin_dir[0].real() * site.spin_mag),
+			t_real_gl(site.spin_dir[1].real() * site.spin_mag),
+			t_real_gl(site.spin_dir[2].real() * site.spin_mag),
+		});
 
 		m_structplot->GetRenderer()->SetObjectMatrix(obj,
 			tl2::hom_translation<t_mat_gl>(
-				t_real_gl(site.pos[0].real()),
-				t_real_gl(site.pos[1].real()),
-				t_real_gl(site.pos[2].real())) *
+				pos_vec[0], pos_vec[1], pos_vec[2]) *
 			tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
 
-		m_structplot->GetRenderer()->SetObjectLabel(
-			obj, site.name);
+		m_structplot->GetRenderer()->SetObjectMatrix(arrow,
+			tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
+				spin_vec,                          // to
+				1,                                 // post-scale
+				tl2::create<t_vec_gl>({0, 0, 0}),  // post-translate
+				tl2::create<t_vec_gl>({0, 0, 1}),  // from
+				scale,                             // pre-scale
+				pos_vec));                         // pre-translate
+
+		m_structplot->GetRenderer()->SetObjectLabel(obj, site.name);
+		m_structplot->GetRenderer()->SetObjectLabel(arrow, site.name);
 	}
 
 	m_structplot->update();

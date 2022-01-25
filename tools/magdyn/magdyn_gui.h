@@ -44,6 +44,7 @@
 #include <qcustomplot.h>
 
 #include <vector>
+#include <unordered_map>
 #include <sstream>
 
 #include "tlibs2/libs/maths.h"
@@ -129,7 +130,9 @@ protected:
 	QLabel *m_labelGlInfos[4]{nullptr, nullptr, nullptr, nullptr};
 	tl2::GlPlot *m_structplot{};
 	std::size_t m_structplot_sphere = 0;
-	std::vector<std::size_t> m_structplot_atoms;
+	std::size_t m_structplot_arrow = 0;
+	std::unordered_map<std::size_t, const tl2_mag::AtomSite*>
+		m_structplot_atoms{};
 
 
 protected:
