@@ -61,11 +61,16 @@ using t_vec_gl = tl2::t_vec_gl;
 using t_mat_gl = tl2::t_mat_gl;
 
 
+extern t_real g_eps;
+extern int g_prec;
+extern int g_prec_gui;
+
+
 class MagDynDlg : public QDialog
 {
 public:
 	MagDynDlg(QWidget* pParent = nullptr);
-	virtual ~MagDynDlg() = default;
+	virtual ~MagDynDlg();
 
 	MagDynDlg(const MagDynDlg&) = delete;
 	const MagDynDlg& operator=(const MagDynDlg&) = delete;
