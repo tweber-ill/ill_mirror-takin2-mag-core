@@ -914,6 +914,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_use_weights->setToolTip("Enables calculation of the spin correlation function.");
 		m_use_weights->setCheckable(true);
 		m_use_weights->setChecked(false);
+		m_use_projector = new QAction("Use Neutron Weights", menuOptions);
+		m_use_projector->setToolTip("Enables the neutron orthogonal projector.");
+		m_use_projector->setCheckable(true);
+		m_use_projector->setChecked(true);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
@@ -929,6 +933,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuOptions->addAction(m_use_field);
 		menuOptions->addAction(m_use_temperature);
 		menuOptions->addAction(m_use_weights);
+		menuOptions->addAction(m_use_projector);
 
 		// connections
 		connect(acNew, &QAction::triggered, this, &MagDynDlg::Clear);
@@ -955,6 +960,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_use_temperature, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_weights, &QAction::toggled,
+			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
+		connect(m_use_projector, &QAction::toggled,
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
 		m_menu->addMenu(menuFile);
@@ -1445,6 +1452,8 @@ void MagDynDlg::Load()
 			m_use_temperature->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_weights"))
 			m_use_weights->setChecked(*optVal);
+		if(auto optVal = magdyn.get_optional<bool>("config.use_projector"))
+			m_use_projector->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_h"))
 			m_rot_axis[0]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_k"))
@@ -1547,6 +1556,7 @@ void MagDynDlg::Save()
 	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
 	magdyn.put<bool>("config.use_temperature", m_use_temperature->isChecked());
 	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
+	magdyn.put<bool>("config.use_projector", m_use_projector->isChecked());
 	magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
 	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
 	magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
@@ -1799,6 +1809,7 @@ void MagDynDlg::CalcDispersion()
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
 
 	bool only_energies = !m_use_weights->isChecked();
+	bool use_projector = m_use_projector->isChecked();
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
@@ -1811,7 +1822,6 @@ void MagDynDlg::CalcDispersion()
 
 		auto energies_and_correlations = m_dyn.GetEnergies(Q[0], Q[1], Q[2],
 			!m_use_weights->isChecked());
-		//t_real weight = std::abs(tl2::trace(S).real());
 
 		for(const auto& E_and_S : energies_and_correlations)
 		{
@@ -1825,7 +1835,12 @@ void MagDynDlg::CalcDispersion()
 			// weights
 			if(!only_energies)
 			{
+				const t_mat& S = E_and_S.S;
 				t_real weight = E_and_S.weight;
+
+				if(!use_projector)
+					weight = tl2::trace<t_mat>(S).real();
+
 				if(std::isnan(weight) || std::isinf(weight))
 					weight = 0.;
 				ws_data.push_back(weight * weight_scale);
@@ -1911,6 +1926,8 @@ void MagDynDlg::CalcHamiltonian()
 
 	// get energies and correlation functions
 	bool only_energies = !m_use_weights->isChecked();
+	bool use_projector = m_use_projector->isChecked();
+
 	auto energies_and_correlations = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
 	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
 
@@ -1996,6 +2013,9 @@ void MagDynDlg::CalcHamiltonian()
 			const t_mat& S = E_and_S.S;
 			const t_mat& S_perp = E_and_S.S_perp;
 			t_real weight = E_and_S.weight;
+			if(!use_projector)
+				weight = tl2::trace<t_mat>(S).real();
+
 			tl2::set_eps_0(E);
 			tl2::set_eps_0(weight);
 
