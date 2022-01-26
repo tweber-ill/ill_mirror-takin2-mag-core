@@ -98,10 +98,15 @@ void MagDynDlg::StructPlotPickerIntersection(
 	if(!pos)
 		return;
 
+	m_structplot_cur_atom = std::nullopt;
+	m_structplot_cur_term = std::nullopt;
+
 	// look for atom sites
 	if(auto iter_atoms = m_structplot_atoms.find(objIdx);
 		iter_atoms != m_structplot_atoms.end())
 	{
+		m_structplot_cur_atom = iter_atoms->second->index;
+
 		const std::string& ident = iter_atoms->second->name;
 		m_structplot_status->setText(ident.c_str());
 
@@ -112,6 +117,8 @@ void MagDynDlg::StructPlotPickerIntersection(
 	if(auto iter_terms = m_structplot_terms.find(objIdx);
 		iter_terms != m_structplot_terms.end())
 	{
+		m_structplot_cur_term = iter_terms->second->index;
+
 		const std::string& ident = iter_terms->second->name;
 		m_structplot_status->setText(ident.c_str());
 
@@ -128,6 +135,19 @@ void MagDynDlg::StructPlotMouseDown(
 	[[maybe_unused]] bool mid,
 	[[maybe_unused]] bool right)
 {
+	if(left && m_structplot_cur_atom)
+	{
+		// select current site in table
+		m_tabs->setCurrentWidget(m_sitespanel);
+		m_sitestab->setCurrentCell(*m_structplot_cur_atom, 0);
+	}
+
+	if(left && m_structplot_cur_term)
+	{
+		// select current term in table
+		m_tabs->setCurrentWidget(m_termspanel);
+		m_termstab->setCurrentCell(*m_structplot_cur_term, 0);
+	}
 }
 
 

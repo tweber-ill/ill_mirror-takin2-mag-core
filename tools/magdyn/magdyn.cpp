@@ -30,7 +30,6 @@
 
 #include <QtGui/QFontDatabase>
 #include <QtWidgets/QGridLayout>
-#include <QtWidgets/QTabWidget>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
@@ -102,7 +101,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
-	auto tabs = new QTabWidget(this);
+	m_tabs = new QTabWidget(this);
 
 	// atom sites panel
 	{
@@ -253,7 +252,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt);
 		});
 
-		tabs->addTab(m_sitespanel, "Atoms");
+		m_tabs->addTab(m_sitespanel, "Atoms");
 	}
 
 
@@ -376,7 +375,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
-		tabs->addTab(m_termspanel, "Couplings");
+		m_tabs->addTab(m_termspanel, "Couplings");
 	}
 
 
@@ -601,7 +600,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			this->SyncSitesAndTerms();
 		});
 
-		tabs->addTab(m_samplepanel, "Sample");
+		m_tabs->addTab(m_samplepanel, "Sample");
 	}
 
 
@@ -721,7 +720,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_plot, &QCustomPlot::mouseMove,
 			this, &MagDynDlg::PlotMouseMove);
 
-		tabs->addTab(m_disppanel, "Dispersion");
+		m_tabs->addTab(m_disppanel, "Dispersion");
 	}
 
 
@@ -778,7 +777,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				[this]() { this->CalcHamiltonian(); });
 		}
 
-		tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
+		m_tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
 	}
 
 
@@ -876,7 +875,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0, 1,1);
 
-		tabs->addTab(infopanel, "Infos");
+		m_tabs->addTab(infopanel, "Infos");
 	}
 
 	// status
@@ -888,7 +887,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	auto pmainGrid = new QGridLayout(this);
 	pmainGrid->setSpacing(4);
 	pmainGrid->setContentsMargins(6, 6, 6, 6);
-	pmainGrid->addWidget(tabs, 0,0, 1,1);
+	pmainGrid->addWidget(m_tabs, 0,0, 1,1);
 	pmainGrid->addWidget(m_status, 1,0,1,1);
 
 	// menu bar

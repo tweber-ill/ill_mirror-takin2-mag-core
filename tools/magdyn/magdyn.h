@@ -31,6 +31,7 @@
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QDialog>
+#include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QSpinBox>
@@ -46,6 +47,7 @@
 #include <vector>
 #include <unordered_map>
 #include <sstream>
+#include <optional>
 
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
@@ -86,6 +88,9 @@ protected:
 	QAction *m_use_temperature{};
 	QAction *m_use_projector{};
 	QAction *m_use_weights{};
+
+	// tab
+	QTabWidget *m_tabs{};
 
 	// panels
 	QWidget *m_sitespanel{};
@@ -141,6 +146,8 @@ protected:
 		m_structplot_atoms{};
 	std::unordered_map<std::size_t, const tl2_mag::ExchangeTerm*>
 		m_structplot_terms{};
+	std::optional<std::size_t> m_structplot_cur_atom{};
+	std::optional<std::size_t> m_structplot_cur_term{};
 
 
 protected:
