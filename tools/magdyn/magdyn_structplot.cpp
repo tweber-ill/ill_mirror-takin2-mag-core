@@ -28,6 +28,10 @@
 
 #include "magdyn.h"
 
+#include <unordered_set>
+#include <functional>
+#include <boost/functional/hash.hpp>
+
 using namespace tl2_ops;
 
 
@@ -40,7 +44,7 @@ void MagDynDlg::ShowStructurePlot()
 	if(!m_structplot_dlg)
 	{
 		m_structplot_dlg = new QDialog(this);
-		m_structplot_dlg->setWindowTitle("Unit Cell");
+		m_structplot_dlg->setWindowTitle("Atom Sites");
 
 		m_structplot = new tl2::GlPlot(this);
 		m_structplot->GetRenderer()->SetLight(
@@ -94,14 +98,25 @@ void MagDynDlg::StructPlotPickerIntersection(
 	if(!pos)
 		return;
 
-	auto iter_atoms = m_structplot_atoms.find(objIdx);
-	if(iter_atoms == m_structplot_atoms.end())
+	// look for atom sites
+	if(auto iter_atoms = m_structplot_atoms.find(objIdx);
+		iter_atoms != m_structplot_atoms.end())
+	{
+		const std::string& ident = iter_atoms->second->name;
+		m_structplot_status->setText(ident.c_str());
+
 		return;
+	}
 
-	const std::string& ident = iter_atoms->second->name;
+	// look for exchange terms
+	if(auto iter_terms = m_structplot_terms.find(objIdx);
+		iter_terms != m_structplot_terms.end())
+	{
+		const std::string& ident = iter_terms->second->name;
+		m_structplot_status->setText(ident.c_str());
 
-	// TODO
-	m_structplot_status->setText(ident.c_str());
+		return;
+	}
 }
 
 
@@ -147,6 +162,12 @@ void MagDynDlg::StructPlotAfterGLInitialisation()
 	m_structplot->GetRenderer()->SetObjectVisible(
 		m_structplot_arrow, false);
 
+	// reference cylinder for linked objects
+	m_structplot_cyl = m_structplot->GetRenderer()->AddCylinder(
+		0.01, 1., 0.,0.,0.5,  1.,1.,1.,1.);
+	m_structplot->GetRenderer()->SetObjectVisible(
+		m_structplot_cyl, false);
+
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]
 		= m_structplot->GetRenderer()->GetGlDescr();
@@ -172,7 +193,10 @@ void MagDynDlg::StructPlotSync()
 	if(!m_structplot)
 		return;
 
+	// get sites and terms
 	const auto& sites = m_dyn.GetAtomSites();
+	const auto& terms = m_dyn.GetExchangeTerms();
+	//const auto [sc_min, sc_max] = m_dyn.GetSupercellMinMax();
 
 
 	// clear old atoms
@@ -184,10 +208,64 @@ void MagDynDlg::StructPlotSync()
 	m_structplot_atoms.clear();
 
 
-	// add atoms
-	for(const auto& site : sites)
+	// clear old terms
+	for(const auto& [term_idx, term] : m_structplot_terms)
 	{
-		t_real_gl rgb[3]{1., 0., 0.};
+		m_structplot->GetRenderer()->RemoveObject(term_idx);
+	}
+
+	m_structplot_terms.clear();
+
+
+	// hashes of already seen atom sites
+	std::unordered_set<std::size_t> atom_hashes;
+
+
+	// calculate the hash of an atom site
+	auto get_atom_hash = [](const tl2_mag::AtomSite& site,
+		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
+			-> std::size_t
+	{
+		int _sc_x = int(std::round(sc_x));
+		int _sc_y = int(std::round(sc_y));
+		int _sc_z = int(std::round(sc_z));
+
+		std::size_t hash = std::hash<int>{}(site.index);
+		boost::hash_combine(hash, std::hash<int>{}(_sc_x));
+		boost::hash_combine(hash, std::hash<int>{}(_sc_y));
+		boost::hash_combine(hash, std::hash<int>{}(_sc_z));
+
+		return hash;
+	};
+
+
+	// check if the atom site has already been seen
+	auto atom_not_yet_seen = [&atom_hashes, &get_atom_hash](
+		const tl2_mag::AtomSite& site,
+		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
+	{
+		std::size_t hash = get_atom_hash(site, sc_x, sc_y, sc_z);
+		return atom_hashes.find(hash) == atom_hashes.end();
+	};
+
+
+	// add an atom site to the plot
+	auto add_atom_site = [this, &atom_hashes, &get_atom_hash](
+		const tl2_mag::AtomSite& site,
+		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
+	{
+		int _sc_x = int(std::round(sc_x));
+		int _sc_y = int(std::round(sc_y));
+		int _sc_z = int(std::round(sc_z));
+
+		t_real_gl rgb[3] {0., 0., 1.};
+		if(_sc_x == 0 && _sc_y == 0 && _sc_z == 0)
+		{
+			rgb[0] = t_real_gl(1.);
+			rgb[1] = t_real_gl(0.);
+			rgb[2] = t_real_gl(0.);
+		}
+
 		t_real_gl scale = 1.;
 
 		std::size_t obj = m_structplot->GetRenderer()->AddLinkedObject(
@@ -200,9 +278,9 @@ void MagDynDlg::StructPlotSync()
 		m_structplot_atoms.insert(std::make_pair(arrow, &site));
 
 		t_vec_gl pos_vec = tl2::create<t_vec_gl>({
-			t_real_gl(site.pos[0].real()),
-			t_real_gl(site.pos[1].real()),
-			t_real_gl(site.pos[2].real()),
+			t_real_gl(site.pos[0].real()) + sc_x,
+			t_real_gl(site.pos[1].real()) + sc_y,
+			t_real_gl(site.pos[2].real()) + sc_z,
 		});
 
 		t_vec_gl spin_vec = tl2::create<t_vec_gl>({
@@ -227,6 +305,71 @@ void MagDynDlg::StructPlotSync()
 
 		m_structplot->GetRenderer()->SetObjectLabel(obj, site.name);
 		m_structplot->GetRenderer()->SetObjectLabel(arrow, site.name);
+
+		// mark the atom as already seen
+		std::size_t hash = get_atom_hash(site, sc_x, sc_y, sc_z);
+		atom_hashes.insert(hash);
+	};
+
+
+	// iterate and add unit cell atom sites
+	for(const auto& site : sites)
+		add_atom_site(site, 0, 0, 0);
+
+
+	// iterate and add exchange terms
+	for(const auto& term : terms)
+	{
+		const auto& site1 = sites[term.atom1];
+		const auto& site2 = sites[term.atom2];
+
+		t_real_gl sc_x = t_real_gl(term.dist[0].real());
+		t_real_gl sc_y = t_real_gl(term.dist[1].real());
+		t_real_gl sc_z = t_real_gl(term.dist[2].real());
+
+		t_real_gl rgb[3] {0., 0.75, 0.};
+		t_real_gl scale = 1.;
+
+		std::size_t obj = m_structplot->GetRenderer()->AddLinkedObject(
+			m_structplot_cyl, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
+
+		m_structplot_terms.insert(std::make_pair(obj, &term));
+
+		// connection from unit cell atom site...
+		t_vec_gl pos1_vec = tl2::create<t_vec_gl>({
+			t_real_gl(site1.pos[0].real()),
+			t_real_gl(site1.pos[1].real()),
+			t_real_gl(site1.pos[2].real()),
+		});
+
+		// ... to atom in super cell
+		t_vec_gl pos2_vec = tl2::create<t_vec_gl>({
+			t_real_gl(site2.pos[0].real()) + sc_x,
+			t_real_gl(site2.pos[1].real()) + sc_y,
+			t_real_gl(site2.pos[2].real()) + sc_z,
+		});
+
+		// add the supercell site if it hasn't been inserted yet
+		if(atom_not_yet_seen(site2, sc_x, sc_y, sc_z))
+			add_atom_site(site2, sc_x, sc_y, sc_z);
+
+		t_vec_gl dir_vec = pos2_vec - pos1_vec;
+		t_real_gl len = tl2::norm<t_vec_gl>(dir_vec);
+
+		m_structplot->GetRenderer()->SetObjectMatrix(obj,
+			tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
+				dir_vec,                           // to
+				1,                                 // post-scale
+				tl2::create<t_vec_gl>({0, 0, 0}),  // post-translate
+				tl2::create<t_vec_gl>({0, 0, 1}),  // from
+				scale,                             // pre-scale
+				pos1_vec)                          // pre-translate
+			* tl2::hom_translation<t_mat_gl>(
+				t_real_gl(0), t_real_gl(0), len*t_real_gl(0.5))
+			* tl2::hom_scaling<t_mat_gl>(
+				t_real_gl(1), t_real_gl(1), len));
+
+		m_structplot->GetRenderer()->SetObjectLabel(obj, term.name);
 	}
 
 	m_structplot->update();

@@ -136,8 +136,11 @@ protected:
 	tl2::GlPlot *m_structplot{};
 	std::size_t m_structplot_sphere = 0;
 	std::size_t m_structplot_arrow = 0;
+	std::size_t m_structplot_cyl = 0;
 	std::unordered_map<std::size_t, const tl2_mag::AtomSite*>
 		m_structplot_atoms{};
+	std::unordered_map<std::size_t, const tl2_mag::ExchangeTerm*>
+		m_structplot_terms{};
 
 
 protected:
