@@ -95,11 +95,11 @@ void MagDynDlg::StructPlotPickerIntersection(
         [[maybe_unused]] const t_vec3_gl* posSphere)
 {
 	m_structplot_status->setText("");
-	if(!pos)
-		return;
-
 	m_structplot_cur_atom = std::nullopt;
 	m_structplot_cur_term = std::nullopt;
+
+	if(!pos)
+		return;
 
 	// look for atom sites
 	if(auto iter_atoms = m_structplot_atoms.find(objIdx);
