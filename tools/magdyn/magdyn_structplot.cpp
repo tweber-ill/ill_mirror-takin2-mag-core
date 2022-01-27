@@ -324,7 +324,7 @@ void MagDynDlg::StructPlotSync()
 				pos_vec));                         // pre-translate
 
 		m_structplot->GetRenderer()->SetObjectLabel(obj, site.name);
-		m_structplot->GetRenderer()->SetObjectLabel(arrow, site.name);
+		//m_structplot->GetRenderer()->SetObjectLabel(arrow, site.name);
 
 		// mark the atom as already seen
 		std::size_t hash = get_atom_hash(site, sc_x, sc_y, sc_z);
@@ -356,14 +356,14 @@ void MagDynDlg::StructPlotSync()
 		m_structplot_terms.insert(std::make_pair(obj, &term));
 
 		// connection from unit cell atom site...
-		t_vec_gl pos1_vec = tl2::create<t_vec_gl>({
+		const t_vec_gl pos1_vec = tl2::create<t_vec_gl>({
 			t_real_gl(site1.pos[0].real()),
 			t_real_gl(site1.pos[1].real()),
 			t_real_gl(site1.pos[2].real()),
 		});
 
 		// ... to atom in super cell
-		t_vec_gl pos2_vec = tl2::create<t_vec_gl>({
+		const t_vec_gl pos2_vec = tl2::create<t_vec_gl>({
 			t_real_gl(site2.pos[0].real()) + sc_x,
 			t_real_gl(site2.pos[1].real()) + sc_y,
 			t_real_gl(site2.pos[2].real()) + sc_z,
@@ -374,8 +374,9 @@ void MagDynDlg::StructPlotSync()
 			add_atom_site(site2, sc_x, sc_y, sc_z);
 
 		t_vec_gl dir_vec = pos2_vec - pos1_vec;
-		t_real_gl len = tl2::norm<t_vec_gl>(dir_vec);
+		t_real_gl dir_len = tl2::norm<t_vec_gl>(dir_vec);
 
+		// coupling bond
 		m_structplot->GetRenderer()->SetObjectMatrix(obj,
 			tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
 				dir_vec,                           // to
@@ -385,11 +386,41 @@ void MagDynDlg::StructPlotSync()
 				scale,                             // pre-scale
 				pos1_vec)                          // pre-translate
 			* tl2::hom_translation<t_mat_gl>(
-				t_real_gl(0), t_real_gl(0), len*t_real_gl(0.5))
+				t_real_gl(0), t_real_gl(0), dir_len*t_real_gl(0.5))
 			* tl2::hom_scaling<t_mat_gl>(
-				t_real_gl(1), t_real_gl(1), len));
+				t_real_gl(1), t_real_gl(1), dir_len));
 
 		m_structplot->GetRenderer()->SetObjectLabel(obj, term.name);
+
+
+		// dmi vector
+		const t_vec_gl dmi_vec = tl2::create<t_vec_gl>({
+			t_real_gl(term.dmi[0].real()),
+			t_real_gl(term.dmi[1].real()),
+			t_real_gl(term.dmi[2].real()),
+		});
+
+		if(tl2::norm<t_vec_gl>(dmi_vec) > g_eps)
+		{
+			std::size_t objDmi = m_structplot->GetRenderer()->AddLinkedObject(
+				m_structplot_arrow, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
+
+			m_structplot_terms.insert(std::make_pair(objDmi, &term));
+
+			t_real_gl scale_dmi = 0.5;
+
+			m_structplot->GetRenderer()->SetObjectMatrix(objDmi,
+				tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
+					dmi_vec,                           // to
+					1,                                 // post-scale
+					tl2::create<t_vec_gl>({0, 0, 0}),  // post-translate
+					tl2::create<t_vec_gl>({0, 0, 1}),  // from
+					scale_dmi,                         // pre-scale
+					(pos1_vec+pos2_vec)/t_real_gl(2))  // pre-translate
+				);
+
+			//m_structplot->GetRenderer()->SetObjectLabel(objDmi, term.name);
+		}
 	}
 
 	m_structplot->update();
