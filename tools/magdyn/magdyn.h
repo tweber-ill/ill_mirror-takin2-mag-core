@@ -137,6 +137,7 @@ protected:
 	// structure plotter
 	QDialog *m_structplot_dlg{};
 	QLabel *m_structplot_status{};
+	QMenu *m_structplot_context{};
 	QLabel *m_labelGlInfos[4]{nullptr, nullptr, nullptr, nullptr};
 	tl2::GlPlot *m_structplot{};
 	std::size_t m_structplot_sphere = 0;
@@ -190,10 +191,12 @@ protected:
 
 	void PlotMouseMove(QMouseEvent* evt);
 
+	virtual void mousePressEvent(QMouseEvent *evt) override;
 	virtual void closeEvent(QCloseEvent *evt) override;
 
 	// structure plotter
 	void ShowStructurePlot();
+	void StructPlotMouseClick(bool left, bool mid, bool right);
 	void StructPlotMouseDown(bool left, bool mid, bool right);
 	void StructPlotMouseUp(bool left, bool mid, bool right);
 	void StructPlotPickerIntersection(
@@ -201,6 +204,7 @@ protected:
 		const t_vec3_gl* posSphere);
 	void StructPlotAfterGLInitialisation();
 	void StructPlotSync();
+	void StructPlotDelete();
 
 
 private:

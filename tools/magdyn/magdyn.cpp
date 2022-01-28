@@ -1518,6 +1518,7 @@ void MagDynDlg::SyncSitesAndTerms()
 		m_dyn.AddAtomSite(std::move(site));
 	}
 
+	m_dyn.CalcIndices();
 	m_dyn.CalcSpinRotation();
 
 	// get exchange terms
@@ -1569,6 +1570,12 @@ void MagDynDlg::SyncSitesAndTerms()
 	CalcHamiltonian();
 
 	StructPlotSync();
+}
+
+
+void MagDynDlg::mousePressEvent(QMouseEvent *evt)
+{
+	QDialog::mousePressEvent(evt);
 }
 
 

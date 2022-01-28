@@ -59,6 +59,10 @@ void MagDynDlg::ShowStructurePlot()
 
 		m_structplot_status = new QLabel(this);
 
+		m_structplot_context= new QMenu(this);
+		QAction *acDel = new QAction("Delete", m_structplot_context);
+		m_structplot_context->addAction(acDel);
+
 		auto grid = new QGridLayout(m_structplot_dlg);
 		grid->setSpacing(2);
 		grid->setContentsMargins(4,4,4,4);
@@ -69,10 +73,13 @@ void MagDynDlg::ShowStructurePlot()
 			this, &MagDynDlg::StructPlotAfterGLInitialisation);
 		connect(m_structplot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection,
 			this, &MagDynDlg::StructPlotPickerIntersection);
+		connect(m_structplot, &tl2::GlPlot::MouseClick,
+			this, &MagDynDlg::StructPlotMouseClick);
 		connect(m_structplot, &tl2::GlPlot::MouseDown,
 			this, &MagDynDlg::StructPlotMouseDown);
 		connect(m_structplot, &tl2::GlPlot::MouseUp,
 			this, &MagDynDlg::StructPlotMouseUp);
+		connect(acDel, &QAction::triggered, this, &MagDynDlg::StructPlotDelete);
 
 		if(m_sett && m_sett->contains("geo_struct_view"))
 			m_structplot_dlg->restoreGeometry(
@@ -128,9 +135,28 @@ void MagDynDlg::StructPlotPickerIntersection(
 
 
 /**
- * structure plot mouse button pressed
+ * delete currently selected atom or bond
  */
-void MagDynDlg::StructPlotMouseDown(
+void MagDynDlg::StructPlotDelete()
+{
+	if(m_structplot_cur_atom)
+	{
+		DelTabItem(m_sitestab, *m_structplot_cur_atom, *m_structplot_cur_atom+1);
+		m_structplot_cur_atom = std::nullopt;
+	}
+
+	if(m_structplot_cur_term)
+	{
+		DelTabItem(m_termstab, *m_structplot_cur_term, *m_structplot_cur_term+1);
+		m_structplot_cur_term = std::nullopt;
+	}
+}
+
+
+/**
+ * structure plot mouse button clicked
+ */
+void MagDynDlg::StructPlotMouseClick(
 	[[maybe_unused]] bool left,
 	[[maybe_unused]] bool mid,
 	[[maybe_unused]] bool right)
@@ -148,6 +174,24 @@ void MagDynDlg::StructPlotMouseDown(
 		m_tabs->setCurrentWidget(m_termspanel);
 		m_termstab->setCurrentCell(*m_structplot_cur_term, 0);
 	}
+
+	if(right)
+	{
+		const QPointF& _pt = m_structplot->GetRenderer()->GetMousePosition();
+		QPoint pt = m_structplot->mapToGlobal(_pt.toPoint());
+		m_structplot_context->popup(pt);
+	}
+}
+
+
+/**
+ * structure plot mouse button pressed
+ */
+void MagDynDlg::StructPlotMouseDown(
+	[[maybe_unused]] bool left,
+	[[maybe_unused]] bool mid,
+	[[maybe_unused]] bool right)
+{
 }
 
 
