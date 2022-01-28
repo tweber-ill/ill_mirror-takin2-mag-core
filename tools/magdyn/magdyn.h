@@ -105,7 +105,7 @@ protected:
 
 	//sites
 	QComboBox *m_comboSG{};
-	std::vector<std::vector<t_mat_real>> m_SGops;
+	std::vector<std::vector<t_mat_real>> m_SGops{};
 
 	// dispersion
 	QCustomPlot *m_plot{};

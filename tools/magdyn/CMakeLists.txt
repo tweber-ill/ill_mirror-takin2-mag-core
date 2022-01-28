@@ -26,7 +26,6 @@ cmake_minimum_required(VERSION 3.0)
 project(magdyn)
 enable_language(CXX)
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}"
@@ -38,8 +37,24 @@ set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-std=c++20)
 add_compile_options(-Wall -Wextra -Weffc++)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	add_compile_options(-g -ggdb)
+	set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
-message("Building for ${CMAKE_SYSTEM_NAME} systems.")
+	message("Debug building for ${CMAKE_SYSTEM_NAME} systems.")
+
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+	add_compile_options("-DNDEBUG")
+	add_compile_options("-Wno-#pragma-messages")
+
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		# see: https://gcc.gnu.org/onlinedocs/gcc/Developer-Options.html
+		add_compile_options(-fcompare-debug-second)
+	endif()
+
+	message("Release building for ${CMAKE_SYSTEM_NAME} systems.")
+endif()
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# pass linker --subsystem option
@@ -73,8 +88,10 @@ endif()
 
 
 
+include_directories("${PROJECT_SOURCE_DIR}")
+
 include_directories(
-	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
+	SYSTEM "${Boost_INCLUDE_DIRS}/.." "../.."
 	"ext" "ext/gemmi/include" "ext/gemmi/third_party"
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party"
 )
