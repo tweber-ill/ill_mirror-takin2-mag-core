@@ -384,6 +384,9 @@ void MagDynDlg::StructPlotSync()
 	// iterate and add exchange terms
 	for(const auto& term : terms)
 	{
+		if(term.atom1 >= sites.size() || term.atom2 >= sites.size())
+			continue;
+
 		const auto& site1 = sites[term.atom1];
 		const auto& site2 = sites[term.atom2];
 

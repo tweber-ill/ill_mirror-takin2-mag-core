@@ -43,6 +43,8 @@
 #include <boost/version.hpp>
 #include <boost/config.hpp>
 
+#include <boost/scope_exit.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 namespace algo = boost::algorithm;
@@ -1060,24 +1062,22 @@ void MagDynDlg::GenerateFromSG()
 		int orgRowCnt = m_sitestab->rowCount();
 		for(int row=0; row<orgRowCnt; ++row)
 		{
-			auto *name = m_sitestab->item(row, COL_SITE_NAME);
-			auto *pos_x = m_sitestab->item(row, COL_SITE_POS_X);
-			auto *pos_y = m_sitestab->item(row, COL_SITE_POS_Y);
-			auto *pos_z = m_sitestab->item(row, COL_SITE_POS_Z);
-			auto *spin_x = m_sitestab->item(row, COL_SITE_SPIN_X);
-			auto *spin_y = m_sitestab->item(row, COL_SITE_SPIN_Y);
-			auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
-			auto *spin_mag = m_sitestab->item(row, COL_SITE_SPIN_MAG);
-
-			t_real x{}, y{}, z{}, sx{}, sy{}, sz{}, S;
-			std::string ident = name->text().toStdString();
-			std::istringstream{pos_x->text().toStdString()} >> x;
-			std::istringstream{pos_y->text().toStdString()} >> y;
-			std::istringstream{pos_z->text().toStdString()} >> z;
-			std::istringstream{spin_x->text().toStdString()} >> sx;
-			std::istringstream{spin_y->text().toStdString()} >> sy;
-			std::istringstream{spin_z->text().toStdString()} >> sz;
-			std::istringstream{spin_mag->text().toStdString()} >> S;
+			std::string ident = m_sitestab->item(row, COL_SITE_NAME)
+				->text().toStdString();
+			t_real x = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_POS_X))->GetValue();
+			t_real y = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_POS_Y))->GetValue();
+			t_real z = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_POS_Z))->GetValue();
+			t_real sx = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_SPIN_X))->GetValue();
+			t_real sy = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_SPIN_Y))->GetValue();
+			t_real sz = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_SPIN_Z))->GetValue();
+			t_real S = static_cast<NumericTableWidgetItem<t_real>*>(
+				m_sitestab->item(row, COL_SITE_SPIN_MAG))->GetValue();
 
 			t_vec_real sitepos = tl2::create<t_vec_real>({x, y, z, 1});
 			auto newsitepos = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
@@ -1429,6 +1429,14 @@ void MagDynDlg::SyncSitesAndTerms()
 
 	m_dyn.Clear();
 
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_sitestab->blockSignals(false);
+		this_->m_termstab->blockSignals(false);
+	} BOOST_SCOPE_EXIT_END
+	m_sitestab->blockSignals(true);
+	m_termstab->blockSignals(true);
+
 	// dmi
 	bool use_dmi = m_use_dmi->isChecked();
 
@@ -1472,13 +1480,20 @@ void MagDynDlg::SyncSitesAndTerms()
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
 	{
 		auto *name = m_sitestab->item(row, COL_SITE_NAME);
-		auto *pos_x = m_sitestab->item(row, COL_SITE_POS_X);
-		auto *pos_y = m_sitestab->item(row, COL_SITE_POS_Y);
-		auto *pos_z = m_sitestab->item(row, COL_SITE_POS_Z);
-		auto *spin_x = m_sitestab->item(row, COL_SITE_SPIN_X);
-		auto *spin_y = m_sitestab->item(row, COL_SITE_SPIN_Y);
-		auto *spin_z = m_sitestab->item(row, COL_SITE_SPIN_Z);
-		auto *spin_mag = m_sitestab->item(row, COL_SITE_SPIN_MAG);
+		auto *pos_x = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_X));
+		auto *pos_y = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_Y));
+		auto *pos_z = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_Z));
+		auto *spin_x = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_SPIN_X));
+		auto *spin_y = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_SPIN_Y));
+		auto *spin_z = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_SPIN_Z));
+		auto *spin_mag = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_SPIN_MAG));
 
 		if(!name || !pos_x || !pos_y || !pos_z || 
 			!spin_x || !spin_y || !spin_z || !spin_mag)
@@ -1490,13 +1505,17 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		AtomSite site;
 		site.name = name->text().toStdString();
-		site.pos = tl2::zero<t_vec>(3);
-		site.spin_dir = tl2::zero<t_vec>(3);
 		site.g = -2. * tl2::unit<t_mat>(3);
-		std::istringstream{pos_x->text().toStdString()} >> site.pos[0];
-		std::istringstream{pos_y->text().toStdString()} >> site.pos[1];
-		std::istringstream{pos_z->text().toStdString()} >> site.pos[2];
-		std::istringstream{spin_mag->text().toStdString()} >> site.spin_mag;
+
+		site.pos = tl2::create<t_vec>(
+		{
+			pos_x->GetValue(),
+			pos_y->GetValue(),
+			pos_z->GetValue(),
+		});
+
+		site.spin_dir = tl2::zero<t_vec>(3);
+		site.spin_mag = spin_mag->GetValue();
 
 		// align spins along external field?
 		if(m_align_spins->isChecked() && m_use_field->isChecked())
@@ -1507,65 +1526,99 @@ void MagDynDlg::SyncSitesAndTerms()
 		}
 		else
 		{
-			std::istringstream{spin_x->text().toStdString()}
-				>> site.spin_dir[0];
-			std::istringstream{spin_y->text().toStdString()}
-				>> site.spin_dir[1];
-			std::istringstream{spin_z->text().toStdString()}
-				>> site.spin_dir[2];
+			site.spin_dir[0] = spin_x->GetValue();
+			site.spin_dir[1] = spin_y->GetValue();
+			site.spin_dir[2] = spin_z->GetValue();
 		}
 
 		m_dyn.AddAtomSite(std::move(site));
 	}
 
-	m_dyn.CalcIndices();
 	m_dyn.CalcSpinRotation();
+	const auto& sites = m_dyn.GetAtomSites();
 
 	// get exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
 		auto *name = m_termstab->item(row, COL_XCH_NAME);
-		auto *atom_1_idx = m_termstab->item(row, COL_XCH_ATOM1_IDX);
-		auto *atom_2_idx = m_termstab->item(row, COL_XCH_ATOM2_IDX);
-		auto *dist_x = m_termstab->item(row, COL_XCH_DIST_X);
-		auto *dist_y = m_termstab->item(row, COL_XCH_DIST_Y);
-		auto *dist_z = m_termstab->item(row, COL_XCH_DIST_Z);
-		auto *interaction = m_termstab->item(row, COL_XCH_INTERACTION);
-		auto *dmi_x = m_termstab->item(row, COL_XCH_DMI_X);
-		auto *dmi_y = m_termstab->item(row, COL_XCH_DMI_Y);
-		auto *dmi_z = m_termstab->item(row, COL_XCH_DMI_Z);
+		auto *atom_1_idx = static_cast<NumericTableWidgetItem<t_size>*>(
+			m_termstab->item(row, COL_XCH_ATOM1_IDX));
+		auto *atom_2_idx = static_cast<NumericTableWidgetItem<t_size>*>(
+			m_termstab->item(row, COL_XCH_ATOM2_IDX));
+		auto *dist_x = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DIST_X));
+		auto *dist_y = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DIST_Y));
+		auto *dist_z = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DIST_Z));
+		auto *interaction = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_INTERACTION));
+		auto *dmi_x = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DMI_X));
+		auto *dmi_y = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DMI_Y));
+		auto *dmi_z = static_cast<NumericTableWidgetItem<t_real>*>(
+			m_termstab->item(row, COL_XCH_DMI_Z));
 
 		if(!name || !atom_1_idx || !atom_2_idx ||
 			!dist_x || !dist_y || !dist_z ||
 			!interaction || !dmi_x || !dmi_y || !dmi_z)
 		{
-			std::cerr << "Invalid entry in terms table row " << row << "." << std::endl;
+			std::cerr << "Invalid entry in terms table row "
+				<< row << "." << std::endl;
 			continue;
 		}
 
 		ExchangeTerm term;
 		term.name = name->text().toStdString();
-		term.dist = tl2::zero<t_vec>(3);
+		term.atom1 = atom_1_idx->GetValue();
+		term.atom2 = atom_2_idx->GetValue();
+		term.dist = tl2::create<t_vec>(
+		{
+			dist_x->GetValue(),
+			dist_y->GetValue(),
+			dist_z->GetValue(),
+		});
+		term.J = interaction->GetValue();
 
-		std::istringstream{atom_1_idx->text().toStdString()} >> term.atom1;
-		std::istringstream{atom_2_idx->text().toStdString()} >> term.atom2;
-		std::istringstream{dist_x->text().toStdString()} >> term.dist[0];
-		std::istringstream{dist_y->text().toStdString()} >> term.dist[1];
-		std::istringstream{dist_z->text().toStdString()} >> term.dist[2];
-		std::istringstream{interaction->text().toStdString()} >> term.J;
+		// atom 1 index out of bounds?
+		if(term.atom1 >= sites.size())
+		{
+			atom_1_idx->setBackground(QBrush(QColor(0xff, 0x00, 0x00)));
+			continue;
+		}
+		else
+		{
+			QBrush brush = name->background();
+			atom_1_idx->setBackground(brush);
+		}
+
+		// atom 2 index out of bounds?
+		if(term.atom2 >= sites.size())
+		{
+			atom_2_idx->setBackground(QBrush(QColor(0xff, 0x00, 0x00)));
+			continue;
+		}
+		else
+		{
+			QBrush brush = name->background();
+			atom_2_idx->setBackground(brush);
+		}
 
 		if(use_dmi)
 		{
-			term.dmi = tl2::zero<t_vec>(3);
-
-			std::istringstream{dmi_x->text().toStdString()} >> term.dmi[0];
-			std::istringstream{dmi_y->text().toStdString()} >> term.dmi[1];
-			std::istringstream{dmi_z->text().toStdString()} >> term.dmi[2];
+			term.dmi = tl2::create<t_vec>(
+			{
+				dmi_x->GetValue(),
+				dmi_y->GetValue(),
+				dmi_z->GetValue(),
+			});
 		}
 
 		m_dyn.AddExchangeTerm(std::move(term));
 	}
 
+	//m_dyn.CalcIndices();
 	CalcDispersion();
 	CalcHamiltonian();
 
