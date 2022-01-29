@@ -161,20 +161,6 @@ void MagDynDlg::StructPlotMouseClick(
 	[[maybe_unused]] bool mid,
 	[[maybe_unused]] bool right)
 {
-	if(left && m_structplot_cur_atom)
-	{
-		// select current site in table
-		m_tabs->setCurrentWidget(m_sitespanel);
-		m_sitestab->setCurrentCell(*m_structplot_cur_atom, 0);
-	}
-
-	if(left && m_structplot_cur_term)
-	{
-		// select current term in table
-		m_tabs->setCurrentWidget(m_termspanel);
-		m_termstab->setCurrentCell(*m_structplot_cur_term, 0);
-	}
-
 	if(right)
 	{
 		const QPointF& _pt = m_structplot->GetRenderer()->GetMousePosition();
@@ -192,6 +178,19 @@ void MagDynDlg::StructPlotMouseDown(
 	[[maybe_unused]] bool mid,
 	[[maybe_unused]] bool right)
 {
+	if(left && m_structplot_cur_atom)
+	{
+		// select current site in table
+		m_tabs->setCurrentWidget(m_sitespanel);
+		m_sitestab->setCurrentCell(*m_structplot_cur_atom, 0);
+	}
+
+	if(left && m_structplot_cur_term)
+	{
+		// select current term in table
+		m_tabs->setCurrentWidget(m_termspanel);
+		m_termstab->setCurrentCell(*m_structplot_cur_term, 0);
+	}
 }
 
 
