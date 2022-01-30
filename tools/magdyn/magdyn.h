@@ -137,6 +137,8 @@ protected:
 	// structure plotter
 	QDialog *m_structplot_dlg{};
 	QLabel *m_structplot_status{};
+	QCheckBox *m_structplot_coordcross{};
+	QCheckBox *m_structplot_labels{};
 	QMenu *m_structplot_context{};
 	QLabel *m_labelGlInfos[4]{nullptr, nullptr, nullptr, nullptr};
 	tl2::GlPlot *m_structplot{};
@@ -147,6 +149,7 @@ protected:
 		m_structplot_atoms{};
 	std::unordered_map<std::size_t, const tl2_mag::ExchangeTerm*>
 		m_structplot_terms{};
+	std::optional<std::size_t> m_structplot_cur_obj{};
 	std::optional<std::size_t> m_structplot_cur_atom{};
 	std::optional<std::size_t> m_structplot_cur_term{};
 
@@ -205,6 +208,9 @@ protected:
 	void StructPlotAfterGLInitialisation();
 	void StructPlotSync();
 	void StructPlotDelete();
+	void StructPlotShowCoordCross(bool show);
+	void StructPlotShowLabels(bool show);
+	void StructPlotCentreCamera();
 
 
 private:

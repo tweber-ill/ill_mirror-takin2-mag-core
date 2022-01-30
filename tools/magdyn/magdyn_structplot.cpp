@@ -57,17 +57,28 @@ void MagDynDlg::ShowStructurePlot()
 		m_structplot->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
+		m_structplot_coordcross = new QCheckBox("Show Coordinates", this);
+		m_structplot_coordcross->setChecked(true);
+
+		m_structplot_labels = new QCheckBox("Show Labels", this);
+		m_structplot_labels->setChecked(true);
+
 		m_structplot_status = new QLabel(this);
 
 		m_structplot_context= new QMenu(this);
-		QAction *acDel = new QAction("Delete", m_structplot_context);
+		QAction *acDel = new QAction("Delete Object", m_structplot_context);
+		QAction *acCentre = new QAction("Centre Camera", m_structplot_context);
 		m_structplot_context->addAction(acDel);
+		m_structplot_context->addSeparator();
+		m_structplot_context->addAction(acCentre);
 
 		auto grid = new QGridLayout(m_structplot_dlg);
 		grid->setSpacing(2);
 		grid->setContentsMargins(4,4,4,4);
 		grid->addWidget(m_structplot, 0,0,1,2);
-		grid->addWidget(m_structplot_status, 1,0,1,2);
+		grid->addWidget(m_structplot_coordcross, 1,0,1,1);
+		grid->addWidget(m_structplot_labels, 1,1,1,1);
+		grid->addWidget(m_structplot_status, 2,0,1,2);
 
 		connect(m_structplot, &tl2::GlPlot::AfterGLInitialisation,
 			this, &MagDynDlg::StructPlotAfterGLInitialisation);
@@ -79,7 +90,14 @@ void MagDynDlg::ShowStructurePlot()
 			this, &MagDynDlg::StructPlotMouseDown);
 		connect(m_structplot, &tl2::GlPlot::MouseUp,
 			this, &MagDynDlg::StructPlotMouseUp);
-		connect(acDel, &QAction::triggered, this, &MagDynDlg::StructPlotDelete);
+		connect(acDel, &QAction::triggered,
+			this, &MagDynDlg::StructPlotDelete);
+		connect(acCentre, &QAction::triggered,
+			this, &MagDynDlg::StructPlotCentreCamera);
+		connect(m_structplot_coordcross, &QCheckBox::toggled,
+			this, &MagDynDlg::StructPlotShowCoordCross);
+		connect(m_structplot_labels, &QCheckBox::toggled,
+			this, &MagDynDlg::StructPlotShowLabels);
 
 		if(m_sett && m_sett->contains("geo_struct_view"))
 			m_structplot_dlg->restoreGeometry(
@@ -102,11 +120,14 @@ void MagDynDlg::StructPlotPickerIntersection(
         [[maybe_unused]] const t_vec3_gl* posSphere)
 {
 	m_structplot_status->setText("");
+	m_structplot_cur_obj = std::nullopt;
 	m_structplot_cur_atom = std::nullopt;
 	m_structplot_cur_term = std::nullopt;
 
 	if(!pos)
 		return;
+
+	m_structplot_cur_obj = objIdx;
 
 	// look for atom sites
 	if(auto iter_atoms = m_structplot_atoms.find(objIdx);
@@ -154,6 +175,44 @@ void MagDynDlg::StructPlotDelete()
 
 
 /**
+ * show or hide the coordinate system
+ */
+void MagDynDlg::StructPlotShowCoordCross(bool show)
+{
+	if(auto obj = m_structplot->GetRenderer()->GetCoordCross(); obj)
+	{
+		m_structplot->GetRenderer()->SetObjectVisible(*obj, show);
+		m_structplot->update();
+	}
+}
+
+
+/**
+ * show or hide the object labels
+ */
+void MagDynDlg::StructPlotShowLabels(bool show)
+{
+	m_structplot->GetRenderer()->SetLabelsVisible(show);
+	m_structplot->update();
+}
+
+
+/**
+ * centre camera on currently selected object
+ */
+void MagDynDlg::StructPlotCentreCamera()
+{
+	if(!m_structplot_cur_obj)
+		return;
+
+	const t_mat_gl& mat = m_structplot->GetRenderer()->
+		GetObjectMatrix(*m_structplot_cur_obj);
+	m_structplot->GetRenderer()->GetCamera().Centre(mat);
+	m_structplot->GetRenderer()->GetCamera().UpdateTransformation();
+}
+
+
+/**
  * structure plot mouse button clicked
  */
 void MagDynDlg::StructPlotMouseClick(
@@ -161,7 +220,7 @@ void MagDynDlg::StructPlotMouseClick(
 	[[maybe_unused]] bool mid,
 	[[maybe_unused]] bool right)
 {
-	if(right)
+	if(right && m_structplot_cur_obj)
 	{
 		const QPointF& _pt = m_structplot->GetRenderer()->GetMousePosition();
 		QPoint pt = m_structplot->mapToGlobal(_pt.toPoint());
