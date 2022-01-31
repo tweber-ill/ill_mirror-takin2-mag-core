@@ -1454,7 +1454,7 @@ void MagDynDlg::SyncSitesAndTerms()
 	if(m_use_field->isChecked())
 	{
 		ExternalField field;
-		field.dir = tl2::create<t_vec>(
+		field.dir = tl2::create<t_vec_real>(
 		{
 			m_field_dir[0]->value(),
 			m_field_dir[1]->value(),
@@ -1517,7 +1517,7 @@ void MagDynDlg::SyncSitesAndTerms()
 		site.name = name->text().toStdString();
 		site.g = -2. * tl2::unit<t_mat>(3);
 
-		site.pos = tl2::create<t_vec>(
+		site.pos = tl2::create<t_vec_real>(
 		{
 			pos_x->GetValue(),
 			pos_y->GetValue(),
@@ -1583,7 +1583,7 @@ void MagDynDlg::SyncSitesAndTerms()
 		term.name = name->text().toStdString();
 		term.atom1 = atom_1_idx->GetValue();
 		term.atom2 = atom_2_idx->GetValue();
-		term.dist = tl2::create<t_vec>(
+		term.dist = tl2::create<t_vec_real>(
 		{
 			dist_x->GetValue(),
 			dist_y->GetValue(),

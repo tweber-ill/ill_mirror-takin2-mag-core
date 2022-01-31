@@ -123,9 +123,9 @@ void MagDynDlg::Load()
 		m_dyn.Load(magdyn);
 
 		// external field
-		m_field_dir[0]->setValue(m_dyn.GetExternalField().dir[0].real());
-		m_field_dir[1]->setValue(m_dyn.GetExternalField().dir[1].real());
-		m_field_dir[2]->setValue(m_dyn.GetExternalField().dir[2].real());
+		m_field_dir[0]->setValue(m_dyn.GetExternalField().dir[0]);
+		m_field_dir[1]->setValue(m_dyn.GetExternalField().dir[1]);
+		m_field_dir[2]->setValue(m_dyn.GetExternalField().dir[2]);
 		m_field_mag->setValue(m_dyn.GetExternalField().mag);
 		m_align_spins->setChecked(m_dyn.GetExternalField().align_spins);
 
@@ -152,7 +152,7 @@ void MagDynDlg::Load()
 		{
 			AddSiteTabItem(-1,
 				site.name,
-				site.pos[0].real(), site.pos[1].real(), site.pos[2].real(),
+				site.pos[0], site.pos[1], site.pos[2],
 				site.spin_dir[0].real(), site.spin_dir[1].real(), site.spin_dir[2].real(),
 				site.spin_mag);
 		}
@@ -162,7 +162,7 @@ void MagDynDlg::Load()
 		{
 			AddTermTabItem(-1,
 				term.name, term.atom1, term.atom2,
-				term.dist[0].real(), term.dist[1].real(), term.dist[2].real(),
+				term.dist[0], term.dist[1], term.dist[2],
 				term.J.real(),
 				term.dmi[0].real(), term.dmi[1].real(), term.dmi[2].real());
 		}

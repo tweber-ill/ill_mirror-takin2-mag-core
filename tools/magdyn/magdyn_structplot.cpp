@@ -400,9 +400,9 @@ void MagDynDlg::StructPlotSync()
 		m_structplot_atoms.insert(std::make_pair(arrow, &site));
 
 		t_vec_gl pos_vec = tl2::create<t_vec_gl>({
-			t_real_gl(site.pos[0].real()) + sc_x,
-			t_real_gl(site.pos[1].real()) + sc_y,
-			t_real_gl(site.pos[2].real()) + sc_z,
+			t_real_gl(site.pos[0]) + sc_x,
+			t_real_gl(site.pos[1]) + sc_y,
+			t_real_gl(site.pos[2]) + sc_z,
 		});
 
 		t_vec_gl spin_vec = tl2::create<t_vec_gl>({
@@ -448,9 +448,9 @@ void MagDynDlg::StructPlotSync()
 		const auto& site1 = sites[term.atom1];
 		const auto& site2 = sites[term.atom2];
 
-		t_real_gl sc_x = t_real_gl(term.dist[0].real());
-		t_real_gl sc_y = t_real_gl(term.dist[1].real());
-		t_real_gl sc_z = t_real_gl(term.dist[2].real());
+		t_real_gl sc_x = t_real_gl(term.dist[0]);
+		t_real_gl sc_y = t_real_gl(term.dist[1]);
+		t_real_gl sc_z = t_real_gl(term.dist[2]);
 
 		t_real_gl rgb[3] {0., 0.75, 0.};
 		t_real_gl scale = 1.;
@@ -462,16 +462,16 @@ void MagDynDlg::StructPlotSync()
 
 		// connection from unit cell atom site...
 		const t_vec_gl pos1_vec = tl2::create<t_vec_gl>({
-			t_real_gl(site1.pos[0].real()),
-			t_real_gl(site1.pos[1].real()),
-			t_real_gl(site1.pos[2].real()),
+			t_real_gl(site1.pos[0]),
+			t_real_gl(site1.pos[1]),
+			t_real_gl(site1.pos[2]),
 		});
 
 		// ... to atom in super cell
 		const t_vec_gl pos2_vec = tl2::create<t_vec_gl>({
-			t_real_gl(site2.pos[0].real()) + sc_x,
-			t_real_gl(site2.pos[1].real()) + sc_y,
-			t_real_gl(site2.pos[2].real()) + sc_z,
+			t_real_gl(site2.pos[0]) + sc_x,
+			t_real_gl(site2.pos[1]) + sc_y,
+			t_real_gl(site2.pos[2]) + sc_z,
 		});
 
 		// add the supercell site if it hasn't been inserted yet
