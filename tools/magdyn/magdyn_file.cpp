@@ -186,7 +186,8 @@ void MagDynDlg::Load()
 void MagDynDlg::Save()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
-	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "XML Files (*.xml *.XML)");
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Save File", dirLast, "XML Files (*.xml)");
 	if(filename=="")
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
@@ -249,10 +250,45 @@ void MagDynDlg::SavePlotFigure()
 
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
-		this, "Save Figure", dirLast, "PDf Files (*.pdf *.PDF)");
+		this, "Save Figure", dirLast, "PDF Files (*.pdf)");
 	if(filename=="")
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
 
 	m_plot->savePdf(filename);
+}
+
+
+/**
+ * save the dispersion data
+ */
+void MagDynDlg::SaveDispersion()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Save Data", dirLast, "Data Files (*.dat)");
+	if(filename=="")
+		return;
+	m_sett->setValue("dir", QFileInfo(filename).path());
+
+	const t_real Q_start[]
+	{
+		m_q_start[0]->value(),
+		m_q_start[1]->value(),
+		m_q_start[2]->value(),
+	};
+
+	const t_real Q_end[]
+	{
+		m_q_end[0]->value(),
+		m_q_end[1]->value(),
+		m_q_end[2]->value(),
+	};
+
+	const t_size num_pts = m_num_points->value();
+
+	m_dyn.SaveDispersion(filename.toStdString(),
+		Q_start[0], Q_start[1], Q_start[2],
+		Q_end[0], Q_end[1], Q_end[2],
+		num_pts);
 }

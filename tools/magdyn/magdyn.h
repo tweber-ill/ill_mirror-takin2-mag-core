@@ -184,7 +184,9 @@ protected:
 	void Clear();
 	void Load();
 	void Save();
+
 	void SavePlotFigure();
+	void SaveDispersion();
 
 	void GenerateFromSG();
 

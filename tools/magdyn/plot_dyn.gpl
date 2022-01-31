@@ -19,24 +19,24 @@ if(out_term == 2) {
 
 
 # q range to plot
-qrange  = 1.0
+qrange  = 0.5
 # E range to plot
-Erange  = 5.0
+Erange  = 15.0
 
 show_legend = 0
 point_size = 1.0
 
 
 # input data file
-file_dyn = "disp_100.dat"
+file_dyn = "disp.dat"
 
 # output files
 if(out_term == 1) {
-	file_out = "disp_100.pdf"
+	file_out = "disp.pdf"
 	set output file_out
 }
 if(out_term == 2) {
-	file_out = "disp_100.png"
+	file_out = "disp.png"
 	set output file_out
 }
 
@@ -79,4 +79,5 @@ set arrow 2 from -qrange,0 to qrange,0 lw 2 dt 2 lc rgb col_axis nohead
 
 
 plot \
-	file_dyn using ($1):($4) with points pt 7 ps point_size lc rgb col_full title "[100]"
+	file_dyn using ($3):($4):($5*point_size) \
+		with points pt 7 ps var lc rgb col_full title "Dispersion"

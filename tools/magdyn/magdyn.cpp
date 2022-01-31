@@ -903,10 +903,13 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		auto acSave = new QAction("Save...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
 
-		auto menuView = new QMenu("View", m_menu);
-		auto acStructView = new QAction("Show Structure...", menuView);
-		auto acSaveFigure = new QAction("Save Dispersion Figure...", menuView);
-		auto acRescalePlot = new QAction("Rescale Dispersion Axes", menuView);
+		auto menuStruct = new QMenu("Structure", m_menu);
+		auto acStructView = new QAction("Show...", menuStruct);
+
+		auto menuDisp = new QMenu("Dispersion", m_menu);
+		auto acRescalePlot = new QAction("Rescale Axes", menuDisp);
+		auto acSaveFigure = new QAction("Save Figure...", menuDisp);
+		auto acSaveDisp = new QAction("Save Data...", menuDisp);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -944,10 +947,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 
-		menuView->addAction(acStructView);
-		menuView->addSeparator();
-		menuView->addAction(acRescalePlot);
-		menuView->addAction(acSaveFigure);
+		menuStruct->addAction(acStructView);
+
+		menuDisp->addAction(acRescalePlot);
+		menuDisp->addSeparator();
+		menuDisp->addAction(acSaveFigure);
+		menuDisp->addAction(acSaveDisp);
 
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
@@ -963,6 +968,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(acSaveFigure, &QAction::triggered,
 			this, &MagDynDlg::SavePlotFigure);
+
+		connect(acSaveDisp, &QAction::triggered,
+			this, &MagDynDlg::SaveDispersion);
+
 		connect(acRescalePlot, &QAction::triggered,
 			[this]()
 		{
@@ -988,7 +997,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
 		m_menu->addMenu(menuFile);
-		m_menu->addMenu(menuView);
+		m_menu->addMenu(menuStruct);
+		m_menu->addMenu(menuDisp);
 		m_menu->addMenu(menuOptions);
 		pmainGrid->setMenuBar(m_menu);
 	}
