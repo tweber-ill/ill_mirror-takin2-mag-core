@@ -939,6 +939,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_use_projector->setToolTip("Enables the neutron orthogonal projector.");
 		m_use_projector->setCheckable(true);
 		m_use_projector->setChecked(true);
+		m_unite_degeneracies = new QAction("Unite Degenerate Energies", menuOptions);
+		m_unite_degeneracies->setToolTip("Unites the weight factors corresponding to degenerate eigenenergies.");
+		m_unite_degeneracies->setCheckable(true);
+		m_unite_degeneracies->setChecked(true);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
@@ -957,8 +961,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
 		menuOptions->addAction(m_use_temperature);
+		menuOptions->addSeparator();
 		menuOptions->addAction(m_use_weights);
 		menuOptions->addAction(m_use_projector);
+		menuOptions->addAction(m_unite_degeneracies);
 
 		// connections
 		connect(acNew, &QAction::triggered, this, &MagDynDlg::Clear);
@@ -994,6 +1000,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_use_weights, &QAction::toggled,
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 		connect(m_use_projector, &QAction::toggled,
+			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
+		connect(m_unite_degeneracies, &QAction::toggled,
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
 		m_menu->addMenu(menuFile);

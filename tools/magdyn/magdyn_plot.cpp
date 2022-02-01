@@ -101,6 +101,7 @@ void MagDynDlg::CalcDispersion()
 
 	bool only_energies = !m_use_weights->isChecked();
 	bool use_projector = m_use_projector->isChecked();
+	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
@@ -218,6 +219,7 @@ void MagDynDlg::CalcHamiltonian()
 	// get energies and correlation functions
 	bool only_energies = !m_use_weights->isChecked();
 	bool use_projector = m_use_projector->isChecked();
+	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
 
 	auto energies_and_correlations = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
 	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;

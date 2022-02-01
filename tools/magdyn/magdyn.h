@@ -86,8 +86,9 @@ protected:
 	QAction *m_use_dmi{};
 	QAction *m_use_field{};
 	QAction *m_use_temperature{};
-	QAction *m_use_projector{};
 	QAction *m_use_weights{};
+	QAction *m_use_projector{};
+	QAction *m_unite_degeneracies{};
 
 	// tab
 	QTabWidget *m_tabs{};
