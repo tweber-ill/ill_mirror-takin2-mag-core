@@ -107,6 +107,8 @@ void MagDynDlg::Load()
 			m_use_temperature->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_weights"))
 			m_use_weights->setChecked(*optVal);
+		if(auto optVal = magdyn.get_optional<bool>("config.unite_degeneracies"))
+			m_unite_degeneracies->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_projector"))
 			m_use_projector->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_h"))
@@ -215,6 +217,7 @@ void MagDynDlg::Save()
 	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
 	magdyn.put<bool>("config.use_temperature", m_use_temperature->isChecked());
 	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
+	magdyn.put<bool>("config.unite_degeneracies", m_unite_degeneracies->isChecked());
 	magdyn.put<bool>("config.use_projector", m_use_projector->isChecked());
 	magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
 	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
