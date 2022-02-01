@@ -1033,6 +1033,7 @@ void MagDynDlg::Clear()
 	m_hamiltonian->clear();
 
 	m_dyn.Clear();
+	StructPlotSync();
 
 	// set some defaults
 	m_comboSG->setCurrentIndex(0);
