@@ -1533,22 +1533,21 @@ void MagDynDlg::SyncSitesAndTerms()
 			pos_z->GetValue(),
 		});
 
-		site.spin_dir = tl2::zero<t_vec>(3);
 		site.spin_mag = spin_mag->GetValue();
+		site.spin_dir = tl2::create<t_vec>(
+		{
+			spin_x->GetValue(),
+			spin_y->GetValue(),
+			spin_z->GetValue()
+		});
 
 		// align spins along external field?
-		if(m_align_spins->isChecked() && m_use_field->isChecked())
+		/*if(m_align_spins->isChecked() && m_use_field->isChecked())
 		{
-			site.spin_dir[0] = m_field_dir[0]->value();
-			site.spin_dir[1] = m_field_dir[1]->value();
-			site.spin_dir[2] = m_field_dir[2]->value();
-		}
-		else
-		{
-			site.spin_dir[0] = spin_x->GetValue();
-			site.spin_dir[1] = spin_y->GetValue();
-			site.spin_dir[2] = spin_z->GetValue();
-		}
+			site.spin_dir[0] = -m_field_dir[0]->value();
+			site.spin_dir[1] = -m_field_dir[1]->value();
+			site.spin_dir[2] = -m_field_dir[2]->value();
+		}*/
 
 		m_dyn.AddAtomSite(std::move(site));
 	}

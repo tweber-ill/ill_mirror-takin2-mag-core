@@ -152,11 +152,23 @@ void MagDynDlg::Load()
 		// atom sites
 		for(const auto &site : m_dyn.GetAtomSites())
 		{
+			t_real S = site.spin_mag;
+
+			t_real sx = site.spin_dir[0].real();
+			t_real sy = site.spin_dir[1].real();
+			t_real sz = site.spin_dir[2].real();
+
+			/*if(m_dyn.GetExternalField().align_spins)
+			{
+				sx = -m_dyn.GetExternalField().dir[0];
+				sy = -m_dyn.GetExternalField().dir[1];
+				sz = -m_dyn.GetExternalField().dir[2];
+			}*/
+
 			AddSiteTabItem(-1,
 				site.name,
 				site.pos[0], site.pos[1], site.pos[2],
-				site.spin_dir[0].real(), site.spin_dir[1].real(), site.spin_dir[2].real(),
-				site.spin_mag);
+				sx, sy, sz, S);
 		}
 
 		// exchange terms

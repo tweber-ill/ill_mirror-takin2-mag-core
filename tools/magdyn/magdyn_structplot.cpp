@@ -318,6 +318,7 @@ void MagDynDlg::StructPlotSync()
 	// get sites and terms
 	const auto& sites = m_dyn.GetAtomSites();
 	const auto& terms = m_dyn.GetExchangeTerms();
+	const auto& field = m_dyn.GetExternalField();
 	//const auto [sc_min, sc_max] = m_dyn.GetSupercellMinMax();
 
 
@@ -374,6 +375,7 @@ void MagDynDlg::StructPlotSync()
 	// add an atom site to the plot
 	auto add_atom_site = [this, &atom_hashes, &get_atom_hash](
 		const tl2_mag::AtomSite& site,
+		const tl2_mag::ExternalField& field,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 	{
 		int _sc_x = int(std::round(sc_x));
@@ -405,11 +407,25 @@ void MagDynDlg::StructPlotSync()
 			t_real_gl(site.pos[2]) + sc_z,
 		});
 
-		t_vec_gl spin_vec = tl2::create<t_vec_gl>({
-			t_real_gl(site.spin_dir[0].real() * site.spin_mag),
-			t_real_gl(site.spin_dir[1].real() * site.spin_mag),
-			t_real_gl(site.spin_dir[2].real() * site.spin_mag),
-		});
+		t_vec_gl spin_vec;
+
+		// align spin to external field?
+		if(field.align_spins)
+		{
+			spin_vec = tl2::create<t_vec_gl>({
+				t_real_gl(-field.dir[0] * site.spin_mag),
+				t_real_gl(-field.dir[1] * site.spin_mag),
+				t_real_gl(-field.dir[2] * site.spin_mag),
+			});
+		}
+		else
+		{
+			spin_vec = tl2::create<t_vec_gl>({
+				t_real_gl(site.spin_dir[0].real() * site.spin_mag),
+				t_real_gl(site.spin_dir[1].real() * site.spin_mag),
+				t_real_gl(site.spin_dir[2].real() * site.spin_mag),
+			});
+		}
 
 		m_structplot->GetRenderer()->SetObjectMatrix(obj,
 			tl2::hom_translation<t_mat_gl>(
@@ -436,7 +452,7 @@ void MagDynDlg::StructPlotSync()
 
 	// iterate and add unit cell atom sites
 	for(const auto& site : sites)
-		add_atom_site(site, 0, 0, 0);
+		add_atom_site(site, field, 0, 0, 0);
 
 
 	// iterate and add exchange terms
@@ -476,7 +492,7 @@ void MagDynDlg::StructPlotSync()
 
 		// add the supercell site if it hasn't been inserted yet
 		if(atom_not_yet_seen(site2, sc_x, sc_y, sc_z))
-			add_atom_site(site2, sc_x, sc_y, sc_z);
+			add_atom_site(site2, field, sc_x, sc_y, sc_z);
 
 		t_vec_gl dir_vec = pos2_vec - pos1_vec;
 		t_real_gl dir_len = tl2::norm<t_vec_gl>(dir_vec);
