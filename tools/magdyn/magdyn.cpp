@@ -202,34 +202,34 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_sitestab);
-		pTabContextMenu->addAction("Add Atom Before", this, [this]()
-		{
-			this->AddSiteTabItem(-2);
-		});
-		pTabContextMenu->addAction("Add Atom After", this, [this]()
-		{
-			this->AddSiteTabItem(-3);
-		});
-		pTabContextMenu->addAction("Clone Atom", this, [this]()
-		{
-			this->AddSiteTabItem(-4);
-		});
-		pTabContextMenu->addAction("Delete Atom", this, [this]()
-		{
-			this->DelTabItem(m_sitestab);
-		});
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Atom Before", this,
+			[this]() { this->AddSiteTabItem(-2); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Atom After", this,
+			[this]() { this->AddSiteTabItem(-3); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("edit-copy"),
+			"Clone Atom", this,
+			[this]() { this->AddSiteTabItem(-4); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Atom",this,
+			[this]() { this->DelTabItem(m_sitestab); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_sitestab);
-		pTabContextMenuNoItem->addAction("Add Atom", this, [this]()
-		{
-			this->AddSiteTabItem();
-		});
-		pTabContextMenuNoItem->addAction("Delete Atom", this, [this]()
-		{
-			this->DelTabItem(m_sitestab);
-		});
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Atom", this,
+			[this]() { this->AddSiteTabItem(); });
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Atom", this,
+			[this]() { this->DelTabItem(m_sitestab); });
 		//pTabContextMenuNoItem->addSeparator();
 
 
@@ -342,21 +342,33 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
-		pTabContextMenu->addAction("Add Term Before", this,
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Term Before", this,
 			[this]() { this->AddTermTabItem(-2); });
-		pTabContextMenu->addAction("Add Term After", this,
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Term After", this,
 			[this]() { this->AddTermTabItem(-3); });
-		pTabContextMenu->addAction("Clone Term", this,
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("edit-copy"),
+			"Clone Term", this,
 			[this]() { this->AddTermTabItem(-4); });
-		pTabContextMenu->addAction("Delete Term", this,
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Term", this,
 			[this]() { this->DelTabItem(m_termstab); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		QMenu *pTabContextMenuNoItem = new QMenu(m_termstab);
-		pTabContextMenuNoItem->addAction("Add Term", this,
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Term", this,
 			[this]() { this->AddTermTabItem(); });
-		pTabContextMenuNoItem->addAction("Delete Term", this,
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Term", this,
 			[this]() { this->DelTabItem(m_termstab); });
 		//pTabContextMenuNoItem->addSeparator();
 
