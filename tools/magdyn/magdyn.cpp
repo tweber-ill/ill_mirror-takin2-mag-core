@@ -1083,19 +1083,19 @@ void MagDynDlg::GenerateFromSG()
 		{
 			std::string ident = m_sitestab->item(row, COL_SITE_NAME)
 				->text().toStdString();
-			t_real x = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_X))->GetValue();
-			t_real y = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_Y))->GetValue();
-			t_real z = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_Z))->GetValue();
-			t_real sx = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real sx = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_X))->GetValue();
-			t_real sy = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real sy = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_Y))->GetValue();
-			t_real sz = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real sz = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_Z))->GetValue();
-			t_real S = static_cast<NumericTableWidgetItem<t_real>*>(
+			t_real S = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_MAG))->GetValue();
 
 			t_vec_real sitepos = tl2::create<t_vec_real>({x, y, z, 1});
@@ -1171,19 +1171,19 @@ void MagDynDlg::AddSiteTabItem(int row,
 		m_sitestab->setItem(row, COL_SITE_NAME,
 			new QTableWidgetItem(name.c_str()));
 		m_sitestab->setItem(row, COL_SITE_POS_X,
-			new NumericTableWidgetItem<t_real>(x));
+			new tl2::NumericTableWidgetItem<t_real>(x));
 		m_sitestab->setItem(row, COL_SITE_POS_Y,
-			new NumericTableWidgetItem<t_real>(y));
+			new tl2::NumericTableWidgetItem<t_real>(y));
 		m_sitestab->setItem(row, COL_SITE_POS_Z,
-			new NumericTableWidgetItem<t_real>(z));
+			new tl2::NumericTableWidgetItem<t_real>(z));
 		m_sitestab->setItem(row, COL_SITE_SPIN_X,
-			new NumericTableWidgetItem<t_real>(sx));
+			new tl2::NumericTableWidgetItem<t_real>(sx));
 		m_sitestab->setItem(row, COL_SITE_SPIN_Y,
-			new NumericTableWidgetItem<t_real>(sy));
+			new tl2::NumericTableWidgetItem<t_real>(sy));
 		m_sitestab->setItem(row, COL_SITE_SPIN_Z,
-			new NumericTableWidgetItem<t_real>(sz));
+			new tl2::NumericTableWidgetItem<t_real>(sz));
 		m_sitestab->setItem(row, COL_SITE_SPIN_MAG,
-			new NumericTableWidgetItem<t_real>(S));
+			new tl2::NumericTableWidgetItem<t_real>(S));
 	}
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
@@ -1237,23 +1237,23 @@ void MagDynDlg::AddTermTabItem(int row,
 		m_termstab->setItem(row, COL_XCH_NAME,
 			new QTableWidgetItem(name.c_str()));
 		m_termstab->setItem(row, COL_XCH_ATOM1_IDX,
-			new NumericTableWidgetItem<t_size>(atom_1));
+			new tl2::NumericTableWidgetItem<t_size>(atom_1));
 		m_termstab->setItem(row, COL_XCH_ATOM2_IDX,
-			new NumericTableWidgetItem<t_size>(atom_2));
+			new tl2::NumericTableWidgetItem<t_size>(atom_2));
 		m_termstab->setItem(row, COL_XCH_DIST_X,
-			new NumericTableWidgetItem<t_real>(dist_x));
+			new tl2::NumericTableWidgetItem<t_real>(dist_x));
 		m_termstab->setItem(row, COL_XCH_DIST_Y,
-			new NumericTableWidgetItem<t_real>(dist_y));
+			new tl2::NumericTableWidgetItem<t_real>(dist_y));
 		m_termstab->setItem(row, COL_XCH_DIST_Z,
-			new NumericTableWidgetItem<t_real>(dist_z));
+			new tl2::NumericTableWidgetItem<t_real>(dist_z));
 		m_termstab->setItem(row, COL_XCH_INTERACTION,
-			new NumericTableWidgetItem<t_real>(J));
+			new tl2::NumericTableWidgetItem<t_real>(J));
 		m_termstab->setItem(row, COL_XCH_DMI_X,
-			new NumericTableWidgetItem<t_real>(dmi_x));
+			new tl2::NumericTableWidgetItem<t_real>(dmi_x));
 		m_termstab->setItem(row, COL_XCH_DMI_Y,
-			new NumericTableWidgetItem<t_real>(dmi_y));
+			new tl2::NumericTableWidgetItem<t_real>(dmi_y));
 		m_termstab->setItem(row, COL_XCH_DMI_Z,
-			new NumericTableWidgetItem<t_real>(dmi_z));
+			new tl2::NumericTableWidgetItem<t_real>(dmi_z));
 	}
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
@@ -1499,19 +1499,19 @@ void MagDynDlg::SyncSitesAndTerms()
 	for(int row=0; row<m_sitestab->rowCount(); ++row)
 	{
 		auto *name = m_sitestab->item(row, COL_SITE_NAME);
-		auto *pos_x = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *pos_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_POS_X));
-		auto *pos_y = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *pos_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_POS_Y));
-		auto *pos_z = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *pos_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_POS_Z));
-		auto *spin_x = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *spin_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_SPIN_X));
-		auto *spin_y = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *spin_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_SPIN_Y));
-		auto *spin_z = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *spin_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_SPIN_Z));
-		auto *spin_mag = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *spin_mag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_SPIN_MAG));
 
 		if(!name || !pos_x || !pos_y || !pos_z || 
@@ -1559,23 +1559,23 @@ void MagDynDlg::SyncSitesAndTerms()
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
 		auto *name = m_termstab->item(row, COL_XCH_NAME);
-		auto *atom_1_idx = static_cast<NumericTableWidgetItem<t_size>*>(
+		auto *atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 			m_termstab->item(row, COL_XCH_ATOM1_IDX));
-		auto *atom_2_idx = static_cast<NumericTableWidgetItem<t_size>*>(
+		auto *atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 			m_termstab->item(row, COL_XCH_ATOM2_IDX));
-		auto *dist_x = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dist_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DIST_X));
-		auto *dist_y = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dist_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DIST_Y));
-		auto *dist_z = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dist_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DIST_Z));
-		auto *interaction = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *interaction = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_INTERACTION));
-		auto *dmi_x = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dmi_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DMI_X));
-		auto *dmi_y = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dmi_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DMI_Y));
-		auto *dmi_z = static_cast<NumericTableWidgetItem<t_real>*>(
+		auto *dmi_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DMI_Z));
 
 		if(!name || !atom_1_idx || !atom_2_idx ||

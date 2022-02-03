@@ -607,12 +607,12 @@ void StructFactDlg::AddTabItem(int row,
 	else
 	{
 		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem(name.c_str()));
-		m_nuclei->setItem(row, COL_SCATLEN_RE, new NumericTableWidgetItem<t_real>(bRe));
-		m_nuclei->setItem(row, COL_SCATLEN_IM, new NumericTableWidgetItem<t_real>(bIm));
-		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
-		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
-		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
-		m_nuclei->setItem(row, COL_RAD, new NumericTableWidgetItem<t_real>(scale));
+		m_nuclei->setItem(row, COL_SCATLEN_RE, new tl2::NumericTableWidgetItem<t_real>(bRe));
+		m_nuclei->setItem(row, COL_SCATLEN_IM, new tl2::NumericTableWidgetItem<t_real>(bIm));
+		m_nuclei->setItem(row, COL_X, new tl2::NumericTableWidgetItem<t_real>(x));
+		m_nuclei->setItem(row, COL_Y, new tl2::NumericTableWidgetItem<t_real>(y));
+		m_nuclei->setItem(row, COL_Z, new tl2::NumericTableWidgetItem<t_real>(z));
+		m_nuclei->setItem(row, COL_RAD, new tl2::NumericTableWidgetItem<t_real>(scale));
 		m_nuclei->setItem(row, COL_COL, new QTableWidgetItem(col.c_str()));
 	}
 
@@ -928,9 +928,9 @@ void StructFactDlg::AddTabItem_FindSG(int row, t_real x, t_real y, t_real z)
 	}
 	else
 	{
-		m_nuclei_FindSG->setItem(row, 0, new NumericTableWidgetItem<t_real>(x));
-		m_nuclei_FindSG->setItem(row, 1, new NumericTableWidgetItem<t_real>(y));
-		m_nuclei_FindSG->setItem(row, 2, new NumericTableWidgetItem<t_real>(z));
+		m_nuclei_FindSG->setItem(row, 0, new tl2::NumericTableWidgetItem<t_real>(x));
+		m_nuclei_FindSG->setItem(row, 1, new tl2::NumericTableWidgetItem<t_real>(y));
+		m_nuclei_FindSG->setItem(row, 2, new tl2::NumericTableWidgetItem<t_real>(z));
 	}
 
 	m_nuclei_FindSG->scrollToItem(m_nuclei_FindSG->item(row, 0));

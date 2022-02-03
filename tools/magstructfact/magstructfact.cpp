@@ -729,17 +729,17 @@ void MagStructFactDlg::AddTabItem(int row,
 	else
 	{
 		m_nuclei->setItem(row, COL_NAME, new QTableWidgetItem(name.c_str()));
-		m_nuclei->setItem(row, COL_M_MAG, new NumericTableWidgetItem<t_real>(MMag));
-		m_nuclei->setItem(row, COL_X, new NumericTableWidgetItem<t_real>(x));
-		m_nuclei->setItem(row, COL_Y, new NumericTableWidgetItem<t_real>(y));
-		m_nuclei->setItem(row, COL_Z, new NumericTableWidgetItem<t_real>(z));
-		m_nuclei->setItem(row, COL_ReM_X, new NumericTableWidgetItem<t_real>(ReMx));
-		m_nuclei->setItem(row, COL_ReM_Y, new NumericTableWidgetItem<t_real>(ReMy));
-		m_nuclei->setItem(row, COL_ReM_Z, new NumericTableWidgetItem<t_real>(ReMz));
-		m_nuclei->setItem(row, COL_ImM_X, new NumericTableWidgetItem<t_real>(ImMx));
-		m_nuclei->setItem(row, COL_ImM_Y, new NumericTableWidgetItem<t_real>(ImMy));
-		m_nuclei->setItem(row, COL_ImM_Z, new NumericTableWidgetItem<t_real>(ImMz));
-		m_nuclei->setItem(row, COL_RAD, new NumericTableWidgetItem<t_real>(scale));
+		m_nuclei->setItem(row, COL_M_MAG, new tl2::NumericTableWidgetItem<t_real>(MMag));
+		m_nuclei->setItem(row, COL_X, new tl2::NumericTableWidgetItem<t_real>(x));
+		m_nuclei->setItem(row, COL_Y, new tl2::NumericTableWidgetItem<t_real>(y));
+		m_nuclei->setItem(row, COL_Z, new tl2::NumericTableWidgetItem<t_real>(z));
+		m_nuclei->setItem(row, COL_ReM_X, new tl2::NumericTableWidgetItem<t_real>(ReMx));
+		m_nuclei->setItem(row, COL_ReM_Y, new tl2::NumericTableWidgetItem<t_real>(ReMy));
+		m_nuclei->setItem(row, COL_ReM_Z, new tl2::NumericTableWidgetItem<t_real>(ReMz));
+		m_nuclei->setItem(row, COL_ImM_X, new tl2::NumericTableWidgetItem<t_real>(ImMx));
+		m_nuclei->setItem(row, COL_ImM_Y, new tl2::NumericTableWidgetItem<t_real>(ImMy));
+		m_nuclei->setItem(row, COL_ImM_Z, new tl2::NumericTableWidgetItem<t_real>(ImMz));
+		m_nuclei->setItem(row, COL_RAD, new tl2::NumericTableWidgetItem<t_real>(scale));
 		m_nuclei->setItem(row, COL_COL, new QTableWidgetItem(col.c_str()));
 	}
 
@@ -1115,10 +1115,10 @@ void MagStructFactDlg::AddPropItem(int row,
 	else
 	{
 		m_propvecs->setItem(row, PROP_COL_NAME, new QTableWidgetItem(name.c_str()));
-		m_propvecs->setItem(row, PROP_COL_X, new NumericTableWidgetItem<t_real>(x));
-		m_propvecs->setItem(row, PROP_COL_Y, new NumericTableWidgetItem<t_real>(y));
-		m_propvecs->setItem(row, PROP_COL_Z, new NumericTableWidgetItem<t_real>(z));
-		m_propvecs->setItem(row, PROP_COL_CONJ, new NumericTableWidgetItem<int>(bConjFC));
+		m_propvecs->setItem(row, PROP_COL_X, new tl2::NumericTableWidgetItem<t_real>(x));
+		m_propvecs->setItem(row, PROP_COL_Y, new tl2::NumericTableWidgetItem<t_real>(y));
+		m_propvecs->setItem(row, PROP_COL_Z, new tl2::NumericTableWidgetItem<t_real>(z));
+		m_propvecs->setItem(row, PROP_COL_CONJ, new tl2::NumericTableWidgetItem<int>(bConjFC));
 	}
 
 	//Add3DItem(row);	TODO
