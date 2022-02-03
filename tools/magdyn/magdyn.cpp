@@ -149,13 +149,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_sitestab->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-		QPushButton *pTabBtnAdd = new QPushButton("Add Atom", m_sitespanel);
-		QPushButton *pTabBtnDel = new QPushButton("Delete Atom", m_sitespanel);
-		QPushButton *pTabBtnUp = new QPushButton("Move Atom Up", m_sitespanel);
-		QPushButton *pTabBtnDown = new QPushButton("Move Atom Down", m_sitespanel);
+		QPushButton *pTabBtnAdd = new QPushButton(
+			QIcon::fromTheme("list-add"),
+			"Add Atom", m_sitespanel);
+		QPushButton *pTabBtnDel = new QPushButton(
+			QIcon::fromTheme("list-remove"),
+			"Delete Atom", m_sitespanel);
+		QPushButton *pTabBtnUp = new QPushButton(
+			QIcon::fromTheme("go-up"),
+			"Move Atom Up", m_sitespanel);
+		QPushButton *pTabBtnDown = new QPushButton(
+			QIcon::fromTheme("go-down"),
+			"Move Atom Down", m_sitespanel);
 
 		m_comboSG = new QComboBox(m_sitespanel);
-		QPushButton *pTabBtnSG = new QPushButton("Generate", m_sitespanel);
+		QPushButton *pTabBtnSG = new QPushButton(
+			QIcon::fromTheme("insert-object"),
+			"Generate", m_sitespanel);
 
 		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
@@ -309,10 +319,18 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_termstab->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-		QPushButton *pTabBtnAdd = new QPushButton("Add Term", m_termspanel);
-		QPushButton *pTabBtnDel = new QPushButton("Delete Term", m_termspanel);
-		QPushButton *pTabBtnUp = new QPushButton("Move Term Up", m_termspanel);
-		QPushButton *pTabBtnDown = new QPushButton("Move Term Down", m_termspanel);
+		QPushButton *pTabBtnAdd = new QPushButton(
+			QIcon::fromTheme("list-add"),
+			"Add Term", m_termspanel);
+		QPushButton *pTabBtnDel = new QPushButton(
+			QIcon::fromTheme("list-remove"),
+			"Delete Term", m_termspanel);
+		QPushButton *pTabBtnUp = new QPushButton(
+			QIcon::fromTheme("go-up"),
+			"Move Term Up", m_termspanel);
+		QPushButton *pTabBtnDown = new QPushButton(
+			QIcon::fromTheme("go-down"),
+			"Move Term Down", m_termspanel);
 		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
@@ -437,6 +455,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		QPushButton *btn_rotate = new QPushButton(
+			QIcon::fromTheme("object-rotate-left"),
 			"Rotate Field", m_samplepanel);
 		btn_rotate->setFocusPolicy(Qt::StrongFocus);
 
@@ -943,6 +962,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		acSave->setIcon(QIcon::fromTheme("document-save"));
 		acExit->setIcon(QIcon::fromTheme("application-exit"));
 		m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
+		acSaveFigure->setIcon(QIcon::fromTheme("image-x-generic"));
+		acSaveDisp->setIcon(QIcon::fromTheme("text-x-generic"));
 
 		auto menuOptions = new QMenu("Options", m_menu);
 		m_use_dmi = new QAction("Use DMI", menuOptions);
