@@ -911,12 +911,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		auto acSaveFigure = new QAction("Save Figure...", menuDisp);
 		auto acSaveDisp = new QAction("Save Data...", menuDisp);
 
+		// recent files menu
+		m_menuOpenRecent = new QMenu("Open Recent", menuFile);
+
+		m_recent.SetRecentFilesMenu(m_menuOpenRecent);
+		m_recent.SetMaxRecentFiles(16);
+		m_recent.SetOpenFunc(&m_open_func);
+
+		// shortcuts
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
 		acSave->setShortcut(QKeySequence::Save);
 		acExit->setShortcut(QKeySequence::Quit);
-
 		acExit->setMenuRole(QAction::QuitRole);
+
+		// icons
+		acNew->setIcon(QIcon::fromTheme("document-new"));
+		acLoad->setIcon(QIcon::fromTheme("document-open"));
+		acSave->setIcon(QIcon::fromTheme("document-save"));
+		acExit->setIcon(QIcon::fromTheme("application-exit"));
+		m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
 
 		auto menuOptions = new QMenu("Options", m_menu);
 		m_use_dmi = new QAction("Use DMI", menuOptions);
@@ -947,6 +961,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
+		menuFile->addMenu(m_menuOpenRecent);
+		menuFile->addSeparator();
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
@@ -968,8 +984,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// connections
 		connect(acNew, &QAction::triggered, this, &MagDynDlg::Clear);
-		connect(acLoad, &QAction::triggered, this, &MagDynDlg::Load);
-		connect(acSave, &QAction::triggered, this, &MagDynDlg::Save);
+		connect(acLoad, &QAction::triggered, this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Load));
+		connect(acSave, &QAction::triggered, this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Save));
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
 		connect(acSaveFigure, &QAction::triggered,
@@ -1012,11 +1028,17 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	// restory window size and position
-	if(m_sett && m_sett->contains("geo"))
-		restoreGeometry(m_sett->value("geo").toByteArray());
-	else
-		resize(600, 500);
+	if(m_sett)
+	{
+		// restory window size and position
+		if(m_sett->contains("geo"))
+			restoreGeometry(m_sett->value("geo").toByteArray());
+		else
+			resize(600, 600);
+
+		if(m_sett->contains("recent_files"))
+			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());
+	}
 
 	m_ignoreTableChanges = 0;
 }
@@ -1657,6 +1679,9 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 {
 	if(!m_sett)
 		return;
+
+	m_recent.TrimEntries();
+	m_sett->setValue("recent_files", m_recent.GetRecentFiles());
 
 	m_sett->setValue("geo", saveGeometry());
 

@@ -34,6 +34,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <boost/scope_exit.hpp>
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
@@ -44,21 +46,37 @@ extern int g_prec;
 
 
 /**
- * load settings
+ * load magnetic structure configuration
  */
 void MagDynDlg::Load()
 {
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getOpenFileName(
+		this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+
+	if(Load(filename))
+	{
+		m_sett->setValue("dir", QFileInfo(filename).path());
+		m_recent.AddRecentFile(filename);
+	}
+}
+
+
+/**
+ * load magnetic structure configuration
+ */
+bool MagDynDlg::Load(const QString& filename)
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = 0;
+	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = 1;
 
 	try
 	{
-		QString dirLast = m_sett->value("dir", "").toString();
-		QString filename = QFileDialog::getOpenFileName(
-			this, "Load File", dirLast, "XML Files (*.xml *.XML)");
-		if(filename=="" || !QFile::exists(filename))
-			return;
-		m_sett->setValue("dir", QFileInfo(filename).path());
-
 		// properties tree
 		pt::ptree node;
 
@@ -71,7 +89,7 @@ void MagDynDlg::Load()
 			!optInfo || !(*optInfo==std::string{"magdyn_tool"}))
 		{
 			QMessageBox::critical(this, "Magnon Dynamics", "Unrecognised file format.");
-			return;
+			return false;
 		}
 
 		const auto &magdyn = node.get_child("magdyn");
@@ -184,18 +202,19 @@ void MagDynDlg::Load()
 	catch(const std::exception& ex)
 	{
 		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		return false;
 	}
 
-	m_ignoreCalc = 0;
 	CalcDispersion();
 	CalcHamiltonian();
 
 	StructPlotSync();
+	return true;
 }
 
 
 /**
- * save current settings
+ * save current magnetic structure configuration
  */
 void MagDynDlg::Save()
 {
@@ -204,54 +223,77 @@ void MagDynDlg::Save()
 		this, "Save File", dirLast, "XML Files (*.xml)");
 	if(filename=="")
 		return;
-	m_sett->setValue("dir", QFileInfo(filename).path());
 
-	// properties tree
-	pt::ptree magdyn;
-
-	magdyn.put<std::string>("meta.info", "magdyn_tool");
-	magdyn.put<std::string>("meta.date",
-		tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
-
-	// settings
-	magdyn.put<t_real>("config.h_start", m_q_start[0]->value());
-	magdyn.put<t_real>("config.k_start", m_q_start[1]->value());
-	magdyn.put<t_real>("config.l_start", m_q_start[2]->value());
-	magdyn.put<t_real>("config.h_end", m_q_end[0]->value());
-	magdyn.put<t_real>("config.k_end", m_q_end[1]->value());
-	magdyn.put<t_real>("config.l_end", m_q_end[2]->value());
-	magdyn.put<t_real>("config.h", m_q[0]->value());
-	magdyn.put<t_real>("config.k", m_q[1]->value());
-	magdyn.put<t_real>("config.l", m_q[2]->value());
-	magdyn.put<t_size>("config.num_Q_points", m_num_points->value());
-	magdyn.put<t_size>("config.weight_scale", m_weight_scale->value());
-	magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
-	magdyn.put<bool>("config.use_field", m_use_field->isChecked());
-	magdyn.put<bool>("config.use_temperature", m_use_temperature->isChecked());
-	magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
-	magdyn.put<bool>("config.unite_degeneracies", m_unite_degeneracies->isChecked());
-	magdyn.put<bool>("config.use_projector", m_use_projector->isChecked());
-	magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
-	magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
-	magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
-	magdyn.put<t_real>("config.field_angle", m_rot_angle->value());
-	magdyn.put<t_real>("config.spacegroup_index", m_comboSG->currentIndex());
-	m_dyn.Save(magdyn);
-
-	pt::ptree node;
-	node.put_child("magdyn", magdyn);
-
-	// save to file
-	std::ofstream ofstr{filename.toStdString()};
-	if(!ofstr)
+	if(Save(filename))
 	{
-		QMessageBox::critical(this, "Magnon Dynamics",
-			"Cannot open file for writing.");
-		return;
+		m_sett->setValue("dir", QFileInfo(filename).path());
+		m_recent.AddRecentFile(filename);
 	}
-	ofstr.precision(g_prec);
-	pt::write_xml(ofstr, node,
-		pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+}
+
+
+/**
+ * save current magnetic structure configuration
+ */
+bool MagDynDlg::Save(const QString& filename)
+{
+	try
+	{
+		// properties tree
+		pt::ptree magdyn;
+
+		magdyn.put<std::string>("meta.info", "magdyn_tool");
+		magdyn.put<std::string>("meta.date",
+			tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+
+		// settings
+		magdyn.put<t_real>("config.h_start", m_q_start[0]->value());
+		magdyn.put<t_real>("config.k_start", m_q_start[1]->value());
+		magdyn.put<t_real>("config.l_start", m_q_start[2]->value());
+		magdyn.put<t_real>("config.h_end", m_q_end[0]->value());
+		magdyn.put<t_real>("config.k_end", m_q_end[1]->value());
+		magdyn.put<t_real>("config.l_end", m_q_end[2]->value());
+		magdyn.put<t_real>("config.h", m_q[0]->value());
+		magdyn.put<t_real>("config.k", m_q[1]->value());
+		magdyn.put<t_real>("config.l", m_q[2]->value());
+		magdyn.put<t_size>("config.num_Q_points", m_num_points->value());
+		magdyn.put<t_size>("config.weight_scale", m_weight_scale->value());
+		magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
+		magdyn.put<bool>("config.use_field", m_use_field->isChecked());
+		magdyn.put<bool>("config.use_temperature", m_use_temperature->isChecked());
+		magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
+		magdyn.put<bool>("config.unite_degeneracies", m_unite_degeneracies->isChecked());
+		magdyn.put<bool>("config.use_projector", m_use_projector->isChecked());
+		magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
+		magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());
+		magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
+		magdyn.put<t_real>("config.field_angle", m_rot_angle->value());
+		magdyn.put<t_real>("config.spacegroup_index", m_comboSG->currentIndex());
+		m_dyn.Save(magdyn);
+
+		pt::ptree node;
+		node.put_child("magdyn", magdyn);
+
+		// save to file
+		std::ofstream ofstr{filename.toStdString()};
+		if(!ofstr)
+		{
+			QMessageBox::critical(this, "Magnon Dynamics",
+				"Cannot open file for writing.");
+			return false;
+		}
+
+		ofstr.precision(g_prec);
+		pt::write_xml(ofstr, node,
+			pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		return false;
+	}
+
+	return true;
 }
 
 

@@ -52,6 +52,7 @@
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
+#include "tlibs2/libs/qt/recent.h"
 #include "tlibs2/libs/qt/glplot.h"
 
 using namespace tl2_mag;
@@ -89,6 +90,16 @@ protected:
 	QAction *m_use_weights{};
 	QAction *m_use_projector{};
 	QAction *m_unite_degeneracies{};
+
+	// recently opened files
+	tl2::RecentFiles m_recent{};
+	QMenu *m_menuOpenRecent{};
+	// function to call for the recent file menu items
+	std::function<bool(const QString& filename)> m_open_func
+		= [this](const QString& filename) -> bool
+	{
+		return this->Load(filename);
+	};
 
 	// tab
 	QTabWidget *m_tabs{};
@@ -185,6 +196,9 @@ protected:
 	void Clear();
 	void Load();
 	void Save();
+
+	bool Load(const QString& filename);
+	bool Save(const QString& filename);
 
 	void SavePlotFigure();
 	void SaveDispersion();

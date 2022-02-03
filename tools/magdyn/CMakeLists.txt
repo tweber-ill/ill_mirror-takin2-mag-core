@@ -102,9 +102,11 @@ add_executable(takin_magdyn
 	magdyn.cpp magdyn.h
 	magdyn_file.cpp
 	magdyn_plot.cpp magdyn_structplot.cpp
+
 	../../tlibs2/libs/magdyn.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h
+	../../tlibs2/libs/qt/recent.cpp ../../tlibs2/libs/qt/recent.h
 )
 
 
