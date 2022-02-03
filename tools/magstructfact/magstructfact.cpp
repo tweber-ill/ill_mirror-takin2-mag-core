@@ -62,7 +62,7 @@ namespace consts = si::constants;
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 
 using namespace tl2_ops;
 

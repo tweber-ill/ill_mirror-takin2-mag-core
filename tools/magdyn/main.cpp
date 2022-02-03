@@ -28,7 +28,7 @@
 
 #include "magdyn.h"
 #include "tlibs2/libs/qt/gl.h"
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 
 #include <QtWidgets/QApplication>
 

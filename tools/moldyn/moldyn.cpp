@@ -38,7 +38,7 @@
 #include <memory>
 
 #include "tlibs2/libs/algos.h"
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 
 using namespace tl2_ops;
 

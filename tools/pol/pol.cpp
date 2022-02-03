@@ -44,7 +44,7 @@
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/str.h"
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 
 #include <boost/version.hpp>
 #include <boost/config.hpp>
