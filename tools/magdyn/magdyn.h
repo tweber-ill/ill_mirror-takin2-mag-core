@@ -203,6 +203,7 @@ protected:
 	void SavePlotFigure();
 	void SaveDispersion();
 
+	void RotateField(bool ccw = true);
 	void GenerateFromSG();
 
 	void SyncSitesAndTerms();

@@ -39,7 +39,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 find_package(Boost REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
@@ -76,4 +76,4 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	)
 endif()
 
-target_link_libraries(takin_magstructfact ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL)
+target_link_libraries(takin_magstructfact ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets)

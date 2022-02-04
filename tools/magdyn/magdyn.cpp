@@ -166,6 +166,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		QPushButton *pTabBtnSG = new QPushButton(
 			QIcon::fromTheme("insert-object"),
 			"Generate", m_sitespanel);
+		pTabBtnSG->setToolTip("Create atom site positions from space group symmetry operators.");
 
 		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
 		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
@@ -454,10 +455,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_rot_angle->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		QPushButton *btn_rotate = new QPushButton(
+		QPushButton *btn_rotate_ccw = new QPushButton(
 			QIcon::fromTheme("object-rotate-left"),
-			"Rotate Field", m_samplepanel);
-		btn_rotate->setFocusPolicy(Qt::StrongFocus);
+			"Rotate Field CCW", m_samplepanel);
+		QPushButton *btn_rotate_cw = new QPushButton(
+			QIcon::fromTheme("object-rotate-right"),
+			"Rotate Field CW", m_samplepanel);
+		btn_rotate_ccw->setToolTip("Rotate the magnetic field in the counter-clockwise direction.");
+		btn_rotate_cw->setToolTip("Rotate the magnetic field in the clockwise direction.");
+		btn_rotate_ccw->setFocusPolicy(Qt::StrongFocus);
+		btn_rotate_cw->setFocusPolicy(Qt::StrongFocus);
 
 		// bragg peak
 		m_bragg[0] = new QDoubleSpinBox(m_samplepanel);
@@ -540,7 +547,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(new QLabel(QString("Rotation Angle:"),
 			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_rot_angle, y,1,1,1);
-		grid->addWidget(btn_rotate, y++,3,1,1);
+		grid->addWidget(btn_rotate_ccw, y,2,1,1);
+		grid->addWidget(btn_rotate_cw, y++,3,1,1);
 
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -600,37 +608,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_align_spins, &QCheckBox::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 
-		connect(btn_rotate, &QAbstractButton::clicked, [this]()
+		connect(btn_rotate_ccw, &QAbstractButton::clicked, [this]()
 		{
-			t_vec_real axis = tl2::create<t_vec_real>(
-			{
-				m_rot_axis[0]->value(),
-				m_rot_axis[1]->value(),
-				m_rot_axis[2]->value(),
-			});
+			RotateField(true);
+		});
 
-			t_vec_real B = tl2::create<t_vec_real>(
-			{
-				m_field_dir[0]->value(),
-				m_field_dir[1]->value(),
-				m_field_dir[2]->value(),
-			});
-
-			t_real angle = m_rot_angle->value() / 180.*tl2::pi<t_real>;
-
-			t_mat_real R = tl2::rotation<t_mat_real, t_vec_real>(
-				axis, angle, false);
-			B = R*B;
-			tl2::set_eps_0(B, g_eps);
-
-			for(int i=0; i<3; ++i)
-			{
-				m_field_dir[i]->blockSignals(true);
-				m_field_dir[i]->setValue(B[i]);
-				m_field_dir[i]->blockSignals(false);
-			}
-
-			this->SyncSitesAndTerms();
+		connect(btn_rotate_cw, &QAbstractButton::clicked, [this]()
+		{
+			RotateField(false);
 		});
 
 		m_tabs->addTab(m_samplepanel, "Sample");
@@ -1103,6 +1088,45 @@ void MagDynDlg::Clear()
 
 	m_ignoreCalc = false;
 }
+
+
+/**
+ * rotate the direction of the magnetic field
+ */
+void MagDynDlg::RotateField(bool ccw)
+{
+	t_vec_real axis = tl2::create<t_vec_real>(
+	{
+		m_rot_axis[0]->value(),
+		m_rot_axis[1]->value(),
+		m_rot_axis[2]->value(),
+	});
+
+	t_vec_real B = tl2::create<t_vec_real>(
+	{
+		m_field_dir[0]->value(),
+		m_field_dir[1]->value(),
+		m_field_dir[2]->value(),
+	});
+
+	t_real angle = m_rot_angle->value() / 180.*tl2::pi<t_real>;
+	if(!ccw)
+		angle = -angle;
+
+	t_mat_real R = tl2::rotation<t_mat_real, t_vec_real>(
+		axis, angle, false);
+	B = R*B;
+	tl2::set_eps_0(B, g_eps);
+
+	for(int i=0; i<3; ++i)
+	{
+		m_field_dir[i]->blockSignals(true);
+		m_field_dir[i]->setValue(B[i]);
+		m_field_dir[i]->blockSignals(false);
+	}
+
+	SyncSitesAndTerms();
+};
 
 
 /**
