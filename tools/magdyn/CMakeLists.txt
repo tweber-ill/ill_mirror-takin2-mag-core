@@ -76,7 +76,7 @@ else()
 	message("Lapacke disabled.")
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets OpenGL)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -119,7 +119,7 @@ endif()
 
 
 target_link_libraries(takin_magdyn
-	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL
+	Qt5::Core Qt5::Gui Qt5::Widgets
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
 	"${Lapacke_LIBRARIES}")
