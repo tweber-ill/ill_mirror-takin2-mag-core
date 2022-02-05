@@ -29,6 +29,12 @@
 #include "magdyn.h"
 
 #include <sstream>
+#include <thread>
+#include <future>
+#include <mutex>
+
+#include <boost/asio.hpp>
+namespace asio = boost::asio;
 
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
@@ -101,44 +107,73 @@ void MagDynDlg::CalcDispersion()
 
 	bool only_energies = !m_use_weights->isChecked();
 	bool use_projector = m_use_projector->isChecked();
+	bool use_weights = m_use_weights->isChecked();
 	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
+
+	unsigned int num_threads = std::max<unsigned int>(
+		1, std::thread::hardware_concurrency()/2);
+	asio::thread_pool pool{num_threads};
+
+	// mutex to protect qs_data, Es_data, and ws_data
+	std::mutex mtx;
+
+	using t_task = std::packaged_task<void()>;
+	using t_taskptr = std::shared_ptr<t_task>;
+	std::vector<t_taskptr> tasks;
+	tasks.reserve(num_pts);
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
-		t_real Q[]
+		auto task = [this, &mtx, &qs_data, &Es_data, &ws_data,
+			i, num_pts, Q_idx, weight_scale, E0,
+			only_energies, use_projector, use_weights,
+			&Q_start, &Q_end]()
 		{
-			std::lerp(Q_start[0], Q_end[0], t_real(i)/t_real(num_pts-1)),
-			std::lerp(Q_start[1], Q_end[1], t_real(i)/t_real(num_pts-1)),
-			std::lerp(Q_start[2], Q_end[2], t_real(i)/t_real(num_pts-1)),
+			t_real Q[]
+			{
+				std::lerp(Q_start[0], Q_end[0], t_real(i)/t_real(num_pts-1)),
+				std::lerp(Q_start[1], Q_end[1], t_real(i)/t_real(num_pts-1)),
+				std::lerp(Q_start[2], Q_end[2], t_real(i)/t_real(num_pts-1)),
+			};
+
+			auto energies_and_correlations = m_dyn.GetEnergies(
+				Q[0], Q[1], Q[2], !use_weights);
+
+			for(const auto& E_and_S : energies_and_correlations)
+			{
+				t_real E = E_and_S.E - E0;
+				if(std::isnan(E) || std::isinf(E))
+					continue;
+
+				std::lock_guard<std::mutex> _lck{mtx};
+
+				qs_data.push_back(Q[Q_idx]);
+				Es_data.push_back(E);
+
+				// weights
+				if(!only_energies)
+				{
+					const t_mat& S = E_and_S.S;
+					t_real weight = E_and_S.weight;
+
+					if(!use_projector)
+						weight = tl2::trace<t_mat>(S).real();
+
+					if(std::isnan(weight) || std::isinf(weight))
+						weight = 0.;
+					ws_data.push_back(weight * weight_scale);
+				}
+			}
 		};
 
-		auto energies_and_correlations = m_dyn.GetEnergies(Q[0], Q[1], Q[2],
-			!m_use_weights->isChecked());
-
-		for(const auto& E_and_S : energies_and_correlations)
-		{
-			t_real E = E_and_S.E - E0;
-			if(std::isnan(E) || std::isinf(E))
-				continue;
-
-			qs_data.push_back(Q[Q_idx]);
-			Es_data.push_back(E);
-
-			// weights
-			if(!only_energies)
-			{
-				const t_mat& S = E_and_S.S;
-				t_real weight = E_and_S.weight;
-
-				if(!use_projector)
-					weight = tl2::trace<t_mat>(S).real();
-
-				if(std::isnan(weight) || std::isinf(weight))
-					weight = 0.;
-				ws_data.push_back(weight * weight_scale);
-			}
-		}
+		t_taskptr taskptr = std::make_shared<t_task>(task);
+		tasks.push_back(taskptr);
+		asio::post(pool, [taskptr]() { (*taskptr)(); });
 	}
+
+	for(t_taskptr task : tasks)
+		task->get_future().get();
+	pool.join();
 
 	//m_plot->addGraph();
 	GraphWithWeights *graph = new GraphWithWeights(
