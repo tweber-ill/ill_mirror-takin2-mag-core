@@ -158,6 +158,15 @@ bool MagDynDlg::Load(const QString& filename)
 			m_bragg[2]->setValue(bragg[2].real());
 		}
 
+		// ordering vector
+		const t_vec_real& ordering = m_dyn.GetOrderingWavevector();
+		if(ordering.size() == 3)
+		{
+			m_ordering[0]->setValue(ordering[0]);
+			m_ordering[1]->setValue(ordering[1]);
+			m_ordering[2]->setValue(ordering[2]);
+		}
+
 		// temperature
 		t_real temp = m_dyn.GetTemperature();
 		if(temp >= 0.)

@@ -344,18 +344,43 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		pTabBtnDown->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
+		// ordering vector
+		m_ordering[0] = new QDoubleSpinBox(m_termspanel);
+		m_ordering[1] = new QDoubleSpinBox(m_termspanel);
+		m_ordering[2] = new QDoubleSpinBox(m_termspanel);
 
+		for(int i=0; i<3; ++i)
+		{
+			m_ordering[i]->setDecimals(4);
+			m_ordering[i]->setMinimum(-1);
+			m_ordering[i]->setMaximum(+1);
+			m_ordering[i]->setSingleStep(0.01);
+			m_ordering[i]->setValue(0.);
+			m_ordering[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+		}
+
+		m_ordering[0]->setPrefix("Oh = ");
+		m_ordering[1]->setPrefix("Ok = ");
+		m_ordering[2]->setPrefix("Ol = ");
+
+
+		// grid
 		auto grid = new QGridLayout(m_termspanel);
 		grid->setSpacing(4);
 		grid->setContentsMargins(6, 6, 6, 6);
 
 		int y = 0;
-		grid->addWidget(m_termstab, y,0,1,4);
-		grid->addWidget(pTabBtnAdd, ++y,0,1,1);
+		grid->addWidget(m_termstab, y++,0,1,4);
+		grid->addWidget(pTabBtnAdd, y,0,1,1);
 		grid->addWidget(pTabBtnDel, y,1,1,1);
 		grid->addWidget(pTabBtnUp, y,2,1,1);
-		grid->addWidget(pTabBtnDown, y,3,1,1);
-
+		grid->addWidget(pTabBtnDown, y++,3,1,1);
+		grid->addWidget(new QLabel(QString("Ordering Vector:"),
+			m_termspanel), y,0,1,1);
+		grid->addWidget(m_ordering[0], y,1,1,1);
+		grid->addWidget(m_ordering[1], y,2,1,1);
+		grid->addWidget(m_ordering[2], y++,3,1,1);
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
@@ -405,6 +430,13 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_termstab, &QTableWidget::customContextMenuRequested, this,
 			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 			{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+
+		for(int i=0; i<3; ++i)
+		{
+			connect(m_ordering[i],
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]() { this->SyncSitesAndTerms(); });
+		}
 
 		m_tabs->addTab(m_termspanel, "Couplings");
 	}
@@ -1582,6 +1614,18 @@ void MagDynDlg::SyncSitesAndTerms()
 	} BOOST_SCOPE_EXIT_END
 	m_sitestab->blockSignals(true);
 	m_termstab->blockSignals(true);
+
+	// get ordering vector
+	{
+		t_vec_real ordering = tl2::create<t_vec_real>(
+		{
+			m_ordering[0]->value(),
+			m_ordering[1]->value(),
+			m_ordering[2]->value(),
+		});
+
+		m_dyn.SetOrderingWavevector(ordering);
+	}
 
 	// dmi
 	bool use_dmi = m_use_dmi->isChecked();

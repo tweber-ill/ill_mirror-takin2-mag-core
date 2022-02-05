@@ -111,13 +111,14 @@ protected:
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
 
-	// tables
-	QTableWidget *m_sitestab{};
-	QTableWidget *m_termstab{};
-
 	//sites
+	QTableWidget *m_sitestab{};
 	QComboBox *m_comboSG{};
 	std::vector<std::vector<t_mat_real>> m_SGops{};
+
+	// terms and ordering vector
+	QTableWidget *m_termstab{};
+	QDoubleSpinBox *m_ordering[3]{nullptr, nullptr, nullptr};
 
 	// dispersion
 	QCustomPlot *m_plot{};
