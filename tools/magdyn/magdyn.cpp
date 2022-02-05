@@ -28,7 +28,6 @@
 
 #include "magdyn.h"
 
-#include <QtGui/QFontDatabase>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
@@ -101,7 +100,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 	setWindowTitle("Magnon Dynamics");
 	setSizeGripEnabled(true);
-	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
 	m_tabs = new QTabWidget(this);
 
@@ -799,7 +797,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	// info panel
+	// info dialog
+	QDialog *dlgInfo = nullptr;
 	{
 		auto infopanel = new QWidget(this);
 		auto grid = new QGridLayout(infopanel);
@@ -893,7 +892,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0, 1,1);
 
-		m_tabs->addTab(infopanel, "Infos");
+		// add info panel as a tab
+		//m_tabs->addTab(infopanel, "Infos");
+
+		// show info panel as a dialog
+		dlgInfo = new QDialog(this);
+		dlgInfo->setWindowTitle("About");
+		dlgInfo->setSizeGripEnabled(true);
+
+		QPushButton *infoDlgOk = new QPushButton("OK", dlgInfo);
+		connect(infoDlgOk, &QAbstractButton::clicked,
+			dlgInfo, &QDialog::accept);
+
+		auto dlgGrid = new QGridLayout(dlgInfo);
+		dlgGrid->setSpacing(8);
+		dlgGrid->setContentsMargins(8, 8, 8, 8);
+		dlgGrid->addWidget(infopanel, 0,0, 1,4);
+		dlgGrid->addWidget(infoDlgOk, 1,3, 1,1);
 	}
 
 	// status
@@ -913,15 +928,18 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_menu = new QMenuBar(this);
 		m_menu->setNativeMenuBar(m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
+		// file menu
 		auto menuFile = new QMenu("File", m_menu);
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Open...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
 
+		// structure menu
 		auto menuStruct = new QMenu("Structure", m_menu);
 		auto acStructView = new QAction("Show...", menuStruct);
 
+		// dispersion menu
 		auto menuDisp = new QMenu("Dispersion", m_menu);
 		auto acRescalePlot = new QAction("Rescale Axes", menuDisp);
 		auto acSaveFigure = new QAction("Save Figure...", menuDisp);
@@ -950,6 +968,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		acSaveFigure->setIcon(QIcon::fromTheme("image-x-generic"));
 		acSaveDisp->setIcon(QIcon::fromTheme("text-x-generic"));
 
+		// options menu
 		auto menuOptions = new QMenu("Options", m_menu);
 		m_use_dmi = new QAction("Use DMI", menuOptions);
 		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
@@ -976,6 +995,19 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_unite_degeneracies->setCheckable(true);
 		m_unite_degeneracies->setChecked(true);
 
+		// help menu
+		auto menuHelp = new QMenu("Help", m_menu);
+		QAction *acAboutQt = new QAction(
+			QIcon::fromTheme("help-about"), 
+			"About Qt...", menuHelp);
+		QAction *acAbout = new QAction(
+			QIcon::fromTheme("help-about"), 
+			"About...", menuHelp);
+
+		acAboutQt->setMenuRole(QAction::AboutQtRole);
+		acAbout->setMenuRole(QAction::AboutRole);
+
+		// actions
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
@@ -1000,20 +1032,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuOptions->addAction(m_use_projector);
 		menuOptions->addAction(m_unite_degeneracies);
 
+		menuHelp->addAction(acAboutQt);
+		menuHelp->addAction(acAbout);
+
 		// connections
 		connect(acNew, &QAction::triggered, this, &MagDynDlg::Clear);
-		connect(acLoad, &QAction::triggered, this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Load));
-		connect(acSave, &QAction::triggered, this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Save));
+		connect(acLoad, &QAction::triggered,
+			this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Load));
+		connect(acSave, &QAction::triggered,
+			this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Save));
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
 		connect(acSaveFigure, &QAction::triggered,
 			this, &MagDynDlg::SavePlotFigure);
-
 		connect(acSaveDisp, &QAction::triggered,
 			this, &MagDynDlg::SaveDispersion);
 
-		connect(acRescalePlot, &QAction::triggered,
-			[this]()
+		connect(acRescalePlot, &QAction::triggered, [this]()
 		{
 			if(!m_plot)
 				return;
@@ -1024,7 +1059,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(acStructView, &QAction::triggered,
 			this, &MagDynDlg::ShowStructurePlot);
-
 		connect(m_use_dmi, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_field, &QAction::toggled,
@@ -1038,10 +1072,24 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_unite_degeneracies, &QAction::toggled,
 			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
 
+		connect(acAboutQt, &QAction::triggered,
+			this, []() { qApp->aboutQt(); });
+		connect(acAbout, &QAction::triggered, this, [dlgInfo]()
+		{
+			if(!dlgInfo)
+				return;
+
+			dlgInfo->show();
+			dlgInfo->raise();
+			dlgInfo->activateWindow();
+		});
+
+		// menu bar
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuStruct);
 		m_menu->addMenu(menuDisp);
 		m_menu->addMenu(menuOptions);
+		m_menu->addMenu(menuHelp);
 		pmainGrid->setMenuBar(m_menu);
 	}
 
