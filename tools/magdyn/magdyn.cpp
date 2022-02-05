@@ -1161,10 +1161,15 @@ void MagDynDlg::Clear()
 	m_hamiltonian->clear();
 
 	m_dyn.Clear();
+
 	StructPlotSync();
 
 	// set some defaults
 	m_comboSG->setCurrentIndex(0);
+
+	m_ordering[0]->setValue(0.);
+	m_ordering[1]->setValue(0.);
+	m_ordering[2]->setValue(0.);
 
 	m_ignoreCalc = false;
 }
