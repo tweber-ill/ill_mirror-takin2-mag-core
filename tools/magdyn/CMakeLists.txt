@@ -64,7 +64,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 
+find_package(Threads REQUIRED)
+
 find_package(Boost REQUIRED)
+set(Boost_USE_MULTITHREADED TRUE)
 add_definitions(${Boost_CXX_FLAGS})
 
 find_package(Lapacke)
@@ -120,6 +123,7 @@ endif()
 
 target_link_libraries(takin_magdyn
 	Qt5::Core Qt5::Gui Qt5::Widgets
+	Threads::Threads
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
 	"${Lapacke_LIBRARIES}")
