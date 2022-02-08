@@ -148,6 +148,8 @@ bool MagDynDlg::Load(const QString& filename)
 		m_field_dir[2]->setValue(m_dyn.GetExternalField().dir[2]);
 		m_field_mag->setValue(m_dyn.GetExternalField().mag);
 		m_align_spins->setChecked(m_dyn.GetExternalField().align_spins);
+		if(!m_use_field->isChecked())
+			m_dyn.ClearExternalField();
 
 		// bragg peak
 		const t_vec& bragg = m_dyn.GetBraggPeak();
@@ -171,6 +173,8 @@ bool MagDynDlg::Load(const QString& filename)
 		t_real temp = m_dyn.GetTemperature();
 		if(temp >= 0.)
 			m_temperature->setValue(temp);
+		if(!m_use_temperature->isChecked())
+			m_dyn.SetTemperature(-1.);
 
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
@@ -214,10 +218,11 @@ bool MagDynDlg::Load(const QString& filename)
 		return false;
 	}
 
+	//SyncSitesAndTerms();
 	CalcDispersion();
 	CalcHamiltonian();
-
 	StructPlotSync();
+
 	return true;
 }
 

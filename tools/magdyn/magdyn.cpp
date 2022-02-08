@@ -1690,7 +1690,7 @@ void MagDynDlg::SyncSitesAndTerms()
 		auto *spin_mag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_sitestab->item(row, COL_SITE_SPIN_MAG));
 
-		if(!name || !pos_x || !pos_y || !pos_z || 
+		if(!name || !pos_x || !pos_y || !pos_z ||
 			!spin_x || !spin_y || !spin_z || !spin_mag)
 		{
 			std::cerr << "Invalid entry in sites table row "
