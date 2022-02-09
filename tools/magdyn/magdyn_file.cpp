@@ -226,8 +226,7 @@ bool MagDynDlg::Load(const QString& filename)
 	}
 
 	//SyncSitesAndTerms();
-	CalcDispersion();
-	CalcHamiltonian();
+	CalcAll();
 	StructPlotSync();
 
 	return true;

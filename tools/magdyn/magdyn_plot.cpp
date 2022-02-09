@@ -211,6 +211,16 @@ void MagDynDlg::CalcDispersion()
 
 
 /**
+ * calculate all output values
+ */
+void MagDynDlg::CalcAll()
+{
+	CalcDispersion();
+	CalcHamiltonian();
+}
+
+
+/**
  * calculate the hamiltonian for a single Q value
  */
 void MagDynDlg::CalcHamiltonian()

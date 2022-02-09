@@ -1233,11 +1233,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_use_temperature, &QAction::toggled,
 			[this]() { this->SyncSitesAndTerms(); });
 		connect(m_use_weights, &QAction::toggled,
-			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
+			[this]() { this->CalcAll(); });
 		connect(m_use_projector, &QAction::toggled,
-			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
+			[this]() { this->CalcAll(); });
 		connect(m_unite_degeneracies, &QAction::toggled,
-			[this]() { this->CalcDispersion(); this->CalcHamiltonian(); });
+			[this]() { this->CalcAll(); });
 
 		connect(acAboutQt, &QAction::triggered,
 			this, []() { qApp->aboutQt(); });
@@ -1290,6 +1290,7 @@ void MagDynDlg::Clear()
 	// clear old tables
 	DelTabItem(m_sitestab, -1);
 	DelTabItem(m_termstab, -1);
+	DelTabItem(m_varstab, -1);
 
 	m_plot->clearPlottables();
 	m_plot->replot();
@@ -1425,8 +1426,7 @@ void MagDynDlg::GenerateFromSG()
 	}
 
 	m_ignoreCalc = 0;
-	CalcDispersion();
-	CalcHamiltonian();
+	CalcAll();
 }
 
 
@@ -2049,9 +2049,7 @@ void MagDynDlg::SyncSitesAndTerms()
 	m_dyn.CalcExchangeTerms();
 	//m_dyn.CalcIndices();
 
-	CalcDispersion();
-	CalcHamiltonian();
-
+	CalcAll();
 	StructPlotSync();
 }
 

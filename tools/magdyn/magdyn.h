@@ -219,6 +219,8 @@ protected:
 	void GenerateFromSG();
 
 	void SyncSitesAndTerms();
+
+	void CalcAll();
 	void CalcDispersion();
 	void CalcHamiltonian();
 
