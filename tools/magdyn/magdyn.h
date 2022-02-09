@@ -186,8 +186,10 @@ protected:
 		const std::string& name="n/a",
 		t_size atom_1=0, t_size atom_2=0,
 		t_real dist_x=0., t_real dist_y=0., t_real dist_z=0.,
-		t_real J=0.,
-		t_real dmi_x=0., t_real dmi_y=0., t_real dmi_z=0.);
+		const std::string& J = "0",
+		const std::string& dmi_x = "0",
+		const std::string& dmi_y = "0",
+		const std::string& dmi_z = "0");
 
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
 

@@ -208,8 +208,8 @@ bool MagDynDlg::Load(const QString& filename)
 			AddTermTabItem(-1,
 				term.name, term.atom1, term.atom2,
 				term.dist[0], term.dist[1], term.dist[2],
-				term.J.real(),
-				term.dmi[0].real(), term.dmi[1].real(), term.dmi[2].real());
+				term.J,
+				term.dmi[0], term.dmi[1], term.dmi[2]);
 		}
 	}
 	catch(const std::exception& ex)

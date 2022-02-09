@@ -318,6 +318,7 @@ void MagDynDlg::StructPlotSync()
 	// get sites and terms
 	const auto& sites = m_dyn.GetAtomSites();
 	const auto& terms = m_dyn.GetExchangeTerms();
+	const auto& terms_calc = m_dyn.GetExchangeTermsCalc();
 	const auto& field = m_dyn.GetExternalField();
 	//const auto [sc_min, sc_max] = m_dyn.GetSupercellMinMax();
 
@@ -456,8 +457,11 @@ void MagDynDlg::StructPlotSync()
 
 
 	// iterate and add exchange terms
-	for(const auto& term : terms)
+	for(t_size term_idx=0; term_idx<terms.size(); ++term_idx)
 	{
+		const auto& term = terms[term_idx];
+		const auto& term_calc = terms_calc[term_idx];
+
 		if(term.atom1 >= sites.size() || term.atom2 >= sites.size())
 			continue;
 
@@ -516,9 +520,9 @@ void MagDynDlg::StructPlotSync()
 
 		// dmi vector
 		const t_vec_gl dmi_vec = tl2::create<t_vec_gl>({
-			t_real_gl(term.dmi[0].real()),
-			t_real_gl(term.dmi[1].real()),
-			t_real_gl(term.dmi[2].real()),
+			t_real_gl(term_calc.dmi[0].real()),
+			t_real_gl(term_calc.dmi[1].real()),
+			t_real_gl(term_calc.dmi[2].real()),
 		});
 
 		if(tl2::norm<t_vec_gl>(dmi_vec) > g_eps)

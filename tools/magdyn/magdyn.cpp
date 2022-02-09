@@ -1367,8 +1367,10 @@ void MagDynDlg::AddTermTabItem(int row,
 	const std::string& name,
 	t_size atom_1, t_size atom_2,
 	t_real dist_x, t_real dist_y, t_real dist_z,
-	t_real J,
-	t_real dmi_x, t_real dmi_y, t_real dmi_z)
+	const std::string& J,
+	const std::string& dmi_x,
+	const std::string& dmi_y,
+	const std::string& dmi_z)
 {
 	bool bclone = 0;
 	m_ignoreTableChanges = 1;
@@ -1728,7 +1730,7 @@ void MagDynDlg::SyncSitesAndTerms()
 		m_dyn.AddAtomSite(std::move(site));
 	}
 
-	m_dyn.CalcSpinRotation();
+	m_dyn.CalcAtomSites();
 	const auto& sites = m_dyn.GetAtomSites();
 
 	// get exchange terms
@@ -1773,7 +1775,9 @@ void MagDynDlg::SyncSitesAndTerms()
 			dist_y->GetValue(),
 			dist_z->GetValue(),
 		});
-		term.J = interaction->GetValue();
+
+		//term.J = interaction->GetValue();
+		term.J = interaction->text().toStdString();
 
 		// atom 1 index out of bounds?
 		if(term.atom1 >= sites.size())
@@ -1801,18 +1805,24 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		if(use_dmi)
 		{
-			term.dmi = tl2::create<t_vec>(
+			/*term.dmi = tl2::create<t_vec>(
 			{
 				dmi_x->GetValue(),
 				dmi_y->GetValue(),
 				dmi_z->GetValue(),
-			});
+			});*/
+
+			term.dmi[0] = dmi_x->text().toStdString();
+			term.dmi[1] = dmi_x->text().toStdString();
+			term.dmi[2] = dmi_x->text().toStdString();
 		}
 
 		m_dyn.AddExchangeTerm(std::move(term));
 	}
 
+	m_dyn.CalcExchangeTerms();
 	//m_dyn.CalcIndices();
+
 	CalcDispersion();
 	CalcHamiltonian();
 
