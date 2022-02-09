@@ -179,6 +179,13 @@ bool MagDynDlg::Load(const QString& filename)
 		// clear old tables
 		DelTabItem(m_sitestab, -1);
 		DelTabItem(m_termstab, -1);
+		DelTabItem(m_varstab, -1);
+
+		// variables
+		for(const auto& var : m_dyn.GetVariables())
+		{
+			AddVariableTabItem(-1, var.name, var.value);
+		}
 
 		// atom sites
 		for(const auto &site : m_dyn.GetAtomSites())

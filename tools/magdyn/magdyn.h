@@ -108,10 +108,11 @@ protected:
 	QWidget *m_sitespanel{};
 	QWidget *m_termspanel{};
 	QWidget *m_samplepanel{};
+	QWidget *m_varspanel{};
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
 
-	//sites
+	// sites
 	QTableWidget *m_sitestab{};
 	QComboBox *m_comboSG{};
 	std::vector<std::vector<t_mat_real>> m_SGops{};
@@ -119,6 +120,9 @@ protected:
 	// terms and ordering vector
 	QTableWidget *m_termstab{};
 	QDoubleSpinBox *m_ordering[3]{nullptr, nullptr, nullptr};
+
+	// variables
+	QTableWidget *m_varstab{};
 
 	// dispersion
 	QCustomPlot *m_plot{};
@@ -191,10 +195,15 @@ protected:
 		const std::string& dmi_y = "0",
 		const std::string& dmi_z = "0");
 
+	void AddVariableTabItem(int row=-1,
+		const std::string& name="var",
+		const t_cplx& var = t_cplx{0, 0});
+
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
 
 	void SitesTableItemChanged(QTableWidgetItem *item);
 	void TermsTableItemChanged(QTableWidgetItem *item);
+	void VariablesTableItemChanged(QTableWidgetItem *item);
 
 	void Clear();
 	void Load();
@@ -237,6 +246,7 @@ protected:
 private:
 	int m_sites_cursor_row = -1;
 	int m_terms_cursor_row = -1;
+	int m_variables_cursor_row = -1;
 
 	bool m_ignoreTableChanges = 1;
 	bool m_ignoreCalc = 0;

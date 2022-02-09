@@ -63,7 +63,7 @@ int g_prec_gui = 3;
 
 
 /**
- * columns of sites table
+ * columns of the sites table
  */
 enum : int
 {
@@ -77,7 +77,7 @@ enum : int
 
 
 /**
- * columns of exchange terms table
+ * columns of the exchange terms table
  */
 enum : int
 {
@@ -90,6 +90,18 @@ enum : int
 	NUM_XCH_COLS
 };
 
+
+/**
+ * columns of the variables table
+ */
+enum : int
+{
+	COL_VARS_NAME = 0,
+	COL_VARS_VALUE_REAL,
+	COL_VARS_VALUE_IMAG,
+
+	NUM_VARS_COLS
+};
 
 
 MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
@@ -439,6 +451,129 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		}
 
 		m_tabs->addTab(m_termspanel, "Couplings");
+	}
+
+
+	// variables panel
+	{
+		m_varspanel = new QWidget(this);
+
+		m_varstab = new QTableWidget(m_varspanel);
+		m_varstab->setShowGrid(true);
+		m_varstab->setSortingEnabled(true);
+		m_varstab->setMouseTracking(true);
+		m_varstab->setSelectionBehavior(QTableWidget::SelectRows);
+		m_varstab->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_varstab->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		m_varstab->verticalHeader()->setDefaultSectionSize(
+			fontMetrics().lineSpacing() + 4);
+		m_varstab->verticalHeader()->setVisible(false);
+
+		m_varstab->setColumnCount(NUM_VARS_COLS);
+		m_varstab->setHorizontalHeaderItem(
+			COL_VARS_NAME, new QTableWidgetItem{"Name"});
+		m_varstab->setHorizontalHeaderItem(
+			COL_VARS_VALUE_REAL, new QTableWidgetItem{"Value (Re)"});
+		m_varstab->setHorizontalHeaderItem(
+			COL_VARS_VALUE_IMAG, new QTableWidgetItem{"Value (Im)"});
+
+		m_varstab->setColumnWidth(COL_VARS_NAME, 150);
+		m_varstab->setColumnWidth(COL_VARS_VALUE_REAL, 150);
+		m_varstab->setColumnWidth(COL_VARS_VALUE_IMAG, 150);
+		m_varstab->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+		QPushButton *pTabBtnAdd = new QPushButton(
+			QIcon::fromTheme("list-add"),
+			"Add Variable", m_varspanel);
+		QPushButton *pTabBtnDel = new QPushButton(
+			QIcon::fromTheme("list-remove"),
+			"Delete Variable", m_varspanel);
+		QPushButton *pTabBtnUp = new QPushButton(
+			QIcon::fromTheme("go-up"),
+			"Move Variable Up", m_varspanel);
+		QPushButton *pTabBtnDown = new QPushButton(
+			QIcon::fromTheme("go-down"),
+			"Move Variable Down", m_varspanel);
+		pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+
+		pTabBtnAdd->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDel->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnUp->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDown->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+
+		// grid
+		auto grid = new QGridLayout(m_varspanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
+
+		int y = 0;
+		grid->addWidget(m_varstab, y++,0,1,4);
+		grid->addWidget(pTabBtnAdd, y,0,1,1);
+		grid->addWidget(pTabBtnDel, y,1,1,1);
+		grid->addWidget(pTabBtnUp, y,2,1,1);
+		grid->addWidget(pTabBtnDown, y++,3,1,1);
+
+
+		// table CustomContextMenu
+		QMenu *pTabContextMenu = new QMenu(m_varstab);
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Variable Before", this,
+			[this]() { this->AddVariableTabItem(-2); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Variable After", this,
+			[this]() { this->AddVariableTabItem(-3); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("edit-copy"),
+			"Clone Variable", this,
+			[this]() { this->AddVariableTabItem(-4); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Variable", this,
+			[this]() { this->DelTabItem(m_varstab); });
+
+
+		// table CustomContextMenu in case nothing is selected
+		QMenu *pTabContextMenuNoItem = new QMenu(m_varstab);
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Variable", this,
+			[this]() { this->AddVariableTabItem(); });
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Variable", this,
+			[this]() { this->DelTabItem(m_varstab); });
+
+
+		// signals
+		connect(pTabBtnAdd, &QAbstractButton::clicked, this,
+			[this]() { this->AddVariableTabItem(-1); });
+		connect(pTabBtnDel, &QAbstractButton::clicked, this,
+			[this]() { this->DelTabItem(m_varstab); });
+		connect(pTabBtnUp, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemUp(m_varstab); });
+		connect(pTabBtnDown, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemDown(m_varstab); });
+
+		connect(m_varstab, &QTableWidget::itemChanged,
+			this, &MagDynDlg::VariablesTableItemChanged);
+		connect(m_varstab, &QTableWidget::customContextMenuRequested, this,
+			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+			{ this->ShowTableContextMenu(m_varstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+
+
+		m_tabs->addTab(m_varspanel, "Variables");
 	}
 
 
@@ -1432,6 +1567,58 @@ void MagDynDlg::AddTermTabItem(int row,
 }
 
 
+/**
+ * add a variable
+ */
+void MagDynDlg::AddVariableTabItem(int row,
+	const std::string& name, const t_cplx& value)
+{
+	bool bclone = 0;
+	m_ignoreTableChanges = 1;
+
+	if(row == -1)	// append to end of table
+		row = m_varstab->rowCount();
+	else if(row == -2 && m_variables_cursor_row >= 0)	// use row from member variable
+		row = m_variables_cursor_row;
+	else if(row == -3 && m_variables_cursor_row >= 0)	// use row from member variable +1
+		row = m_variables_cursor_row + 1;
+	else if(row == -4 && m_variables_cursor_row >= 0)	// use row from member variable +1
+	{
+		row = m_variables_cursor_row + 1;
+		bclone = 1;
+	}
+
+	m_varstab->setSortingEnabled(false);
+	m_varstab->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<NUM_VARS_COLS; ++thecol)
+		{
+			m_varstab->setItem(row, thecol,
+				m_varstab->item(m_variables_cursor_row, thecol)->clone());
+		}
+	}
+	else
+	{
+		m_varstab->setItem(row, COL_VARS_NAME,
+			new QTableWidgetItem(name.c_str()));
+		m_varstab->setItem(row, COL_VARS_VALUE_REAL,
+			new tl2::NumericTableWidgetItem<t_real>(value.real()));
+		m_varstab->setItem(row, COL_VARS_VALUE_IMAG,
+			new tl2::NumericTableWidgetItem<t_real>(value.imag()));
+	}
+
+	m_varstab->scrollToItem(m_varstab->item(row, 0));
+	m_varstab->setCurrentCell(row, 0);
+
+	m_varstab->setSortingEnabled(/*sorting*/ true);
+
+	m_ignoreTableChanges = 0;
+	SyncSitesAndTerms();
+}
+
+
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
 	m_ignoreTableChanges = 1;
@@ -1580,6 +1767,18 @@ void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 }
 
 
+/**
+ * item contents changed
+ */
+void MagDynDlg::VariablesTableItemChanged(QTableWidgetItem * /*item*/)
+{
+	if(m_ignoreTableChanges)
+		return;
+
+	SyncSitesAndTerms();
+}
+
+
 void MagDynDlg::ShowTableContextMenu(
 	QTableWidget *pTab, QMenu *pMenu, QMenu *pMenuNoItem, const QPoint& pt)
 {
@@ -1591,6 +1790,8 @@ void MagDynDlg::ShowTableContextMenu(
 			m_terms_cursor_row = item->row();
 		else if(pTab == m_sitestab)
 			m_sites_cursor_row = item->row();
+		else if(pTab == m_varstab)
+			m_variables_cursor_row = item->row();
 
 		ptGlob.setY(ptGlob.y() + pMenu->sizeHint().height()/2);
 		pMenu->popup(ptGlob);
@@ -1604,7 +1805,7 @@ void MagDynDlg::ShowTableContextMenu(
 
 
 /**
- * get the sites and exchange terms from the table
+ * get the sitesm exchange terms, and variables from the table
  * and transfer them to the dynamics calculator
  */
 void MagDynDlg::SyncSitesAndTerms()
@@ -1618,9 +1819,11 @@ void MagDynDlg::SyncSitesAndTerms()
 	{
 		this_->m_sitestab->blockSignals(false);
 		this_->m_termstab->blockSignals(false);
+		this_->m_varstab->blockSignals(false);
 	} BOOST_SCOPE_EXIT_END
 	m_sitestab->blockSignals(true);
 	m_termstab->blockSignals(true);
+	m_varstab->blockSignals(true);
 
 	// get ordering vector
 	{
@@ -1671,6 +1874,29 @@ void MagDynDlg::SyncSitesAndTerms()
 	{
 		t_real temp = m_temperature->value();
 		m_dyn.SetTemperature(temp);
+	}
+
+	// get variables
+	for(int row=0; row<m_varstab->rowCount(); ++row)
+	{
+		auto *name = m_varstab->item(row, COL_VARS_NAME);
+		auto *val_re = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+			m_varstab->item(row, COL_VARS_VALUE_REAL));
+		auto *val_im = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+			m_varstab->item(row, COL_VARS_VALUE_IMAG));
+
+		if(!name || !val_re || !val_im)
+		{
+			std::cerr << "Invalid entry in variables table row "
+				<< row << "." << std::endl;
+			continue;
+		}
+
+		Variable var;
+		var.name = name->text().toStdString();
+		var.value = val_re->GetValue() + val_im->GetValue() * t_cplx(0, 1);
+
+		m_dyn.AddVariable(std::move(var));
 	}
 
 	// get atom sites
@@ -1813,8 +2039,8 @@ void MagDynDlg::SyncSitesAndTerms()
 			});*/
 
 			term.dmi[0] = dmi_x->text().toStdString();
-			term.dmi[1] = dmi_x->text().toStdString();
-			term.dmi[2] = dmi_x->text().toStdString();
+			term.dmi[1] = dmi_y->text().toStdString();
+			term.dmi[2] = dmi_z->text().toStdString();
 		}
 
 		m_dyn.AddExchangeTerm(std::move(term));
