@@ -447,7 +447,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		{
 			connect(m_ordering[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->SyncSitesAndTerms(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->SyncSitesAndTerms();
+			});
 		}
 
 		m_tabs->addTab(m_termspanel, "Couplings");
@@ -753,25 +757,45 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		// signals
 		connect(m_field_mag,
 			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]() { this->SyncSitesAndTerms(); });
+			[this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
 
 		for(int i=0; i<3; ++i)
 		{
 			connect(m_field_dir[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->SyncSitesAndTerms(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->SyncSitesAndTerms();
+			});
 
 			connect(m_bragg[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->SyncSitesAndTerms(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->SyncSitesAndTerms();
+			});
 		}
 
 		connect(m_temperature,
 			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]() { this->SyncSitesAndTerms(); });
+			[this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
 
 		connect(m_align_spins, &QCheckBox::toggled,
-			[this]() { this->SyncSitesAndTerms(); });
+			[this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
 
 		connect(btn_rotate_ccw, &QAbstractButton::clicked, [this]()
 		{
@@ -886,19 +910,35 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		{
 			connect(m_q_start[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->CalcDispersion(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->CalcDispersion();
+			});
 			connect(m_q_end[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->CalcDispersion(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->CalcDispersion();
+			});
 		}
 
 		connect(m_num_points,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-			[this]() { this->CalcDispersion(); });
+			[this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->CalcDispersion();
+		});
 
 		connect(m_weight_scale,
 			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]() { this->CalcDispersion(); });
+			[this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->CalcDispersion();
+		});
 
 		connect(m_plot, &QCustomPlot::mouseMove,
 			this, &MagDynDlg::PlotMouseMove);
@@ -957,7 +997,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		{
 			connect(m_q[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]() { this->CalcHamiltonian(); });
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->CalcHamiltonian();
+			});
 		}
 
 		m_tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
@@ -1137,6 +1181,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// options menu
 		auto menuOptions = new QMenu("Options", m_menu);
+		m_autocalc = new QAction("Automatically Calculate", menuOptions);
+		m_autocalc->setToolTip("Automatically calculate the results.");
+		m_autocalc->setCheckable(true);
+		m_autocalc->setChecked(true);
 		m_use_dmi = new QAction("Use DMI", menuOptions);
 		m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
 		m_use_dmi->setCheckable(true);
@@ -1191,6 +1239,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		menuDisp->addAction(acSaveFigure);
 		menuDisp->addAction(acSaveDisp);
 
+		menuOptions->addAction(m_autocalc);
+		menuOptions->addSeparator();
 		menuOptions->addAction(m_use_dmi);
 		menuOptions->addAction(m_use_field);
 		menuOptions->addAction(m_use_temperature);
@@ -1226,21 +1276,49 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		connect(acStructView, &QAction::triggered,
 			this, &MagDynDlg::ShowStructurePlot);
-		connect(m_use_dmi, &QAction::toggled,
-			[this]() { this->SyncSitesAndTerms(); });
-		connect(m_use_field, &QAction::toggled,
-			[this]() { this->SyncSitesAndTerms(); });
-		connect(m_use_temperature, &QAction::toggled,
-			[this]() { this->SyncSitesAndTerms(); });
-		connect(m_use_weights, &QAction::toggled,
-			[this]() { this->CalcAll(); });
-		connect(m_use_projector, &QAction::toggled,
-			[this]() { this->CalcAll(); });
-		connect(m_unite_degeneracies, &QAction::toggled,
-			[this]() { this->CalcAll(); });
+		connect(m_use_dmi, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
+		connect(m_use_field, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
+		connect(m_use_temperature, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->SyncSitesAndTerms();
+		});
+		connect(m_use_weights, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->CalcAll();
+		});
+		connect(m_use_projector, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->CalcAll();
+		});
+		connect(m_unite_degeneracies, &QAction::toggled, [this]()
+		{
+			if(this->m_autocalc->isChecked())
+				this->CalcAll();
+		});
+		connect(m_autocalc, &QAction::toggled, [this](bool checked)
+		{
+			if(checked)
+			{
+				this->SyncSitesAndTerms();
+				//this->CalcAll();
+			}
+		});
 
-		connect(acAboutQt, &QAction::triggered,
-			this, []() { qApp->aboutQt(); });
+		connect(acAboutQt, &QAction::triggered, this, []()
+		{
+			qApp->aboutQt();
+		});
 		connect(acAbout, &QAction::triggered, this, [dlgInfo]()
 		{
 			if(!dlgInfo)
@@ -1346,7 +1424,8 @@ void MagDynDlg::RotateField(bool ccw)
 		m_field_dir[i]->blockSignals(false);
 	}
 
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 };
 
 
@@ -1491,7 +1570,8 @@ void MagDynDlg::AddSiteTabItem(int row,
 	m_sitestab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1563,7 +1643,8 @@ void MagDynDlg::AddTermTabItem(int row,
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1615,7 +1696,8 @@ void MagDynDlg::AddVariableTabItem(int row,
 	m_varstab->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1645,7 +1727,8 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 	}
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1681,7 +1764,8 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 	}
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1717,7 +1801,8 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 	}
 
 	m_ignoreTableChanges = 0;
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1751,7 +1836,8 @@ void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
 	if(m_ignoreTableChanges)
 		return;
 
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1763,7 +1849,8 @@ void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 	if(m_ignoreTableChanges)
 		return;
 
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 
@@ -1775,7 +1862,8 @@ void MagDynDlg::VariablesTableItemChanged(QTableWidgetItem * /*item*/)
 	if(m_ignoreTableChanges)
 		return;
 
-	SyncSitesAndTerms();
+	if(m_autocalc->isChecked())
+		SyncSitesAndTerms();
 }
 
 

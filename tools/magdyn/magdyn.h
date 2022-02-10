@@ -84,6 +84,7 @@ protected:
 	QMenuBar *m_menu{};
 	QLabel *m_status{};
 
+	QAction *m_autocalc{};
 	QAction *m_use_dmi{};
 	QAction *m_use_field{};
 	QAction *m_use_temperature{};
