@@ -1,6 +1,8 @@
-# Takin 2 -- mag-core
+# Takin 2 - Magnetic Core Module
 
 Software concerning magnetic and polarised scattering. 
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4117437.svg)](https://doi.org/10.5281/zenodo.4117437)
 
 
 ## Project history
