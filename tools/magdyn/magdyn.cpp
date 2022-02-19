@@ -1451,9 +1451,9 @@ void MagDynDlg::GenerateFromSG()
 		const auto& ops = m_SGops[sgidx];
 		std::vector<std::tuple<
 			std::string,
-			t_real, t_real, t_real, // position
-			t_real, t_real, t_real, // spin direction
-			t_real                  // spin magnitude
+			t_real, t_real, t_real,                // position
+			std::string, std::string, std::string, // spin direction
+			t_real                                 // spin magnitude
 			>> generatedsites;
 
 		// iterate sites
@@ -1468,12 +1468,9 @@ void MagDynDlg::GenerateFromSG()
 				m_sitestab->item(row, COL_SITE_POS_Y))->GetValue();
 			t_real z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_Z))->GetValue();
-			t_real sx = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_sitestab->item(row, COL_SITE_SPIN_X))->GetValue();
-			t_real sy = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_sitestab->item(row, COL_SITE_SPIN_Y))->GetValue();
-			t_real sz = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_sitestab->item(row, COL_SITE_SPIN_Z))->GetValue();
+			std::string sx = m_sitestab->item(row, COL_SITE_SPIN_X)->text().toStdString();
+			std::string sy = m_sitestab->item(row, COL_SITE_SPIN_Y)->text().toStdString();
+			std::string sz = m_sitestab->item(row, COL_SITE_SPIN_Z)->text().toStdString();
 			t_real S = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_MAG))->GetValue();
 
@@ -1515,7 +1512,9 @@ void MagDynDlg::GenerateFromSG()
 void MagDynDlg::AddSiteTabItem(int row,
 	const std::string& name,
 	t_real x, t_real y, t_real z,
-	t_real sx, t_real sy, t_real sz,
+	const std::string& sx,
+	const std::string& sy,
+	const std::string& sz,
 	t_real S)
 {
 	bool bclone = 0;
@@ -2026,20 +2025,9 @@ void MagDynDlg::SyncSitesAndTerms()
 		});
 
 		site.spin_mag = spin_mag->GetValue();
-		site.spin_dir = tl2::create<t_vec>(
-		{
-			spin_x->GetValue(),
-			spin_y->GetValue(),
-			spin_z->GetValue()
-		});
-
-		// align spins along external field?
-		/*if(m_align_spins->isChecked() && m_use_field->isChecked())
-		{
-			site.spin_dir[0] = -m_field_dir[0]->value();
-			site.spin_dir[1] = -m_field_dir[1]->value();
-			site.spin_dir[2] = -m_field_dir[2]->value();
-		}*/
+		site.spin_dir[0] = spin_x->text().toStdString();
+		site.spin_dir[1] = spin_y->text().toStdString();
+		site.spin_dir[2] = spin_z->text().toStdString();
 
 		m_dyn.AddAtomSite(std::move(site));
 	}
@@ -2119,13 +2107,6 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		if(use_dmi)
 		{
-			/*term.dmi = tl2::create<t_vec>(
-			{
-				dmi_x->GetValue(),
-				dmi_y->GetValue(),
-				dmi_z->GetValue(),
-			});*/
-
 			term.dmi[0] = dmi_x->text().toStdString();
 			term.dmi[1] = dmi_y->text().toStdString();
 			term.dmi[2] = dmi_z->text().toStdString();

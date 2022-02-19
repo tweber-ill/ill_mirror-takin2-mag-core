@@ -317,6 +317,7 @@ void MagDynDlg::StructPlotSync()
 
 	// get sites and terms
 	const auto& sites = m_dyn.GetAtomSites();
+	const auto& sites_calc = m_dyn.GetAtomSitesCalc();
 	const auto& terms = m_dyn.GetExchangeTerms();
 	const auto& terms_calc = m_dyn.GetExchangeTermsCalc();
 	const auto& field = m_dyn.GetExternalField();
@@ -376,6 +377,7 @@ void MagDynDlg::StructPlotSync()
 	// add an atom site to the plot
 	auto add_atom_site = [this, &atom_hashes, &get_atom_hash](
 		const tl2_mag::AtomSite& site,
+		const tl2_mag::AtomSiteCalc& site_calc,
 		const tl2_mag::ExternalField& field,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 	{
@@ -422,9 +424,9 @@ void MagDynDlg::StructPlotSync()
 		else
 		{
 			spin_vec = tl2::create<t_vec_gl>({
-				t_real_gl(site.spin_dir[0].real() * site.spin_mag),
-				t_real_gl(site.spin_dir[1].real() * site.spin_mag),
-				t_real_gl(site.spin_dir[2].real() * site.spin_mag),
+				t_real_gl(site_calc.spin_dir[0].real() * site.spin_mag),
+				t_real_gl(site_calc.spin_dir[1].real() * site.spin_mag),
+				t_real_gl(site_calc.spin_dir[2].real() * site.spin_mag),
 			});
 		}
 
@@ -452,8 +454,12 @@ void MagDynDlg::StructPlotSync()
 
 
 	// iterate and add unit cell atom sites
-	for(const auto& site : sites)
-		add_atom_site(site, field, 0, 0, 0);
+	for(std::size_t site_idx=0; site_idx<sites.size(); ++site_idx)
+	{
+		add_atom_site(sites[site_idx],
+			sites_calc[site_idx],
+			field, 0, 0, 0);
+	}
 
 
 	// iterate and add exchange terms
@@ -467,6 +473,7 @@ void MagDynDlg::StructPlotSync()
 
 		const auto& site1 = sites[term.atom1];
 		const auto& site2 = sites[term.atom2];
+		const auto& site2_calc = sites_calc[term.atom2];
 
 		t_real_gl sc_x = t_real_gl(term.dist[0]);
 		t_real_gl sc_y = t_real_gl(term.dist[1]);
@@ -496,7 +503,7 @@ void MagDynDlg::StructPlotSync()
 
 		// add the supercell site if it hasn't been inserted yet
 		if(atom_not_yet_seen(site2, sc_x, sc_y, sc_z))
-			add_atom_site(site2, field, sc_x, sc_y, sc_z);
+			add_atom_site(site2, site2_calc, field, sc_x, sc_y, sc_z);
 
 		t_vec_gl dir_vec = pos2_vec - pos1_vec;
 		t_real_gl dir_len = tl2::norm<t_vec_gl>(dir_vec);
