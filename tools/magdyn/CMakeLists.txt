@@ -79,7 +79,7 @@ else()
 	message("Lapacke disabled.")
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -122,7 +122,7 @@ endif()
 
 
 target_link_libraries(takin_magdyn
-	Qt5::Core Qt5::Gui Qt5::Widgets
+	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	Threads::Threads
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
