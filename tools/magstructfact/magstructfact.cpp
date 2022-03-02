@@ -74,12 +74,12 @@ constexpr int g_prec = 6;
 enum : int
 {
 	COL_NAME = 0,
-	COL_X, COL_Y, COL_Z,				// position
-	COL_M_MAG,							// scale factor of FC
-	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,	// fourier components
+	COL_X, COL_Y, COL_Z,                // position
+	COL_M_MAG,                          // scale factor of FC
+	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,    // fourier components
 	COL_ImM_X, COL_ImM_Y, COL_ImM_Z,
-	COL_RAD,							// drawing radius
-	COL_COL,							// colour
+	COL_RAD,                            // drawing radius
+	COL_COL,                            // colour
 
 	NUM_COLS
 };
@@ -89,8 +89,8 @@ enum : int
 enum : int
 {
 	PROP_COL_NAME = 0,
-	PROP_COL_X, PROP_COL_Y, PROP_COL_Z,	// propagation direction
-	PROP_COL_CONJ,						// conjugate fourier component for this propagation vector?
+	PROP_COL_X, PROP_COL_Y, PROP_COL_Z, // propagation direction
+	PROP_COL_CONJ,                      // conjugate fourier component for this propagation vector?
 
 	PROP_NUM_COLS
 };
@@ -844,21 +844,21 @@ void MagStructFactDlg::Sync3DItem(int row)
 	auto normImM = tl2::norm<t_vec_gl>(vecImM);
 
 	t_mat_gl matArrowRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
-		vecReM, 									// to
-		1, 											// post-scale
-		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
-		tl2::create<t_vec_gl>({0, 0, 1}),				// from
-		M*scale, 									// pre-scale
-		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
+		vecReM,                                    // to
+		1,                                         // post-scale
+		tl2::create<t_vec_gl>({0, 0, 0}),          // post-translate
+		tl2::create<t_vec_gl>({0, 0, 1}),          // from
+		M*scale,                                   // pre-scale
+		tl2::create<t_vec_gl>({posx, posy, posz})  // pre-translate
 	);
 
 	t_mat_gl matArrowIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
-		vecImM, 									// to
-		1, 											// post-scale
-		tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
-		tl2::create<t_vec_gl>({0, 0, 1}),				// from
-		M*scale, 									// pre-scale
-		tl2::create<t_vec_gl>({posx, posy, posz})		// pre-translate
+		vecImM,                                    // to
+		1,                                         // post-scale
+		tl2::create<t_vec_gl>({0, 0, 0}),          // post-translate
+		tl2::create<t_vec_gl>({0, 0, 1}),          // from
+		M*scale,                                   // pre-scale
+		tl2::create<t_vec_gl>({posx, posy, posz})  // pre-translate
 	);
 
 	m_plot->GetRenderer()->SetObjectMatrix(objSphere, matSphere);
@@ -1639,8 +1639,11 @@ void MagStructFactDlg::CalcB(bool bFullRecalc)
 	std::istringstream{m_editBeta->text().toStdString()} >> beta;
 	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
 
-	m_crystB = tl2::B_matrix<t_mat>(a, b, c,
-		alpha/180.*tl2::pi<t_real>, beta/180.*tl2::pi<t_real>, gamma/180.*tl2::pi<t_real>);
+	m_crystB = tl2::B_matrix<t_mat>(
+		a, b, c,
+		alpha/180.*tl2::pi<t_real>,
+		beta/180.*tl2::pi<t_real>,
+		gamma/180.*tl2::pi<t_real>);
 
 	bool ok = true;
 	std::tie(m_crystA, ok) = tl2::inv(m_crystB);
@@ -1785,72 +1788,82 @@ void MagStructFactDlg::Calc()
 		<< std::setw(g_prec*2) << std::right << "Mult." << "\n";
 
 
+	// iterate brillouin zones
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
+	for(t_real k=-maxBZ; k<=maxBZ; ++k)
+	for(t_real l=-maxBZ; l<=maxBZ; ++l)
 	{
-		for(t_real k=-maxBZ; k<=maxBZ; ++k)
+		// iterate propagation vectors
+		for(const auto& prop : propvecs)
 		{
-			for(t_real l=-maxBZ; l<=maxBZ; ++l)
+			auto Q = tl2::create<t_vec>({ h,k,l }) + prop;
+			auto Q_invA = m_crystB * Q;
+			auto Qabs_invA = tl2::norm(Q_invA);
+
+			// magnetic structure factor
+			auto Fm = p * tl2::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
+			bool Fm_is_zero = 1;
+
+			// set small value to zero
+			for(auto &comp : Fm)
 			{
-				for(const auto& prop : propvecs)
-				{
-					auto Q = tl2::create<t_vec>({ h,k,l }) + prop;
-					auto Q_invA = m_crystB * Q;
-					auto Qabs_invA = tl2::norm(Q_invA);
-
-					// magnetic structure factor
-					auto Fm = p * tl2::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
-					bool Fm_is_zero = 1;
-					for(auto &comp : Fm)
-					{
-						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.); else Fm_is_zero = 0;
-						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.); else Fm_is_zero = 0;
-					}
-					if(Fm.size() == 0)
-						Fm = tl2::zero<t_vec_cplx>(3);
-
-					// neutron scattering: orthogonal projection onto plane with normal Q.
-					auto Fm_perp = tl2::ortho_project<t_vec_cplx>(
-						Fm, tl2::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
-					for(auto &comp : Fm_perp)
-					{
-						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
-					}
-
-					t_real I = (std::conj(Fm[0])*Fm[0] +
-						std::conj(Fm[1])*Fm[1] +
-						std::conj(Fm[2])*Fm[2]).real();
-					t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
-						std::conj(Fm_perp[1])*Fm_perp[1] +
-						std::conj(Fm_perp[2])*Fm_perp[2]).real();
-
-					if(std::isnan(I_perp))
-					{
-						I_perp = 0.;
-						for(auto& comp : Fm_perp)
-							comp = t_cplx{0.,0.};
-					}
-
-					if(remove_zeroes && Fm_is_zero)
-						continue;
-
-					add_powderline(Qabs_invA, I_perp, h,k,l);
-
-					ostr
-						<< std::setw(g_prec*1.2) << std::right << h+prop[0] << " "
-						<< std::setw(g_prec*1.2) << std::right << k+prop[1] << " "
-						<< std::setw(g_prec*1.2) << std::right << l+prop[2] << " "
-						<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
-						<< std::setw(g_prec*2) << std::right << I << " "
-						<< std::setw(g_prec*2) << std::right << I_perp << " "
-						<< std::setw(g_prec*5) << std::right << Fm[0] << " "
-						<< std::setw(g_prec*5) << std::right << Fm[1] << " "
-						<< std::setw(g_prec*5) << std::right << Fm[2] << " "
-						<< std::setw(g_prec*5) << std::right << Fm_perp[0] << " "
-						<< std::setw(g_prec*5) << std::right << Fm_perp[1] << " "
-						<< std::setw(g_prec*5) << std::right << Fm_perp[2] << "\n";
-				}
+				if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps))
+					comp.real(0.);
+				else
+					Fm_is_zero = 0;
+				if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps))
+					comp.imag(0.);
+				else
+					Fm_is_zero = 0;
 			}
+			if(Fm.size() == 0)
+				Fm = tl2::zero<t_vec_cplx>(3);
+
+			// neutron scattering: orthogonal projection onto plane with normal Q.
+			auto Fm_perp = tl2::ortho_project<t_vec_cplx>(
+				Fm, tl2::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+
+			// set small value to zero
+			for(auto &comp : Fm_perp)
+			{
+				if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps))
+					comp.real(0.);
+				if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps))
+					comp.imag(0.);
+			}
+
+			t_real I = (std::conj(Fm[0])*Fm[0] +
+				std::conj(Fm[1])*Fm[1] +
+				std::conj(Fm[2])*Fm[2]).real();
+			t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
+				std::conj(Fm_perp[1])*Fm_perp[1] +
+				std::conj(Fm_perp[2])*Fm_perp[2]).real();
+
+			if(std::isnan(I_perp))
+			{
+				I_perp = 0.;
+				for(auto& comp : Fm_perp)
+					comp = t_cplx{0.,0.};
+			}
+
+			if(remove_zeroes && Fm_is_zero)
+				continue;
+
+			add_powderline(Qabs_invA, I_perp, h,k,l);
+
+			ostr
+				<< std::setw(g_prec*1.2) << std::right << h+prop[0] << " "
+				<< std::setw(g_prec*1.2) << std::right << k+prop[1] << " "
+				<< std::setw(g_prec*1.2) << std::right << l+prop[2] << " "
+				<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
+				<< std::setw(g_prec*2) << std::right << I << " "
+				<< std::setw(g_prec*2) << std::right << I_perp << " "
+				<< std::setw(g_prec*5) << std::right << Fm[0] << " "
+				<< std::setw(g_prec*5) << std::right << Fm[1] << " "
+				<< std::setw(g_prec*5) << std::right << Fm[2] << " "
+				<< std::setw(g_prec*5) << std::right << Fm_perp[0] << " "
+				<< std::setw(g_prec*5) << std::right << Fm_perp[1] << " "
+				<< std::setw(g_prec*5) << std::right << Fm_perp[2] << "\n";
 		}
 	}
 
@@ -1912,116 +1925,126 @@ void MagStructFactDlg::Calc()
 	//std::vector<t_vec_cplx> moments;
 	auto vecCentring = tl2::create<t_vec>({0, 0, 0});
 
+	const t_cplx imag{0., 1.};
+	const t_real twopi = tl2::pi<t_real>*t_real{2};
+
+	// iterate over supercell
 	for(t_real sc_x=-maxSCx; sc_x<=maxSCx; ++sc_x)
+	for(t_real sc_y=-maxSCy; sc_y<=maxSCy; ++sc_y)
+	for(t_real sc_z=-maxSCz; sc_z<=maxSCz; ++sc_z)
 	{
-		for(t_real sc_y=-maxSCy; sc_y<=maxSCy; ++sc_y)
+		auto vecCellCentre = tl2::create<t_vec>({ sc_x, sc_y, sc_z })
+			+ vecCentring;
+
+		// iterate magnetic atoms
+		for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
 		{
-			for(t_real sc_z=-maxSCz; sc_z<=maxSCz; ++sc_z)
+			const t_vec_cplx& fourier = Ms[nuclidx];
+			const std::string& name = names[nuclidx];
+			const std::string& colstr = cols[nuclidx];
+			auto thepos = pos[nuclidx] + vecCellCentre;
+			auto scale = scales[nuclidx];
+
+			auto posGL = tl2::convert<t_vec_gl>(thepos);
+			auto moment = tl2::create<t_vec_cplx>({0, 0, 0});
+			auto fourier_conj = tl2::conj(fourier);
+
+			qreal r=1, g=1, b=1;
+			QColor col{colstr.c_str()};
+			col.getRgbF(&r, &g, &b);
+
+			// iterate propagation vectors
+			for(std::size_t propidx=0; propidx<propvecs.size(); ++propidx)
 			{
-				auto vecCellCentre = tl2::create<t_vec>({ sc_x, sc_y, sc_z }) + vecCentring;
-
-				for(std::size_t nuclidx=0; nuclidx<Ms.size(); ++nuclidx)
-				{
-					const t_vec_cplx& fourier = Ms[nuclidx];
-					const std::string& name = names[nuclidx];
-					const std::string& colstr = cols[nuclidx];
-					auto thepos = pos[nuclidx] + vecCellCentre;
-					auto scale = scales[nuclidx];
-
-					auto posGL = tl2::convert<t_vec_gl>(thepos);
-					auto moment = tl2::create<t_vec_cplx>({0, 0, 0});
-					auto fourier_conj = tl2::conj(fourier);
-
-					qreal r=1, g=1, b=1;
-					QColor col{colstr.c_str()};
-					col.getRgbF(&r, &g, &b);
-
-					for(std::size_t propidx=0; propidx<propvecs.size(); ++propidx)
-					{
-						const auto& propvec = propvecs[propidx];
-						auto *pfourier = conjFCs[propidx] ? &fourier_conj : &fourier;
-						moment += *pfourier * std::exp(t_cplx{0,1}*tl2::pi<t_real>*t_real{2} * tl2::inner<t_vec>(propvec, vecCellCentre));
-					}
-
-					for(auto &comp : moment)
-					{
-						if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps)) comp.real(0.);
-						if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps)) comp.imag(0.);
-					}
-
-
-					// add 3d objs to super cell view
-					if(m_plotSC)
-					{
-						auto objArrowRe = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
-						auto objArrowIm = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
-
-						auto [_vecReM, _vecImM] = tl2::split_cplx<t_vec_cplx, t_vec>(moment);
-						auto vecReM = tl2::convert<t_vec_gl>(_vecReM);
-						auto vecImM = tl2::convert<t_vec_gl>(_vecImM);
-
-						auto normReM = tl2::norm<t_vec_gl>(vecReM);
-						auto normImM = tl2::norm<t_vec_gl>(vecImM);
-
-						t_mat_gl matArrowRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
-							vecReM, 									// to
-							1, 											// post-scale
-							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
-							tl2::create<t_vec_gl>({0, 0, 1}),				// from
-							normReM*scale, 								// pre-scale
-							posGL										// pre-translate
-						);
-
-						t_mat_gl matArrowIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
-							vecImM, 									// to
-							1, 											// post-scale
-							tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
-							tl2::create<t_vec_gl>({0, 0, 1}),				// from
-							normImM*scale, 								// pre-scale
-							posGL										// pre-translate
-						);
-
-						// labels
-						std::ostringstream ostrMom;
-						ostrMom.precision(g_prec);
-						ostrMom
-							<< "Re{M} = (" << moment[0].real() << " " << moment[1].real() << " " << moment[2].real() << "); "
-							<< "Im{M} = (" << moment[0].imag() << " " << moment[1].imag() << " " << moment[2].imag() << "); "
-							<< "r = (" << thepos[0] << " " << thepos[1] << " " << thepos[2] << ")";
-
-						m_plotSC->GetRenderer()->SetObjectMatrix(objArrowRe, matArrowRe);
-						m_plotSC->GetRenderer()->SetObjectMatrix(objArrowIm, matArrowIm);
-						m_plotSC->GetRenderer()->SetObjectCol(objArrowRe, r, g, b, 1.);
-						m_plotSC->GetRenderer()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
-						//m_plotSC->GetRenderer()->SetObjectLabel(objArrowRe, name + " (real)");
-						//m_plotSC->GetRenderer()->SetObjectLabel(objArrowIm, name + " (imag)");
-						m_plotSC->GetRenderer()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
-						m_plotSC->GetRenderer()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
-						m_plotSC->GetRenderer()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
-						m_plotSC->GetRenderer()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
-
-						m_3dobjsSC.push_back(objArrowRe);
-						m_3dobjsSC.push_back(objArrowIm);
-					}
-
-					ostrMoments
-						<< std::setw(g_prec*2) << std::right << name << " "
-						<< std::setw(g_prec*2) << std::right << thepos[0] << " "
-						<< std::setw(g_prec*2) << std::right << thepos[1] << " "
-						<< std::setw(g_prec*2) << std::right << thepos[2] << " "
-						<< std::setw(g_prec*2) << std::right << moment[0].real() << " "
-						<< std::setw(g_prec*2) << std::right << moment[1].real() << " "
-						<< std::setw(g_prec*2) << std::right << moment[2].real() << " "
-						<< std::setw(g_prec*2) << std::right << moment[0].imag() << " "
-						<< std::setw(g_prec*2) << std::right << moment[1].imag() << " "
-						<< std::setw(g_prec*2) << std::right << moment[2].imag() << " "
-						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[0] << " "
-						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[1] << " "
-						<< std::setw(g_prec*1.2) << std::right << vecCellCentre[2] << "\n";
-
-					//moments.emplace_back(std::move(moment));
-				}
+				const auto& propvec = propvecs[propidx];
+				auto *pfourier = conjFCs[propidx] ? &fourier_conj : &fourier;
+				moment += *pfourier *
+					std::exp(imag*twopi *
+						tl2::inner<t_vec>(
+							propvec, vecCellCentre));
 			}
+
+			// set small values to zero
+			for(auto &comp : moment)
+			{
+				if(tl2::equals<t_real>(comp.real(), t_real(0), g_eps))
+					comp.real(0.);
+				if(tl2::equals<t_real>(comp.imag(), t_real(0), g_eps))
+					comp.imag(0.);
+			}
+
+
+			// add 3d objs to super cell view
+			if(m_plotSC)
+			{
+				auto objArrowRe = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+				auto objArrowIm = m_plotSC->GetRenderer()->AddLinkedObject(m_arrowSC, 0,0,0, 1,1,1,1);
+
+				auto [_vecReM, _vecImM] =
+					tl2::split_cplx<t_vec_cplx, t_vec>(moment);
+				auto vecReM = tl2::convert<t_vec_gl>(_vecReM);
+				auto vecImM = tl2::convert<t_vec_gl>(_vecImM);
+
+				auto normReM = tl2::norm<t_vec_gl>(vecReM);
+				auto normImM = tl2::norm<t_vec_gl>(vecImM);
+
+				t_mat_gl matArrowRe = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
+					vecReM, 									// to
+					1, 											// post-scale
+					tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+					tl2::create<t_vec_gl>({0, 0, 1}),				// from
+					normReM*scale,							// pre-scale
+					posGL										// pre-translate
+				);
+
+				t_mat_gl matArrowIm = tl2::get_arrow_matrix<t_vec_gl, t_mat_gl, t_real_gl>(
+					vecImM, 									// to
+					1, 											// post-scale
+					tl2::create<t_vec_gl>({0, 0, 0}),				// post-translate
+					tl2::create<t_vec_gl>({0, 0, 1}),				// from
+					normImM*scale,								// pre-scale
+					posGL										// pre-translate
+				);
+
+				// labels
+				std::ostringstream ostrMom;
+				ostrMom.precision(g_prec);
+				ostrMom
+					<< "Re{M} = (" << moment[0].real() << " " << moment[1].real() << " " << moment[2].real() << "); "
+					<< "Im{M} = (" << moment[0].imag() << " " << moment[1].imag() << " " << moment[2].imag() << "); "
+					<< "r = (" << thepos[0] << " " << thepos[1] << " " << thepos[2] << ")";
+
+				m_plotSC->GetRenderer()->SetObjectMatrix(objArrowRe, matArrowRe);
+				m_plotSC->GetRenderer()->SetObjectMatrix(objArrowIm, matArrowIm);
+				m_plotSC->GetRenderer()->SetObjectCol(objArrowRe, r, g, b, 1.);
+				m_plotSC->GetRenderer()->SetObjectCol(objArrowIm, 1.-r, 1.-g, 1.-b, 1.);
+				//m_plotSC->GetRenderer()->SetObjectLabel(objArrowRe, name + " (real)");
+				//m_plotSC->GetRenderer()->SetObjectLabel(objArrowIm, name + " (imag)");
+				m_plotSC->GetRenderer()->SetObjectDataString(objArrowRe, name + " (real); " + ostrMom.str());
+				m_plotSC->GetRenderer()->SetObjectDataString(objArrowIm, name + " (imag); " + ostrMom.str());
+				m_plotSC->GetRenderer()->SetObjectVisible(objArrowRe, !tl2::equals<t_real_gl>(normReM, 0, g_eps));
+				m_plotSC->GetRenderer()->SetObjectVisible(objArrowIm, !tl2::equals<t_real_gl>(normImM, 0, g_eps));
+
+				m_3dobjsSC.push_back(objArrowRe);
+				m_3dobjsSC.push_back(objArrowIm);
+			}
+
+			ostrMoments
+				<< std::setw(g_prec*2) << std::right << name << " "
+				<< std::setw(g_prec*2) << std::right << thepos[0] << " "
+				<< std::setw(g_prec*2) << std::right << thepos[1] << " "
+				<< std::setw(g_prec*2) << std::right << thepos[2] << " "
+				<< std::setw(g_prec*2) << std::right << moment[0].real() << " "
+				<< std::setw(g_prec*2) << std::right << moment[1].real() << " "
+				<< std::setw(g_prec*2) << std::right << moment[2].real() << " "
+				<< std::setw(g_prec*2) << std::right << moment[0].imag() << " "
+				<< std::setw(g_prec*2) << std::right << moment[1].imag() << " "
+				<< std::setw(g_prec*2) << std::right << moment[2].imag() << " "
+				<< std::setw(g_prec*1.2) << std::right << vecCellCentre[0] << " "
+				<< std::setw(g_prec*1.2) << std::right << vecCellCentre[1] << " "
+				<< std::setw(g_prec*1.2) << std::right << vecCellCentre[2] << "\n";
+
+			//moments.emplace_back(std::move(moment));
 		}
 	}
 
