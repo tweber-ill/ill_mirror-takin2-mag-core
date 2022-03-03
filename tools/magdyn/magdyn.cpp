@@ -128,7 +128,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_sitestab->setContextMenuPolicy(Qt::CustomContextMenu);
 
 		m_sitestab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
-		m_sitestab->verticalHeader()->setVisible(false);
+		m_sitestab->verticalHeader()->setVisible(true);
 
 		m_sitestab->setColumnCount(NUM_SITE_COLS);
 		m_sitestab->setHorizontalHeaderItem(COL_SITE_NAME,
@@ -293,7 +293,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		m_termstab->verticalHeader()->setDefaultSectionSize(
 			fontMetrics().lineSpacing() + 4);
-		m_termstab->verticalHeader()->setVisible(false);
+		m_termstab->verticalHeader()->setVisible(true);
 
 		m_termstab->setColumnCount(NUM_XCH_COLS);
 		m_termstab->setHorizontalHeaderItem(
@@ -1568,6 +1568,8 @@ void MagDynDlg::AddSiteTabItem(int row,
 
 	m_sitestab->setSortingEnabled(/*sorting*/ true);
 
+	UpdateVerticalHeader(m_sitestab);
+
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
 		SyncSitesAndTerms();
@@ -1641,6 +1643,8 @@ void MagDynDlg::AddTermTabItem(int row,
 
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
+	UpdateVerticalHeader(m_termstab);
+
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
 		SyncSitesAndTerms();
@@ -1694,12 +1698,17 @@ void MagDynDlg::AddVariableTabItem(int row,
 
 	m_varstab->setSortingEnabled(/*sorting*/ true);
 
+	UpdateVerticalHeader(m_varstab);
+
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
 		SyncSitesAndTerms();
 }
 
 
+/**
+ * delete table widget items
+ */
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
 	m_ignoreTableChanges = 1;
@@ -1724,6 +1733,8 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 			pTab->removeRow(row);
 		}
 	}
+
+	UpdateVerticalHeader(pTab);
 
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
@@ -1755,12 +1766,14 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 	for(int row=0; row<pTab->rowCount(); ++row)
 	{
 		if(auto *item = pTab->item(row, 0);
-		   item && std::find(selected.begin(), selected.end(), row+1) != selected.end())
-		   {
-			   for(int col=0; col<pTab->columnCount(); ++col)
-				   pTab->item(row, col)->setSelected(true);
-		   }
+			item && std::find(selected.begin(), selected.end(), row+1) != selected.end())
+		{
+			for(int col=0; col<pTab->columnCount(); ++col)
+				pTab->item(row, col)->setSelected(true);
+		}
 	}
+
+	UpdateVerticalHeader(pTab);
 
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
@@ -1792,16 +1805,34 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 	for(int row=0; row<pTab->rowCount(); ++row)
 	{
 		if(auto *item = pTab->item(row, 0);
-		   item && std::find(selected.begin(), selected.end(), row-1) != selected.end())
-		   {
-			   for(int col=0; col<pTab->columnCount(); ++col)
-				   pTab->item(row, col)->setSelected(true);
-		   }
+			item && std::find(selected.begin(), selected.end(), row-1) != selected.end())
+		{
+			for(int col=0; col<pTab->columnCount(); ++col)
+				pTab->item(row, col)->setSelected(true);
+		}
 	}
+
+	UpdateVerticalHeader(pTab);
 
 	m_ignoreTableChanges = 0;
 	if(m_autocalc->isChecked())
 		SyncSitesAndTerms();
+}
+
+
+/**
+ * insert a vertical header column showing the row index
+ */
+void MagDynDlg::UpdateVerticalHeader(QTableWidget *pTab)
+{
+	for(int row=0; row<pTab->rowCount(); ++row)
+	{
+		QTableWidgetItem *item = pTab->verticalHeaderItem(row);
+		if(!item)
+			item = new QTableWidgetItem{};
+		item->setText(QString::number(row));
+		pTab->setVerticalHeaderItem(row, item);
+	}
 }
 
 

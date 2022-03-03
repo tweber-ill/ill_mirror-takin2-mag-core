@@ -203,6 +203,7 @@ protected:
 		const t_cplx& var = t_cplx{0, 0});
 
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
+	void UpdateVerticalHeader(QTableWidget *pTab);
 
 	void SitesTableItemChanged(QTableWidgetItem *item);
 	void TermsTableItemChanged(QTableWidgetItem *item);
