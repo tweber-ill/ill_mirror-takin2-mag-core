@@ -321,6 +321,9 @@ void MagDynDlg::StructPlotSync()
 	const auto& terms = m_dyn.GetExchangeTerms();
 	const auto& terms_calc = m_dyn.GetExchangeTermsCalc();
 	const auto& field = m_dyn.GetExternalField();
+	const auto& ordering = m_dyn.GetOrderingWavevector();
+	const auto& rotaxis = m_dyn.GetRotationAxis();
+	const bool is_incommensurate = m_dyn.IsIncommensurate();
 	//const auto [sc_min, sc_max] = m_dyn.GetSupercellMinMax();
 
 
@@ -375,12 +378,14 @@ void MagDynDlg::StructPlotSync()
 
 
 	// add an atom site to the plot
-	auto add_atom_site = [this, &atom_hashes, &get_atom_hash](
+	auto add_atom_site = [this, &atom_hashes, &get_atom_hash,
+		is_incommensurate, &ordering, &rotaxis](
 		const tl2_mag::AtomSite& site,
 		const tl2_mag::AtomSiteCalc& site_calc,
 		const tl2_mag::ExternalField& field,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 	{
+		// super cell index
 		int _sc_x = int(std::round(sc_x));
 		int _sc_y = int(std::round(sc_y));
 		int _sc_z = int(std::round(sc_z));
@@ -428,6 +433,25 @@ void MagDynDlg::StructPlotSync()
 				t_real_gl(site_calc.spin_dir[1].real() * site.spin_mag),
 				t_real_gl(site_calc.spin_dir[2].real() * site.spin_mag),
 			});
+
+			if(is_incommensurate)
+			{
+				// rotate spin vector for incommensurate structures
+				t_vec_gl sc_vec = tl2::create<t_vec_gl>({sc_x, sc_y, sc_z});
+				t_real_gl sc_angle = t_real_gl(2) * tl2::pi<t_real_gl> *
+					tl2::inner<t_vec_gl>(
+						tl2::convert<t_vec_gl>(ordering),
+						sc_vec);
+
+				if(!tl2::equals_0<t_real_gl>(sc_angle, t_real_gl(g_eps)))
+				{
+					t_mat_gl sc_rot = tl2::rotation<t_mat_gl, t_vec_gl>(
+						tl2::convert<t_vec_gl>(rotaxis),
+						sc_angle);
+
+					spin_vec = sc_rot * spin_vec;
+				}
+			}
 		}
 
 		m_structplot->GetRenderer()->SetObjectMatrix(obj,

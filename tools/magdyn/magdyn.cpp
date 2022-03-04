@@ -361,6 +361,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		m_ordering[1] = new QDoubleSpinBox(m_termspanel);
 		m_ordering[2] = new QDoubleSpinBox(m_termspanel);
 
+		// rotation axis
+		m_rotaxis[0] = new QDoubleSpinBox(m_termspanel);
+		m_rotaxis[1] = new QDoubleSpinBox(m_termspanel);
+		m_rotaxis[2] = new QDoubleSpinBox(m_termspanel);
+
 		for(int i=0; i<3; ++i)
 		{
 			m_ordering[i]->setDecimals(4);
@@ -370,11 +375,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_ordering[i]->setValue(0.);
 			m_ordering[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+			m_rotaxis[i]->setDecimals(4);
+			m_rotaxis[i]->setMinimum(-1);
+			m_rotaxis[i]->setMaximum(+1);
+			m_rotaxis[i]->setSingleStep(0.01);
+			m_rotaxis[i]->setValue(i==0 ? 1. : 0.);
+			m_rotaxis[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
 		m_ordering[0]->setPrefix("Oh = ");
 		m_ordering[1]->setPrefix("Ok = ");
 		m_ordering[2]->setPrefix("Ol = ");
+
+		m_rotaxis[0]->setPrefix("Nh = ");
+		m_rotaxis[1]->setPrefix("Nk = ");
+		m_rotaxis[2]->setPrefix("Nl = ");
 
 
 		// grid
@@ -393,6 +410,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(m_ordering[0], y,1,1,1);
 		grid->addWidget(m_ordering[1], y,2,1,1);
 		grid->addWidget(m_ordering[2], y++,3,1,1);
+		grid->addWidget(new QLabel(QString("Rotation Axis:"),
+			m_termspanel), y,0,1,1);
+		grid->addWidget(m_rotaxis[0], y,1,1,1);
+		grid->addWidget(m_rotaxis[1], y,2,1,1);
+		grid->addWidget(m_rotaxis[2], y++,3,1,1);
 
 		// table CustomContextMenu
 		QMenu *pTabContextMenu = new QMenu(m_termstab);
@@ -446,6 +468,14 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		for(int i=0; i<3; ++i)
 		{
 			connect(m_ordering[i],
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->SyncSitesAndTerms();
+			});
+
+			connect(m_rotaxis[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]()
 			{
@@ -1385,6 +1415,10 @@ void MagDynDlg::Clear()
 	m_ordering[1]->setValue(0.);
 	m_ordering[2]->setValue(0.);
 
+	m_rotaxis[0]->setValue(1.);
+	m_rotaxis[1]->setValue(0.);
+	m_rotaxis[2]->setValue(0.);
+
 	m_ignoreCalc = false;
 }
 
@@ -1943,7 +1977,7 @@ void MagDynDlg::SyncSitesAndTerms()
 	m_termstab->blockSignals(true);
 	m_varstab->blockSignals(true);
 
-	// get ordering vector
+	// get ordering vector and rotation axis
 	{
 		t_vec_real ordering = tl2::create<t_vec_real>(
 		{
@@ -1952,7 +1986,15 @@ void MagDynDlg::SyncSitesAndTerms()
 			m_ordering[2]->value(),
 		});
 
+		t_vec_real rotaxis = tl2::create<t_vec_real>(
+		{
+			m_rotaxis[0]->value(),
+			m_rotaxis[1]->value(),
+			m_rotaxis[2]->value(),
+		});
+
 		m_dyn.SetOrderingWavevector(ordering);
+		m_dyn.SetRotationAxis(rotaxis);
 	}
 
 	// dmi
