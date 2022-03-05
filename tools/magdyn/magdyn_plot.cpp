@@ -100,9 +100,9 @@ void MagDynDlg::CalcDispersion()
 	Es_data.reserve(num_pts*10);
 	ws_data.reserve(num_pts*10);
 
-	const t_real weight_scale = m_weight_scale->value();;
-	const t_real weight_min = m_weight_min->value();;
-	const t_real weight_max = m_weight_max->value();;
+	const t_real weight_scale = m_weight_scale->value();
+	const t_real weight_min = m_weight_min->value();
+	const t_real weight_max = m_weight_max->value();
 
 	bool use_goldstone = false;
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
@@ -166,7 +166,7 @@ void MagDynDlg::CalcDispersion()
 						weight = 0.;
 
 					t_real scaled_weight = weight * weight_scale;
-					if(weight_max >= 0. && weight_min >= 0. && weight_min >= weight_max)
+					if(weight_max >= 0. && weight_min >= 0. && weight_min <= weight_max)
 						scaled_weight = tl2::clamp(scaled_weight, weight_min, weight_max);
 					ws_data.push_back(scaled_weight);
 				}
