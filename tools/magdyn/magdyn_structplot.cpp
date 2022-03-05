@@ -438,19 +438,12 @@ void MagDynDlg::StructPlotSync()
 			{
 				// rotate spin vector for incommensurate structures
 				t_vec_gl sc_vec = tl2::create<t_vec_gl>({sc_x, sc_y, sc_z});
-				t_real_gl sc_angle = t_real_gl(2) * tl2::pi<t_real_gl> *
-					tl2::inner<t_vec_gl>(
-						tl2::convert<t_vec_gl>(ordering),
-						sc_vec);
 
-				if(!tl2::equals_0<t_real_gl>(sc_angle, t_real_gl(g_eps)))
-				{
-					t_mat_gl sc_rot = tl2::rotation<t_mat_gl, t_vec_gl>(
-						tl2::convert<t_vec_gl>(rotaxis),
-						sc_angle);
-
-					spin_vec = sc_rot * spin_vec;
-				}
+				tl2_mag::rotate_spin_incommensurate<t_mat_gl, t_vec_gl, t_real_gl>(
+					spin_vec, sc_vec,
+					tl2::convert<t_vec_gl>(ordering),
+					tl2::convert<t_vec_gl>(rotaxis),
+					g_eps);
 			}
 		}
 

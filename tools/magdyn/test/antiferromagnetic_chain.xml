@@ -20,7 +20,7 @@
 		<weight_max>50</weight_max>
 		<auto_calc>true</auto_calc>
 		<use_DMI>true</use_DMI>
-		<use_field>true</use_field>
+		<use_field>false</use_field>
 		<use_temperature>false</use_temperature>
 		<use_weights>true</use_weights>
 		<unite_degeneracies>true</unite_degeneracies>
