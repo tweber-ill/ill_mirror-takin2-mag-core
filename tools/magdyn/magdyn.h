@@ -131,7 +131,7 @@ protected:
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
-	QDoubleSpinBox *m_weight_scale{};
+	QDoubleSpinBox *m_weight_scale{}, *m_weight_min{}, *m_weight_max{};
 
 	// hamiltonian
 	QTextEdit *m_hamiltonian{};

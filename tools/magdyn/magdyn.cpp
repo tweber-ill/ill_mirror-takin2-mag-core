@@ -872,14 +872,22 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		// scaling factor for weights
-		m_weight_scale = new QDoubleSpinBox(m_disppanel);
-		m_weight_scale->setDecimals(2);
-		m_weight_scale->setMinimum(0);
-		m_weight_scale->setMaximum(+99);
-		m_weight_scale->setSingleStep(0.1);
+		for(auto** comp : {&m_weight_scale, &m_weight_min, &m_weight_max})
+		{
+			*comp = new QDoubleSpinBox(m_disppanel);
+			(*comp)->setDecimals(4);
+			(*comp)->setMinimum(0.);
+			(*comp)->setMaximum(+9999.);
+			(*comp)->setSingleStep(0.1);
+			(*comp)->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+		}
+
 		m_weight_scale->setValue(1.);
-		m_weight_scale->setSizePolicy(QSizePolicy{
-			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		m_weight_min->setValue(0.);
+		m_weight_max->setValue(9999);
+		m_weight_min->setMinimum(-1.);	// -1: disable clamping
+		m_weight_max->setMinimum(-1.);	// -1: disable clamping
 
 		for(int i=0; i<3; ++i)
 		{
@@ -934,6 +942,12 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(
 			new QLabel(QString("Weight Scale:"), m_disppanel), y,2,1,1);
 		grid->addWidget(m_weight_scale, y++,3,1,1);
+		grid->addWidget(
+			new QLabel(QString("Min. Weight:"), m_disppanel), y,0,1,1);
+		grid->addWidget(m_weight_min, y,1,1,1);
+		grid->addWidget(
+			new QLabel(QString("Max. Weight:"), m_disppanel), y,2,1,1);
+		grid->addWidget(m_weight_max, y++,3,1,1);
 
 		// signals
 		for(int i=0; i<3; ++i)
@@ -962,13 +976,16 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				this->CalcDispersion();
 		});
 
-		connect(m_weight_scale,
-			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]()
+		for(auto* comp : {m_weight_scale, m_weight_min, m_weight_max})
 		{
-			if(this->m_autocalc->isChecked())
-				this->CalcDispersion();
-		});
+			connect(comp,
+				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+				[this]()
+			{
+				if(this->m_autocalc->isChecked())
+					this->CalcDispersion();
+			});
+		}
 
 		connect(m_plot, &QCustomPlot::mouseMove,
 			this, &MagDynDlg::PlotMouseMove);
@@ -1418,6 +1435,10 @@ void MagDynDlg::Clear()
 	m_rotaxis[0]->setValue(1.);
 	m_rotaxis[1]->setValue(0.);
 	m_rotaxis[2]->setValue(0.);
+
+	m_weight_scale->setValue(1.);
+	m_weight_min->setValue(0.);
+	m_weight_max->setValue(9999.);
 
 	m_ignoreCalc = false;
 }
