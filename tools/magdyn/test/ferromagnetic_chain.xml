@@ -2,7 +2,7 @@
 <magdyn>
 	<meta>
 		<info>magdyn_tool</info>
-		<date>Sat 2022-Mar-05 02:32:47 CET</date>
+		<date>jeu. 2022-mars-10 11:26:53 CET</date>
 	</meta>
 	<config>
 		<h_start>0</h_start>
@@ -67,8 +67,8 @@
 			<position_y>0</position_y>
 			<position_z>0</position_z>
 			<spin_x>0</spin_x>
-			<spin_y>1</spin_y>
-			<spin_z>0</spin_z>
+			<spin_y>0</spin_y>
+			<spin_z>1</spin_z>
 			<spin_magnitude>1</spin_magnitude>
 		</site>
 	</atom_sites>
