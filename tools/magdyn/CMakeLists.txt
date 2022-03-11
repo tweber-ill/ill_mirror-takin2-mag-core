@@ -110,6 +110,8 @@ add_executable(takin_magdyn
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h
 	../../tlibs2/libs/qt/recent.cpp ../../tlibs2/libs/qt/recent.h
+
+#	../../../paths/externals/qcustomplot/qcustomplot.cpp
 )
 
 
