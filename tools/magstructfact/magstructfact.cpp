@@ -1799,6 +1799,7 @@ void MagStructFactDlg::Calc()
 			auto Q = tl2::create<t_vec>({ h,k,l }) + prop;
 			auto Q_invA = m_crystB * Q;
 			auto Qabs_invA = tl2::norm(Q_invA);
+			auto Q_cplx = tl2::create<t_vec_cplx>({ Q[0], Q[1], Q[2] });
 
 			// magnetic structure factor
 			auto Fm = p * tl2::structure_factor<t_vec, t_vec_cplx>(Ms, pos, Q, nullptr);
@@ -1820,8 +1821,9 @@ void MagStructFactDlg::Calc()
 				Fm = tl2::zero<t_vec_cplx>(3);
 
 			// neutron scattering: orthogonal projection onto plane with normal Q.
-			auto Fm_perp = tl2::ortho_project<t_vec_cplx>(
-				Fm, tl2::create<t_vec_cplx>({Q[0], Q[1], Q[2]}), false);
+			auto Fm_perp = tl2::ortho_project<t_vec_cplx>(Fm, Q_cplx, false);
+			//auto proj = tl2::ortho_projector<t_mat_cplx, t_vec_cplx>(Q_cplx, false);
+			//auto Fm_perp = proj * Fm;
 
 			// set small value to zero
 			for(auto &comp : Fm_perp)
@@ -1832,12 +1834,8 @@ void MagStructFactDlg::Calc()
 					comp.imag(0.);
 			}
 
-			t_real I = (std::conj(Fm[0])*Fm[0] +
-				std::conj(Fm[1])*Fm[1] +
-				std::conj(Fm[2])*Fm[2]).real();
-			t_real I_perp = (std::conj(Fm_perp[0])*Fm_perp[0] +
-				std::conj(Fm_perp[1])*Fm_perp[1] +
-				std::conj(Fm_perp[2])*Fm_perp[2]).real();
+			t_real I = tl2::inner(Fm, Fm).real();
+			t_real I_perp = tl2::inner(Fm_perp, Fm_perp).real();
 
 			if(std::isnan(I_perp))
 			{
