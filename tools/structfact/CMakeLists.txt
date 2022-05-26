@@ -24,6 +24,12 @@
 
 cmake_minimum_required(VERSION 3.0)
 project(structfact)
+enable_language(CXX)
+
+list(APPEND CMAKE_MODULE_PATH
+	"${PROJECT_SOURCE_DIR}"
+	"${PROJECT_SOURCE_DIR}/../../tlibs2/cmake"
+)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 option(BUILD_LIB "build as dynamic library" FALSE)
@@ -40,6 +46,12 @@ endif()
 
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qhull)
+
+if(Qhull_FOUND)
+	add_definitions(-DUSE_QHULL)
+	include_directories("${Qhull_INCLUDE_DIRS}")
+endif()
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
@@ -61,12 +73,18 @@ if(BUILD_LIB)
 
 	add_definitions(-DBUILD_LIB)
 	add_library(takin_structfact SHARED
-		structfact.cpp structfact.h
+		structfact.cpp structfact_file.cpp
+		structfact_structplot.cpp structfact_main.cpp
+		structfact_findsg.cpp structfact_nuclei.cpp
+		structfact.h
 		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 else()
 	add_executable(takin_structfact
-		structfact.cpp structfact.h
+		structfact.cpp structfact_file.cpp
+		structfact_structplot.cpp structfact_main.cpp
+		structfact_findsg.cpp structfact_nuclei.cpp
+		structfact.h
 		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 endif()
@@ -78,4 +96,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	)
 endif()
 
-target_link_libraries(takin_structfact ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries(takin_structfact
+	${Boost_LIBRARIES}
+	${Qhull_LIBRARIES}
+	Qt5::Core Qt5::Gui Qt5::Widgets
+)

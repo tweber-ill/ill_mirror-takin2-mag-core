@@ -64,6 +64,23 @@ using t_vec_gl = tl2::t_vec_gl;
 using t_mat_gl = tl2::t_mat_gl;
 
 
+constexpr t_real g_eps = 1e-6;
+constexpr int g_prec = 6;
+
+
+enum : int
+{
+	COL_NAME = 0,
+	COL_SCATLEN_RE,
+	COL_SCATLEN_IM,
+	COL_X, COL_Y, COL_Z,
+	COL_RAD,
+	COL_COL,
+
+	NUM_COLS
+};
+
+
 struct NuclPos
 {
 	std::string name;
@@ -77,6 +94,7 @@ class StructFactDlg : public QDialog
 public:
 	StructFactDlg(QWidget* pParent = nullptr);
 	~StructFactDlg() = default;
+
 
 protected:
 	QSettings *m_sett = nullptr;
@@ -116,6 +134,7 @@ protected:
 	t_mat m_crystA = tl2::unit<t_mat>(3);
 	t_mat m_crystB = tl2::unit<t_mat>(3);
 
+
 protected:
 	// for nuclei tab
 	void AddTabItem(int row=-1, const std::string& name="n/a", t_real bRe=0., t_real bIm=0.,
@@ -124,14 +143,10 @@ protected:
 	void MoveTabItemUp();
 	void MoveTabItemDown();
 
-	void Add3DItem(int row=-1);
-	void Set3DStatusMsg(const std::string& msg);
-
 	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
 	void TableCellEntered(const QModelIndex& idx);
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
-
 
 	void Load();
 	void Save();
@@ -144,6 +159,10 @@ protected:
 	void CalcB(bool bFullRecalc=true);
 	void Calc();
 
+	void Add3DItem(int row=-1);
+	void Set3DStatusMsg(const std::string& msg);
+
+	void ShowStructPlot();
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PlotMouseUp(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos, std::size_t objIdx, const t_vec3_gl* posSphere);
@@ -164,6 +183,7 @@ protected:
 
 	virtual void closeEvent(QCloseEvent *evt) override;
 
+
 private:
 	int m_iCursorRow = -1;
 	bool m_ignoreChanges = 1;
@@ -174,6 +194,7 @@ private:
 	int m_iCursorRow_FindSG = -1;
 
 	static std::vector<std::string> g_default_colours;
+
 
 private:
 	std::vector<int> GetSelectedRows(bool sort_reversed = false) const;

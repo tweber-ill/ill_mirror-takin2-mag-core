@@ -32,6 +32,7 @@ data/**
 res/**
 tlibs
 tlibs2
+pathslib
 data
 
 # Temporary files
