@@ -343,7 +343,6 @@ find_matching_sgs(
 {
 	std::vector<t_vec> posFinal = tl2::keep_atoms_in_uc<t_vec, t_real>(_posFinal);
 
-
 	std::vector<std::tuple<int, std::string, std::vector<t_mat>>> matchingSGs;
 	auto sgs = get_sgs<t_mat, t_real>();
 
@@ -355,7 +354,8 @@ find_matching_sgs(
 
 		for(const t_vec& pos : posInit)
 		{
-			std::vector<t_vec> newpos = tl2::apply_ops_hom<t_vec, t_mat, t_real>(pos, sgOps, eps);
+			std::vector<t_vec> newpos =
+				tl2::apply_ops_hom<t_vec, t_mat, t_real>(pos, sgOps, eps);
 			generatedpos.insert(generatedpos.end(), newpos.begin(), newpos.end());
 		}
 

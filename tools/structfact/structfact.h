@@ -120,7 +120,7 @@ protected:
 	QLineEdit *m_editGamma = nullptr;
 
 	QComboBox *m_comboSG = nullptr;
-	std::vector<std::vector<t_mat>> m_SGops;
+	std::vector<std::vector<t_mat>> m_SGops, m_SGops_centr;
 
 	QSpinBox *m_maxBZ = nullptr;
 	QCheckBox *m_RemoveZeroes = nullptr;

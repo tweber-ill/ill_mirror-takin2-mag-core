@@ -142,6 +142,15 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		{
 			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
 			m_SGops.emplace_back(std::move(ops));
+
+			// determine centring ops
+			std::vector<t_mat> ops_centr;
+			for(const t_mat& op : ops)
+			{
+				if(hom_is_centering<t_mat>(op, g_eps))
+					ops_centr.push_back(op);
+			}
+			m_SGops.emplace_back(std::move(ops_centr));
 		}
 
 
