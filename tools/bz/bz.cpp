@@ -415,6 +415,10 @@ void BZDlg::CalcBZ()
 	std::ostringstream ostr;
 	ostr.precision(g_prec);
 
+	ostr << "# centring symmetry operations" << std::endl;
+	for(const t_mat& op : ops_centr)
+		ostr << op << std::endl;
+
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
 	{
 		for(t_real k=-maxBZ; k<=maxBZ; ++k)
@@ -422,9 +426,12 @@ void BZDlg::CalcBZ()
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
 				auto Q = tl2::create<t_vec>({ h, k, l });
+				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
+					Q, ops_centr, g_eps).first)
+					continue;
+
 				auto Q_invA = m_crystB * Q;
 				auto Qabs_invA = tl2::norm(Q_invA);
-
 			}
 		}
 	}

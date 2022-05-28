@@ -71,12 +71,6 @@ enum : int
 };
 
 
-struct SymOp
-{
-	t_mat op;
-};
-
-
 class BZDlg : public QDialog
 {
 public:
@@ -133,7 +127,7 @@ protected:
 	void ImportCIF();
 	void GetSymOpsFromSG();
 
-	std::vector<SymOp> GetSymOps(bool only_centring = false) const;
+	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
 	void CalcB(bool bFullRecalc=true);
 	void CalcBZ();
 

@@ -37,9 +37,8 @@
 #include <gemmi/cif.hpp>
 #include <gemmi/symmetry.hpp>
 
-#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/maths.h"
 using namespace tl2_ops;
-
 
 
 template<class t_real=double>
@@ -48,7 +47,6 @@ struct Lattice
 	t_real a, b, c;
 	t_real alpha, beta, gamma;
 };
-
 
 
 /**
@@ -65,7 +63,6 @@ void remove_quotes(t_str& str)
 	if(str[str.size()-1] == '\'' || str[str.size()-1] == '\"')
 		str.erase(str.begin()+str.size()-1);
 }
-
 
 
 /**
@@ -118,7 +115,6 @@ get_cif_atoms(gemmi::cif::Block& block)
 }
 
 
-
 /**
  * gets the symmetry operations from the CIF
  */
@@ -167,7 +163,6 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 }
 
 
-
 /**
  * gets the symmetry operations from the CIF's space group
  * (use tl2::equals_all to check if space group operations are the same)
@@ -202,7 +197,6 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
 
 	return ops;
 }
-
 
 
 /**
@@ -280,7 +274,6 @@ load_cif(const std::string& filename, t_real eps=1e-6)
 }
 
 
-
 /**
  * gets space group description strings and symmetry operations
  */
@@ -325,7 +318,6 @@ get_sgs(bool bAddNr=true, bool bAddHall=true)
 
 	return sgs;
 }
-
 
 
 /**
@@ -374,6 +366,45 @@ find_matching_sgs(
 	}
 
 	return matchingSGs;
+}
+
+
+/**
+ * checks for allowed Bragg reflections
+ *
+ * algorithm based on Clipper's HKL_class
+ *   constructor in clipper/core/coords.cpp by K. Cowtan, 2013
+ * @see http://www.ysbl.york.ac.uk/~cowtan/clipper/
+ *
+ * symmetry operation S on position r: R*r + t
+ * F = sum<S>( exp(2*pi*i * (R*r + t)*G) )
+ *   = sum<S>( exp(2*pi*i * ((R*r)*G + t*G)) )
+ *   = sum<S>( exp(2*pi*i * (r*(G*R) + t*G)) )
+ *   = sum<S>( exp(2*pi*i * (r*(G*R)))  *  exp(2*pi*i * (G*t)) )
+ */
+template<class t_mat, class t_vec, class t_real = typename t_vec::value_type,
+	template<class...> class t_cont = std::vector>
+std::pair<bool, std::size_t>
+is_reflection_allowed(const t_vec& Q, const t_cont<t_mat>& symops, t_real eps)
+requires tl2::is_mat<t_mat> && tl2::is_vec<t_vec>
+{
+	for(std::size_t opidx=0; opidx<symops.size(); ++opidx)
+	{
+		const t_mat& mat = symops[opidx];
+		t_mat rot = tl2::submat<t_mat>(mat, 0,0, 3,3); // rotation part of the symop
+		rot = tl2::trans(rot);                         // recip -> transpose
+
+		if(tl2::equals<t_vec>(Q, rot*Q, eps))          // does Q transform into itself
+		{
+			t_vec trans = tl2::create<t_vec>({ mat(0,3), mat(1,3), mat(2,3) });
+
+			// does Q translate to multiples of the lattice vector?
+			if(!tl2::is_integer<t_real>(tl2::inner<t_vec>(trans, Q), eps))
+				return std::make_pair(false, opidx);
+		}
+	}
+
+	return std::make_pair(true, symops.size());
 }
 
 

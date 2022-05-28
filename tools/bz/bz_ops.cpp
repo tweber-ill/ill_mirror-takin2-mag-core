@@ -73,7 +73,7 @@ t_mat BZDlg::StrToOp(const std::string& str)
 {
 	t_mat op = tl2::unit<t_mat>(4);
 
-	std::istringstream istr;
+	std::istringstream istr(str);
 	for(std::size_t row=0; row<op.size1(); ++row)
 		for(std::size_t col=0; col<op.size2(); ++col)
 			istr >> op(row, col);
@@ -379,30 +379,28 @@ void BZDlg::GetSymOpsFromSG()
 /**
  * reads symmetry operations from table
  */
-std::vector<SymOp> BZDlg::GetSymOps(bool only_centring) const
+std::vector<t_mat> BZDlg::GetSymOps(bool only_centring) const
 {
-	std::vector<SymOp> vec;
+	std::vector<t_mat> ops;
 
 	for(int row=0; row<m_symops->rowCount(); ++row)
 	{
-		auto *op = m_symops->item(row, COL_OP);
-
-		if(!op)
+		auto *op_item = m_symops->item(row, COL_OP);
+		if(!op_item)
 		{
 			std::cerr << "Invalid entry in row " << row << "." << std::endl;
 			continue;
 		}
 
-		SymOp symop;
-		symop.op = StrToOp(op->text().toStdString());
+		t_mat op = StrToOp(op_item->text().toStdString());
 
 		bool add_op = true;
 		if(only_centring)
-			add_op = tl2::hom_is_centering<t_mat>(symop.op, g_eps);
+			add_op = tl2::hom_is_centering<t_mat>(op, g_eps);
 
 		if(add_op)
-			vec.emplace_back(std::move(symop));
+			ops.emplace_back(std::move(op));
 	}
 
-	return vec;
+	return ops;
 }
