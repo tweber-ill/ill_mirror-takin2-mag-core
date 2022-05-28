@@ -46,7 +46,7 @@ namespace algo = boost::algorithm;
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/qt/helper.h"
-//#include "pathslib/libs/voronoi.h"
+#include "pathslib/libs/voronoi.h"
 
 using namespace tl2_ops;
 
@@ -195,7 +195,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_bz->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
 		m_maxBZ = new QSpinBox(sfactpanel);
-		m_maxBZ->setMinimum(0);
+		m_maxBZ->setMinimum(1);
 		m_maxBZ->setMaximum(99);
 		m_maxBZ->setValue(4);
 
@@ -419,21 +419,41 @@ void BZDlg::CalcBZ()
 	for(const t_mat& op : ops_centr)
 		ostr << op << std::endl;
 
+	std::vector<t_vec> Qs_invA;
+	Qs_invA.reserve((2*maxBZ+1)*(2*maxBZ+1)*(2*maxBZ+1));
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
 	{
 		for(t_real k=-maxBZ; k<=maxBZ; ++k)
 		{
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
-				auto Q = tl2::create<t_vec>({ h, k, l });
+				t_vec Q = tl2::create<t_vec>({ h, k, l });
 				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
 					Q, ops_centr, g_eps).first)
 					continue;
 
-				auto Q_invA = m_crystB * Q;
-				auto Qabs_invA = tl2::norm(Q_invA);
+				t_vec Q_invA = m_crystB * Q;
+				t_real Qabs_invA = tl2::norm(Q_invA);
+
+				Qs_invA.emplace_back(std::move(Q_invA));
 			}
 		}
+	}
+
+
+	// calculate voronoi diagram
+	auto [voronoi, triags, neighbours] = geo::calc_delaunay(3, Qs_invA, false);
+
+	std::cout << voronoi.size() << " " << triags.size() << " " << neighbours.size() << std::endl;
+
+	ostr << "\n# Brillouin zone" << std::endl;
+	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
+	{
+		t_vec voro = voronoi[idx];
+		tl2::set_eps_0(voro, g_eps);
+		ostr << "vertex " << idx << ": " << voro << std::endl;
+		for(std::size_t nidx : neighbours[idx])
+			ostr << "\tneighbour index: " << nidx << std::endl;
 	}
 
 	// brillouin zone description
