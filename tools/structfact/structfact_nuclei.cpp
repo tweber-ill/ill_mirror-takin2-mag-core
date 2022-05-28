@@ -418,3 +418,190 @@ std::vector<NuclPos> StructFactDlg::GetNuclei() const
 
 	return vec;
 }
+
+
+
+// ----------------------------------------------------------------------------
+struct PowderLine
+{
+        t_real Q{};
+        t_real I{};
+        std::size_t num_peaks = 0;
+        std::string peaks;
+};
+
+
+/**
+ * calculate crystal B matrix
+ */
+void StructFactDlg::CalcB(bool bFullRecalc)
+{
+	if(m_ignoreCalc)
+		return;
+
+	t_real a,b,c, alpha,beta,gamma;
+	std::istringstream{m_editA->text().toStdString()} >> a;
+	std::istringstream{m_editB->text().toStdString()} >> b;
+	std::istringstream{m_editC->text().toStdString()} >> c;
+	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
+	std::istringstream{m_editBeta->text().toStdString()} >> beta;
+	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
+
+	m_crystB = tl2::B_matrix<t_mat>(a, b, c,
+		alpha/180.*tl2::pi<t_real>, beta/180.*tl2::pi<t_real>, gamma/180.*tl2::pi<t_real>);
+
+	bool ok = true;
+	std::tie(m_crystA, ok) = tl2::inv(m_crystB);
+	if(!ok)
+	{
+		m_crystA = tl2::unit<t_mat>();
+		std::cerr << "Error: Cannot invert B matrix." << std::endl;
+	}
+	else
+	{
+		m_crystA *= t_real(2)*tl2::pi<t_real>;
+	}
+
+	if(m_plot)
+	{
+		t_mat_gl matA{m_crystA};
+		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
+	}
+	if(bFullRecalc)
+		Calc();
+}
+
+
+/**
+ * calculate structure factors
+ */
+void StructFactDlg::Calc()
+{
+	if(m_ignoreCalc)
+		return;
+
+	const auto maxBZ = m_maxBZ->value();
+	const bool remove_zeroes = m_RemoveZeroes->isChecked();
+
+
+	// powder lines
+	std::vector<PowderLine> powderlines;
+	auto add_powderline = [&powderlines](t_real Q, t_real I,
+		t_real h, t_real k, t_real l)
+	{
+		std::ostringstream ostrPeak; ostrPeak.precision(g_prec);
+		ostrPeak << "(" << h << "," << k << "," << l << "); ";
+
+		// is this Q value already in the vector?
+		bool foundQ = false;
+		for(auto& line : powderlines)
+		{
+			if(tl2::equals<t_real>(line.Q, Q, g_eps))
+			{
+				line.I += I;
+				line.peaks +=  ostrPeak.str();
+				++line.num_peaks;
+				foundQ = true;
+				break;
+			}
+		}
+
+		// start a new line
+		if(!foundQ)
+		{
+			PowderLine line;
+			line.Q = Q;
+			line.I = I;
+			line.peaks = ostrPeak.str();
+			line.num_peaks = 1;
+			powderlines.emplace_back(std::move(line));
+		}
+	};
+
+
+	std::vector<t_cplx> bs;
+	std::vector<t_vec> pos;
+
+	for(const auto& nucl : GetNuclei())
+	{
+		bs.push_back(nucl.b);
+		pos.emplace_back(tl2::create<t_vec>({ nucl.pos[0], nucl.pos[1], nucl.pos[2] }));
+	}
+
+
+	std::ostringstream ostr, ostrPowder;
+	ostr.precision(g_prec);
+	ostrPowder.precision(g_prec);
+
+	ostr << "# Nuclear single-crystal structure factors:" << "\n";
+	ostr << "# "
+		<< std::setw(g_prec*1.2-2) << std::right << "h" << " "
+		<< std::setw(g_prec*1.2) << std::right << "k" << " "
+		<< std::setw(g_prec*1.2) << std::right << "l" << " "
+		<< std::setw(g_prec*2) << std::right << "|Q| (1/A)" << " "
+		<< std::setw(g_prec*2) << std::right << "|Fn|^2" << " "
+		<< std::setw(g_prec*5) << std::right << "Fn (fm)" << "\n";
+
+	ostrPowder << "# Nuclear powder lines:" << "\n";
+	ostrPowder << "# "
+		<< std::setw(g_prec*2-2) << std::right << "|Q| (1/A)" << " "
+		<< std::setw(g_prec*2) << std::right << "|F|^2" << " "
+		<< std::setw(g_prec*2) << std::right << "Mult." << "\n";
+
+
+	for(t_real h=-maxBZ; h<=maxBZ; ++h)
+	{
+		for(t_real k=-maxBZ; k<=maxBZ; ++k)
+		{
+			for(t_real l=-maxBZ; l<=maxBZ; ++l)
+			{
+				auto Q = tl2::create<t_vec>({h,k,l}) /*+ prop*/;
+				auto Q_invA = m_crystB * Q;
+				auto Qabs_invA = tl2::norm(Q_invA);
+
+				// nuclear structure factor
+				auto Fn = tl2::structure_factor<t_vec, t_cplx>(bs, pos, Q);
+				if(tl2::equals<t_cplx>(Fn, t_cplx(0), g_eps)) Fn = 0.;
+				if(tl2::equals<t_real>(Fn.real(), 0, g_eps)) Fn.real(0.);
+				if(tl2::equals<t_real>(Fn.imag(), 0, g_eps)) Fn.imag(0.);
+				auto I = (std::conj(Fn)*Fn).real();
+
+				if(remove_zeroes && tl2::equals<t_cplx>(Fn, t_cplx(0), g_eps))
+					continue;
+
+				add_powderline(Qabs_invA, I, h,k,l);
+
+				ostr
+					<< std::setw(g_prec*1.2) << std::right << h << " "
+					<< std::setw(g_prec*1.2) << std::right << k << " "
+					<< std::setw(g_prec*1.2) << std::right << l << " "
+					<< std::setw(g_prec*2) << std::right << Qabs_invA << " "
+					<< std::setw(g_prec*2) << std::right << I << " "
+					<< std::setw(g_prec*5) << std::right << Fn << "\n";
+			}
+		}
+	}
+
+	// single-crystal peaks
+	m_structfacts->setPlainText(ostr.str().c_str());
+
+
+	// powder peaks
+	std::stable_sort(powderlines.begin(), powderlines.end(),
+		[](const PowderLine& line1, const PowderLine& line2) -> bool
+		{
+			return line1.Q < line2.Q;
+		});
+
+	for(const auto& line : powderlines)
+	{
+		ostrPowder
+			<< std::setw(g_prec*2) << std::right << line.Q << " "
+			<< std::setw(g_prec*2) << std::right << line.I << " "
+			<< std::setw(g_prec*2) << std::right << line.num_peaks << " "
+			<< line.peaks << "\n";
+	}
+
+	m_powderlines->setPlainText(ostrPowder.str().c_str());
+}
+// ----------------------------------------------------------------------------

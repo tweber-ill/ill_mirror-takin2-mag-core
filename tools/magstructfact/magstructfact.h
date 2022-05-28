@@ -50,6 +50,32 @@
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 
 
+// columns of Fourier components table
+enum : int
+{
+	COL_NAME = 0,
+	COL_X, COL_Y, COL_Z,                // position
+	COL_M_MAG,                          // scale factor of FC
+	COL_ReM_X, COL_ReM_Y, COL_ReM_Z,    // fourier components
+	COL_ImM_X, COL_ImM_Y, COL_ImM_Z,
+	COL_RAD,                            // drawing radius
+	COL_COL,                            // colour
+
+	NUM_COLS
+};
+
+
+// columns of propagation vectors table
+enum : int
+{
+	PROP_COL_NAME = 0,
+	PROP_COL_X, PROP_COL_Y, PROP_COL_Z, // propagation direction
+	PROP_COL_CONJ,                      // conjugate fourier component for this propagation ve>
+
+	PROP_NUM_COLS
+};
+
+
 using t_real = double;
 using t_cplx = std::complex<t_real>;
 using t_vec = tl2::vec<t_real, std::vector>;
@@ -62,6 +88,19 @@ using t_vec2_gl = tl2::t_vec2_gl;
 using t_vec3_gl = tl2::t_vec3_gl;
 using t_vec_gl = tl2::t_vec_gl;
 using t_mat_gl = tl2::t_mat_gl;
+
+
+constexpr t_real g_eps = 1e-6;
+constexpr int g_prec = 6;
+
+
+struct PowderLine
+{
+	t_real Q{};
+	t_real I{};
+	std::size_t num_peaks = 0;
+	std::string peaks;
+};
 
 
 struct NuclPos
@@ -84,6 +123,7 @@ class MagStructFactDlg : public QDialog
 public:
 	MagStructFactDlg(QWidget* pParent = nullptr);
 	virtual ~MagStructFactDlg() = default;
+
 
 protected:
 	QSettings *m_sett = nullptr;
@@ -130,6 +170,7 @@ protected:
 	t_mat m_crystA = tl2::unit<t_mat>(3);
 	t_mat m_crystB = tl2::unit<t_mat>(3);
 
+
 protected:
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
@@ -174,6 +215,7 @@ protected:
 	void SetGLInfos();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+
 
 private:
 	int m_iCursorRow = -1;
