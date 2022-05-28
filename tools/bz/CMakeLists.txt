@@ -1,6 +1,6 @@
 #
 # @author Tobias Weber
-# @date dec-2018
+# @date may-2022
 # @license GPLv3, see 'LICENSE' file
 #
 # ----------------------------------------------------------------------------
@@ -23,7 +23,7 @@
 #
 
 cmake_minimum_required(VERSION 3.0)
-project(structfact)
+project(bz)
 enable_language(CXX)
 
 list(APPEND CMAKE_MODULE_PATH
@@ -46,6 +46,12 @@ endif()
 
 find_package(Boost REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qhull)
+
+if(Qhull_FOUND)
+	add_definitions(-DUSE_QHULL)
+	include_directories("${Qhull_INCLUDE_DIRS}")
+endif()
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
@@ -62,35 +68,22 @@ include_directories(
 )
 
 
-if(BUILD_LIB)
-	set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-
-	add_definitions(-DBUILD_LIB)
-	add_library(takin_structfact SHARED
-		structfact.cpp structfact_file.cpp
-		structfact_structplot.cpp structfact_main.cpp
-		structfact_findsg.cpp structfact_nuclei.cpp
-		structfact.h
-		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
-		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
-else()
-	add_executable(takin_structfact
-		structfact.cpp structfact_file.cpp
-		structfact_structplot.cpp structfact_main.cpp
-		structfact_findsg.cpp structfact_nuclei.cpp
-		structfact.h
-		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
-		../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
-endif()
+add_executable(takin_bz
+	bz.cpp bz_file.cpp
+	bz_plot.cpp bz_main.cpp
+	bz_ops.cpp bz.h
+	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
+	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-	target_link_options(takin_structfact
+	target_link_options(takin_bz
 		# create an __info_plist section in the binary
-		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../setup_mac/InfoStructFact.plist
+		PRIVATE LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_SOURCE_DIR}/../../setup_mac/InfoBZ.plist
 	)
 endif()
 
-target_link_libraries(takin_structfact
+target_link_libraries(takin_bz
 	${Boost_LIBRARIES}
+	${Qhull_LIBRARIES}
 	Qt5::Core Qt5::Gui Qt5::Widgets
 )

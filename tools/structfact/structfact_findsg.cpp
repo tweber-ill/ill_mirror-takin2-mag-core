@@ -35,7 +35,6 @@
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/qt/helper.h"
-#include "pathslib/libs/voronoi.h"
 
 using namespace tl2_ops;
 

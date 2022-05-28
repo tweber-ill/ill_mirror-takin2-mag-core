@@ -39,6 +39,7 @@ data
 tmp/**
 build/**
 tools/structfact/build/**
+tools/bz/build/**
 tools/cif2xml/build/**
 tools/magstructfact/build/**
 tools/magsgbrowser/build/**

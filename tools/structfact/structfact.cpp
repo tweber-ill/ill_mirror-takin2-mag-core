@@ -47,7 +47,6 @@ namespace algo = boost::algorithm;
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/qt/helper.h"
-#include "pathslib/libs/voronoi.h"
 
 using namespace tl2_ops;
 
@@ -138,6 +137,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		// get space groups and symops
 		auto spacegroups = get_sgs<t_mat>();
 		m_SGops.reserve(spacegroups.size());
+		m_SGops_centr.reserve(spacegroups.size());
 		for(auto [sgnum, descr, ops] : spacegroups)
 		{
 			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
@@ -147,10 +147,10 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 			std::vector<t_mat> ops_centr;
 			for(const t_mat& op : ops)
 			{
-				if(hom_is_centering<t_mat>(op, g_eps))
+				if(tl2::hom_is_centering<t_mat>(op, g_eps))
 					ops_centr.push_back(op);
 			}
-			m_SGops.emplace_back(std::move(ops_centr));
+			m_SGops_centr.emplace_back(std::move(ops_centr));
 		}
 
 
