@@ -51,33 +51,33 @@ void BZDlg::ShowBZPlot()
 		m_plot->GetRenderer()->GetCamera().SetDist(1.5);
 		m_plot->GetRenderer()->GetCamera().UpdateTransformation();
 
-		auto labCoordSys = new QLabel("Coordinate System:", /*m_dlgPlot*/ this);
-		auto comboCoordSys = new QComboBox(/*m_dlgPlot*/ this);
-		m_status3D = new QLabel(/*m_dlgPlot*/ this);
+		//auto labCoordSys = new QLabel("Coordinate System:", this);
+		//auto comboCoordSys = new QComboBox(this);
+		//comboCoordSys->addItem("Fractional Units (rlu)");
+		//comboCoordSys->addItem("Lab Units (A)");
 
-		comboCoordSys->addItem("Fractional Units (rlu)");
-		comboCoordSys->addItem("Lab Units (A)");
+		m_status3D = new QLabel(this);
 
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-		labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
+		//labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 
 		auto grid = new QGridLayout(m_dlgPlot);
 		grid->setSpacing(2);
 		grid->setContentsMargins(4,4,4,4);
 		grid->addWidget(m_plot.get(), 0,0,1,2);
-		grid->addWidget(labCoordSys, 1,0,1,1);
-		grid->addWidget(comboCoordSys, 1,1,1,1);
+		//grid->addWidget(labCoordSys, 1,0,1,1);
+		//grid->addWidget(comboCoordSys, 1,1,1,1);
 		grid->addWidget(m_status3D, 2,0,1,2);
 
 		connect(m_plot.get(), &tl2::GlPlot::AfterGLInitialisation, this, &BZDlg::AfterGLInitialisation);
 		connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &BZDlg::PickerIntersection);
 		connect(m_plot.get(), &tl2::GlPlot::MouseDown, this, &BZDlg::PlotMouseDown);
 		connect(m_plot.get(), &tl2::GlPlot::MouseUp, this, &BZDlg::PlotMouseUp);
-		connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
+		/*connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 		{
 			if(this->m_plot)
 				this->m_plot->GetRenderer()->SetCoordSys(val);
-		});
+		});*/
 
 
 		if(m_sett && m_sett->contains("geo_3dview"))
@@ -93,22 +93,64 @@ void BZDlg::ShowBZPlot()
 
 
 /**
- * add 3d object
+ * add a voronoi vertex to the plot
  */
-void BZDlg::Add3DItem(int row)
+void BZDlg::PlotAddVoronoiVertex(const t_vec& pos)
 {
 	if(!m_plot) return;
 
-	// TODO
-	/*qreal r=1, g=1, b=1;
+	t_real_gl r = 0, g = 0, b = 1;
+	t_real_gl scale = 1;
+	t_real_gl posx = static_cast<t_real_gl>(pos[0]);
+	t_real_gl posy = static_cast<t_real_gl>(pos[1]);
+	t_real_gl posz = static_cast<t_real_gl>(pos[2]);
 
 	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
 	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, r,g,b,1);
 	m_plot->GetRenderer()->SetObjectMatrix(obj, 
 		tl2::hom_translation<t_mat_gl>(posx, posy, posz) *
-		tl2::hom_scaling<t_mat_gl>(scale,scale,scale));
-	//m_plot->GetRenderer()->SetObjectLabel(obj, "");
-	m_plot->update();*/
+		tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
+	//m_plot->GetRenderer()->SetObjectLabel(obj, "Voronoi Vertex");
+
+	m_plotObjs.push_back(obj);
+	m_plot->update();
+}
+
+
+/**
+ * add a bragg peak to the plot
+ */
+void BZDlg::PlotAddBraggPeak(const t_vec& pos)
+{
+	if(!m_plot) return;
+
+	t_real_gl r = 1, g = 0, b = 0;
+	t_real_gl scale = 1;
+	t_real_gl posx = static_cast<t_real_gl>(pos[0]);
+	t_real_gl posy = static_cast<t_real_gl>(pos[1]);
+	t_real_gl posz = static_cast<t_real_gl>(pos[2]);
+
+	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
+	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, r,g,b,1);
+	m_plot->GetRenderer()->SetObjectMatrix(obj, 
+		tl2::hom_translation<t_mat_gl>(posx, posy, posz) *
+		tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
+	//m_plot->GetRenderer()->SetObjectLabel(obj, "Voronoi Vertex");
+
+	m_plotObjs.push_back(obj);
+	m_plot->update();
+}
+
+
+void BZDlg::ClearPlot()
+{
+	if(!m_plot) return;
+
+	for(std::size_t obj : m_plotObjs)
+		m_plot->GetRenderer()->RemoveObject(obj);
+
+	m_plotObjs.clear();
+	m_plot->update();
 }
 
 
@@ -182,10 +224,7 @@ void BZDlg::AfterGLInitialisation()
 	m_plot->GetRenderer()->SetObjectVisible(m_sphere, false);
 
 	// B matrix
-	m_plot->GetRenderer()->SetBTrafo(m_crystB);
-
-	// add all 3d objects
-	Add3DItem(-1);
+	//m_plot->GetRenderer()->SetBTrafo(m_crystB);
 
 	// GL device info
 	auto [strGlVer, strGlShaderVer, strGlVendor, strGlRenderer]

@@ -131,7 +131,9 @@ protected:
 	void CalcB(bool bFullRecalc=true);
 	void CalcBZ();
 
-	void Add3DItem(int row=-1);
+	void ClearPlot();
+	void PlotAddVoronoiVertex(const t_vec& pos);
+	void PlotAddBraggPeak(const t_vec& pos);
 	void Set3DStatusMsg(const std::string& msg);
 
 	void ShowBZPlot();
@@ -154,6 +156,7 @@ private:
 	bool m_ignoreCalc = 0;
 
 	long m_curPickedObj = -1;
+	std::vector<std::size_t> m_plotObjs;
 
 
 private:

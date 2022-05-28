@@ -68,7 +68,7 @@ if(BUILD_LIB)
 	add_definitions(-DBUILD_LIB)
 	add_library(takin_structfact SHARED
 		structfact.cpp structfact_file.cpp
-		structfact_structplot.cpp structfact_main.cpp
+		structfact_plot.cpp structfact_main.cpp
 		structfact_findsg.cpp structfact_nuclei.cpp
 		structfact.h
 		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
@@ -76,7 +76,7 @@ if(BUILD_LIB)
 else()
 	add_executable(takin_structfact
 		structfact.cpp structfact_file.cpp
-		structfact_structplot.cpp structfact_main.cpp
+		structfact_plot.cpp structfact_main.cpp
 		structfact_findsg.cpp structfact_nuclei.cpp
 		structfact.h
 		../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h

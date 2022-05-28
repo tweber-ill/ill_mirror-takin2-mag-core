@@ -114,8 +114,6 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 			new QTableWidgetItem(OpToStr(op).c_str()));
 	}
 
-	Add3DItem(row);
-
 	m_symops->scrollToItem(m_symops->item(row, 0));
 	m_symops->setCurrentCell(row, 0);
 
@@ -133,15 +131,6 @@ void BZDlg::DelTabItem(int begin, int end)
 	// if nothing is selected, clear all items
 	if(begin == -1 || m_symops->selectedItems().count() == 0)
 	{
-		if(m_plot)
-		{
-			for(int row=0; row<m_symops->rowCount(); ++row)
-				if(std::size_t obj = m_symops->item(
-					row, COL_OP)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetRenderer()->RemoveObject(obj);
-			m_plot->update();
-		}
-
 		m_symops->clearContents();
 		m_symops->setRowCount(0);
 	}
@@ -149,15 +138,6 @@ void BZDlg::DelTabItem(int begin, int end)
 	{
 		for(int row : GetSelectedRows(true))
 		{
-			// remove 3d object
-			if(m_plot)
-			{
-				if(std::size_t obj = m_symops->item(
-					row, COL_OP)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetRenderer()->RemoveObject(obj);
-				m_plot->update();
-			}
-
 			m_symops->removeRow(row);
 		}
 	}
@@ -165,15 +145,6 @@ void BZDlg::DelTabItem(int begin, int end)
 	{
 		for(int row=end-1; row>=begin; --row)
 		{
-			// remove 3d object
-			if(m_plot)
-			{
-				if(std::size_t obj = m_symops->item(
-					row, COL_OP)->data(Qt::UserRole).toUInt(); obj)
-					m_plot->GetRenderer()->RemoveObject(obj);
-				m_plot->update();
-			}
-
 			m_symops->removeRow(row);
 		}
 	}

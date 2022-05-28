@@ -376,26 +376,42 @@ void BZDlg::CalcB(bool bFullRecalc)
 	std::istringstream{m_editBeta->text().toStdString()} >> beta;
 	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
 
-	m_crystB = tl2::B_matrix<t_mat>(a, b, c,
-		alpha/180.*tl2::pi<t_real>, beta/180.*tl2::pi<t_real>, gamma/180.*tl2::pi<t_real>);
+	if(tl2::equals<t_real>(a, 0., g_eps) || a <= 0. ||
+		tl2::equals<t_real>(b, 0., g_eps) || b <= 0. ||
+		tl2::equals<t_real>(c, 0., g_eps) || c <= 0. ||
+		tl2::equals<t_real>(alpha, 0., g_eps) || alpha <= 0. ||
+		tl2::equals<t_real>(beta, 0., g_eps) || beta <= 0. ||
+		tl2::equals<t_real>(gamma, 0., g_eps) || gamma <= 0.)
+	{
+		QMessageBox::critical(this, "Brillouin Zones",
+			"Error: Invalid lattice.");
+		return;
+	}
+
+	t_mat crystB = tl2::B_matrix<t_mat>(a, b, c,
+		alpha/180.*tl2::pi<t_real>,
+		beta/180.*tl2::pi<t_real>,
+		gamma/180.*tl2::pi<t_real>);
 
 	bool ok = true;
-	std::tie(m_crystA, ok) = tl2::inv(m_crystB);
+	t_mat crystA = tl2::unit<t_mat>(3);
+	std::tie(crystA, ok) = tl2::inv(crystB);
 	if(!ok)
 	{
-		m_crystA = tl2::unit<t_mat>();
-		std::cerr << "Error: Cannot invert B matrix." << std::endl;
+		QMessageBox::critical(this, "Brillouin Zones",
+			"Error: Cannot invert B matrix.");
+		return;
 	}
-	else
-	{
-		m_crystA *= t_real(2)*tl2::pi<t_real>;
-	}
+
+	m_crystA = crystA * t_real(2)*tl2::pi<t_real>;
+	m_crystB = crystB;
 
 	if(m_plot)
 	{
 		t_mat_gl matA{m_crystA};
 		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
 	}
+
 	if(bFullRecalc)
 		CalcBZ();
 }
@@ -444,13 +460,19 @@ void BZDlg::CalcBZ()
 	// calculate voronoi diagram
 	auto [voronoi, triags, neighbours] = geo::calc_delaunay(3, Qs_invA, false);
 
-	std::cout << voronoi.size() << " " << triags.size() << " " << neighbours.size() << std::endl;
-
 	ostr << "\n# Brillouin zone" << std::endl;
+	ClearPlot();
+
+	//for(const t_vec& Q : Qs_invA)
+	//	PlotAddBraggPeak(Q);
+
 	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
 	{
 		t_vec voro = voronoi[idx];
 		tl2::set_eps_0(voro, g_eps);
+
+		PlotAddVoronoiVertex(voro);
+
 		ostr << "vertex " << idx << ": " << voro << std::endl;
 		for(std::size_t nidx : neighbours[idx])
 			ostr << "\tneighbour index: " << nidx << std::endl;
