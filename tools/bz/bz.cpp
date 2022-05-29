@@ -437,6 +437,7 @@ void BZDlg::CalcBZ()
 
 	std::vector<t_vec> Qs_invA;
 	Qs_invA.reserve((2*maxBZ+1)*(2*maxBZ+1)*(2*maxBZ+1));
+	std::size_t idx000 = 0;
 	for(t_real h=-maxBZ; h<=maxBZ; ++h)
 	{
 		for(t_real k=-maxBZ; k<=maxBZ; ++k)
@@ -444,9 +445,13 @@ void BZDlg::CalcBZ()
 			for(t_real l=-maxBZ; l<=maxBZ; ++l)
 			{
 				t_vec Q = tl2::create<t_vec>({ h, k, l });
+
 				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
 					Q, ops_centr, g_eps).first)
 					continue;
+
+				if(tl2::equals_0(Q, g_eps))
+					idx000 = Qs_invA.size();
 
 				t_vec Q_invA = m_crystB * Q;
 				t_real Qabs_invA = tl2::norm(Q_invA);
@@ -458,13 +463,23 @@ void BZDlg::CalcBZ()
 
 
 	// calculate voronoi diagram
-	auto [voronoi, triags, neighbours] = geo::calc_delaunay(3, Qs_invA, false);
+	auto [voronoi, triags, neighbours] = geo::calc_delaunay(3, Qs_invA, false, false, idx000);
 
 	ostr << "\n# Brillouin zone" << std::endl;
 	ClearPlot();
 
-	//for(const t_vec& Q : Qs_invA)
-	//	PlotAddBraggPeak(Q);
+#ifdef DEBUG
+	std::ofstream ofstrSites("sites.dat");
+	std::cout << "cat sites.dat | qvoronoi s p Fv QV" << idx000 << std::endl;
+	ofstrSites << "3 " << Qs_invA.size() << std::endl;
+	for(const t_vec& Q : Qs_invA)
+	{
+		//PlotAddBraggPeak(Q);
+		ofstrSites << Q[0] << " " << Q[1] << " " << Q[2] << std::endl;
+	}
+#endif
+
+	PlotAddBraggPeak(Qs_invA[idx000]);
 
 	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
 	{
@@ -473,17 +488,9 @@ void BZDlg::CalcBZ()
 
 		PlotAddVoronoiVertex(voro);
 
-		std::vector<t_vec> plane;
-		plane.push_back(voro);
-
 		ostr << "vertex " << idx << ": " << voro << std::endl;
 		for(std::size_t nidx : neighbours[idx])
-		{
-			plane.push_back(voronoi[nidx]);
 			ostr << "\tneighbour index: " << nidx << std::endl;
-		}
-
-		//PlotAddPlane(plane);
 	}
 
 	// brillouin zone description
