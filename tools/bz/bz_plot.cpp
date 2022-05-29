@@ -45,6 +45,7 @@ void BZDlg::ShowBZPlot()
 		m_dlgPlot->setWindowTitle("Brillouin Zone - 3D View");
 
 		m_plot = std::make_shared<tl2::GlPlot>(this);
+		m_plot->GetRenderer()->SetCull(false);
 		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetRenderer()->SetCoordMax(1.);
@@ -138,6 +139,40 @@ void BZDlg::PlotAddBraggPeak(const t_vec& pos)
 	//m_plot->GetRenderer()->SetObjectLabel(obj, "Voronoi Vertex");
 
 	m_plotObjs.push_back(obj);
+	m_plot->update();
+}
+
+
+/**
+ * add a plane to the plot
+ */
+void BZDlg::PlotAddPlane(const std::vector<t_vec>& _vecs)
+{
+	if(!m_plot) return;
+	if(_vecs.size() < 3) return;
+
+	t_real_gl r = 1, g = 0, b = 0;
+	std::vector<t_vec3_gl> vecs, norms;
+	vecs.reserve(_vecs.size());
+	norms.reserve(_vecs.size());
+
+	t_vec _norm = tl2::cross(_vecs[2]-_vecs[0], _vecs[1]-_vecs[0]);
+	t_vec3_gl norm = tl2::convert<t_vec3_gl>(_norm);
+
+	t_vec3_gl vec1 = tl2::convert<t_vec3_gl>(_vecs[0]);
+	for(std::size_t idx=1; idx<_vecs.size()-2; ++idx)
+	{
+		t_vec3_gl vec2 = tl2::convert<t_vec3_gl>(_vecs[idx]);
+		t_vec3_gl vec3 = tl2::convert<t_vec3_gl>(_vecs[idx+1]);
+		vecs.push_back(vec1);
+		vecs.emplace_back(std::move(vec2));
+		vecs.emplace_back(std::move(vec3));
+		norms.push_back(norm);
+	}
+
+	auto obj = m_plot->GetRenderer()->AddTriangleObject(vecs, norms, r,g,b,1);
+	m_plotObjs.push_back(obj);
+
 	m_plot->update();
 }
 

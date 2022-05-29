@@ -473,9 +473,17 @@ void BZDlg::CalcBZ()
 
 		PlotAddVoronoiVertex(voro);
 
+		std::vector<t_vec> plane;
+		plane.push_back(voro);
+
 		ostr << "vertex " << idx << ": " << voro << std::endl;
 		for(std::size_t nidx : neighbours[idx])
+		{
+			plane.push_back(voronoi[nidx]);
 			ostr << "\tneighbour index: " << nidx << std::endl;
+		}
+
+		//PlotAddPlane(plane);
 	}
 
 	// brillouin zone description

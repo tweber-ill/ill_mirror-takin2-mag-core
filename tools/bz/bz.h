@@ -43,6 +43,9 @@
 #include <vector>
 #include <sstream>
 
+#include <boost/math/quaternion.hpp>
+namespace math = boost::math;
+
 #include "tlibs2/libs/qt/glplot.h"
 #include "tlibs2/libs/math20.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
@@ -51,6 +54,7 @@
 using t_real = double;
 using t_vec = tl2::vec<t_real, std::vector>;
 using t_mat = tl2::mat<t_real, std::vector>;
+using t_quat = math::quaternion<t_real>;
 
 using t_real_gl = tl2::t_real_gl;
 using t_vec2_gl = tl2::t_vec2_gl;
@@ -134,6 +138,7 @@ protected:
 	void ClearPlot();
 	void PlotAddVoronoiVertex(const t_vec& pos);
 	void PlotAddBraggPeak(const t_vec& pos);
+	void PlotAddPlane(const std::vector<t_vec>& vecs);
 	void Set3DStatusMsg(const std::string& msg);
 
 	void ShowBZPlot();
