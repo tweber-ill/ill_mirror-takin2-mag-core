@@ -463,7 +463,8 @@ void BZDlg::CalcBZ()
 
 
 	// calculate voronoi diagram
-	auto [voronoi, triags, neighbours] = geo::calc_delaunay(3, Qs_invA, false, false, idx000);
+	auto [voronoi, triags, neighbours] =
+		geo::calc_delaunay(3, Qs_invA, false, false, idx000);
 
 	ostr << "\n# Brillouin zone" << std::endl;
 	ClearPlot();
@@ -479,11 +480,14 @@ void BZDlg::CalcBZ()
 	}
 #endif
 
+	// add gamma point
 	PlotAddBraggPeak(Qs_invA[idx000]);
 
+	// add voronoi vertices forming the vertices of the BZ
+	ostr << "\n";
 	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
 	{
-		t_vec voro = voronoi[idx];
+		t_vec& voro = voronoi[idx];
 		tl2::set_eps_0(voro, g_eps);
 
 		PlotAddVoronoiVertex(voro);
@@ -492,6 +496,25 @@ void BZDlg::CalcBZ()
 		for(std::size_t nidx : neighbours[idx])
 			ostr << "\tneighbour index: " << nidx << std::endl;
 	}
+
+	// calculate the faces of the BZ
+	auto [bz_verts, bz_triags, bz_neighbours] =
+		geo::calc_delaunay(3, voronoi, true, false);
+
+	std::vector<t_vec> bz_all_triags;
+	ostr << "\n";
+	for(std::size_t idx_triag=0; idx_triag<bz_triags.size(); ++idx_triag)
+	{
+		const auto& triag = bz_triags[idx_triag];
+		ostr << "polygon " << idx_triag << ": " << std::endl;
+		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
+		{
+			bz_all_triags.push_back(triag[idx_vert]);
+			ostr << "\tvertex: " << triag[idx_vert] << std::endl;
+		}
+	}
+
+	PlotAddPlane(bz_all_triags);
 
 	// brillouin zone description
 	m_bz->setPlainText(ostr.str().c_str());

@@ -159,14 +159,16 @@ void BZDlg::PlotAddPlane(const std::vector<t_vec>& _vecs)
 	t_vec _norm = tl2::cross(_vecs[2]-_vecs[0], _vecs[1]-_vecs[0]);
 	t_vec3_gl norm = tl2::convert<t_vec3_gl>(_norm);
 
-	t_vec3_gl vec1 = tl2::convert<t_vec3_gl>(_vecs[0]);
-	for(std::size_t idx=1; idx<_vecs.size()-2; ++idx)
+	for(std::size_t idx=0; idx<_vecs.size()-2; idx+=3)
 	{
-		t_vec3_gl vec2 = tl2::convert<t_vec3_gl>(_vecs[idx]);
-		t_vec3_gl vec3 = tl2::convert<t_vec3_gl>(_vecs[idx+1]);
-		vecs.push_back(vec1);
+		t_vec3_gl vec1 = tl2::convert<t_vec3_gl>(_vecs[idx]);
+		t_vec3_gl vec2 = tl2::convert<t_vec3_gl>(_vecs[idx+1]);
+		t_vec3_gl vec3 = tl2::convert<t_vec3_gl>(_vecs[idx+2]);
+		vecs.emplace_back(std::move(vec1));
 		vecs.emplace_back(std::move(vec2));
 		vecs.emplace_back(std::move(vec3));
+		norms.push_back(norm);
+		norms.push_back(norm);
 		norms.push_back(norm);
 	}
 
