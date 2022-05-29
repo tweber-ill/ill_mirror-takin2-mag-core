@@ -144,9 +144,9 @@ void BZDlg::PlotAddBraggPeak(const t_vec& pos)
 
 
 /**
- * add a plane to the plot
+ * add polygons to the plot
  */
-void BZDlg::PlotAddPlane(const std::vector<t_vec>& _vecs)
+void BZDlg::PlotAddTriangles(const std::vector<t_vec>& _vecs)
 {
 	if(!m_plot) return;
 	if(_vecs.size() < 3) return;
@@ -156,20 +156,33 @@ void BZDlg::PlotAddPlane(const std::vector<t_vec>& _vecs)
 	vecs.reserve(_vecs.size());
 	norms.reserve(_vecs.size());
 
-	t_vec _norm = tl2::cross(_vecs[2]-_vecs[0], _vecs[1]-_vecs[0]);
-	t_vec3_gl norm = tl2::convert<t_vec3_gl>(_norm);
-
 	for(std::size_t idx=0; idx<_vecs.size()-2; idx+=3)
 	{
 		t_vec3_gl vec1 = tl2::convert<t_vec3_gl>(_vecs[idx]);
 		t_vec3_gl vec2 = tl2::convert<t_vec3_gl>(_vecs[idx+1]);
 		t_vec3_gl vec3 = tl2::convert<t_vec3_gl>(_vecs[idx+2]);
-		vecs.emplace_back(std::move(vec1));
-		vecs.emplace_back(std::move(vec2));
-		vecs.emplace_back(std::move(vec3));
-		norms.push_back(norm);
-		norms.push_back(norm);
-		norms.push_back(norm);
+
+		t_vec3_gl norm = tl2::cross<t_vec3_gl>(vec2-vec1, vec3-vec1);
+		norm /= tl2::norm(norm);
+
+		t_vec3_gl mid = (vec1+vec2+vec3)/3.;
+		mid /= tl2::norm<t_vec3_gl>(mid);
+
+		// change sign of norm / sense of veritices?
+		if(tl2::inner<t_vec3_gl>(norm, mid) < 0.)
+		{
+			vecs.emplace_back(std::move(vec3));
+			vecs.emplace_back(std::move(vec2));
+			vecs.emplace_back(std::move(vec1));
+			norms.push_back(-norm);
+		}
+		else
+		{
+			vecs.emplace_back(std::move(vec1));
+			vecs.emplace_back(std::move(vec2));
+			vecs.emplace_back(std::move(vec3));
+			norms.push_back(norm);
+		}
 	}
 
 	auto obj = m_plot->GetRenderer()->AddTriangleObject(vecs, norms, r,g,b,1);
@@ -270,4 +283,6 @@ void BZDlg::AfterGLInitialisation()
 	m_labelGlInfos[1]->setText(QString("GL Shader Version: ") + strGlShaderVer.c_str() + QString("."));
 	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
 	m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
+
+	CalcBZ();
 }

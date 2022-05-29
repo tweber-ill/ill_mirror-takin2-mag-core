@@ -431,9 +431,11 @@ void BZDlg::CalcBZ()
 	std::ostringstream ostr;
 	ostr.precision(g_prec);
 
+#ifdef DEBUG
 	ostr << "# centring symmetry operations" << std::endl;
 	for(const t_mat& op : ops_centr)
 		ostr << op << std::endl;
+#endif
 
 	std::vector<t_vec> Qs_invA;
 	Qs_invA.reserve((2*maxBZ+1)*(2*maxBZ+1)*(2*maxBZ+1));
@@ -466,7 +468,6 @@ void BZDlg::CalcBZ()
 	auto [voronoi, triags, neighbours] =
 		geo::calc_delaunay(3, Qs_invA, false, false, idx000);
 
-	ostr << "\n# Brillouin zone" << std::endl;
 	ClearPlot();
 
 #ifdef DEBUG
@@ -484,7 +485,7 @@ void BZDlg::CalcBZ()
 	PlotAddBraggPeak(Qs_invA[idx000]);
 
 	// add voronoi vertices forming the vertices of the BZ
-	ostr << "\n";
+	ostr << "\n# Brillouin zone vertices" << std::endl;
 	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
 	{
 		t_vec& voro = voronoi[idx];
@@ -493,8 +494,8 @@ void BZDlg::CalcBZ()
 		PlotAddVoronoiVertex(voro);
 
 		ostr << "vertex " << idx << ": " << voro << std::endl;
-		for(std::size_t nidx : neighbours[idx])
-			ostr << "\tneighbour index: " << nidx << std::endl;
+		//for(std::size_t nidx : neighbours[idx])
+		//	ostr << "\tneighbour index: " << nidx << std::endl;
 	}
 
 	// calculate the faces of the BZ
@@ -502,10 +503,11 @@ void BZDlg::CalcBZ()
 		geo::calc_delaunay(3, voronoi, true, false);
 
 	std::vector<t_vec> bz_all_triags;
-	ostr << "\n";
+	ostr << "\n# Brillouin zone polygons" << std::endl;
 	for(std::size_t idx_triag=0; idx_triag<bz_triags.size(); ++idx_triag)
 	{
 		const auto& triag = bz_triags[idx_triag];
+
 		ostr << "polygon " << idx_triag << ": " << std::endl;
 		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
 		{
@@ -514,7 +516,7 @@ void BZDlg::CalcBZ()
 		}
 	}
 
-	PlotAddPlane(bz_all_triags);
+	PlotAddTriangles(bz_all_triags);
 
 	// brillouin zone description
 	m_bz->setPlainText(ostr.str().c_str());

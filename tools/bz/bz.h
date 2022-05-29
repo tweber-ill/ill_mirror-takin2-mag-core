@@ -138,7 +138,7 @@ protected:
 	void ClearPlot();
 	void PlotAddVoronoiVertex(const t_vec& pos);
 	void PlotAddBraggPeak(const t_vec& pos);
-	void PlotAddPlane(const std::vector<t_vec>& vecs);
+	void PlotAddTriangles(const std::vector<t_vec>& vecs);
 	void Set3DStatusMsg(const std::string& msg);
 
 	void ShowBZPlot();
