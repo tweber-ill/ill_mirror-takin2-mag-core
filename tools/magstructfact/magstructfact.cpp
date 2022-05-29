@@ -515,6 +515,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 				m_plot = std::make_shared<tl2::GlPlot>(this);
 				m_plot->setFormat(tl2::gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8, m_plot->format()));
 
+				m_plot->GetRenderer()->SetRestrictCamTheta(false);
 				m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 				m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 				m_plot->GetRenderer()->SetCoordMax(1.);

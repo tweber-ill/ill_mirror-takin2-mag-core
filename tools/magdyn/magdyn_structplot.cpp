@@ -47,6 +47,7 @@ void MagDynDlg::ShowStructurePlot()
 		m_structplot_dlg->setWindowTitle("Atom Sites");
 
 		m_structplot = new tl2::GlPlot(this);
+		m_structplot->GetRenderer()->SetRestrictCamTheta(false);
 		m_structplot->GetRenderer()->SetLight(
 			0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_structplot->GetRenderer()->SetLight(

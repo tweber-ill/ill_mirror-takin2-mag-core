@@ -46,6 +46,7 @@ void StructFactDlg::ShowStructPlot()
 		m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
 
 		m_plot = std::make_shared<tl2::GlPlot>(this);
+		m_plot->GetRenderer()->SetRestrictCamTheta(false);
 		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetRenderer()->SetCoordMax(1.);

@@ -283,7 +283,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
 		auto menuFile = new QMenu("File", m_menu);
-		auto menuView = new QMenu("View", m_menu);
+		auto menuView = new QMenu("Brillouin Zone", m_menu);
 
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
