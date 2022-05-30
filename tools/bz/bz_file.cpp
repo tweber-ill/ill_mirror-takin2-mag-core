@@ -38,7 +38,6 @@
 namespace pt = boost::property_tree;
 
 #include "../structfact/loadcif.h"
-#include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/algos.h"
 
 using namespace tl2_ops;

@@ -71,7 +71,8 @@ include_directories(
 add_executable(takin_bz
 	bz.cpp bz_file.cpp
 	bz_plot.cpp bz_main.cpp
-	bz_ops.cpp bz.h
+	bz_ops.cpp bz.h globals.h
+	plot_cut.cpp plot_cut.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 

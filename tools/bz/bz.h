@@ -33,6 +33,7 @@
 #include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QLabel>
@@ -43,28 +44,11 @@
 #include <vector>
 #include <sstream>
 
-#include <boost/math/quaternion.hpp>
-namespace math = boost::math;
+#include "globals.h"
+#include "plot_cut.h"
 
 #include "tlibs2/libs/qt/glplot.h"
-#include "tlibs2/libs/math20.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
-
-
-using t_real = double;
-using t_vec = tl2::vec<t_real, std::vector>;
-using t_mat = tl2::mat<t_real, std::vector>;
-using t_quat = math::quaternion<t_real>;
-
-using t_real_gl = tl2::t_real_gl;
-using t_vec2_gl = tl2::t_vec2_gl;
-using t_vec3_gl = tl2::t_vec3_gl;
-using t_vec_gl = tl2::t_vec_gl;
-using t_mat_gl = tl2::t_mat_gl;
-
-
-constexpr t_real g_eps = 1e-6;
-constexpr int g_prec = 6;
 
 
 enum : int
@@ -86,23 +70,33 @@ protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 
+	// plotter
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<tl2::GlPlot> m_plot;
 	std::size_t m_sphere = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
 
-	QTableWidget *m_symops = nullptr;
-	QPlainTextEdit *m_bz = nullptr;
-
+	// symops panel
 	QLineEdit *m_editA = nullptr;
 	QLineEdit *m_editB = nullptr;
 	QLineEdit *m_editC = nullptr;
 	QLineEdit *m_editAlpha = nullptr;
 	QLineEdit *m_editBeta = nullptr;
 	QLineEdit *m_editGamma = nullptr;
-
+	QTableWidget *m_symops = nullptr;
 	QComboBox *m_comboSG = nullptr;
+
+	// cuts panel
+	BZCutScene *m_bzscene = nullptr;
+	BZCutView *m_bzview = nullptr;
+	QDoubleSpinBox *m_cutX = nullptr;
+	QDoubleSpinBox *m_cutY = nullptr;
+	QDoubleSpinBox *m_cutZ = nullptr;
+	QDoubleSpinBox *m_cutD = nullptr;
+
+	// brillouin zone panel
+	QPlainTextEdit *m_bz = nullptr;
 	QSpinBox *m_maxBZ = nullptr;
 
 	QMenu *m_pTabContextMenu = nullptr;        // menu in case a symop is selected

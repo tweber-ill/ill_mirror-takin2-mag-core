@@ -34,7 +34,6 @@
 #include <iostream>
 #include <tuple>
 
-#include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/qt/helper.h"

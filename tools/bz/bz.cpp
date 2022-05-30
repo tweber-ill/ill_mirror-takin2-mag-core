@@ -32,6 +32,7 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QToolButton>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -42,7 +43,6 @@
 namespace algo = boost::algorithm;
 
 #include "../structfact/loadcif.h"
-#include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/qt/helper.h"
@@ -82,24 +82,23 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_symops->setHorizontalHeaderItem(COL_OP, new QTableWidgetItem{"Symmetry Operation"});
 		m_symops->setColumnWidth(COL_OP, 500);
 
-		QToolButton *pTabBtnAdd = new QToolButton(symopspanel);
-		QToolButton *pTabBtnDel = new QToolButton(symopspanel);
-		QToolButton *pTabBtnUp = new QToolButton(symopspanel);
-		QToolButton *pTabBtnDown = new QToolButton(symopspanel);
-		QToolButton *pTabBtnSG = new QToolButton(symopspanel);
+		QToolButton *btnAdd = new QToolButton(symopspanel);
+		QToolButton *btnDel = new QToolButton(symopspanel);
+		QToolButton *btnUp = new QToolButton(symopspanel);
+		QToolButton *btnDown = new QToolButton(symopspanel);
+		QPushButton *btnSG = new QPushButton("Get SymOps", symopspanel);
 
 		m_symops->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
-		pTabBtnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
-		pTabBtnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		pTabBtnAdd->setText("Add SymOp");
-		pTabBtnDel->setText("Delete SymOp");
-		pTabBtnUp->setText("Move SymOp Up");
-		pTabBtnDown->setText("Move SymOp Down");
-		pTabBtnSG->setText("Get SymOps");
+		btnAdd->setText("Add SymOp");
+		btnDel->setText("Delete SymOp");
+		btnUp->setText("Move SymOp Up");
+		btnDown->setText("Move SymOp Down");
 
 		m_editA = new QLineEdit("5", symopspanel);
 		m_editB = new QLineEdit("5", symopspanel);
@@ -127,14 +126,14 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		int y=0;
 		//pTabGrid->addWidget(m_plot.get(), y,0,1,4);
 		pTabGrid->addWidget(m_symops, y,0,1,4);
-		pTabGrid->addWidget(pTabBtnAdd, ++y,0,1,1);
-		pTabGrid->addWidget(pTabBtnDel, y,1,1,1);
-		pTabGrid->addWidget(pTabBtnUp, y,2,1,1);
-		pTabGrid->addWidget(pTabBtnDown, y,3,1,1);
+		pTabGrid->addWidget(btnAdd, ++y,0,1,1);
+		pTabGrid->addWidget(btnDel, y,1,1,1);
+		pTabGrid->addWidget(btnUp, y,2,1,1);
+		pTabGrid->addWidget(btnDown, y,3,1,1);
 
 		pTabGrid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
 		pTabGrid->addWidget(m_comboSG, y,1,1,2);
-		pTabGrid->addWidget(pTabBtnSG, y,3,1,1);
+		pTabGrid->addWidget(btnSG, y,3,1,1);
 
 
 		auto sep1 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
@@ -169,11 +168,11 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		for(auto* edit : std::vector<QLineEdit*>{{ m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma }})
 			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
 
-		connect(pTabBtnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(pTabBtnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelTabItem(); });
-		connect(pTabBtnUp, &QToolButton::clicked, this, &BZDlg::MoveTabItemUp);
-		connect(pTabBtnDown, &QToolButton::clicked, this, &BZDlg::MoveTabItemDown);
-		connect(pTabBtnSG, &QToolButton::clicked, this, &BZDlg::GetSymOpsFromSG);
+		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
+		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelTabItem(); });
+		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveTabItemUp);
+		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveTabItemDown);
+		connect(btnSG, &QPushButton::clicked, this, &BZDlg::GetSymOpsFromSG);
 
 		connect(m_symops, &QTableWidget::currentCellChanged, this, &BZDlg::TableCurCellChanged);
 		connect(m_symops, &QTableWidget::entered, this, &BZDlg::TableCellEntered);
@@ -184,33 +183,71 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	{	// brillouin zone panel
-		auto sfactpanel = new QWidget(this);
-		auto pGrid = new QGridLayout(sfactpanel);
+	{	// brillouin zone cuts panel
+		auto cutspanel = new QWidget(this);
+		auto pGrid = new QGridLayout(cutspanel);
 		pGrid->setSpacing(4);
 		pGrid->setContentsMargins(4,4,4,4);
 
-		m_bz = new QPlainTextEdit(sfactpanel);
+		m_bzscene = new BZCutScene(cutspanel);
+		m_bzview = new BZCutView(m_bzscene);
+
+		for(QDoubleSpinBox** const cut : { &m_cutX, &m_cutY, &m_cutZ, &m_cutD })
+		{
+			*cut = new QDoubleSpinBox(cutspanel);
+			(*cut)->setMinimum(-99);
+			(*cut)->setMaximum(99);
+			(*cut)->setDecimals(2);
+			(*cut)->setSingleStep(1);
+			(*cut)->setValue(0);
+		}
+		m_cutZ->setValue(1);
+
+		pGrid->addWidget(m_bzview, 0,0, 1,4);
+		pGrid->addWidget(new QLabel("Plane Normal:"), 1,0, 1,1);
+		pGrid->addWidget(m_cutX, 1,1, 1,1);
+		pGrid->addWidget(m_cutY, 1,2, 1,1);
+		pGrid->addWidget(m_cutZ, 1,3, 1,1);
+		pGrid->addWidget(new QLabel("Plane Offset:"), 2,0, 1,1);
+		pGrid->addWidget(m_cutD, 2,1, 1,1);
+
+		// signals
+		// TODO
+
+		tabs->addTab(cutspanel, "Cuts");
+	}
+
+
+	{	// brillouin zone panel
+		auto bzpanel = new QWidget(this);
+		auto pGrid = new QGridLayout(bzpanel);
+		pGrid->setSpacing(4);
+		pGrid->setContentsMargins(4,4,4,4);
+
+		m_bz = new QPlainTextEdit(bzpanel);
 		m_bz->setReadOnly(true);
 		m_bz->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-		m_maxBZ = new QSpinBox(sfactpanel);
+		m_maxBZ = new QSpinBox(bzpanel);
 		m_maxBZ->setMinimum(1);
 		m_maxBZ->setMaximum(99);
 		m_maxBZ->setValue(4);
 
+		QPushButton *btnShowBZ = new QPushButton("3D View...", bzpanel);
 
 		pGrid->addWidget(m_bz, 0,0, 1,4);
 		pGrid->addWidget(new QLabel("Max. Order:"), 1,0,1,1);
 		pGrid->addWidget(m_maxBZ, 1,1, 1,1);
+		pGrid->addWidget(btnShowBZ, 1,3, 1,1);
 
 
 		// signals
 		connect(m_maxBZ,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 				this, [this]() { this->CalcBZ(); });
+		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
 
-		tabs->addTab(sfactpanel, "Brillouin Zone");
+		tabs->addTab(bzpanel, "Brillouin Zone");
 	}
 
 
