@@ -38,6 +38,9 @@ add_subdirectory(tools/pol)
 add_subdirectory(tools/structfact)
 add_subdirectory(tools/magstructfact)
 
+# Brillouin zone tool
+add_subdirectory(tools/bz)
+
 # magnon dynamics tool
 add_subdirectory(tools/magdyn)
 
