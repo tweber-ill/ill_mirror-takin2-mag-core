@@ -74,8 +74,12 @@ protected:
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<tl2::GlPlot> m_plot;
 	std::size_t m_sphere = 0;
+	std::size_t m_plane = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
+	QCheckBox *m_plot_coordcross = nullptr;
+	QCheckBox *m_plot_labels = nullptr;
+	QCheckBox *m_plot_plane = nullptr;
 
 	// symops panel
 	QLineEdit *m_editA = nullptr;
@@ -128,14 +132,20 @@ protected:
 	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
 	void CalcB(bool bFullRecalc=true);
 	void CalcBZ();
+	void CalcBZCut();
 
 	void ClearPlot();
 	void PlotAddVoronoiVertex(const t_vec& pos);
 	void PlotAddBraggPeak(const t_vec& pos);
 	void PlotAddTriangles(const std::vector<t_vec>& vecs);
+	void PlotSetPlane(const t_vec& norm, t_real d);
 	void Set3DStatusMsg(const std::string& msg);
 
 	void ShowBZPlot();
+	void PlotShowCoordCross(bool show);
+	void PlotShowLabels(bool show);
+	void PlotShowPlane(bool show);
+
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PlotMouseUp(bool left, bool mid, bool right);
 	void PickerIntersection(const t_vec3_gl* pos,

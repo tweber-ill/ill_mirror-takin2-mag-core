@@ -69,7 +69,7 @@ include_directories(
 
 
 add_executable(takin_bz
-	bz.cpp bz_file.cpp
+	bz.cpp bz_file.cpp bz_calc.cpp
 	bz_plot.cpp bz_main.cpp
 	bz_ops.cpp bz.h globals.h
 	plot_cut.cpp plot_cut.h

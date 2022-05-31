@@ -43,16 +43,8 @@
 namespace algo = boost::algorithm;
 
 #include "../structfact/loadcif.h"
-#include "tlibs2/libs/phys.h"
-#include "tlibs2/libs/algos.h"
-#include "tlibs2/libs/qt/helper.h"
-#include "pathslib/libs/voronoi.h"
-
-using namespace tl2_ops;
 
 
-
-// ----------------------------------------------------------------------------
 BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	m_sett{new QSettings{"takin", "bz"}}
 {
@@ -79,7 +71,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_symops->verticalHeader()->setVisible(false);
 
 		m_symops->setColumnCount(NUM_COLS);
-		m_symops->setHorizontalHeaderItem(COL_OP, new QTableWidgetItem{"Symmetry Operation"});
+		m_symops->setHorizontalHeaderItem(COL_OP, new QTableWidgetItem{"Symmetry Operations"});
 		m_symops->setColumnWidth(COL_OP, 500);
 
 		QToolButton *btnAdd = new QToolButton(symopspanel);
@@ -198,8 +190,12 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			(*cut)->setMinimum(-99);
 			(*cut)->setMaximum(99);
 			(*cut)->setDecimals(2);
-			(*cut)->setSingleStep(1);
+			(*cut)->setSingleStep(0.1);
 			(*cut)->setValue(0);
+
+			connect(*cut, static_cast<void (QDoubleSpinBox::*)(double)>
+					(&QDoubleSpinBox::valueChanged),
+				this, &BZDlg::CalcBZCut);
 		}
 		m_cutZ->setValue(1);
 
@@ -211,10 +207,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(new QLabel("Plane Offset:"), 2,0, 1,1);
 		pGrid->addWidget(m_cutD, 2,1, 1,1);
 
-		// signals
-		// TODO
-
-		tabs->addTab(cutspanel, "Cuts");
+		tabs->addTab(cutspanel, "Cut");
 	}
 
 
@@ -392,170 +385,3 @@ void BZDlg::closeEvent(QCloseEvent *)
 			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
 	}
 }
-
-
-// ----------------------------------------------------------------------------
-
-
-/**
- * calculate crystal B matrix
- */
-void BZDlg::CalcB(bool bFullRecalc)
-{
-	if(m_ignoreCalc)
-		return;
-
-	t_real a,b,c, alpha,beta,gamma;
-	std::istringstream{m_editA->text().toStdString()} >> a;
-	std::istringstream{m_editB->text().toStdString()} >> b;
-	std::istringstream{m_editC->text().toStdString()} >> c;
-	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
-	std::istringstream{m_editBeta->text().toStdString()} >> beta;
-	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
-
-	if(tl2::equals<t_real>(a, 0., g_eps) || a <= 0. ||
-		tl2::equals<t_real>(b, 0., g_eps) || b <= 0. ||
-		tl2::equals<t_real>(c, 0., g_eps) || c <= 0. ||
-		tl2::equals<t_real>(alpha, 0., g_eps) || alpha <= 0. ||
-		tl2::equals<t_real>(beta, 0., g_eps) || beta <= 0. ||
-		tl2::equals<t_real>(gamma, 0., g_eps) || gamma <= 0.)
-	{
-		QMessageBox::critical(this, "Brillouin Zones",
-			"Error: Invalid lattice.");
-		return;
-	}
-
-	t_mat crystB = tl2::B_matrix<t_mat>(a, b, c,
-		alpha/180.*tl2::pi<t_real>,
-		beta/180.*tl2::pi<t_real>,
-		gamma/180.*tl2::pi<t_real>);
-
-	bool ok = true;
-	t_mat crystA = tl2::unit<t_mat>(3);
-	std::tie(crystA, ok) = tl2::inv(crystB);
-	if(!ok)
-	{
-		QMessageBox::critical(this, "Brillouin Zones",
-			"Error: Cannot invert B matrix.");
-		return;
-	}
-
-	m_crystA = crystA * t_real(2)*tl2::pi<t_real>;
-	m_crystB = crystB;
-
-	if(m_plot)
-	{
-		t_mat_gl matA{m_crystA};
-		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
-	}
-
-	if(bFullRecalc)
-		CalcBZ();
-}
-
-
-/**
- * calculate brillouin zone
- */
-void BZDlg::CalcBZ()
-{
-	if(m_ignoreCalc)
-		return;
-
-	const auto maxBZ = m_maxBZ->value();
-	const auto ops_centr = GetSymOps(true);
-
-	std::ostringstream ostr;
-	ostr.precision(g_prec);
-
-#ifdef DEBUG
-	ostr << "# centring symmetry operations" << std::endl;
-	for(const t_mat& op : ops_centr)
-		ostr << op << std::endl;
-#endif
-
-	std::vector<t_vec> Qs_invA;
-	Qs_invA.reserve((2*maxBZ+1)*(2*maxBZ+1)*(2*maxBZ+1));
-	std::size_t idx000 = 0;
-	for(t_real h=-maxBZ; h<=maxBZ; ++h)
-	{
-		for(t_real k=-maxBZ; k<=maxBZ; ++k)
-		{
-			for(t_real l=-maxBZ; l<=maxBZ; ++l)
-			{
-				t_vec Q = tl2::create<t_vec>({ h, k, l });
-
-				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
-					Q, ops_centr, g_eps).first)
-					continue;
-
-				if(tl2::equals_0(Q, g_eps))
-					idx000 = Qs_invA.size();
-
-				t_vec Q_invA = m_crystB * Q;
-				t_real Qabs_invA = tl2::norm(Q_invA);
-
-				Qs_invA.emplace_back(std::move(Q_invA));
-			}
-		}
-	}
-
-
-	// calculate voronoi diagram
-	auto [voronoi, triags, neighbours] =
-		geo::calc_delaunay(3, Qs_invA, false, false, idx000);
-
-	ClearPlot();
-
-#ifdef DEBUG
-	std::ofstream ofstrSites("sites.dat");
-	std::cout << "cat sites.dat | qvoronoi s p Fv QV" << idx000 << std::endl;
-	ofstrSites << "3 " << Qs_invA.size() << std::endl;
-	for(const t_vec& Q : Qs_invA)
-	{
-		//PlotAddBraggPeak(Q);
-		ofstrSites << Q[0] << " " << Q[1] << " " << Q[2] << std::endl;
-	}
-#endif
-
-	// add gamma point
-	PlotAddBraggPeak(Qs_invA[idx000]);
-
-	// add voronoi vertices forming the vertices of the BZ
-	ostr << "\n# Brillouin zone vertices" << std::endl;
-	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
-	{
-		t_vec& voro = voronoi[idx];
-		tl2::set_eps_0(voro, g_eps);
-
-		PlotAddVoronoiVertex(voro);
-
-		ostr << "vertex " << idx << ": " << voro << std::endl;
-		//for(std::size_t nidx : neighbours[idx])
-		//	ostr << "\tneighbour index: " << nidx << std::endl;
-	}
-
-	// calculate the faces of the BZ
-	auto [bz_verts, bz_triags, bz_neighbours] =
-		geo::calc_delaunay(3, voronoi, true, false);
-
-	std::vector<t_vec> bz_all_triags;
-	ostr << "\n# Brillouin zone polygons" << std::endl;
-	for(std::size_t idx_triag=0; idx_triag<bz_triags.size(); ++idx_triag)
-	{
-		const auto& triag = bz_triags[idx_triag];
-
-		ostr << "polygon " << idx_triag << ": " << std::endl;
-		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
-		{
-			bz_all_triags.push_back(triag[idx_vert]);
-			ostr << "\tvertex: " << triag[idx_vert] << std::endl;
-		}
-	}
-
-	PlotAddTriangles(bz_all_triags);
-
-	// brillouin zone description
-	m_bz->setPlainText(ostr.str().c_str());
-}
-// ----------------------------------------------------------------------------

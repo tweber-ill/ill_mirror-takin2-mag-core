@@ -46,6 +46,7 @@ void BZDlg::ShowBZPlot()
 		m_plot = std::make_shared<tl2::GlPlot>(this);
 		m_plot->GetRenderer()->SetRestrictCamTheta(false);
 		m_plot->GetRenderer()->SetCull(false);
+		m_plot->GetRenderer()->SetBlend(true);
 		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetRenderer()->SetCoordMax(1.);
@@ -57,6 +58,13 @@ void BZDlg::ShowBZPlot()
 		//comboCoordSys->addItem("Fractional Units (rlu)");
 		//comboCoordSys->addItem("Lab Units (A)");
 
+		m_plot_coordcross = new QCheckBox("Show Coordinates", this);
+		m_plot_labels = new QCheckBox("Show Labels", this);
+		m_plot_plane = new QCheckBox("Show Plane", this);
+		m_plot_coordcross->setChecked(true);
+		m_plot_labels->setChecked(true);
+		m_plot_plane->setChecked(true);
+
 		m_status3D = new QLabel(this);
 
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
@@ -65,15 +73,21 @@ void BZDlg::ShowBZPlot()
 		auto grid = new QGridLayout(m_dlgPlot);
 		grid->setSpacing(2);
 		grid->setContentsMargins(4,4,4,4);
-		grid->addWidget(m_plot.get(), 0,0,1,2);
+		grid->addWidget(m_plot.get(), 0,0,1,3);
 		//grid->addWidget(labCoordSys, 1,0,1,1);
 		//grid->addWidget(comboCoordSys, 1,1,1,1);
-		grid->addWidget(m_status3D, 2,0,1,2);
+		grid->addWidget(m_plot_coordcross, 1,0,1,1);
+		grid->addWidget(m_plot_labels, 1,1,1,1);
+		grid->addWidget(m_plot_plane, 1,2,1,1);
+		grid->addWidget(m_status3D, 2,0,1,3);
 
 		connect(m_plot.get(), &tl2::GlPlot::AfterGLInitialisation, this, &BZDlg::AfterGLInitialisation);
 		connect(m_plot->GetRenderer(), &tl2::GlPlotRenderer::PickerIntersection, this, &BZDlg::PickerIntersection);
 		connect(m_plot.get(), &tl2::GlPlot::MouseDown, this, &BZDlg::PlotMouseDown);
 		connect(m_plot.get(), &tl2::GlPlot::MouseUp, this, &BZDlg::PlotMouseUp);
+		connect(m_plot_coordcross, &QCheckBox::toggled, this, &BZDlg::PlotShowCoordCross);
+		connect(m_plot_labels, &QCheckBox::toggled, this, &BZDlg::PlotShowLabels);
+		connect(m_plot_plane, &QCheckBox::toggled, this, &BZDlg::PlotShowPlane);
 		/*connect(comboCoordSys, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [this](int val)
 		{
 			if(this->m_plot)
@@ -90,6 +104,45 @@ void BZDlg::ShowBZPlot()
 	m_dlgPlot->show();
 	m_dlgPlot->raise();
 	m_dlgPlot->focusWidget();
+}
+
+
+/**
+ * show or hide the coordinate system
+ */
+void BZDlg::PlotShowCoordCross(bool show)
+{
+	if(!m_plot) return;
+
+	if(auto obj = m_plot->GetRenderer()->GetCoordCross(); obj)
+	{
+		m_plot->GetRenderer()->SetObjectVisible(*obj, show);
+		m_plot->update();
+	}
+}
+
+
+/**
+ * show or hide the object labels
+ */
+void BZDlg::PlotShowLabels(bool show)
+{
+	if(!m_plot) return;
+
+	m_plot->GetRenderer()->SetLabelsVisible(show);
+	m_plot->update();
+}
+
+
+/**
+ * show or hide the BZ cut plane
+ */
+void BZDlg::PlotShowPlane(bool show)
+{
+	if(!m_plot) return;
+
+	m_plot->GetRenderer()->SetObjectVisible(m_plane, show);
+	m_plot->update();
 }
 
 
@@ -192,6 +245,26 @@ void BZDlg::PlotAddTriangles(const std::vector<t_vec>& _vecs)
 }
 
 
+/**
+ * set the brillouin zone cut plane
+ */
+void BZDlg::PlotSetPlane(const t_vec& _norm, t_real d)
+{
+	if(!m_plot) return;
+
+	t_vec3_gl norm = tl2::convert<t_vec3_gl>(_norm);
+	t_vec3_gl norm_old = tl2::create<t_vec3_gl>({ 0, 0, 1 });
+	t_vec3_gl rot_vec = tl2::create<t_vec3_gl>({ 1, 0, 0 });
+
+	t_vec3_gl offs = d * norm;
+	t_mat_gl rot = tl2::hom_rotation<t_mat_gl, t_vec3_gl>(norm_old, norm, &rot_vec);
+	t_mat_gl trans = tl2::hom_translation<t_mat_gl>(offs[0], offs[1], offs[2]);
+
+	m_plot->GetRenderer()->SetObjectMatrix(m_plane, trans*rot);
+	m_plot->update();
+}
+
+
 void BZDlg::ClearPlot()
 {
 	if(!m_plot) return;
@@ -269,9 +342,12 @@ void BZDlg::AfterGLInitialisation()
 {
 	if(!m_plot) return;
 
-	// reference sphere for linked objects
+	// reference sphere and plane for linked objects
 	m_sphere = m_plot->GetRenderer()->AddSphere(0.05, 0.,0.,0., 1.,1.,1.,1.);
+	m_plane = m_plot->GetRenderer()->AddPlane(0.,0.,1., 0.,0.,0., 5., 0.75,0.75,0.75,0.5);
 	m_plot->GetRenderer()->SetObjectVisible(m_sphere, false);
+	m_plot->GetRenderer()->SetObjectVisible(m_plane, true);
+	m_plot->GetRenderer()->SetObjectPriority(m_plane, 0);
 
 	// B matrix
 	//m_plot->GetRenderer()->SetBTrafo(m_crystB);
