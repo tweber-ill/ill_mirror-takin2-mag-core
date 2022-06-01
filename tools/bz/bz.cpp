@@ -195,12 +195,18 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			(*cut)->setSingleStep(0.1);
 			(*cut)->setValue(0);
 
+			// signals
 			connect(*cut, static_cast<void (QDoubleSpinBox::*)(double)>
 					(&QDoubleSpinBox::valueChanged),
 				this, &BZDlg::CalcBZCut);
 		}
 		m_cutX->setValue(1);
 		m_cutNZ->setValue(1);
+
+		m_BZOrder = new QSpinBox(cutspanel);
+		m_BZOrder->setMinimum(0);
+		m_BZOrder->setMaximum(99);
+		m_BZOrder->setValue(4);
 
 		pGrid->addWidget(m_bzview, 0,0, 1,4);
 		pGrid->addWidget(new QLabel("In-Plane Vector:"), 1,0, 1,1);
@@ -213,6 +219,13 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		pGrid->addWidget(m_cutNZ, 2,3, 1,1);
 		pGrid->addWidget(new QLabel("Plane Offset:"), 3,0, 1,1);
 		pGrid->addWidget(m_cutD, 3,1, 1,1);
+		pGrid->addWidget(new QLabel("Peak Order:"), 3,2,1,1);
+		pGrid->addWidget(m_BZOrder, 3,3, 1,1);
+
+		// signals
+		connect(m_BZOrder,
+			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+				this, [this]() { this->CalcBZCut(); });
 
 		tabs->addTab(cutspanel, "Cut");
 	}
@@ -391,4 +404,12 @@ void BZDlg::closeEvent(QCloseEvent *)
 		if(m_dlgPlot)
 			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
 	}
+}
+
+
+void BZDlg::UpdateBZDescription()
+{
+	// brillouin zone description
+	std::string descr = m_descrBZ + "\n" + m_descrBZCut;
+	m_bz->setPlainText(descr.c_str());
 }

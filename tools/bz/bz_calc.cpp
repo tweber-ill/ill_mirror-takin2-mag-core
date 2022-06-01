@@ -137,8 +137,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 					idx000 = Qs_invA.size();
 
 				t_vec Q_invA = m_crystB * Q;
-				t_real Qabs_invA = tl2::norm(Q_invA);
-
+				//t_real Qabs_invA = tl2::norm(Q_invA);
 				Qs_invA.emplace_back(std::move(Q_invA));
 			}
 		}
@@ -215,11 +214,12 @@ void BZDlg::CalcBZ(bool full_recalc)
 	m_bz_polys = std::move(bz_triags);
 	PlotAddTriangles(bz_all_triags);
 
-	// brillouin zone description
-	m_bz->setPlainText(ostr.str().c_str());
+	m_descrBZ = ostr.str();
 
 	if(full_recalc)
 		CalcBZCut();
+	else
+		UpdateBZDescription();
 }
 
 
@@ -230,6 +230,9 @@ void BZDlg::CalcBZCut()
 {
 	if(m_ignoreCalc || !m_bz_polys.size())
 		return;
+
+	std::ostringstream ostr;
+	ostr.precision(g_prec);
 
 	t_real x = m_cutX->value();
 	t_real y = m_cutY->value();
@@ -251,24 +254,68 @@ void BZDlg::CalcBZCut()
 
 	t_mat matPlane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, true);
 
-	std::vector<std::pair<t_vec, t_vec>> lines;
-	for(const auto& bz_poly : m_bz_polys)
+	std::vector<std::pair<t_vec, t_vec>> cut_lines, cut_lines000;
+
+	const auto order = m_BZOrder->value();
+	const auto ops = GetSymOps(true);
+
+	for(t_real h=-order; h<=order; ++h)
 	{
-		auto vecs = tl2::intersect_plane_poly<t_vec>(
-			norm, d, bz_poly, g_eps);
-		vecs = tl2::remove_duplicates(vecs, g_eps);
-
-		if(vecs.size() >= 2)
+		for(t_real k=-order; k<=order; ++k)
 		{
-			t_vec pt1 = matPlane * vecs[0];
-			t_vec pt2 = matPlane * vecs[1];
+			for(t_real l=-order; l<=order; ++l)
+			{
+				t_vec Q = tl2::create<t_vec>({ h, k, l });
 
-			lines.emplace_back(std::make_pair(pt1, pt2));
+				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
+					Q, ops, g_eps).first)
+					continue;
+
+				// (000) peak?
+				bool is_000 = tl2::equals_0(Q, g_eps);
+				t_vec Q_invA = m_crystB * Q;
+
+				for(const auto& _bz_poly : m_bz_polys)
+				{
+					// centre bz around bragg peak
+					auto bz_poly = _bz_poly;
+					for(t_vec& vec : bz_poly)
+						vec += Q_invA;
+
+					auto vecs = tl2::intersect_plane_poly<t_vec>(
+						norm, d, bz_poly, g_eps);
+					vecs = tl2::remove_duplicates(vecs, g_eps);
+
+					if(vecs.size() >= 2)
+					{
+						t_vec pt1 = matPlane * vecs[0];
+						t_vec pt2 = matPlane * vecs[1];
+						tl2::set_eps_0(pt1, g_eps);
+						tl2::set_eps_0(pt2, g_eps);
+
+						cut_lines.emplace_back(std::make_pair(pt1, pt2));
+						if(is_000)
+							cut_lines000.emplace_back(std::make_pair(pt1, pt2));
+					}
+				}
+			}
 		}
 	}
 
+
 	m_bzscene->clear();
-	m_bzscene->AddCut(lines);
+	m_bzscene->AddCut(cut_lines);
+
+	ostr << "# Brillouin zone cut" << std::endl;
+	for(std::size_t i=0; i<cut_lines000.size(); ++i)
+	{
+		const auto& line = cut_lines000[i];
+
+		ostr << "line " << i << ":\n\tvertex 0: " << line.first
+			<< "\n\tvertex 1: " << line.second << std::endl;
+	}
+	m_descrBZCut = ostr.str();
 
 	PlotSetPlane(norm, d);
+	UpdateBZDescription();
 }

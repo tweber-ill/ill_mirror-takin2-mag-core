@@ -101,11 +101,13 @@ protected:
 	QDoubleSpinBox *m_cutNY = nullptr;
 	QDoubleSpinBox *m_cutNZ = nullptr;
 	QDoubleSpinBox *m_cutD = nullptr;
+	QSpinBox *m_BZOrder = nullptr;
 
 	// brillouin zone panel
 	QPlainTextEdit *m_bz = nullptr;
 	QSpinBox *m_maxBZ = nullptr;
 	std::vector<std::vector<t_vec>> m_bz_polys;
+	std::string m_descrBZ, m_descrBZCut;
 
 	QMenu *m_pTabContextMenu = nullptr;        // menu in case a symop is selected
 	QMenu *m_pTabContextMenuNoItem = nullptr;  // menu if nothing is selected
@@ -149,6 +151,7 @@ protected:
 	void PlotShowCoordCross(bool show);
 	void PlotShowLabels(bool show);
 	void PlotShowPlane(bool show);
+	void UpdateBZDescription();
 
 	void PlotMouseDown(bool left, bool mid, bool right);
 	void PlotMouseUp(bool left, bool mid, bool right);

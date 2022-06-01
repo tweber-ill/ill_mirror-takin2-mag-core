@@ -26,6 +26,7 @@
  */
 
 #include "plot_cut.h"
+#include <QtWidgets/QApplication>
 
 
 // --------------------------------------------------------------------------------
@@ -43,9 +44,14 @@ void BZCutScene::AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines)
 {
 	for(const auto& line : lines)
 	{
+		QPen pen;
+		pen.setCosmetic(true);
+		pen.setColor(qApp->palette().color(QPalette::WindowText));
+
 		addLine(QLineF(
 			line.first[0]*m_scale, line.first[1]*m_scale,
-			line.second[0]*m_scale, line.second[1]*m_scale));
+			line.second[0]*m_scale, line.second[1]*m_scale),
+			pen);
 	}
 }
 // --------------------------------------------------------------------------------
