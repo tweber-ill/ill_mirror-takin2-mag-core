@@ -265,7 +265,7 @@ void BZDlg::PlotSetPlane(const t_vec& _norm, t_real d)
 }
 
 
-void BZDlg::ClearPlot()
+void BZDlg::ClearBZPlot()
 {
 	if(!m_plot) return;
 

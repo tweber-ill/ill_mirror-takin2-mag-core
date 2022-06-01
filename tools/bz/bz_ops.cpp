@@ -105,7 +105,8 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 	if(bclone)
 	{
 		for(int thecol=0; thecol<NUM_COLS; ++thecol)
-			m_symops->setItem(row, thecol, m_symops->item(m_iCursorRow, thecol)->clone());
+			m_symops->setItem(row, thecol,
+				m_symops->item(m_iCursorRow, thecol)->clone());
 	}
 	else
 	{
@@ -119,7 +120,7 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 	m_symops->setSortingEnabled(/*sorting*/ true);
 
 	m_ignoreChanges = 0;
-	CalcBZ();
+	CalcBZ(true);
 }
 
 
@@ -136,20 +137,16 @@ void BZDlg::DelTabItem(int begin, int end)
 	else if(begin == -2)	// clear selected
 	{
 		for(int row : GetSelectedRows(true))
-		{
 			m_symops->removeRow(row);
-		}
 	}
 	else if(begin >= 0 && end >= 0)		// clear given range
 	{
 		for(int row=end-1; row>=begin; --row)
-		{
 			m_symops->removeRow(row);
-		}
 	}
 
 	m_ignoreChanges = 0;
-	CalcBZ();
+	CalcBZ(true);
 }
 
 
@@ -283,7 +280,7 @@ void BZDlg::TableItemChanged(QTableWidgetItem *item)
 	}
 
 	if(!m_ignoreChanges)
-		CalcBZ();
+		CalcBZ(true);
 }
 
 
@@ -341,8 +338,7 @@ void BZDlg::GetSymOpsFromSG()
 
 
 	m_ignoreCalc = 0;
-	CalcB(false);
-	CalcBZ();
+	CalcB(true);
 }
 
 

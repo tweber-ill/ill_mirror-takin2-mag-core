@@ -45,7 +45,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 find_package(Boost REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Svg)
 find_package(Qhull)
 
 if(Qhull_FOUND)
@@ -86,5 +86,5 @@ endif()
 target_link_libraries(takin_bz
 	${Boost_LIBRARIES}
 	${Qhull_LIBRARIES}
-	Qt5::Core Qt5::Gui Qt5::Widgets
+	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Svg
 )

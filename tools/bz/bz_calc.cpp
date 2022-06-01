@@ -85,7 +85,7 @@ void BZDlg::CalcB(bool full_recalc)
 	}
 
 	m_crystA = crystA * t_real(2)*tl2::pi<t_real>;
-	m_crystB = crystB;
+	m_crystB = std::move(crystB);
 
 	if(m_plot)
 	{
@@ -149,7 +149,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 		geo::calc_delaunay(3, Qs_invA, false, false, idx000);
 	voronoi = tl2::remove_duplicates(voronoi, g_eps);
 
-	ClearPlot();
+	ClearBZPlot();
 	m_bz_polys.clear();
 
 #ifdef DEBUG
@@ -252,7 +252,8 @@ void BZDlg::CalcBZCut()
 	vec1 /= tl2::norm<t_vec>(vec1);
 	vec2 /= tl2::norm<t_vec>(vec2);
 
-	t_mat matPlane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, true);
+	m_cut_plane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, false);
+	m_cut_plane_inv = tl2::trans<t_mat>(m_cut_plane);
 
 	std::vector<std::pair<t_vec, t_vec>> cut_lines, cut_lines000;
 
@@ -288,8 +289,8 @@ void BZDlg::CalcBZCut()
 
 					if(vecs.size() >= 2)
 					{
-						t_vec pt1 = matPlane * vecs[0];
-						t_vec pt2 = matPlane * vecs[1];
+						t_vec pt1 = m_cut_plane_inv * vecs[0];
+						t_vec pt2 = m_cut_plane_inv * vecs[1];
 						tl2::set_eps_0(pt1, g_eps);
 						tl2::set_eps_0(pt2, g_eps);
 
@@ -318,4 +319,26 @@ void BZDlg::CalcBZCut()
 
 	PlotSetPlane(norm, d);
 	UpdateBZDescription();
+}
+
+
+/**
+ * calculate reciprocal coordinates of the cursor position
+ */
+void BZDlg::BZCutMouseMoved(t_real x, t_real y)
+{
+	t_real d = m_cutD->value();
+	t_vec QinvA = m_cut_plane * tl2::create<t_vec>({ x, y, d });
+	t_mat B_inv = m_crystA / (t_real(2)*tl2::pi<t_real>);
+	t_vec Qrlu = B_inv * QinvA;
+
+	tl2::set_eps_0(QinvA, g_eps);
+	tl2::set_eps_0(Qrlu, g_eps);
+
+	std::ostringstream ostr;
+	ostr.precision(g_prec_gui);
+
+	ostr << "Q = (" << QinvA[0] << ", " << QinvA[1] << ", " << QinvA[2] << ") Å⁻¹";
+	ostr << " = (" << Qrlu[0] << ", " << Qrlu[1] << ", " << Qrlu[2] << ") rlu.";
+	m_status->setText(ostr.str().c_str());	
 }

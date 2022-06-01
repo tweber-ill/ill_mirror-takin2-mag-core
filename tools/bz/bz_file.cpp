@@ -29,6 +29,7 @@
 
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <QtSvg/QSvgGenerator>
 
 #include <iostream>
 #include <fstream>
@@ -41,6 +42,37 @@ namespace pt = boost::property_tree;
 #include "tlibs2/libs/algos.h"
 
 using namespace tl2_ops;
+
+
+void BZDlg::NewFile()
+{
+	m_ignoreCalc = 1;
+
+	// clear old table
+	DelTabItem(-1);
+
+	// set some defaults
+	m_comboSG->setCurrentIndex(0);
+	m_editA->setText("5");
+	m_editB->setText("5");
+	m_editC->setText("5");
+	m_editAlpha->setText("90");
+	m_editBeta->setText("90");
+	m_editGamma->setText("90");
+
+	m_cutX->setValue(1);
+	m_cutY->setValue(0);
+	m_cutZ->setValue(0);
+	m_cutNX->setValue(0);
+	m_cutNY->setValue(0);
+	m_cutNZ->setValue(1);
+	m_cutD->setValue(0);
+	m_BZOrder->setValue(4);
+	m_maxBZ->setValue(4);
+
+	m_ignoreCalc = 0;
+	CalcB(true);
+}
 
 
 void BZDlg::Load()
@@ -109,6 +141,38 @@ void BZDlg::Load()
 		{
 			m_maxBZ->setValue(*opt);
 		}
+		if(auto opt = node.get_optional<int>("bz.cut.order"); opt)
+		{
+			m_BZOrder->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.x"); opt)
+		{
+			m_cutX->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.y"); opt)
+		{
+			m_cutY->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.z"); opt)
+		{
+			m_cutZ->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.nx"); opt)
+		{
+			m_cutNX->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.ny"); opt)
+		{
+			m_cutNY->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.nz"); opt)
+		{
+			m_cutNZ->setValue(*opt);
+		}
+		if(auto opt = node.get_optional<t_real>("bz.cut.d"); opt)
+		{
+			m_cutD->setValue(*opt);
+		}
 		if(auto opt = node.get_optional<int>("bz.sg_idx"); opt)
 		{
 			m_comboSG->setCurrentIndex(*opt);
@@ -136,8 +200,7 @@ void BZDlg::Load()
 
 
 	m_ignoreCalc = 0;
-	CalcB(false);
-	CalcBZ();
+	CalcB(true);
 }
 
 
@@ -172,6 +235,14 @@ void BZDlg::Save()
 	node.put<t_real>("bz.xtal.beta", beta);
 	node.put<t_real>("bz.xtal.gamma", gamma);
 	node.put<int>("bz.order", m_maxBZ->value());
+	node.put<int>("bz.cut.order", m_BZOrder->value());
+	node.put<t_real>("bz.cut.x", m_cutX->value());
+	node.put<t_real>("bz.cut.y", m_cutY->value());
+	node.put<t_real>("bz.cut.z", m_cutZ->value());
+	node.put<t_real>("bz.cut.nx", m_cutNX->value());
+	node.put<t_real>("bz.cut.ny", m_cutNY->value());
+	node.put<t_real>("bz.cut.nz", m_cutNZ->value());
+	node.put<t_real>("bz.cut.d", m_cutD->value());
 	node.put<int>("bz.sg_idx", m_comboSG->currentIndex());
 
 	// symop list
@@ -262,6 +333,28 @@ void BZDlg::ImportCIF()
 
 
 	m_ignoreCalc = 0;
-	CalcB(false);
-	CalcBZ();
+	CalcB(true);
+}
+
+
+void BZDlg::SaveCutSVG()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Save SVG File", dirLast, "SVG Files (*.svg *.SVG)");
+	if(filename=="")
+		return;
+	m_sett->setValue("dir", QFileInfo(filename).path());
+
+	QSvgGenerator svg;
+	svg.setSize(QSize{800, 800});
+	svg.setViewBox(QRect{0, 0, 800, 800});
+	svg.setFileName(filename);
+	svg.setTitle("Brillouin Zone Cut");
+	svg.setDescription("Created with Takin (https://doi.org/10.5281/zenodo.4117437).");
+
+	QPainter painter;
+	painter.begin(&svg);
+	m_bzscene->render(&painter);
+	painter.end();
 }

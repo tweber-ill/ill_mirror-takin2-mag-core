@@ -69,6 +69,7 @@ public:
 protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
+	QLabel *m_status = nullptr;
 
 	// plotter
 	QDialog *m_dlgPlot = nullptr;
@@ -114,6 +115,8 @@ protected:
 
 	t_mat m_crystA = tl2::unit<t_mat>(3);
 	t_mat m_crystB = tl2::unit<t_mat>(3);
+	t_mat m_cut_plane = tl2::unit<t_mat>(3);
+	t_mat m_cut_plane_inv = tl2::unit<t_mat>(3);
 
 	std::vector<std::vector<t_mat>> m_SGops;
 
@@ -130,24 +133,29 @@ protected:
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
 
+	void NewFile();
 	void Load();
 	void Save();
 	void ImportCIF();
 	void GetSymOpsFromSG();
+	void SaveCutSVG();
 
 	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
 	void CalcB(bool full_recalc = true);
 	void CalcBZ(bool full_recalc = true);
 	void CalcBZCut();
 
-	void ClearPlot();
+	// 3d bz cut plot
+	void BZCutMouseMoved(t_real x, t_real y);
+
+	// 3d bz plot
+	void ShowBZPlot();
+	void ClearBZPlot();
 	void PlotAddVoronoiVertex(const t_vec& pos);
 	void PlotAddBraggPeak(const t_vec& pos);
 	void PlotAddTriangles(const std::vector<t_vec>& vecs);
 	void PlotSetPlane(const t_vec& norm, t_real d);
 	void Set3DStatusMsg(const std::string& msg);
-
-	void ShowBZPlot();
 	void PlotShowCoordCross(bool show);
 	void PlotShowLabels(bool show);
 	void PlotShowPlane(bool show);

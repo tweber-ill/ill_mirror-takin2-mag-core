@@ -49,6 +49,7 @@ using t_mat_gl = tl2::t_mat_gl;
 
 constexpr t_real g_eps = 1e-6;
 constexpr int g_prec = 6;
+constexpr int g_prec_gui = 4;
 
 
 #endif

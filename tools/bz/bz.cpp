@@ -226,8 +226,10 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_BZOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 				this, [this]() { this->CalcBZCut(); });
+		connect(m_bzview, &BZCutView::SignalMouseCoordinates,
+			this, &BZDlg::BZCutMouseMoved);
 
-		tabs->addTab(cutspanel, "Cut");
+		tabs->addTab(cutspanel, "BZ Cut");
 	}
 
 
@@ -319,11 +321,17 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
+	// status bar
+	m_status = new QLabel(this);
+	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+	m_status->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+
 	// main grid
-	auto pmainGrid = new QGridLayout(this);
-	pmainGrid->setSpacing(4);
-	pmainGrid->setContentsMargins(4,4,4,4);
-	pmainGrid->addWidget(tabs, 0,0, 1,1);
+	auto main_grid = new QGridLayout(this);
+	main_grid->setSpacing(4);
+	main_grid->setContentsMargins(4,4,4,4);
+	main_grid->addWidget(tabs, 0,0, 1,1);
+	main_grid->addWidget(m_status, 1,0, 1,1);
 
 
 	// menu bar
@@ -341,6 +349,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
+		auto acCutSVG = new QAction("Save Cut to SVG...", menuFile);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -358,30 +367,19 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
 		menuView->addAction(ac3DView);
+		menuView->addAction(acCutSVG);
 
-		connect(acNew, &QAction::triggered, this,  [this]()
-		{
-			// clear old table
-			DelTabItem(-1);
-
-			// set some defaults
-			m_comboSG->setCurrentIndex(0);
-			m_editA->setText("5");
-			m_editB->setText("5");
-			m_editC->setText("5");
-			m_editAlpha->setText("90");
-			m_editBeta->setText("90");
-			m_editGamma->setText("90");
-		});
+		connect(acNew, &QAction::triggered, this, &BZDlg::NewFile);
 		connect(acLoad, &QAction::triggered, this, &BZDlg::Load);
 		connect(acSave, &QAction::triggered, this, &BZDlg::Save);
 		connect(acImportCIF, &QAction::triggered, this, &BZDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, &BZDlg::ShowBZPlot);
+		connect(acCutSVG, &QAction::triggered, this, &BZDlg::SaveCutSVG);
 
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuView);
-		pmainGrid->setMenuBar(m_menu);
+		main_grid->setMenuBar(m_menu);
 	}
 
 

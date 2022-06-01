@@ -31,6 +31,7 @@
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsItem>
+#include <QtGui/QMouseEvent>
 #include <QtGui/QWheelEvent>
 
 #include "globals.h"
@@ -43,6 +44,7 @@ public:
 	virtual ~BZCutScene();
 
 	void AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines);
+	t_real GetScale() const { return m_scale; }
 
 
 protected:
@@ -51,14 +53,23 @@ protected:
 
 
 class BZCutView : public QGraphicsView
-{
+{ Q_OBJECT
 public:
 	BZCutView(BZCutScene* scene);
 	virtual ~BZCutView();
 
 
 protected:
+	virtual void mouseMoveEvent(QMouseEvent *evt) override;
 	virtual void wheelEvent(QWheelEvent *evt) override;
+
+
+signals:
+	void SignalMouseCoordinates(t_real x, t_real y);
+
+
+protected:
+	BZCutScene* m_scene = nullptr;
 };
 
 

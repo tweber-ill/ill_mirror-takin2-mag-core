@@ -47,6 +47,7 @@ void BZCutScene::AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines)
 		QPen pen;
 		pen.setCosmetic(true);
 		pen.setColor(qApp->palette().color(QPalette::WindowText));
+		pen.setWidthF(2.);
 
 		addLine(QLineF(
 			line.first[0]*m_scale, line.first[1]*m_scale,
@@ -60,17 +61,29 @@ void BZCutScene::AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines)
 
 // --------------------------------------------------------------------------------
 BZCutView::BZCutView(BZCutScene* scene)
-	: QGraphicsView(scene, static_cast<QWidget*>(scene->parent()))
+	: QGraphicsView(scene, static_cast<QWidget*>(scene->parent())),
+	m_scene(scene)
 {
 	setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 	setDragMode(QGraphicsView::ScrollHandDrag);
 	setInteractive(true);
 	setMouseTracking(true);
+	scale(1., -1.);
 }
 
 
 BZCutView::~BZCutView()
 {
+}
+
+
+void BZCutView::mouseMoveEvent(QMouseEvent *evt)
+{
+	QPointF pos = mapToScene(evt->pos());
+	t_real scale = m_scene->GetScale();
+	emit SignalMouseCoordinates(pos.x()/scale, pos.y()/scale);
+
+	QGraphicsView::mouseMoveEvent(evt);
 }
 
 
