@@ -31,12 +31,22 @@
 // --------------------------------------------------------------------------------
 BZCutScene::BZCutScene(QWidget *parent) : QGraphicsScene(parent)
 {
-	//addLine(QLineF(0,0, 10,10));
 }
 
 
 BZCutScene::~BZCutScene()
 {
+}
+
+
+void BZCutScene::AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines)
+{
+	for(const auto& line : lines)
+	{
+		addLine(QLineF(
+			line.first[0]*m_scale, line.first[1]*m_scale,
+			line.second[0]*m_scale, line.second[1]*m_scale));
+	}
 }
 // --------------------------------------------------------------------------------
 

@@ -97,11 +97,15 @@ protected:
 	QDoubleSpinBox *m_cutX = nullptr;
 	QDoubleSpinBox *m_cutY = nullptr;
 	QDoubleSpinBox *m_cutZ = nullptr;
+	QDoubleSpinBox *m_cutNX = nullptr;
+	QDoubleSpinBox *m_cutNY = nullptr;
+	QDoubleSpinBox *m_cutNZ = nullptr;
 	QDoubleSpinBox *m_cutD = nullptr;
 
 	// brillouin zone panel
 	QPlainTextEdit *m_bz = nullptr;
 	QSpinBox *m_maxBZ = nullptr;
+	std::vector<std::vector<t_vec>> m_bz_polys;
 
 	QMenu *m_pTabContextMenu = nullptr;        // menu in case a symop is selected
 	QMenu *m_pTabContextMenuNoItem = nullptr;  // menu if nothing is selected
@@ -130,8 +134,8 @@ protected:
 	void GetSymOpsFromSG();
 
 	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
-	void CalcB(bool bFullRecalc=true);
-	void CalcBZ();
+	void CalcB(bool full_recalc = true);
+	void CalcBZ(bool full_recalc = true);
 	void CalcBZCut();
 
 	void ClearPlot();

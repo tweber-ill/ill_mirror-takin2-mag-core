@@ -42,8 +42,11 @@ public:
 	BZCutScene(QWidget *parent = nullptr);
 	virtual ~BZCutScene();
 
+	void AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines);
+
 
 protected:
+	t_real m_scale = 100.;
 };
 
 

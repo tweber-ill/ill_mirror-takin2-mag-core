@@ -184,7 +184,9 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_bzscene = new BZCutScene(cutspanel);
 		m_bzview = new BZCutView(m_bzscene);
 
-		for(QDoubleSpinBox** const cut : { &m_cutX, &m_cutY, &m_cutZ, &m_cutD })
+		for(QDoubleSpinBox** const cut :
+			{ &m_cutX, &m_cutY, &m_cutZ,
+			&m_cutNX, &m_cutNY, &m_cutNZ, &m_cutD })
 		{
 			*cut = new QDoubleSpinBox(cutspanel);
 			(*cut)->setMinimum(-99);
@@ -197,15 +199,20 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 					(&QDoubleSpinBox::valueChanged),
 				this, &BZDlg::CalcBZCut);
 		}
-		m_cutZ->setValue(1);
+		m_cutX->setValue(1);
+		m_cutNZ->setValue(1);
 
 		pGrid->addWidget(m_bzview, 0,0, 1,4);
-		pGrid->addWidget(new QLabel("Plane Normal:"), 1,0, 1,1);
+		pGrid->addWidget(new QLabel("In-Plane Vector:"), 1,0, 1,1);
 		pGrid->addWidget(m_cutX, 1,1, 1,1);
 		pGrid->addWidget(m_cutY, 1,2, 1,1);
 		pGrid->addWidget(m_cutZ, 1,3, 1,1);
-		pGrid->addWidget(new QLabel("Plane Offset:"), 2,0, 1,1);
-		pGrid->addWidget(m_cutD, 2,1, 1,1);
+		pGrid->addWidget(new QLabel("Plane Normal:"), 2,0, 1,1);
+		pGrid->addWidget(m_cutNX, 2,1, 1,1);
+		pGrid->addWidget(m_cutNY, 2,2, 1,1);
+		pGrid->addWidget(m_cutNZ, 2,3, 1,1);
+		pGrid->addWidget(new QLabel("Plane Offset:"), 3,0, 1,1);
+		pGrid->addWidget(m_cutD, 3,1, 1,1);
 
 		tabs->addTab(cutspanel, "Cut");
 	}

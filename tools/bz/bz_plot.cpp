@@ -360,5 +360,5 @@ void BZDlg::AfterGLInitialisation()
 	m_labelGlInfos[2]->setText(QString("GL Vendor: ") + strGlVendor.c_str() + QString("."));
 	m_labelGlInfos[3]->setText(QString("GL Device: ") + strGlRenderer.c_str() + QString("."));
 
-	CalcBZ();
+	CalcB(true);
 }

@@ -44,7 +44,7 @@ using namespace tl2_ops;
 /**
  * calculate crystal B matrix
  */
-void BZDlg::CalcB(bool bFullRecalc)
+void BZDlg::CalcB(bool full_recalc)
 {
 	if(m_ignoreCalc)
 		return;
@@ -93,7 +93,7 @@ void BZDlg::CalcB(bool bFullRecalc)
 		m_plot->GetRenderer()->SetBTrafo(m_crystB, &matA);
 	}
 
-	if(bFullRecalc)
+	if(full_recalc)
 		CalcBZ();
 }
 
@@ -101,7 +101,7 @@ void BZDlg::CalcB(bool bFullRecalc)
 /**
  * calculate brillouin zone
  */
-void BZDlg::CalcBZ()
+void BZDlg::CalcBZ(bool full_recalc)
 {
 	if(m_ignoreCalc)
 		return;
@@ -151,6 +151,7 @@ void BZDlg::CalcBZ()
 	voronoi = tl2::remove_duplicates(voronoi, g_eps);
 
 	ClearPlot();
+	m_bz_polys.clear();
 
 #ifdef DEBUG
 	std::ofstream ofstrSites("sites.dat");
@@ -211,10 +212,14 @@ void BZDlg::CalcBZ()
 		}
 	}
 
+	m_bz_polys = std::move(bz_triags);
 	PlotAddTriangles(bz_all_triags);
 
 	// brillouin zone description
 	m_bz->setPlainText(ostr.str().c_str());
+
+	if(full_recalc)
+		CalcBZCut();
 }
 
 
@@ -223,12 +228,47 @@ void BZDlg::CalcBZ()
  */
 void BZDlg::CalcBZCut()
 {
-	t_real nx = m_cutX->value();
-	t_real ny = m_cutY->value();
-	t_real nz = m_cutZ->value();
+	if(m_ignoreCalc || !m_bz_polys.size())
+		return;
+
+	t_real x = m_cutX->value();
+	t_real y = m_cutY->value();
+	t_real z = m_cutZ->value();
+	t_real nx = m_cutNX->value();
+	t_real ny = m_cutNY->value();
+	t_real nz = m_cutNZ->value();
 	t_real d = m_cutD->value();
+
+	// get plane coordinate system
+	t_vec vec1 = tl2::create<t_vec>({ x, y, z });
 	t_vec norm = tl2::create<t_vec>({ nx, ny, nz });
 	norm /= tl2::norm<t_vec>(norm);
+
+	t_vec vec2 = tl2::cross<t_vec>(norm, vec1);
+	vec1 = tl2::cross<t_vec>(vec2, norm);
+	vec1 /= tl2::norm<t_vec>(vec1);
+	vec2 /= tl2::norm<t_vec>(vec2);
+
+	t_mat matPlane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, true);
+
+	std::vector<std::pair<t_vec, t_vec>> lines;
+	for(const auto& bz_poly : m_bz_polys)
+	{
+		auto vecs = tl2::intersect_plane_poly<t_vec>(
+			norm, d, bz_poly, g_eps);
+		vecs = tl2::remove_duplicates(vecs, g_eps);
+
+		if(vecs.size() >= 2)
+		{
+			t_vec pt1 = matPlane * vecs[0];
+			t_vec pt2 = matPlane * vecs[1];
+
+			lines.emplace_back(std::make_pair(pt1, pt2));
+		}
+	}
+
+	m_bzscene->clear();
+	m_bzscene->AddCut(lines);
 
 	PlotSetPlane(norm, d);
 }
