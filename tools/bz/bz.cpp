@@ -72,8 +72,11 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_symops->setAlternatingRowColors(true);
 		m_symops->setColumnCount(NUM_COLS);
 		m_symops->setHorizontalHeaderItem(COL_OP,
-			new QTableWidgetItem{"Symmetry Operations"});
-		m_symops->setColumnWidth(COL_OP, 500);
+			new QTableWidgetItem{"Symmetry Operation"});
+		m_symops->setHorizontalHeaderItem(COL_PROP,
+			new QTableWidgetItem{"Properties"});
+		m_symops->setColumnWidth(COL_OP, 400);
+		m_symops->setColumnWidth(COL_PROP, 100);
 
 		QToolButton *btnAdd = new QToolButton(symopspanel);
 		QToolButton *btnDel = new QToolButton(symopspanel);

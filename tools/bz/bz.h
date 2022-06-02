@@ -54,6 +54,7 @@
 enum : int
 {
 	COL_OP = 0,
+	COL_PROP,
 
 	NUM_COLS
 };
@@ -174,6 +175,8 @@ protected:
 	// conversion functions
 	static std::string OpToStr(const t_mat& rot);
 	static t_mat StrToOp(const std::string& str);
+
+	static std::string GetOpProperties(const t_mat& op);
 
 
 private:

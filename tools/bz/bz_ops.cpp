@@ -85,6 +85,28 @@ t_mat BZDlg::StrToOp(const std::string& str)
 }
 
 
+/**
+ * get the properties of a symmetry operation
+ */
+std::string BZDlg::GetOpProperties(const t_mat& op)
+{
+	std::string prop;
+
+	if(tl2::is_unit<t_mat>(op, g_eps))
+	{
+		if(prop.size()) prop += ", ";
+		prop += "identity";
+	}
+	if(tl2::hom_is_centring<t_mat>(op, g_eps))
+	{
+		if(prop.size()) prop += ", ";
+		prop += "centring";
+	}
+
+	return prop;
+}
+
+
 void BZDlg::AddTabItem(int row, const t_mat& op)
 {
 	bool bclone = 0;
@@ -114,8 +136,11 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 	}
 	else
 	{
+		std::string prop = GetOpProperties(op);
 		m_symops->setItem(row, COL_OP,
 			new QTableWidgetItem(OpToStr(op).c_str()));
+		m_symops->setItem(row, COL_PROP,
+			new QTableWidgetItem(prop.c_str()));
 	}
 
 	m_symops->scrollToItem(m_symops->item(row, 0));
@@ -251,10 +276,8 @@ std::vector<int> BZDlg::GetSelectedRows(bool sort_reversed) const
  * selected a new row
  */
 void BZDlg::TableCurCellChanged(
-	[[maybe_unused]] int rowNew,
-	[[maybe_unused]] int colNew,
-	[[maybe_unused]] int rowOld,
-	[[maybe_unused]] int colOld)
+	[[maybe_unused]] int rowNew, [[maybe_unused]] int colNew,
+	[[maybe_unused]] int rowOld, [[maybe_unused]] int colOld)
 {
 }
 
@@ -272,17 +295,15 @@ void BZDlg::TableCellEntered(const QModelIndex&)
  */
 void BZDlg::TableItemChanged(QTableWidgetItem *item)
 {
-	// update associated 3d object
-	if(item)
+	// update properties
+	if(item->column() == COL_OP)
 	{
-		int row = item->row();
-		if(std::size_t obj = m_symops->item(row, COL_OP)->
-			data(Qt::UserRole).toUInt(); obj)
-		{
-			auto *itemOp = m_symops->item(row, COL_OP);
-
-			// TODO
-		}
+		t_mat op = StrToOp(item->text().toStdString());
+		std::string prop = GetOpProperties(op);
+		if(QTableWidgetItem *itemProp = m_symops->item(item->row(), COL_PROP); itemProp)
+			itemProp->setText(prop.c_str());
+		else
+			m_symops->setItem(item->row(), COL_PROP, new QTableWidgetItem(prop.c_str()));
 	}
 
 	if(!m_ignoreChanges)
@@ -368,7 +389,7 @@ std::vector<t_mat> BZDlg::GetSymOps(bool only_centring) const
 
 		bool add_op = true;
 		if(only_centring)
-			add_op = tl2::hom_is_centering<t_mat>(op, g_eps);
+			add_op = tl2::hom_is_centring<t_mat>(op, g_eps);
 
 		if(add_op)
 			ops.emplace_back(std::move(op));

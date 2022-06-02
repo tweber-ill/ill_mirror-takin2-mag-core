@@ -139,7 +139,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 			std::vector<t_mat> ops_centr;
 			for(const t_mat& op : ops)
 			{
-				if(tl2::hom_is_centering<t_mat>(op, g_eps))
+				if(tl2::hom_is_centring<t_mat>(op, g_eps))
 					ops_centr.push_back(op);
 			}
 			m_SGops_centr.emplace_back(std::move(ops_centr));
