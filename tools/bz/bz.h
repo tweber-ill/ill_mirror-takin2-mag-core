@@ -103,6 +103,7 @@ protected:
 	QDoubleSpinBox *m_cutNZ = nullptr;
 	QDoubleSpinBox *m_cutD = nullptr;
 	QSpinBox *m_BZOrder = nullptr;
+	QAction *m_acCutHull = nullptr;
 
 	// brillouin zone panel
 	QPlainTextEdit *m_bz = nullptr;

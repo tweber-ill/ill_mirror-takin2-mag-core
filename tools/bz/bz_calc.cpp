@@ -241,6 +241,7 @@ void BZDlg::CalcBZCut()
 	t_real ny = m_cutNY->value();
 	t_real nz = m_cutNZ->value();
 	t_real d_rlu = m_cutD->value();
+	bool calc_bzcut_hull = m_acCutHull->isChecked();
 
 	// get plane coordinate system
 	t_vec vec1 = m_crystB * tl2::create<t_vec>({ x, y, z });
@@ -279,6 +280,9 @@ void BZDlg::CalcBZCut()
 				bool is_000 = tl2::equals_0(Q, g_eps);
 				t_vec Q_invA = m_crystB * Q;
 
+				std::vector<t_vec> cut_verts;
+				std::optional<t_real> z_comp;
+
 				for(const auto& _bz_poly : m_bz_polys)
 				{
 					// centre bz around bragg peak
@@ -290,10 +294,60 @@ void BZDlg::CalcBZCut()
 						norm, d_invA, bz_poly, g_eps);
 					vecs = tl2::remove_duplicates(vecs, g_eps);
 
-					if(vecs.size() >= 2)
+					// calulate the hull of the bz cut
+					if(calc_bzcut_hull)
+					{
+						for(const t_vec& vec : vecs)
+						{
+							t_vec vec_rot = m_cut_plane_inv * vec;
+							tl2::set_eps_0(vec_rot, g_eps);
+
+							cut_verts.emplace_back(
+								tl2::create<t_vec>({
+									vec_rot[0],
+									vec_rot[1] }));
+
+							// z component is the same for every vector
+							if(!z_comp)
+								z_comp = vec_rot[2];
+						}
+					}
+					// alternatively use the lines directly
+					else if(vecs.size() >= 2)
 					{
 						t_vec pt1 = m_cut_plane_inv * vecs[0];
 						t_vec pt2 = m_cut_plane_inv * vecs[1];
+						tl2::set_eps_0(pt1, g_eps);
+						tl2::set_eps_0(pt2, g_eps);
+
+						cut_lines.emplace_back(std::make_pair(pt1, pt2));
+						if(is_000)
+							cut_lines000.emplace_back(std::make_pair(pt1, pt2));
+					}
+				}
+
+				// calulate the hull of the bz cut
+				if(calc_bzcut_hull)
+				{
+					cut_verts = tl2::remove_duplicates(cut_verts, g_eps);
+					if(cut_verts.size() < 3)
+						continue;
+
+					// calculate the faces of the BZ
+					auto [bz_verts, bz_triags, bz_neighbours] =
+						geo::calc_delaunay(2, cut_verts, true, false);
+
+					for(std::size_t bz_idx=0; bz_idx<bz_verts.size(); ++bz_idx)
+					{
+						std::size_t bz_idx2 = (bz_idx+1) % bz_verts.size();
+						t_vec pt1 = tl2::create<t_vec>({
+							bz_verts[bz_idx][0],
+							bz_verts[bz_idx][1],
+							z_comp ? *z_comp : 0. });
+						t_vec pt2 = tl2::create<t_vec>({
+							bz_verts[bz_idx2][0],
+							bz_verts[bz_idx2][1],
+							z_comp ? *z_comp : 0. });
 						tl2::set_eps_0(pt1, g_eps);
 						tl2::set_eps_0(pt2, g_eps);
 

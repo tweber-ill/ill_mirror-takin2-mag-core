@@ -351,6 +351,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		auto acExit = new QAction("Quit", menuFile);
 		auto ac3DView = new QAction("3D View...", menuFile);
 		auto acCutSVG = new QAction("Save Cut to SVG...", menuFile);
+		m_acCutHull = new QAction("Calculate Convex Hull for Cut", menuFile);
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -358,6 +359,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		acExit->setShortcut(QKeySequence::Quit);
 
 		acExit->setMenuRole(QAction::QuitRole);
+		m_acCutHull->setCheckable(true);
+		m_acCutHull->setChecked(true);
 
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
@@ -367,8 +370,10 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acImportCIF);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
-		menuView->addAction(ac3DView);
+		menuView->addAction(m_acCutHull);
 		menuView->addAction(acCutSVG);
+		menuView->addSeparator();
+		menuView->addAction(ac3DView);
 
 		connect(acNew, &QAction::triggered, this, &BZDlg::NewFile);
 		connect(acLoad, &QAction::triggered, this, &BZDlg::Load);
@@ -377,6 +382,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, &BZDlg::ShowBZPlot);
 		connect(acCutSVG, &QAction::triggered, this, &BZDlg::SaveCutSVG);
+		connect(m_acCutHull, &QAction::triggered, this, &BZDlg::CalcBZCut);
 
 		m_menu->addMenu(menuFile);
 		m_menu->addMenu(menuView);
