@@ -55,10 +55,14 @@ std::string BZDlg::OpToStr(const t_mat& op)
 		{
 			t_real elem = op(row, col);
 			tl2::set_eps_0(elem);
-			ostr << elem << " ";
+
+			ostr << elem;
+			if(col != op.size2()-1)
+				ostr << " ";
 		}
 
-		ostr << " ";
+		if(row != op.size1()-1)
+			ostr << "\n";
 	}
 
 	return ostr.str();
@@ -174,7 +178,8 @@ void BZDlg::MoveTabItemUp()
 	for(int row=0; row<m_symops->rowCount(); ++row)
 	{
 		if(auto *item = m_symops->item(row, 0);
-			item && std::find(selected.begin(), selected.end(), row+1) != selected.end())
+			item && std::find(selected.begin(), selected.end(), row+1)
+				!= selected.end())
 		{
 			for(int col=0; col<m_symops->columnCount(); ++col)
 				m_symops->item(row, col)->setSelected(true);
@@ -209,7 +214,8 @@ void BZDlg::MoveTabItemDown()
 	for(int row=0; row<m_symops->rowCount(); ++row)
 	{
 		if(auto *item = m_symops->item(row, 0);
-			item && std::find(selected.begin(), selected.end(), row-1) != selected.end())
+			item && std::find(selected.begin(), selected.end(), row-1)
+				!= selected.end())
 		{
 			for(int col=0; col<m_symops->columnCount(); ++col)
 				m_symops->item(row, col)->setSelected(true);

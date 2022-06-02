@@ -38,6 +38,10 @@
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
 
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
+namespace algo = boost::algorithm;
+
 #include "../structfact/loadcif.h"
 #include "tlibs2/libs/algos.h"
 
@@ -248,9 +252,11 @@ void BZDlg::Save()
 	// symop list
 	for(int row=0; row<m_symops->rowCount(); ++row)
 	{
-		pt::ptree itemNode;
-		itemNode.put<std::string>("op", m_symops->item(row, COL_OP)->text().toStdString());
+		std::string opstr = m_symops->item(row, COL_OP)->text().toStdString();
+		algo::replace_all(opstr, "\n", " ");
 
+		pt::ptree itemNode;
+		itemNode.put<std::string>("op", opstr);
 		node.add_child("bz.symops.symop", itemNode);
 	}
 

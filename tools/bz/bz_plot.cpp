@@ -50,7 +50,7 @@ void BZDlg::ShowBZPlot()
 		m_plot->GetRenderer()->SetLight(0, tl2::create<t_vec3_gl>({ 5, 5, 5 }));
 		m_plot->GetRenderer()->SetLight(1, tl2::create<t_vec3_gl>({ -5, -5, -5 }));
 		m_plot->GetRenderer()->SetCoordMax(1.);
-		m_plot->GetRenderer()->GetCamera().SetDist(1.5);
+		m_plot->GetRenderer()->GetCamera().SetDist(2.);
 		m_plot->GetRenderer()->GetCamera().UpdateTransformation();
 
 		//auto labCoordSys = new QLabel("Coordinate System:", this);
@@ -65,7 +65,10 @@ void BZDlg::ShowBZPlot()
 		m_plot_labels->setChecked(true);
 		m_plot_plane->setChecked(true);
 
+		// status bar
 		m_status3D = new QLabel(this);
+		m_status3D->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+		m_status3D->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 
 		m_plot->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		//labCoordSys->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
@@ -291,9 +294,22 @@ void BZDlg::PickerIntersection(
 		m_curPickedObj = -1;
 
 
-	if(m_curPickedObj > 0)
+	if(m_curPickedObj > 0 && pos)
 	{
-		// TODO
+		std::ostringstream ostr;
+		ostr.precision(g_prec_gui);
+
+		t_vec QinvA = tl2::convert<t_vec>(*pos);
+		t_mat Binv = m_crystA / (t_real(2)*tl2::pi<t_real>);
+		t_vec Qrlu = Binv * QinvA;
+
+		tl2::set_eps_0<t_vec>(QinvA, t_real_gl(g_eps));
+		tl2::set_eps_0<t_vec>(Qrlu, t_real_gl(g_eps));
+
+		ostr << "Q = (" << QinvA[0] << ", " << QinvA[1] << ", " << QinvA[2] << ") Å⁻¹";
+		ostr << " = (" << Qrlu[0] << ", " << Qrlu[1] << ", " << Qrlu[2] << ") rlu.";
+
+		Set3DStatusMsg(ostr.str());
 	}
 	else
 	{

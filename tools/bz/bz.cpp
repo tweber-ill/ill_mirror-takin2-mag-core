@@ -66,12 +66,13 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_symops->setSelectionBehavior(QTableWidget::SelectRows);
 		m_symops->setSelectionMode(QTableWidget::ContiguousSelection);
 		m_symops->setContextMenuPolicy(Qt::CustomContextMenu);
-
-		m_symops->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_symops->verticalHeader()->setDefaultSectionSize(
+			fontMetrics().lineSpacing()*4 + 4);
 		m_symops->verticalHeader()->setVisible(false);
-
+		m_symops->setAlternatingRowColors(true);
 		m_symops->setColumnCount(NUM_COLS);
-		m_symops->setHorizontalHeaderItem(COL_OP, new QTableWidgetItem{"Symmetry Operations"});
+		m_symops->setHorizontalHeaderItem(COL_OP,
+			new QTableWidgetItem{"Symmetry Operations"});
 		m_symops->setColumnWidth(COL_OP, 500);
 
 		QToolButton *btnAdd = new QToolButton(symopspanel);
