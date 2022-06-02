@@ -240,12 +240,15 @@ void BZDlg::CalcBZCut()
 	t_real nx = m_cutNX->value();
 	t_real ny = m_cutNY->value();
 	t_real nz = m_cutNZ->value();
-	t_real d = m_cutD->value();
+	t_real d_rlu = m_cutD->value();
 
 	// get plane coordinate system
-	t_vec vec1 = tl2::create<t_vec>({ x, y, z });
+	t_vec vec1 = m_crystB * tl2::create<t_vec>({ x, y, z });
 	t_vec norm = tl2::create<t_vec>({ nx, ny, nz });
-	norm /= tl2::norm<t_vec>(norm);
+	norm = m_crystB * norm / tl2::norm<t_vec>(norm);
+	m_cut_norm_scale = tl2::norm<t_vec>(norm);
+	norm /= m_cut_norm_scale;
+	t_real d_invA = d_rlu *m_cut_norm_scale;
 
 	t_vec vec2 = tl2::cross<t_vec>(norm, vec1);
 	vec1 = tl2::cross<t_vec>(vec2, norm);
@@ -284,7 +287,7 @@ void BZDlg::CalcBZCut()
 						vec += Q_invA;
 
 					auto vecs = tl2::intersect_plane_poly<t_vec>(
-						norm, d, bz_poly, g_eps);
+						norm, d_invA, bz_poly, g_eps);
 					vecs = tl2::remove_duplicates(vecs, g_eps);
 
 					if(vecs.size() >= 2)
@@ -317,7 +320,7 @@ void BZDlg::CalcBZCut()
 	}
 	m_descrBZCut = ostr.str();
 
-	PlotSetPlane(norm, d);
+	PlotSetPlane(norm, d_invA);
 	UpdateBZDescription();
 }
 
@@ -327,7 +330,8 @@ void BZDlg::CalcBZCut()
  */
 void BZDlg::BZCutMouseMoved(t_real x, t_real y)
 {
-	t_real d = m_cutD->value();
+	t_real d = m_cutD->value() * m_cut_norm_scale;
+
 	t_vec QinvA = m_cut_plane * tl2::create<t_vec>({ x, y, d });
 	t_mat B_inv = m_crystA / (t_real(2)*tl2::pi<t_real>);
 	t_vec Qrlu = B_inv * QinvA;

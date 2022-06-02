@@ -117,6 +117,7 @@ protected:
 	t_mat m_crystB = tl2::unit<t_mat>(3);
 	t_mat m_cut_plane = tl2::unit<t_mat>(3);
 	t_mat m_cut_plane_inv = tl2::unit<t_mat>(3);
+	t_real m_cut_norm_scale = 1.;              // convert 1/A to rlu lengths along the normal
 
 	std::vector<std::vector<t_mat>> m_SGops;
 
