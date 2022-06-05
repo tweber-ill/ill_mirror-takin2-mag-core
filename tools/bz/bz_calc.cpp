@@ -106,7 +106,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 	if(m_ignoreCalc)
 		return;
 
-	const auto maxBZ = m_maxBZ->value();
+	const auto maxBZ = m_BZCalcOrder->value();
 	const auto ops_centr = GetSymOps(true);
 
 	std::ostringstream ostr;
@@ -263,7 +263,7 @@ void BZDlg::CalcBZCut()
 	std::vector<std::tuple<t_vec, t_vec, std::array<t_real, 3>>>
 		cut_lines, cut_lines000;
 
-	const auto order = m_BZOrder->value();
+	const auto order = m_BZDrawOrder->value();
 	const auto ops = GetSymOps(true);
 
 	for(t_real h=-order; h<=order; ++h)

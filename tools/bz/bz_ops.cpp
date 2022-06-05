@@ -318,13 +318,13 @@ void BZDlg::ShowTableContextMenu(const QPoint& pt)
 	if(const auto* item = m_symops->itemAt(pt); item)
 	{
 		m_iCursorRow = item->row();
-		ptGlob.setY(ptGlob.y() + m_pTabContextMenu->sizeHint().height()/2);
-		m_pTabContextMenu->popup(ptGlob);
+		ptGlob.setY(ptGlob.y() + m_tabContextMenu->sizeHint().height()/2);
+		m_tabContextMenu->popup(ptGlob);
 	}
 	else
 	{
-		ptGlob.setY(ptGlob.y() + m_pTabContextMenuNoItem->sizeHint().height()/2);
-		m_pTabContextMenuNoItem->popup(ptGlob);
+		ptGlob.setY(ptGlob.y() + m_tabContextMenuNoItem->sizeHint().height()/2);
+		m_tabContextMenuNoItem->popup(ptGlob);
 	}
 }
 

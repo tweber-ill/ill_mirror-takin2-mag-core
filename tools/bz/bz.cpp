@@ -27,6 +27,7 @@
 
 #include "bz.h"
 
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QTabWidget>
@@ -116,48 +117,48 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		}
 
 
-		auto pTabGrid = new QGridLayout(symopspanel);
-		pTabGrid->setSpacing(2);
-		pTabGrid->setContentsMargins(4,4,4,4);
+		auto tabGrid = new QGridLayout(symopspanel);
+		tabGrid->setSpacing(2);
+		tabGrid->setContentsMargins(4,4,4,4);
 		int y=0;
-		//pTabGrid->addWidget(m_plot.get(), y,0,1,4);
-		pTabGrid->addWidget(m_symops, y,0,1,4);
-		pTabGrid->addWidget(btnAdd, ++y,0,1,1);
-		pTabGrid->addWidget(btnDel, y,1,1,1);
-		pTabGrid->addWidget(btnUp, y,2,1,1);
-		pTabGrid->addWidget(btnDown, y,3,1,1);
+		//tabGrid->addWidget(m_plot.get(), y,0,1,4);
+		tabGrid->addWidget(m_symops, y,0,1,4);
+		tabGrid->addWidget(btnAdd, ++y,0,1,1);
+		tabGrid->addWidget(btnDel, y,1,1,1);
+		tabGrid->addWidget(btnUp, y,2,1,1);
+		tabGrid->addWidget(btnDown, y,3,1,1);
 
-		pTabGrid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
-		pTabGrid->addWidget(m_comboSG, y,1,1,2);
-		pTabGrid->addWidget(btnSG, y,3,1,1);
+		tabGrid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
+		tabGrid->addWidget(m_comboSG, y,1,1,2);
+		tabGrid->addWidget(btnSG, y,3,1,1);
 
 
 		auto sep1 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
-		pTabGrid->addWidget(sep1, ++y,0, 1,4);
+		tabGrid->addWidget(sep1, ++y,0, 1,4);
 
-		pTabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
-		pTabGrid->addWidget(m_editA, y,1,1,1);
-		pTabGrid->addWidget(m_editB, y,2,1,1);
-		pTabGrid->addWidget(m_editC, y,3,1,1);
-		pTabGrid->addWidget(new QLabel("Angles (deg):"), ++y,0,1,1);
-		pTabGrid->addWidget(m_editAlpha, y,1,1,1);
-		pTabGrid->addWidget(m_editBeta, y,2,1,1);
-		pTabGrid->addWidget(m_editGamma, y,3,1,1);
+		tabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
+		tabGrid->addWidget(m_editA, y,1,1,1);
+		tabGrid->addWidget(m_editB, y,2,1,1);
+		tabGrid->addWidget(m_editC, y,3,1,1);
+		tabGrid->addWidget(new QLabel("Angles (deg):"), ++y,0,1,1);
+		tabGrid->addWidget(m_editAlpha, y,1,1,1);
+		tabGrid->addWidget(m_editBeta, y,2,1,1);
+		tabGrid->addWidget(m_editGamma, y,3,1,1);
 
 
 		// table CustomContextMenu
-		m_pTabContextMenu = new QMenu(m_symops);
-		m_pTabContextMenu->addAction("Add SymOp Before", this, [this]() { this->AddTabItem(-2); });
-		m_pTabContextMenu->addAction("Add SymOp After", this, [this]() { this->AddTabItem(-3); });
-		m_pTabContextMenu->addAction("Clone SymOp", this, [this]() { this->AddTabItem(-4); });
-		m_pTabContextMenu->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
+		m_tabContextMenu = new QMenu(m_symops);
+		m_tabContextMenu->addAction("Add SymOp Before", this, [this]() { this->AddTabItem(-2); });
+		m_tabContextMenu->addAction("Add SymOp After", this, [this]() { this->AddTabItem(-3); });
+		m_tabContextMenu->addAction("Clone SymOp", this, [this]() { this->AddTabItem(-4); });
+		m_tabContextMenu->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
-		m_pTabContextMenuNoItem = new QMenu(m_symops);
-		m_pTabContextMenuNoItem->addAction("Add SymOp", this, [this]() { this->AddTabItem(); });
-		m_pTabContextMenuNoItem->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
-		//m_pTabContextMenuNoItem->addSeparator();
+		m_tabContextMenuNoItem = new QMenu(m_symops);
+		m_tabContextMenuNoItem->addAction("Add SymOp", this, [this]() { this->AddTabItem(); });
+		m_tabContextMenuNoItem->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
+		//m_tabContextMenuNoItem->addSeparator();
 
 
 		// signals
@@ -175,24 +176,24 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_symops, &QTableWidget::itemChanged, this, &BZDlg::TableItemChanged);
 		connect(m_symops, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowTableContextMenu);
 
-		tabs->addTab(symopspanel, "Space Group");
+		tabs->addTab(symopspanel, "Crystal");
 	}
 
 
-	{	// brillouin zone cuts panel
-		auto cutspanel = new QWidget(this);
-		auto pGrid = new QGridLayout(cutspanel);
-		pGrid->setSpacing(4);
-		pGrid->setContentsMargins(4,4,4,4);
+	{	// brillouin zone and cuts panel
+		auto bzpanel = new QWidget(this);
+		auto grid = new QGridLayout(bzpanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(4,4,4,4);
 
-		m_bzscene = new BZCutScene(cutspanel);
+		m_bzscene = new BZCutScene(bzpanel);
 		m_bzview = new BZCutView(m_bzscene);
 
 		for(QDoubleSpinBox** const cut :
 			{ &m_cutX, &m_cutY, &m_cutZ,
 			&m_cutNX, &m_cutNY, &m_cutNZ, &m_cutD })
 		{
-			*cut = new QDoubleSpinBox(cutspanel);
+			*cut = new QDoubleSpinBox(bzpanel);
 			(*cut)->setMinimum(-99);
 			(*cut)->setMaximum(99);
 			(*cut)->setDecimals(2);
@@ -207,61 +208,47 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_cutX->setValue(1);
 		m_cutNZ->setValue(1);
 
-		m_BZOrder = new QSpinBox(cutspanel);
-		m_BZOrder->setMinimum(0);
-		m_BZOrder->setMaximum(99);
-		m_BZOrder->setValue(4);
+		m_BZDrawOrder = new QSpinBox(bzpanel);
+		m_BZDrawOrder->setMinimum(0);
+		m_BZDrawOrder->setMaximum(99);
+		m_BZDrawOrder->setValue(4);
 
-		pGrid->addWidget(m_bzview, 0,0, 1,4);
-		pGrid->addWidget(new QLabel("In-Plane Vector:"), 1,0, 1,1);
-		pGrid->addWidget(m_cutX, 1,1, 1,1);
-		pGrid->addWidget(m_cutY, 1,2, 1,1);
-		pGrid->addWidget(m_cutZ, 1,3, 1,1);
-		pGrid->addWidget(new QLabel("Plane Normal:"), 2,0, 1,1);
-		pGrid->addWidget(m_cutNX, 2,1, 1,1);
-		pGrid->addWidget(m_cutNY, 2,2, 1,1);
-		pGrid->addWidget(m_cutNZ, 2,3, 1,1);
-		pGrid->addWidget(new QLabel("Plane Offset:"), 3,0, 1,1);
-		pGrid->addWidget(m_cutD, 3,1, 1,1);
-		pGrid->addWidget(new QLabel("Peak Order:"), 3,2,1,1);
-		pGrid->addWidget(m_BZOrder, 3,3, 1,1);
+		m_BZCalcOrder = new QSpinBox(bzpanel);
+		m_BZCalcOrder->setMinimum(1);
+		m_BZCalcOrder->setMaximum(99);
+		m_BZCalcOrder->setValue(4);
+
+		QPushButton *btnShowBZ = new QPushButton("3D View...", bzpanel);
+
+		// cuts
+		grid->addWidget(m_bzview, 0,0, 1,4);
+		grid->addWidget(new QLabel("In-Plane Vector:"), 1,0, 1,1);
+		grid->addWidget(m_cutX, 1,1, 1,1);
+		grid->addWidget(m_cutY, 1,2, 1,1);
+		grid->addWidget(m_cutZ, 1,3, 1,1);
+		grid->addWidget(new QLabel("Plane Normal:"), 2,0, 1,1);
+		grid->addWidget(m_cutNX, 2,1, 1,1);
+		grid->addWidget(m_cutNY, 2,2, 1,1);
+		grid->addWidget(m_cutNZ, 2,3, 1,1);
+		grid->addWidget(new QLabel("Plane Offset:"), 3,0, 1,1);
+		grid->addWidget(m_cutD, 3,1, 1,1);
+		grid->addWidget(new QLabel("Draw Order:"), 3,2,1,1);
+		grid->addWidget(m_BZDrawOrder, 3,3, 1,1);
+
+		// bz
+		auto sep1 = new QFrame(bzpanel); sep1->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep1, 4,0,1,4);
+		grid->addWidget(new QLabel("Calc. Order:"), 5,0,1,1);
+		grid->addWidget(m_BZCalcOrder, 5,1, 1,1);
+		grid->addWidget(btnShowBZ, 5,3, 1,1);
 
 		// signals
-		connect(m_BZOrder,
+		connect(m_BZDrawOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 				this, [this]() { this->CalcBZCut(); });
 		connect(m_bzview, &BZCutView::SignalMouseCoordinates,
 			this, &BZDlg::BZCutMouseMoved);
-
-		tabs->addTab(cutspanel, "BZ Cut");
-	}
-
-
-	{	// brillouin zone panel
-		auto bzpanel = new QWidget(this);
-		auto pGrid = new QGridLayout(bzpanel);
-		pGrid->setSpacing(4);
-		pGrid->setContentsMargins(4,4,4,4);
-
-		m_bz = new QPlainTextEdit(bzpanel);
-		m_bz->setReadOnly(true);
-		m_bz->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-
-		m_maxBZ = new QSpinBox(bzpanel);
-		m_maxBZ->setMinimum(1);
-		m_maxBZ->setMaximum(99);
-		m_maxBZ->setValue(4);
-
-		QPushButton *btnShowBZ = new QPushButton("3D View...", bzpanel);
-
-		pGrid->addWidget(m_bz, 0,0, 1,4);
-		pGrid->addWidget(new QLabel("Max. Order:"), 1,0,1,1);
-		pGrid->addWidget(m_maxBZ, 1,1, 1,1);
-		pGrid->addWidget(btnShowBZ, 1,3, 1,1);
-
-
-		// signals
-		connect(m_maxBZ,
+		connect(m_BZCalcOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 				this, [this]() { this->CalcBZ(); });
 		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
@@ -270,58 +257,20 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	{	// info panel
-		auto infopanel = new QWidget(this);
-		auto pGrid = new QGridLayout(infopanel);
-		pGrid->setSpacing(4);
-		pGrid->setContentsMargins(4,4,4,4);
+	{	// brillouin zone calculation results panel
+		auto resultspanel = new QWidget(this);
+		auto grid = new QGridLayout(resultspanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(4,4,4,4);
 
-		// table grid
-		for(int i=0; i<4; ++i)
-		{
-			m_labelGlInfos[i] = new QLabel("", infopanel);
-			m_labelGlInfos[i]->setSizePolicy(
-				QSizePolicy::Ignored,
-				m_labelGlInfos[i]->sizePolicy().verticalPolicy());
-		}
+		m_bzresults = new QPlainTextEdit(resultspanel);
+		m_bzresults->setReadOnly(true);
+		m_bzresults->setFont(
+			QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
-		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
-		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
+		grid->addWidget(m_bzresults, 0,0, 1,4);
 
-		std::string strBoost = BOOST_LIB_VERSION;
-		algo::replace_all(strBoost, "_", ".");
-
-		auto labelTitle = new QLabel("Brillouin Zone Calculator", infopanel);
-		auto fontTitle = labelTitle->font();
-		fontTitle.setBold(true);
-		labelTitle->setFont(fontTitle);
-		labelTitle->setAlignment(Qt::AlignHCenter);
-
-		auto labelAuthor = new QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel);
-		labelAuthor->setAlignment(Qt::AlignHCenter);
-
-		auto labelDate = new QLabel("May 2022.", infopanel);
-		labelDate->setAlignment(Qt::AlignHCenter);
-
-		int y = 0;
-		pGrid->addWidget(labelTitle, y++,0, 1,1);
-		pGrid->addWidget(labelAuthor, y++,0, 1,1);
-		pGrid->addWidget(labelDate, y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Fixed), y++,0, 1,1);
-		pGrid->addWidget(sep1, y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Compiler: ") + QString(BOOST_COMPILER) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("C++ Library: ") + QString(BOOST_STDLIB) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Build Date: ") + QString(__DATE__) + ", " + QString(__TIME__) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(sep2, y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Qt Version: ") + QString(QT_VERSION_STR) + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(new QLabel(QString("Boost Version: ") + strBoost.c_str() + ".", infopanel), y++,0, 1,1);
-		pGrid->addWidget(sep3, y++,0, 1,1);
-		for(int i=0; i<4; ++i)
-			pGrid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
-		pGrid->addItem(new QSpacerItem(16,16, QSizePolicy::Minimum, QSizePolicy::Expanding), y++,0, 1,1);
-
-		tabs->addTab(infopanel, "Infos");
+		tabs->addTab(resultspanel, "Results");
 	}
 
 
@@ -338,6 +287,109 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	main_grid->addWidget(m_status, 1,0, 1,1);
 
 
+	// info dialog
+	QDialog *dlgInfo = nullptr;
+	{
+		auto infopanel = new QWidget(this);
+		auto grid = new QGridLayout(infopanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
+
+		auto sep1 = new QFrame(infopanel);
+		sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(infopanel);
+		sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(infopanel);
+		sep3->setFrameStyle(QFrame::HLine);
+
+		std::string strBoost = BOOST_LIB_VERSION;
+		algo::replace_all(strBoost, "_", ".");
+
+		auto labelTitle = new QLabel("Brillouin Zone Calculator", infopanel);
+		auto fontTitle = labelTitle->font();
+		fontTitle.setBold(true);
+		labelTitle->setFont(fontTitle);
+		labelTitle->setAlignment(Qt::AlignHCenter);
+
+		auto labelAuthor = new QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel);
+		labelAuthor->setAlignment(Qt::AlignHCenter);
+
+		auto labelDate = new QLabel("May 2022.", infopanel);
+		labelDate->setAlignment(Qt::AlignHCenter);
+
+		// renderer infos
+		for(int i=0; i<4; ++i)
+		{
+			m_labelGlInfos[i] = new QLabel("", infopanel);
+			m_labelGlInfos[i]->setSizePolicy(
+				QSizePolicy::Ignored,
+				m_labelGlInfos[i]->sizePolicy().verticalPolicy());
+		}
+
+		int y = 0;
+		grid->addWidget(labelTitle, y++,0, 1,1);
+		grid->addWidget(labelAuthor, y++,0, 1,1);
+		grid->addWidget(labelDate, y++,0, 1,1);
+
+		grid->addItem(new QSpacerItem(16,16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		grid->addWidget(sep1, y++,0, 1,1);
+
+		grid->addWidget(new QLabel(
+			QString("Compiler: ") +
+			QString(BOOST_COMPILER) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("C++ Library: ") +
+			QString(BOOST_STDLIB) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Build Date: ") +
+			QString(__DATE__) + ", " +
+			QString(__TIME__) + ".",
+			infopanel), y++,0, 1,1);
+
+		grid->addWidget(sep2, y++,0, 1,1);
+
+		grid->addWidget(new QLabel(
+			QString("Qt Version: ") +
+			QString(QT_VERSION_STR) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Boost Version: ") +
+			strBoost.c_str() + ".",
+			infopanel), y++,0, 1,1);
+
+		grid->addWidget(sep3, y++,0, 1,1);
+
+		for(int i=0; i<4; ++i)
+			grid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
+
+		grid->addItem(new QSpacerItem(16,16,
+			QSizePolicy::Minimum, QSizePolicy::Expanding),
+			y++,0, 1,1);
+
+		// add info panel as a tab
+		//m_tabs->addTab(infopanel, "Infos");
+
+		// show info panel as a dialog
+		dlgInfo = new QDialog(this);
+		dlgInfo->setWindowTitle("About");
+		dlgInfo->setSizeGripEnabled(true);
+
+		QPushButton *infoDlgOk = new QPushButton("OK", dlgInfo);
+		connect(infoDlgOk, &QAbstractButton::clicked,
+			dlgInfo, &QDialog::accept);
+
+		auto dlgGrid = new QGridLayout(dlgInfo);
+		dlgGrid->setSpacing(8);
+		dlgGrid->setContentsMargins(8, 8, 8, 8);
+		dlgGrid->addWidget(infopanel, 0,0, 1,4);
+		dlgGrid->addWidget(infoDlgOk, 1,3, 1,1);
+	}
+
+
 	// menu bar
 	{
 		m_menu = new QMenuBar(this);
@@ -345,16 +397,31 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			m_sett ? m_sett->value("native_gui", false).toBool() : false);
 
 		auto menuFile = new QMenu("File", m_menu);
-		auto menuView = new QMenu("Brillouin Zone", m_menu);
+		auto menuBZ = new QMenu("Brillouin Zone", m_menu);
 
+		// file menu
 		auto acNew = new QAction("New", menuFile);
 		auto acLoad = new QAction("Load...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
+
+		// bz menu
 		auto ac3DView = new QAction("3D View...", menuFile);
 		auto acCutSVG = new QAction("Save Cut to SVG...", menuFile);
 		m_acCutHull = new QAction("Calculate Convex Hull for Cut", menuFile);
+
+		// help menu
+		auto menuHelp = new QMenu("Help", m_menu);
+		auto *acAboutQt = new QAction("About Qt...", menuHelp);
+		auto *acAbout = new QAction("About...", menuHelp);
+
+		acNew->setIcon(QIcon::fromTheme("document-new"));
+		acLoad->setIcon(QIcon::fromTheme("document-open"));
+		acSave->setIcon(QIcon::fromTheme("document-save"));
+		acExit->setIcon(QIcon::fromTheme("application-exit"));
+		acAboutQt->setIcon(QIcon::fromTheme("help-about"));
+		acAbout->setIcon(QIcon::fromTheme("help-about"));
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -362,6 +429,9 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		acExit->setShortcut(QKeySequence::Quit);
 
 		acExit->setMenuRole(QAction::QuitRole);
+		acAboutQt->setMenuRole(QAction::AboutQtRole);
+		acAbout->setMenuRole(QAction::AboutRole);
+
 		m_acCutHull->setCheckable(true);
 		m_acCutHull->setChecked(true);
 
@@ -373,10 +443,14 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acImportCIF);
 		menuFile->addSeparator();
 		menuFile->addAction(acExit);
-		menuView->addAction(m_acCutHull);
-		menuView->addAction(acCutSVG);
-		menuView->addSeparator();
-		menuView->addAction(ac3DView);
+
+		menuBZ->addAction(m_acCutHull);
+		menuBZ->addAction(acCutSVG);
+		menuBZ->addSeparator();
+		menuBZ->addAction(ac3DView);
+
+		menuHelp->addAction(acAboutQt);
+		menuHelp->addAction(acAbout);
 
 		connect(acNew, &QAction::triggered, this, &BZDlg::NewFile);
 		connect(acLoad, &QAction::triggered, this, &BZDlg::Load);
@@ -386,9 +460,23 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(ac3DView, &QAction::triggered, this, &BZDlg::ShowBZPlot);
 		connect(acCutSVG, &QAction::triggered, this, &BZDlg::SaveCutSVG);
 		connect(m_acCutHull, &QAction::triggered, this, &BZDlg::CalcBZCut);
+		connect(acAboutQt, &QAction::triggered, this, []()
+		{
+			qApp->aboutQt();
+		});
+		connect(acAbout, &QAction::triggered, this, [dlgInfo]()
+		{
+			if(!dlgInfo)
+				return;
+
+			dlgInfo->show();
+			dlgInfo->raise();
+			dlgInfo->activateWindow();
+		});
 
 		m_menu->addMenu(menuFile);
-		m_menu->addMenu(menuView);
+		m_menu->addMenu(menuBZ);
+		m_menu->addMenu(menuHelp);
 		main_grid->setMenuBar(m_menu);
 	}
 
@@ -419,5 +507,5 @@ void BZDlg::UpdateBZDescription()
 {
 	// brillouin zone description
 	std::string descr = m_descrBZ + "\n" + m_descrBZCut;
-	m_bz->setPlainText(descr.c_str());
+	m_bzresults->setPlainText(descr.c_str());
 }

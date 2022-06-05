@@ -71,8 +71,8 @@ void BZDlg::NewFile()
 	m_cutNY->setValue(0);
 	m_cutNZ->setValue(1);
 	m_cutD->setValue(0);
-	m_BZOrder->setValue(4);
-	m_maxBZ->setValue(4);
+	m_BZDrawOrder->setValue(4);
+	m_BZCalcOrder->setValue(4);
 
 	m_ignoreCalc = 0;
 	CalcB(true);
@@ -143,11 +143,11 @@ void BZDlg::Load()
 		}
 		if(auto opt = node.get_optional<int>("bz.order"); opt)
 		{
-			m_maxBZ->setValue(*opt);
+			m_BZCalcOrder->setValue(*opt);
 		}
 		if(auto opt = node.get_optional<int>("bz.cut.order"); opt)
 		{
-			m_BZOrder->setValue(*opt);
+			m_BZDrawOrder->setValue(*opt);
 		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.x"); opt)
 		{
@@ -238,8 +238,8 @@ void BZDlg::Save()
 	node.put<t_real>("bz.xtal.alpha", alpha);
 	node.put<t_real>("bz.xtal.beta", beta);
 	node.put<t_real>("bz.xtal.gamma", gamma);
-	node.put<int>("bz.order", m_maxBZ->value());
-	node.put<int>("bz.cut.order", m_BZOrder->value());
+	node.put<int>("bz.order", m_BZCalcOrder->value());
+	node.put<int>("bz.cut.order", m_BZDrawOrder->value());
 	node.put<t_real>("bz.cut.x", m_cutX->value());
 	node.put<t_real>("bz.cut.y", m_cutY->value());
 	node.put<t_real>("bz.cut.z", m_cutZ->value());

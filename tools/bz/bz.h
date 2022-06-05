@@ -93,7 +93,7 @@ protected:
 	QTableWidget *m_symops = nullptr;
 	QComboBox *m_comboSG = nullptr;
 
-	// cuts panel
+	// brillouin zone and cuts panel
 	BZCutScene *m_bzscene = nullptr;
 	BZCutView *m_bzview = nullptr;
 	QDoubleSpinBox *m_cutX = nullptr;
@@ -103,17 +103,17 @@ protected:
 	QDoubleSpinBox *m_cutNY = nullptr;
 	QDoubleSpinBox *m_cutNZ = nullptr;
 	QDoubleSpinBox *m_cutD = nullptr;
-	QSpinBox *m_BZOrder = nullptr;
+	QSpinBox *m_BZDrawOrder = nullptr;
 	QAction *m_acCutHull = nullptr;
-
-	// brillouin zone panel
-	QPlainTextEdit *m_bz = nullptr;
-	QSpinBox *m_maxBZ = nullptr;
+	QSpinBox *m_BZCalcOrder = nullptr;
 	std::vector<std::vector<t_vec>> m_bz_polys;
+
+	// results panel
+	QPlainTextEdit *m_bzresults = nullptr;
 	std::string m_descrBZ, m_descrBZCut;
 
-	QMenu *m_pTabContextMenu = nullptr;        // menu in case a symop is selected
-	QMenu *m_pTabContextMenuNoItem = nullptr;  // menu if nothing is selected
+	QMenu *m_tabContextMenu = nullptr;        // menu in case a symop is selected
+	QMenu *m_tabContextMenuNoItem = nullptr;  // menu if nothing is selected
 
 	t_mat m_crystA = tl2::unit<t_mat>(3);
 	t_mat m_crystB = tl2::unit<t_mat>(3);

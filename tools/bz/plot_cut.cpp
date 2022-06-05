@@ -73,7 +73,7 @@ void BZCutScene::AddCut(
 
 
 	// draw (000) brillouin zone
-	pen.setColor(QColor(0x00, 0x00, 0xff));
+	pen.setColor(QColor(0xff, 0x00, 0x00));
 	pen.setWidthF(4.);
 
 	for(const auto* line : lines000)
