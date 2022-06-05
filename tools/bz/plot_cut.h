@@ -34,6 +34,9 @@
 #include <QtGui/QMouseEvent>
 #include <QtGui/QWheelEvent>
 
+#include <tuple>
+#include <array>
+
 #include "globals.h"
 
 
@@ -43,7 +46,9 @@ public:
 	BZCutScene(QWidget *parent = nullptr);
 	virtual ~BZCutScene();
 
-	void AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines);
+	void AddCut(const std::vector<
+		// [x, y, Q]
+		std::tuple<t_vec, t_vec, std::array<t_real, 3>>>& lines);
 	t_real GetScale() const { return m_scale; }
 
 

@@ -259,7 +259,9 @@ void BZDlg::CalcBZCut()
 	m_cut_plane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, false);
 	m_cut_plane_inv = tl2::trans<t_mat>(m_cut_plane);
 
-	std::vector<std::pair<t_vec, t_vec>> cut_lines, cut_lines000;
+	// [x, y, Q]
+	std::vector<std::tuple<t_vec, t_vec, std::array<t_real, 3>>>
+		cut_lines, cut_lines000;
 
 	const auto order = m_BZOrder->value();
 	const auto ops = GetSymOps(true);
@@ -320,9 +322,13 @@ void BZDlg::CalcBZCut()
 						tl2::set_eps_0(pt1, g_eps);
 						tl2::set_eps_0(pt2, g_eps);
 
-						cut_lines.emplace_back(std::make_pair(pt1, pt2));
+						cut_lines.emplace_back(std::make_tuple(
+							pt1, pt2,
+							std::array<t_real,3>{h, k, l}));
 						if(is_000)
-							cut_lines000.emplace_back(std::make_pair(pt1, pt2));
+							cut_lines000.emplace_back(std::make_tuple(
+								pt1, pt2,
+								std::array<t_real,3>{h, k, l}));
 					}
 				}
 
@@ -351,9 +357,13 @@ void BZDlg::CalcBZCut()
 						tl2::set_eps_0(pt1, g_eps);
 						tl2::set_eps_0(pt2, g_eps);
 
-						cut_lines.emplace_back(std::make_pair(pt1, pt2));
+						cut_lines.emplace_back(std::make_tuple(
+							pt1, pt2,
+							std::array<t_real,3>{h, k, l}));
 						if(is_000)
-							cut_lines000.emplace_back(std::make_pair(pt1, pt2));
+							cut_lines000.emplace_back(std::make_tuple(
+								pt1, pt2,
+								std::array<t_real,3>{h, k, l}));
 					}
 				}
 			}
@@ -369,8 +379,8 @@ void BZDlg::CalcBZCut()
 	{
 		const auto& line = cut_lines000[i];
 
-		ostr << "line " << i << ":\n\tvertex 0: " << line.first
-			<< "\n\tvertex 1: " << line.second << std::endl;
+		ostr << "line " << i << ":\n\tvertex 0: " << std::get<0>(line)
+			<< "\n\tvertex 1: " << std::get<1>(line) << std::endl;
 	}
 	m_descrBZCut = ostr.str();
 

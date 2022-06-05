@@ -40,18 +40,47 @@ BZCutScene::~BZCutScene()
 }
 
 
-void BZCutScene::AddCut(const std::vector<std::pair<t_vec, t_vec>>& lines)
+void BZCutScene::AddCut(
+	const std::vector<std::tuple<t_vec, t_vec, std::array<t_real, 3>>>& lines)
 {
+	// (000) brillouin zone
+	std::vector<const std::tuple<t_vec, t_vec, std::array<t_real, 3>>*> lines000;
+
+	QPen pen;
+	pen.setCosmetic(true);
+	pen.setColor(qApp->palette().color(QPalette::WindowText));
+	pen.setWidthF(2.);
+
+	// draw brillouin zones
 	for(const auto& line : lines)
 	{
-		QPen pen;
-		pen.setCosmetic(true);
-		pen.setColor(qApp->palette().color(QPalette::WindowText));
-		pen.setWidthF(2.);
+		const auto& Q = std::get<2>(line);
+
+		// (000) BZ?
+		if(tl2::equals_0(Q[0], g_eps) &&
+			tl2::equals_0(Q[1], g_eps) &&
+			tl2::equals_0(Q[2], g_eps))
+		{
+			lines000.push_back(&line);
+			continue;
+		}
 
 		addLine(QLineF(
-			line.first[0]*m_scale, line.first[1]*m_scale,
-			line.second[0]*m_scale, line.second[1]*m_scale),
+			std::get<0>(line)[0]*m_scale, std::get<0>(line)[1]*m_scale,
+			std::get<1>(line)[0]*m_scale, std::get<1>(line)[1]*m_scale),
+			pen);
+	}
+
+
+	// draw (000) brillouin zone
+	pen.setColor(QColor(0x00, 0x00, 0xff));
+	pen.setWidthF(4.);
+
+	for(const auto* line : lines000)
+	{
+		addLine(QLineF(
+			std::get<0>(*line)[0]*m_scale, std::get<0>(*line)[1]*m_scale,
+			std::get<1>(*line)[0]*m_scale, std::get<1>(*line)[1]*m_scale),
 			pen);
 	}
 }

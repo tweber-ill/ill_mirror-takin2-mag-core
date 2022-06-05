@@ -75,7 +75,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			new QTableWidgetItem{"Symmetry Operation"});
 		m_symops->setHorizontalHeaderItem(COL_PROP,
 			new QTableWidgetItem{"Properties"});
-		m_symops->setColumnWidth(COL_OP, 400);
+		m_symops->setColumnWidth(COL_OP, 300);
 		m_symops->setColumnWidth(COL_PROP, 100);
 
 		QToolButton *btnAdd = new QToolButton(symopspanel);
