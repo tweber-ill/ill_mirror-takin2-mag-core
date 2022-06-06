@@ -114,13 +114,13 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 
 	if(row == -1)	// append to end of table
 		row = m_symops->rowCount();
-	else if(row == -2 && m_iCursorRow >= 0)	// use row from member variable
-		row = m_iCursorRow;
-	else if(row == -3 && m_iCursorRow >= 0)	// use row from member variable +1
-		row = m_iCursorRow + 1;
-	else if(row == -4 && m_iCursorRow >= 0)	// use row from member variable +1
+	else if(row == -2 && m_cursorRow >= 0)	// use row from member variable
+		row = m_cursorRow;
+	else if(row == -3 && m_cursorRow >= 0)	// use row from member variable +1
+		row = m_cursorRow + 1;
+	else if(row == -4 && m_cursorRow >= 0)	// use row from member variable +1
 	{
-		row = m_iCursorRow + 1;
+		row = m_cursorRow + 1;
 		bclone = 1;
 	}
 
@@ -132,7 +132,7 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 	{
 		for(int thecol=0; thecol<NUM_COLS; ++thecol)
 			m_symops->setItem(row, thecol,
-				m_symops->item(m_iCursorRow, thecol)->clone());
+				m_symops->item(m_cursorRow, thecol)->clone());
 	}
 	else
 	{
@@ -317,7 +317,7 @@ void BZDlg::ShowTableContextMenu(const QPoint& pt)
 
 	if(const auto* item = m_symops->itemAt(pt); item)
 	{
-		m_iCursorRow = item->row();
+		m_cursorRow = item->row();
 		ptGlob.setY(ptGlob.y() + m_tabContextMenu->sizeHint().height()/2);
 		m_tabContextMenu->popup(ptGlob);
 	}
@@ -340,7 +340,7 @@ void BZDlg::GetSymOpsFromSG()
 	{
 		// symops of current space group
 		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
-		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
+		if(sgidx < 0 || std::size_t(sgidx) >= m_sg_ops.size())
 		{
 			QMessageBox::critical(this, "Space Group Conversion",
 				"Invalid space group selected.");
@@ -353,7 +353,7 @@ void BZDlg::GetSymOpsFromSG()
 		DelTabItem(-1);
 
 		// add symops
-		for(const auto& op : m_SGops[sgidx])
+		for(const auto& op : m_sg_ops[sgidx])
 		{
 			AddTabItem(-1, op);
 		}

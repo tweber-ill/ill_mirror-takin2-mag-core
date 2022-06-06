@@ -109,11 +109,11 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 		// get space groups and symops
 		auto spacegroups = get_sgs<t_mat>();
-		m_SGops.reserve(spacegroups.size());
+		m_sg_ops.reserve(spacegroups.size());
 		for(auto [sgnum, descr, ops] : spacegroups)
 		{
 			m_comboSG->addItem(descr.c_str(), m_comboSG->count());
-			m_SGops.emplace_back(std::move(ops));
+			m_sg_ops.emplace_back(std::move(ops));
 		}
 
 
@@ -295,12 +295,9 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		grid->setSpacing(4);
 		grid->setContentsMargins(6, 6, 6, 6);
 
-		auto sep1 = new QFrame(infopanel);
-		sep1->setFrameStyle(QFrame::HLine);
-		auto sep2 = new QFrame(infopanel);
-		sep2->setFrameStyle(QFrame::HLine);
-		auto sep3 = new QFrame(infopanel);
-		sep3->setFrameStyle(QFrame::HLine);
+		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
 
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
@@ -352,14 +349,26 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 		grid->addWidget(sep2, y++,0, 1,1);
 
-		grid->addWidget(new QLabel(
-			QString("Qt Version: ") +
-			QString(QT_VERSION_STR) + ".",
-			infopanel), y++,0, 1,1);
-		grid->addWidget(new QLabel(
-			QString("Boost Version: ") +
-			strBoost.c_str() + ".",
-			infopanel), y++,0, 1,1);
+		auto labelQt = new QLabel(QString(
+			"<a href=\"http://code.qt.io/cgit/\">Qt</a>"
+			" Version: %1.").arg(QT_VERSION_STR),
+			infopanel);
+		labelQt->setOpenExternalLinks(true);
+		grid->addWidget(labelQt, y++,0, 1,1);
+
+		auto labelBoost = new QLabel(QString(
+			"<a href=\"http://www.boost.org\">Boost</a>"
+			" Version: %1.").arg(strBoost.c_str()),
+			infopanel);
+		labelBoost->setOpenExternalLinks(true);
+		grid->addWidget(labelBoost, y++,0, 1,1);
+
+		auto labelGemmi = new QLabel(QString(
+			"<a href=\"https://github.com/project-gemmi/gemmi\">Gemmi</a>"
+			" Version: %1.").arg(get_gemmi_version<QString>()),
+			infopanel);
+		labelGemmi->setOpenExternalLinks(true);
+		grid->addWidget(labelGemmi, y++,0, 1,1);
 
 		grid->addWidget(sep3, y++,0, 1,1);
 

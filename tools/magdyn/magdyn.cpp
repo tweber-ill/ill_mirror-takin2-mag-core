@@ -728,11 +728,13 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(m_field_dir[2], y++,3,1,1);
 		grid->addWidget(m_align_spins, y++,0,1,2);
 
+		auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(m_samplepanel); sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(m_samplepanel); sep3->setFrameStyle(QFrame::HLine);
+
 		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		auto sep1 = new QFrame(m_samplepanel);
-		sep1->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep1, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -752,8 +754,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		auto sep2 = new QFrame(m_samplepanel);
-		sep2->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep2, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -768,8 +768,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
-		auto sep3 = new QFrame(m_samplepanel);
-		sep3->setFrameStyle(QFrame::HLine);
 		grid->addWidget(sep3, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -1063,14 +1061,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->setSpacing(4);
 		grid->setContentsMargins(6, 6, 6, 6);
 
-		auto sep1 = new QFrame(infopanel);
-		sep1->setFrameStyle(QFrame::HLine);
-		auto sep2 = new QFrame(infopanel);
-		sep2->setFrameStyle(QFrame::HLine);
-		auto sep3 = new QFrame(infopanel);
-		sep3->setFrameStyle(QFrame::HLine);
-		auto sep4 = new QFrame(infopanel);
-		sep4->setFrameStyle(QFrame::HLine);
+		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
+		auto sep4 = new QFrame(infopanel); sep4->setFrameStyle(QFrame::HLine);
 
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
@@ -1138,9 +1132,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			infopanel), y++,0, 1,1);
 
 		grid->addWidget(sep3, y++,0, 1,1);
-
 		grid->addWidget(labelPaper, y++,0, 1,1);
-
 		grid->addWidget(sep4, y++,0, 1,1);
 
 		for(int i=0; i<4; ++i)

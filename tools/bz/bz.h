@@ -51,6 +51,7 @@
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 
 
+// sg table column indices
 enum : int
 {
 	COL_OP = 0,
@@ -72,11 +73,10 @@ protected:
 	QMenuBar *m_menu = nullptr;
 	QLabel *m_status = nullptr;
 
-	// plotter
+	// 3d plotter
 	QDialog *m_dlgPlot = nullptr;
 	std::shared_ptr<tl2::GlPlot> m_plot;
-	std::size_t m_sphere = 0;
-	std::size_t m_plane = 0;
+	std::size_t m_sphere = 0, m_plane = 0;
 	QLabel *m_labelGlInfos[4] = { nullptr, nullptr, nullptr, nullptr };
 	QLabel *m_status3D = nullptr;
 	QCheckBox *m_plot_coordcross = nullptr;
@@ -104,24 +104,24 @@ protected:
 	QDoubleSpinBox *m_cutNZ = nullptr;
 	QDoubleSpinBox *m_cutD = nullptr;
 	QSpinBox *m_BZDrawOrder = nullptr;
-	QAction *m_acCutHull = nullptr;
 	QSpinBox *m_BZCalcOrder = nullptr;
-	std::vector<std::vector<t_vec>> m_bz_polys;
+	QAction *m_acCutHull = nullptr;
 
 	// results panel
 	QPlainTextEdit *m_bzresults = nullptr;
-	std::string m_descrBZ, m_descrBZCut;
+	std::string m_descrBZ, m_descrBZCut;         // text description of the results
 
-	QMenu *m_tabContextMenu = nullptr;        // menu in case a symop is selected
-	QMenu *m_tabContextMenuNoItem = nullptr;  // menu if nothing is selected
+	QMenu *m_tabContextMenu = nullptr;           // menu in case a symop is selected
+	QMenu *m_tabContextMenuNoItem = nullptr;     // menu if nothing is selected
 
-	t_mat m_crystA = tl2::unit<t_mat>(3);
-	t_mat m_crystB = tl2::unit<t_mat>(3);
-	t_mat m_cut_plane = tl2::unit<t_mat>(3);
-	t_mat m_cut_plane_inv = tl2::unit<t_mat>(3);
-	t_real m_cut_norm_scale = 1.;              // convert 1/A to rlu lengths along the normal
+	t_mat m_crystA = tl2::unit<t_mat>(3);        // crystal A matrix
+	t_mat m_crystB = tl2::unit<t_mat>(3);        // crystal B matrix
+	t_mat m_cut_plane = tl2::unit<t_mat>(3);     // cutting plane
+	t_mat m_cut_plane_inv = tl2::unit<t_mat>(3); // and its inverse
+	t_real m_cut_norm_scale = 1.;                // convert 1/A to rlu lengths along the normal
 
-	std::vector<std::vector<t_mat>> m_SGops;
+	std::vector<std::vector<t_mat>> m_sg_ops;    // symops per space group
+	std::vector<std::vector<t_vec>> m_bz_polys;  // polygons of the 3d bz
 
 
 protected:
@@ -130,12 +130,12 @@ protected:
 	void DelTabItem(int begin=-2, int end=-2);
 	void MoveTabItemUp();
 	void MoveTabItemDown();
-
 	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
 	void TableCellEntered(const QModelIndex& idx);
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
 
+	// menu functions
 	void NewFile();
 	void Load();
 	void Save();
@@ -143,6 +143,7 @@ protected:
 	void GetSymOpsFromSG();
 	void SaveCutSVG();
 
+	// calculation functions
 	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
 	void CalcB(bool full_recalc = true);
 	void CalcBZ(bool full_recalc = true);
@@ -180,12 +181,12 @@ protected:
 
 
 private:
-	int m_iCursorRow = -1;
-	bool m_ignoreChanges = 1;
-	bool m_ignoreCalc = 0;
+	int m_cursorRow = -1;                        // current sg row
+	bool m_ignoreChanges = 1;                    // ignore sg changes
+	bool m_ignoreCalc = 0;                       // ignore bz calculation
 
-	long m_curPickedObj = -1;
-	std::vector<std::size_t> m_plotObjs;
+	long m_curPickedObj = -1;                    // current 3d bz object
+	std::vector<std::size_t> m_plotObjs;         // 3d bz plot objects
 
 
 private:

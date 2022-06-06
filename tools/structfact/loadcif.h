@@ -36,12 +36,20 @@
 
 #include <gemmi/cif.hpp>
 #include <gemmi/symmetry.hpp>
+#include <gemmi/version.hpp>
 
 #include "tlibs2/libs/maths.h"
 using namespace tl2_ops;
 
 
-template<class t_real=double>
+template<class t_str = std::string>
+t_str get_gemmi_version()
+{
+	return GEMMI_VERSION;
+}
+
+
+template<class t_real = double>
 struct Lattice
 {
 	t_real a, b, c;
