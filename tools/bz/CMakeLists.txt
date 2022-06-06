@@ -73,6 +73,7 @@ add_executable(takin_bz
 	bz_plot.cpp bz_main.cpp
 	bz_ops.cpp bz.h globals.h
 	plot_cut.cpp plot_cut.h
+	../../tlibs2/libs/qt/recent.cpp ../../tlibs2/libs/qt/recent.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)
 

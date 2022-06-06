@@ -79,20 +79,12 @@ void BZDlg::NewFile()
 }
 
 
-void BZDlg::Load()
+bool BZDlg::Load(const QString& filename)
 {
 	m_ignoreCalc = 1;
 
 	try
 	{
-		QString dirLast = m_sett->value("dir", "").toString();
-		QString filename = QFileDialog::getOpenFileName(
-			this, "Load File", dirLast, "XML Files (*.xml *.XML)");
-		if(filename=="" || !QFile::exists(filename))
-			return;
-		m_sett->setValue("dir", QFileInfo(filename).path());
-
-
 		pt::ptree node;
 
 		std::ifstream ifstr{filename.toStdString()};
@@ -104,7 +96,8 @@ void BZDlg::Load()
 		{
 			QMessageBox::critical(this, "Brillouin Zones",
 				"Unrecognised file format.");
-			return;
+			m_ignoreCalc = 0;
+			return false;
 		}
 
 
@@ -200,28 +193,24 @@ void BZDlg::Load()
 	catch(const std::exception& ex)
 	{
 		QMessageBox::critical(this, "Brillouin Zones", ex.what());
+		m_ignoreCalc = 0;
+		return false;
 	}
 
 
 	m_ignoreCalc = 0;
 	CalcB(true);
+	return true;
 }
 
 
-void BZDlg::Save()
+bool BZDlg::Save(const QString& filename)
 {
-	QString dirLast = m_sett->value("dir", "").toString();
-	QString filename = QFileDialog::getSaveFileName(
-		this, "Save File", dirLast, "XML Files (*.xml *.XML)");
-	if(filename=="")
-		return;
-	m_sett->setValue("dir", QFileInfo(filename).path());
-
-
 	pt::ptree node;
+
+	// meta infos
 	node.put<std::string>("bz.meta.info", "bz_tool");
 	node.put<std::string>("bz.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
-
 
 	// lattice
 	t_real a,b,c, alpha,beta,gamma;
@@ -264,10 +253,44 @@ void BZDlg::Save()
 	if(!ofstr)
 	{
 		QMessageBox::critical(this, "Brillouin Zones", "Cannot open file for writing.");
-		return;
+		return false;
 	}
 	ofstr.precision(g_prec);
 	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+
+	return true;
+}
+
+
+void BZDlg::Load()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getOpenFileName(
+		this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+
+	if(Load(filename))
+	{
+		m_sett->setValue("dir", QFileInfo(filename).path());
+		m_recent.AddRecentFile(filename);
+	}
+}
+
+
+void BZDlg::Save()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Save File", dirLast, "XML Files (*.xml *.XML)");
+	if(filename=="")
+		return;
+
+	if(Save(filename))
+	{
+		m_sett->setValue("dir", QFileInfo(filename).path());
+		m_recent.AddRecentFile(filename);
+	}
 }
 
 

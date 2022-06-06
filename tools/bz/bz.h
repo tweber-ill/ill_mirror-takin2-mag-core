@@ -47,6 +47,7 @@
 #include "globals.h"
 #include "plot_cut.h"
 
+#include "tlibs2/libs/qt/recent.h"
 #include "tlibs2/libs/qt/glplot.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 
@@ -105,11 +106,23 @@ protected:
 	QDoubleSpinBox *m_cutD = nullptr;
 	QSpinBox *m_BZDrawOrder = nullptr;
 	QSpinBox *m_BZCalcOrder = nullptr;
-	QAction *m_acCutHull = nullptr;
 
 	// results panel
 	QPlainTextEdit *m_bzresults = nullptr;
 	std::string m_descrBZ, m_descrBZCut;         // text description of the results
+
+	// menu
+	QAction *m_acCutHull = nullptr;
+
+	// recently opened files
+	tl2::RecentFiles m_recent{};
+	QMenu *m_menuOpenRecent{};
+	// function to call for the recent file menu items
+	std::function<bool(const QString& filename)> m_open_func
+		= [this](const QString& filename) -> bool
+	{
+		return this->Load(filename);
+	};
 
 	QMenu *m_tabContextMenu = nullptr;           // menu in case a symop is selected
 	QMenu *m_tabContextMenuNoItem = nullptr;     // menu if nothing is selected
@@ -142,6 +155,9 @@ protected:
 	void ImportCIF();
 	void GetSymOpsFromSG();
 	void SaveCutSVG();
+
+	bool Load(const QString& filename);
+	bool Save(const QString& filename);
 
 	// calculation functions
 	std::vector<t_mat> GetSymOps(bool only_centring = false) const;

@@ -408,9 +408,16 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		auto menuFile = new QMenu("File", m_menu);
 		auto menuBZ = new QMenu("Brillouin Zone", m_menu);
 
+		// recent files menu
+		m_menuOpenRecent = new QMenu("Open Recent", menuFile);
+
+		m_recent.SetRecentFilesMenu(m_menuOpenRecent);
+		m_recent.SetMaxRecentFiles(16);
+		m_recent.SetOpenFunc(&m_open_func);
+
 		// file menu
 		auto acNew = new QAction("New", menuFile);
-		auto acLoad = new QAction("Load...", menuFile);
+		auto acLoad = new QAction("Open...", menuFile);
 		auto acSave = new QAction("Save...", menuFile);
 		auto acImportCIF = new QAction("Import CIF...", menuFile);
 		auto acExit = new QAction("Quit", menuFile);
@@ -431,6 +438,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		acExit->setIcon(QIcon::fromTheme("application-exit"));
 		acAboutQt->setIcon(QIcon::fromTheme("help-about"));
 		acAbout->setIcon(QIcon::fromTheme("help-about"));
+		m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
 
 		acNew->setShortcut(QKeySequence::New);
 		acLoad->setShortcut(QKeySequence::Open);
@@ -447,6 +455,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuFile->addAction(acNew);
 		menuFile->addSeparator();
 		menuFile->addAction(acLoad);
+		menuFile->addMenu(m_menuOpenRecent);
+		menuFile->addSeparator();
 		menuFile->addAction(acSave);
 		menuFile->addSeparator();
 		menuFile->addAction(acImportCIF);
@@ -462,8 +472,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuHelp->addAction(acAbout);
 
 		connect(acNew, &QAction::triggered, this, &BZDlg::NewFile);
-		connect(acLoad, &QAction::triggered, this, &BZDlg::Load);
-		connect(acSave, &QAction::triggered, this, &BZDlg::Save);
+		connect(acLoad, &QAction::triggered, this, static_cast<void (BZDlg::*)()>(&BZDlg::Load));
+		connect(acSave, &QAction::triggered, this, static_cast<void (BZDlg::*)()>(&BZDlg::Save));
 		connect(acImportCIF, &QAction::triggered, this, &BZDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, &BZDlg::ShowBZPlot);
@@ -490,12 +500,17 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
-	// restore window size and position
-	if(m_sett && m_sett->contains("geo"))
-		restoreGeometry(m_sett->value("geo").toByteArray());
-	else
-		resize(600, 500);
+	if(m_sett)
+	{
+		// restore window size and position
+		if(m_sett->contains("geo"))
+			restoreGeometry(m_sett->value("geo").toByteArray());
+		else
+			resize(600, 500);
 
+		if(m_sett->contains("recent_files"))
+			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());
+	}
 
 	m_ignoreChanges = 0;
 }
@@ -505,6 +520,9 @@ void BZDlg::closeEvent(QCloseEvent *)
 {
 	if(m_sett)
 	{
+		m_recent.TrimEntries();
+		m_sett->setValue("recent_files", m_recent.GetRecentFiles());
+
 		m_sett->setValue("geo", saveGeometry());
 		if(m_dlgPlot)
 			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
