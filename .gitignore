@@ -50,6 +50,7 @@ tools/scanbrowser/build/**
 tools/setup/build/**
 *.pyc
 .DS_Store
+._.DS_Store
 *.csv
 
 # Temporary lexer/parser files
