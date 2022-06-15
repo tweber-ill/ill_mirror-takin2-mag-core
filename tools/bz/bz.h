@@ -153,6 +153,9 @@ protected:
 	std::vector<std::vector<t_mat>> m_sg_ops;    // symops per space group
 	std::vector<std::vector<t_vec>> m_bz_polys;  // polygons of the 3d bz
 
+	t_real m_min_x = 1., m_max_x = -1.;          // plot ranges for curves
+	t_real m_min_y = 1., m_max_y = -1.;          // plot ranges for curves
+
 
 protected:
 	// space group / symops tab

@@ -40,6 +40,7 @@
 #include "globals.h"
 
 
+
 class BZCutScene : public QGraphicsScene
 {
 public:
@@ -49,12 +50,22 @@ public:
 	void AddCut(const std::vector<
 		// [x, y, Q]
 		std::tuple<t_vec, t_vec, std::array<t_real, 3>>>& lines);
+	void AddCurve(const std::vector<t_vec>& points);
+
 	t_real GetScale() const { return m_scale; }
+
+	void ClearAll();
+	void ClearCut();
+	void ClearCurves();
 
 
 protected:
 	t_real m_scale = 100.;
+
+	std::vector<QGraphicsItem*> m_bzcut{};
+	std::vector<QGraphicsItem*> m_curves{};
 };
+
 
 
 class BZCutView : public QGraphicsView

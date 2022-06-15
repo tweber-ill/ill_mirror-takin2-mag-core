@@ -37,9 +37,14 @@ BZCutScene::BZCutScene(QWidget *parent) : QGraphicsScene(parent)
 
 BZCutScene::~BZCutScene()
 {
+	ClearAll();
 }
 
 
+/**
+ * adds the line segments of a brillouin zone cut
+ * @arg [start, end, Q]
+ */
 void BZCutScene::AddCut(
 	const std::vector<std::tuple<t_vec, t_vec, std::array<t_real, 3>>>& lines)
 {
@@ -50,6 +55,8 @@ void BZCutScene::AddCut(
 	pen.setCosmetic(true);
 	pen.setColor(qApp->palette().color(QPalette::WindowText));
 	pen.setWidthF(1.);
+
+	m_bzcut.reserve(lines.size() * 2);
 
 	// draw brillouin zones
 	for(const auto& line : lines)
@@ -65,10 +72,12 @@ void BZCutScene::AddCut(
 			continue;
 		}
 
-		addLine(QLineF(
+		QGraphicsLineItem *plot_line = addLine(QLineF(
 			std::get<0>(line)[0]*m_scale, std::get<0>(line)[1]*m_scale,
 			std::get<1>(line)[0]*m_scale, std::get<1>(line)[1]*m_scale),
 			pen);
+
+		m_bzcut.push_back(plot_line);
 	}
 
 
@@ -78,12 +87,63 @@ void BZCutScene::AddCut(
 
 	for(const auto* line : lines000)
 	{
-		addLine(QLineF(
+		QGraphicsLineItem *plot_line = addLine(QLineF(
 			std::get<0>(*line)[0]*m_scale, std::get<0>(*line)[1]*m_scale,
 			std::get<1>(*line)[0]*m_scale, std::get<1>(*line)[1]*m_scale),
 			pen);
+
+		m_bzcut.push_back(plot_line);
 	}
 }
+
+
+/**
+ * adds a plot curve from a set of points
+ */
+void BZCutScene::AddCurve(const std::vector<t_vec>& points)
+{
+	QPen pen;
+	pen.setCosmetic(true);
+	pen.setColor(QColor(0x00, 0x00, 0xff));
+	pen.setWidthF(2.);
+
+	for(std::size_t i=0; i<points.size()-1; ++i)
+	{
+		std::size_t j = i+1;
+
+		QGraphicsLineItem *plot_line = addLine(QLineF(
+			points[i][0]*m_scale, points[i][1]*m_scale,
+			points[j][0]*m_scale, points[j][1]*m_scale),
+			pen);
+
+		m_curves.push_back(plot_line);
+	}
+}
+
+
+void BZCutScene::ClearAll()
+{
+	ClearCut();
+	ClearCurves();
+	clear();
+}
+
+
+void BZCutScene::ClearCut()
+{
+	for(QGraphicsItem *item : m_bzcut)
+		delete item;
+	m_bzcut.clear();
+}
+
+
+void BZCutScene::ClearCurves()
+{
+	for(QGraphicsItem *item : m_curves)
+		delete item;
+	m_curves.clear();
+}
+
 // --------------------------------------------------------------------------------
 
 

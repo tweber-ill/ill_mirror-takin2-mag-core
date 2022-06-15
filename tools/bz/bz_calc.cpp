@@ -297,7 +297,7 @@ void BZDlg::CalcBZCut()
 						norm, d_invA, bz_poly, g_eps);
 					vecs = tl2::remove_duplicates(vecs, g_eps);
 
-					// calulate the hull of the bz cut
+					// calculate the hull of the bz cut
 					if(calc_bzcut_hull)
 					{
 						for(const t_vec& vec : vecs)
@@ -333,7 +333,7 @@ void BZDlg::CalcBZCut()
 					}
 				}
 
-				// calulate the hull of the bz cut
+				// calculate the hull of the bz cut
 				if(calc_bzcut_hull)
 				{
 					cut_verts = tl2::remove_duplicates(cut_verts, g_eps);
@@ -372,9 +372,35 @@ void BZDlg::CalcBZCut()
 	}
 
 
-	m_bzscene->clear();
+	// get ranges
+	m_min_x = std::numeric_limits<t_real>::max();
+	m_max_x = -m_min_x;
+	m_min_y = std::numeric_limits<t_real>::max();
+	m_max_y = -m_min_y;
+
+	for(const auto& tup : cut_lines)
+	{
+		const auto& pt1 = std::get<0>(tup);
+		const auto& pt2 = std::get<1>(tup);
+
+		m_min_x = std::min(m_min_x, pt1[0]);
+		m_min_x = std::min(m_min_x, pt2[0]);
+		m_max_x = std::max(m_max_x, pt1[0]);
+		m_max_x = std::max(m_max_x, pt2[0]);
+
+		m_min_y = std::min(m_min_y, pt1[1]);
+		m_min_y = std::min(m_min_y, pt2[1]);
+		m_max_y = std::max(m_max_y, pt1[1]);
+		m_max_y = std::max(m_max_y, pt2[1]);
+	}
+
+
+	// draw cut
+	m_bzscene->ClearAll();
 	m_bzscene->AddCut(cut_lines);
 
+
+	// get description of bz cut
 	ostr << "# Brillouin zone cut" << std::endl;
 	for(std::size_t i=0; i<cut_lines000.size(); ++i)
 	{
@@ -385,6 +411,8 @@ void BZDlg::CalcBZCut()
 	}
 	m_descrBZCut = ostr.str();
 
+
+	// update calculation results
 	PlotSetPlane(norm, d_invA);
 	UpdateBZDescription();
 	CalcFormulas();
@@ -396,6 +424,10 @@ void BZDlg::CalcBZCut()
  */
 void BZDlg::CalcFormulas()
 {
+	m_bzscene->ClearCurves();
+	if(m_max_x < m_min_x)
+		return;
+
 	std::vector<std::string> formulas = GetFormulas();
 	for(const std::string& formula : formulas)
 	{
@@ -408,8 +440,23 @@ void BZDlg::CalcFormulas()
 			if(bool ok = parser.parse(formula); !ok)
 				continue;
 
-			// TODO
-			//t_real result = parser.eval();
+			int num_pts = 512;
+			t_real x_delta = (m_max_x - m_min_x) / t_real(num_pts);
+
+			std::vector<t_vec> curve;
+			curve.reserve(num_pts);
+
+			for(t_real x=m_min_x; x<=m_max_x; x+=x_delta)
+			{
+				parser.register_var("x", x);
+				t_real y = parser.eval();
+				if(y < m_min_y || y > m_max_y)
+					continue;
+
+				curve.emplace_back(tl2::create<t_vec>({ x, y }));
+			}
+
+			m_bzscene->AddCurve(curve);
 		}
 		catch(const std::exception& ex)
 		{
