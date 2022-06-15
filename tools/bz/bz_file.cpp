@@ -52,8 +52,9 @@ void BZDlg::NewFile()
 {
 	m_ignoreCalc = 1;
 
-	// clear old table
-	DelTabItem(-1);
+	// clear old tables
+	DelSymOpTabItem(-1);
+	DelFormulaTabItem(-1);
 
 	// set some defaults
 	m_comboSG->setCurrentIndex(0);
@@ -102,7 +103,7 @@ bool BZDlg::Load(const QString& filename)
 
 
 		// clear old items
-		DelTabItem(-1);
+		DelSymOpTabItem(-1);
 
 		if(auto opt = node.get_optional<t_real>("bz.xtal.a"); opt)
 		{
@@ -179,14 +180,22 @@ bool BZDlg::Load(const QString& filename)
 		// symops
 		if(auto symops = node.get_child_optional("bz.symops"); symops)
 		{
-			std::size_t opidx = 0;
 			for(const auto &symop : *symops)
 			{
 				auto optOp = symop.second.get<std::string>(
 					"op", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
 
-				AddTabItem(-1, StrToOp(optOp));
-				++opidx;
+				AddSymOpTabItem(-1, StrToOp(optOp));
+			}
+		}
+
+		// formulas
+		if(auto formulas = node.get_child_optional("bz.formulas"); formulas)
+		{
+			for(const auto &formula : *formulas)
+			{
+				std::string expr = formula.second.get<std::string>("expr", "");
+				AddFormulaTabItem(-1, expr);
 			}
 		}
 	}
@@ -200,6 +209,7 @@ bool BZDlg::Load(const QString& filename)
 
 	m_ignoreCalc = 0;
 	CalcB(true);
+
 	return true;
 }
 
@@ -247,6 +257,17 @@ bool BZDlg::Save(const QString& filename)
 		pt::ptree itemNode;
 		itemNode.put<std::string>("op", opstr);
 		node.add_child("bz.symops.symop", itemNode);
+	}
+
+	// formula list
+	for(int row=0; row<m_formulas->rowCount(); ++row)
+	{
+		std::string opstr = m_formulas->item(row, COL_FORMULA)->text().toStdString();
+		algo::replace_all(opstr, "\n", " ");
+
+		pt::ptree itemNode;
+		itemNode.put<std::string>("expr", opstr);
+		node.add_child("bz.formulas.formula", itemNode);
 	}
 
 	std::ofstream ofstr{filename.toStdString()};
@@ -320,7 +341,7 @@ void BZDlg::ImportCIF()
 
 
 		// clear old symops
-		DelTabItem(-1);
+		DelSymOpTabItem(-1);
 
 		// lattice
 		{
@@ -352,7 +373,7 @@ void BZDlg::ImportCIF()
 		// symops
 		for(std::size_t opnum=0; opnum<symops.size(); ++opnum)
 		{
-			AddTabItem(-1, symops[opnum]);
+			AddSymOpTabItem(-1, symops[opnum]);
 		}
 	}
 	catch(const std::exception& ex)

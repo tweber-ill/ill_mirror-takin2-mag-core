@@ -49,7 +49,7 @@ void BZCutScene::AddCut(
 	QPen pen;
 	pen.setCosmetic(true);
 	pen.setColor(qApp->palette().color(QPalette::WindowText));
-	pen.setWidthF(2.);
+	pen.setWidthF(1.);
 
 	// draw brillouin zones
 	for(const auto& line : lines)
@@ -74,7 +74,7 @@ void BZCutScene::AddCut(
 
 	// draw (000) brillouin zone
 	pen.setColor(QColor(0xff, 0x00, 0x00));
-	pen.setWidthF(4.);
+	pen.setWidthF(2.);
 
 	for(const auto* line : lines000)
 	{

@@ -52,13 +52,26 @@
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 
 
-// sg table column indices
+/**
+ * symmetry operation table column indices
+ */
 enum : int
 {
 	COL_OP = 0,
 	COL_PROP,
 
-	NUM_COLS
+	NUM_SYMOP_COLS
+};
+
+
+/**
+ * formulas table column indices
+ */
+enum : int
+{
+	COL_FORMULA = 0,
+
+	NUM_FORMULAS_COLS
 };
 
 
@@ -93,6 +106,8 @@ protected:
 	QLineEdit *m_editGamma = nullptr;
 	QTableWidget *m_symops = nullptr;
 	QComboBox *m_comboSG = nullptr;
+	QMenu *m_symOpContextMenu = nullptr;         // menu in case a symop is selected
+	QMenu *m_symOpContextMenuNoItem = nullptr;   // menu if nothing is selected
 
 	// brillouin zone and cuts panel
 	BZCutScene *m_bzscene = nullptr;
@@ -106,6 +121,11 @@ protected:
 	QDoubleSpinBox *m_cutD = nullptr;
 	QSpinBox *m_BZDrawOrder = nullptr;
 	QSpinBox *m_BZCalcOrder = nullptr;
+
+	// formulas panel
+	QTableWidget *m_formulas = nullptr;
+	QMenu *m_formulasContextMenu = nullptr;         // menu in case a symop is selected
+	QMenu *m_formulasContextMenuNoItem = nullptr;   // menu if nothing is selected
 
 	// results panel
 	QPlainTextEdit *m_bzresults = nullptr;
@@ -124,9 +144,6 @@ protected:
 		return this->Load(filename);
 	};
 
-	QMenu *m_tabContextMenu = nullptr;           // menu in case a symop is selected
-	QMenu *m_tabContextMenuNoItem = nullptr;     // menu if nothing is selected
-
 	t_mat m_crystA = tl2::unit<t_mat>(3);        // crystal A matrix
 	t_mat m_crystB = tl2::unit<t_mat>(3);        // crystal B matrix
 	t_mat m_cut_plane = tl2::unit<t_mat>(3);     // cutting plane
@@ -138,15 +155,25 @@ protected:
 
 
 protected:
-	// for space group / symops tab
-	void AddTabItem(int row = -1, const t_mat& op = tl2::unit<t_mat>(4));
-	void DelTabItem(int begin=-2, int end=-2);
-	void MoveTabItemUp();
-	void MoveTabItemDown();
-	void TableCurCellChanged(int rowNew, int colNew, int rowOld, int colOld);
-	void TableCellEntered(const QModelIndex& idx);
-	void TableItemChanged(QTableWidgetItem *item);
-	void ShowTableContextMenu(const QPoint& pt);
+	// space group / symops tab
+	void AddSymOpTabItem(int row = -1, const t_mat& op = tl2::unit<t_mat>(4));
+	void DelSymOpTabItem(int begin=-2, int end=-2);
+	void MoveSymOpTabItemUp();
+	void MoveSymOpTabItemDown();
+	void SymOpTableItemChanged(QTableWidgetItem *item);
+	void ShowSymOpTableContextMenu(const QPoint& pt);
+	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
+	std::vector<int> GetSelectedSymOpRows(bool sort_reversed = false) const;
+
+	// formulas tab
+	void AddFormulaTabItem(int row = -1, const std::string& formula = "");
+	void DelFormulaTabItem(int begin=-2, int end=-2);
+	void MoveFormulaTabItemUp();
+	void MoveFormulaTabItemDown();
+	void FormulaTableItemChanged(QTableWidgetItem *item);
+	void ShowFormulaTableContextMenu(const QPoint& pt);
+	std::vector<std::string> GetFormulas() const;
+	std::vector<int> GetSelectedFormulaRows(bool sort_reversed = false) const;
 
 	// menu functions
 	void NewFile();
@@ -160,10 +187,10 @@ protected:
 	bool Save(const QString& filename);
 
 	// calculation functions
-	std::vector<t_mat> GetSymOps(bool only_centring = false) const;
 	void CalcB(bool full_recalc = true);
 	void CalcBZ(bool full_recalc = true);
 	void CalcBZCut();
+	void CalcFormulas();
 
 	// 3d bz cut plot
 	void BZCutMouseMoved(t_real x, t_real y);
@@ -197,16 +224,14 @@ protected:
 
 
 private:
-	int m_cursorRow = -1;                        // current sg row
-	bool m_ignoreChanges = 1;                    // ignore sg changes
+	int m_symOpCursorRow = -1;                   // current sg row
+	int m_formulaCursorRow = -1;                 // current sg row
+	bool m_symOpIgnoreChanges = 1;               // ignore sg changes
+	bool m_formulaIgnoreChanges = 1;             // ignore sg changes
 	bool m_ignoreCalc = 0;                       // ignore bz calculation
 
 	long m_curPickedObj = -1;                    // current 3d bz object
 	std::vector<std::size_t> m_plotObjs;         // 3d bz plot objects
-
-
-private:
-	std::vector<int> GetSelectedRows(bool sort_reversed = false) const;
 };
 
 

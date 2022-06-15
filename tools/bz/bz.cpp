@@ -71,7 +71,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			fontMetrics().lineSpacing()*4 + 4);
 		m_symops->verticalHeader()->setVisible(false);
 		m_symops->setAlternatingRowColors(true);
-		m_symops->setColumnCount(NUM_COLS);
+		m_symops->setColumnCount(NUM_SYMOP_COLS);
 		m_symops->setHorizontalHeaderItem(COL_OP,
 			new QTableWidgetItem{"Symmetry Operation"});
 		m_symops->setHorizontalHeaderItem(COL_PROP,
@@ -147,34 +147,32 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// table CustomContextMenu
-		m_tabContextMenu = new QMenu(m_symops);
-		m_tabContextMenu->addAction("Add SymOp Before", this, [this]() { this->AddTabItem(-2); });
-		m_tabContextMenu->addAction("Add SymOp After", this, [this]() { this->AddTabItem(-3); });
-		m_tabContextMenu->addAction("Clone SymOp", this, [this]() { this->AddTabItem(-4); });
-		m_tabContextMenu->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
+		m_symOpContextMenu = new QMenu(m_symops);
+		m_symOpContextMenu->addAction("Add SymOp Before", this, [this]() { this->AddSymOpTabItem(-2); });
+		m_symOpContextMenu->addAction("Add SymOp After", this, [this]() { this->AddSymOpTabItem(-3); });
+		m_symOpContextMenu->addAction("Clone SymOp", this, [this]() { this->AddSymOpTabItem(-4); });
+		m_symOpContextMenu->addAction("Delete SymOp", this, [this]() { BZDlg::DelSymOpTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
-		m_tabContextMenuNoItem = new QMenu(m_symops);
-		m_tabContextMenuNoItem->addAction("Add SymOp", this, [this]() { this->AddTabItem(); });
-		m_tabContextMenuNoItem->addAction("Delete SymOp", this, [this]() { BZDlg::DelTabItem(); });
-		//m_tabContextMenuNoItem->addSeparator();
+		m_symOpContextMenuNoItem = new QMenu(m_symops);
+		m_symOpContextMenuNoItem->addAction("Add SymOp", this, [this]() { this->AddSymOpTabItem(); });
+		m_symOpContextMenuNoItem->addAction("Delete SymOp", this, [this]() { BZDlg::DelSymOpTabItem(); });
+		//m_symOpContextMenuNoItem->addSeparator();
 
 
 		// signals
 		for(auto* edit : std::vector<QLineEdit*>{{ m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma }})
 			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
 
-		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddTabItem(-1); });
-		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelTabItem(); });
-		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveTabItemUp);
-		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveTabItemDown);
+		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddSymOpTabItem(-1); });
+		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelSymOpTabItem(); });
+		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveSymOpTabItemUp);
+		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveSymOpTabItemDown);
 		connect(btnSG, &QPushButton::clicked, this, &BZDlg::GetSymOpsFromSG);
 
-		connect(m_symops, &QTableWidget::currentCellChanged, this, &BZDlg::TableCurCellChanged);
-		connect(m_symops, &QTableWidget::entered, this, &BZDlg::TableCellEntered);
-		connect(m_symops, &QTableWidget::itemChanged, this, &BZDlg::TableItemChanged);
-		connect(m_symops, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowTableContextMenu);
+		connect(m_symops, &QTableWidget::itemChanged, this, &BZDlg::SymOpTableItemChanged);
+		connect(m_symops, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowSymOpTableContextMenu);
 
 		tabs->addTab(symopspanel, "Crystal");
 	}
@@ -254,6 +252,75 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
 
 		tabs->addTab(bzpanel, "Brillouin Zone");
+	}
+
+
+	{ // formulas panel
+		QWidget *formulaspanel = new QWidget(this);
+
+		m_formulas = new QTableWidget(formulaspanel);
+		m_formulas->setShowGrid(true);
+		m_formulas->setSortingEnabled(true);
+		m_formulas->setMouseTracking(true);
+		m_formulas->setSelectionBehavior(QTableWidget::SelectRows);
+		m_formulas->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_formulas->setContextMenuPolicy(Qt::CustomContextMenu);
+		m_formulas->verticalHeader()->setVisible(false);
+		m_formulas->setAlternatingRowColors(true);
+		m_formulas->setColumnCount(NUM_FORMULAS_COLS);
+		m_formulas->setHorizontalHeaderItem(COL_FORMULA, new QTableWidgetItem{"Formula to Plot"});
+		m_formulas->setColumnWidth(COL_FORMULA, 500);
+
+		QToolButton *btnAdd = new QToolButton(formulaspanel);
+		QToolButton *btnDel = new QToolButton(formulaspanel);
+		QToolButton *btnUp = new QToolButton(formulaspanel);
+		QToolButton *btnDown = new QToolButton(formulaspanel);
+
+		m_formulas->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
+		btnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnDel->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+		btnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+		btnAdd->setText("Add Formula");
+		btnDel->setText("Delete Formula");
+		btnUp->setText("Move Formula Up");
+		btnDown->setText("Move Formula Down");
+
+		auto tabGrid = new QGridLayout(formulaspanel);
+		tabGrid->setSpacing(2);
+		tabGrid->setContentsMargins(4,4,4,4);
+		int y=0;
+		tabGrid->addWidget(m_formulas, y,0,1,4);
+		tabGrid->addWidget(btnAdd, ++y,0,1,1);
+		tabGrid->addWidget(btnDel, y,1,1,1);
+		tabGrid->addWidget(btnUp, y,2,1,1);
+		tabGrid->addWidget(btnDown, y,3,1,1);
+
+
+		// table CustomContextMenu
+		m_formulasContextMenu = new QMenu(m_formulas);
+		m_formulasContextMenu->addAction("Add Formula Before", this, [this]() { this->AddFormulaTabItem(-2); });
+		m_formulasContextMenu->addAction("Add Formula After", this, [this]() { this->AddFormulaTabItem(-3); });
+		m_formulasContextMenu->addAction("Clone Formula", this, [this]() { this->AddFormulaTabItem(-4); });
+		m_formulasContextMenu->addAction("Delete Formula", this, [this]() { BZDlg::DelFormulaTabItem(); });
+
+		// table CustomContextMenu in case nothing is selected
+		m_formulasContextMenuNoItem = new QMenu(m_formulas);
+		m_formulasContextMenuNoItem->addAction("Add Formula", this, [this]() { this->AddFormulaTabItem(); });
+		m_formulasContextMenuNoItem->addAction("Delete Formula", this, [this]() { BZDlg::DelFormulaTabItem(); });
+
+
+		// signals
+		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddFormulaTabItem(-1); });
+		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelFormulaTabItem(); });
+		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveFormulaTabItemUp);
+		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveFormulaTabItemDown);
+
+		connect(m_formulas, &QTableWidget::itemChanged, this, &BZDlg::FormulaTableItemChanged);
+		connect(m_formulas, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowFormulaTableContextMenu);
+
+		tabs->addTab(formulaspanel, "Formulas");
 	}
 
 
@@ -512,7 +579,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());
 	}
 
-	m_ignoreChanges = 0;
+	m_symOpIgnoreChanges = 0;
+	m_formulaIgnoreChanges = 0;
 }
 
 

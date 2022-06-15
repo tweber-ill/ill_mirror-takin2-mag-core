@@ -164,7 +164,7 @@ void BZDlg::PlotAddVoronoiVertex(const t_vec& pos)
 
 	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
 	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	m_plot->GetRenderer()->SetObjectMatrix(obj, 
+	m_plot->GetRenderer()->SetObjectMatrix(obj,
 		tl2::hom_translation<t_mat_gl>(posx, posy, posz) *
 		tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
 	//m_plot->GetRenderer()->SetObjectLabel(obj, "Voronoi Vertex");
@@ -189,7 +189,7 @@ void BZDlg::PlotAddBraggPeak(const t_vec& pos)
 
 	auto obj = m_plot->GetRenderer()->AddLinkedObject(m_sphere, 0,0,0, r,g,b,1);
 	//auto obj = m_plot->GetRenderer()->AddSphere(0.05, 0,0,0, r,g,b,1);
-	m_plot->GetRenderer()->SetObjectMatrix(obj, 
+	m_plot->GetRenderer()->SetObjectMatrix(obj,
 		tl2::hom_translation<t_mat_gl>(posx, posy, posz) *
 		tl2::hom_scaling<t_mat_gl>(scale, scale, scale));
 	//m_plot->GetRenderer()->SetObjectLabel(obj, "Voronoi Vertex");

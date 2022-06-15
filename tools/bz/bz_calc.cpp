@@ -35,6 +35,7 @@
 #include "../structfact/loadcif.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
+#include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/qt/helper.h"
 #include "pathslib/libs/voronoi.h"
 
@@ -386,6 +387,35 @@ void BZDlg::CalcBZCut()
 
 	PlotSetPlane(norm, d_invA);
 	UpdateBZDescription();
+	CalcFormulas();
+}
+
+
+/**
+ * evaluate the formulas in the table and plot them
+ */
+void BZDlg::CalcFormulas()
+{
+	std::vector<std::string> formulas = GetFormulas();
+	for(const std::string& formula : formulas)
+	{
+		try
+		{
+			tl2::ExprParser<t_real> parser;
+			parser.SetAutoregisterVariables(false);
+			parser.register_var("x", 0.);
+
+			if(bool ok = parser.parse(formula); !ok)
+				continue;
+
+			// TODO
+			//t_real result = parser.eval();
+		}
+		catch(const std::exception& ex)
+		{
+			m_status->setText(ex.what());
+		}
+	}
 }
 
 
@@ -408,5 +438,5 @@ void BZDlg::BZCutMouseMoved(t_real x, t_real y)
 
 	ostr << "Q = (" << QinvA[0] << ", " << QinvA[1] << ", " << QinvA[2] << ") Å⁻¹";
 	ostr << " = (" << Qrlu[0] << ", " << Qrlu[1] << ", " << Qrlu[2] << ") rlu.";
-	m_status->setText(ostr.str().c_str());	
+	m_status->setText(ostr.str().c_str());
 }

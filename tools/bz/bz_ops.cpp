@@ -107,20 +107,20 @@ std::string BZDlg::GetOpProperties(const t_mat& op)
 }
 
 
-void BZDlg::AddTabItem(int row, const t_mat& op)
+void BZDlg::AddSymOpTabItem(int row, const t_mat& op)
 {
 	bool bclone = 0;
-	m_ignoreChanges = 1;
+	m_symOpIgnoreChanges = 1;
 
 	if(row == -1)	// append to end of table
 		row = m_symops->rowCount();
-	else if(row == -2 && m_cursorRow >= 0)	// use row from member variable
-		row = m_cursorRow;
-	else if(row == -3 && m_cursorRow >= 0)	// use row from member variable +1
-		row = m_cursorRow + 1;
-	else if(row == -4 && m_cursorRow >= 0)	// use row from member variable +1
+	else if(row == -2 && m_symOpCursorRow >= 0)	// use row from member variable
+		row = m_symOpCursorRow;
+	else if(row == -3 && m_symOpCursorRow >= 0)	// use row from member variable +1
+		row = m_symOpCursorRow + 1;
+	else if(row == -4 && m_symOpCursorRow >= 0)	// use row from member variable +1
 	{
-		row = m_cursorRow + 1;
+		row = m_symOpCursorRow + 1;
 		bclone = 1;
 	}
 
@@ -130,9 +130,9 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 
 	if(bclone)
 	{
-		for(int thecol=0; thecol<NUM_COLS; ++thecol)
+		for(int thecol=0; thecol<NUM_SYMOP_COLS; ++thecol)
 			m_symops->setItem(row, thecol,
-				m_symops->item(m_cursorRow, thecol)->clone());
+				m_symops->item(m_symOpCursorRow, thecol)->clone());
 	}
 	else
 	{
@@ -148,14 +148,14 @@ void BZDlg::AddTabItem(int row, const t_mat& op)
 
 	m_symops->setSortingEnabled(/*sorting*/ true);
 
-	m_ignoreChanges = 0;
+	m_symOpIgnoreChanges = 0;
 	CalcBZ(true);
 }
 
 
-void BZDlg::DelTabItem(int begin, int end)
+void BZDlg::DelSymOpTabItem(int begin, int end)
 {
-	m_ignoreChanges = 1;
+	m_symOpIgnoreChanges = 1;
 
 	// if nothing is selected, clear all items
 	if(begin == -1 || m_symops->selectedItems().count() == 0)
@@ -165,7 +165,7 @@ void BZDlg::DelTabItem(int begin, int end)
 	}
 	else if(begin == -2)	// clear selected
 	{
-		for(int row : GetSelectedRows(true))
+		for(int row : GetSelectedSymOpRows(true))
 			m_symops->removeRow(row);
 	}
 	else if(begin >= 0 && end >= 0)		// clear given range
@@ -174,17 +174,17 @@ void BZDlg::DelTabItem(int begin, int end)
 			m_symops->removeRow(row);
 	}
 
-	m_ignoreChanges = 0;
+	m_symOpIgnoreChanges = 0;
 	CalcBZ(true);
 }
 
 
-void BZDlg::MoveTabItemUp()
+void BZDlg::MoveSymOpTabItemUp()
 {
-	m_ignoreChanges = 1;
+	m_symOpIgnoreChanges = 1;
 	m_symops->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(false);
+	auto selected = GetSelectedSymOpRows(false);
 	for(int row : selected)
 	{
 		if(row == 0)
@@ -211,16 +211,16 @@ void BZDlg::MoveTabItemUp()
 		}
 	}
 
-	m_ignoreChanges = 0;
+	m_symOpIgnoreChanges = 0;
 }
 
 
-void BZDlg::MoveTabItemDown()
+void BZDlg::MoveSymOpTabItemDown()
 {
-	m_ignoreChanges = 1;
+	m_symOpIgnoreChanges = 1;
 	m_symops->setSortingEnabled(false);
 
-	auto selected = GetSelectedRows(true);
+	auto selected = GetSelectedSymOpRows(true);
 	for(int row : selected)
 	{
 		if(row == m_symops->rowCount()-1)
@@ -247,11 +247,11 @@ void BZDlg::MoveTabItemDown()
 		}
 	}
 
-	m_ignoreChanges = 0;
+	m_symOpIgnoreChanges = 0;
 }
 
 
-std::vector<int> BZDlg::GetSelectedRows(bool sort_reversed) const
+std::vector<int> BZDlg::GetSelectedSymOpRows(bool sort_reversed) const
 {
 	std::vector<int> vec;
 	vec.reserve(m_symops->selectedItems().size());
@@ -273,27 +273,9 @@ std::vector<int> BZDlg::GetSelectedRows(bool sort_reversed) const
 
 
 /**
- * selected a new row
- */
-void BZDlg::TableCurCellChanged(
-	[[maybe_unused]] int rowNew, [[maybe_unused]] int colNew,
-	[[maybe_unused]] int rowOld, [[maybe_unused]] int colOld)
-{
-}
-
-
-/**
- * hovered over new row
- */
-void BZDlg::TableCellEntered(const QModelIndex&)
-{
-}
-
-
-/**
  * item contents changed
  */
-void BZDlg::TableItemChanged(QTableWidgetItem *item)
+void BZDlg::SymOpTableItemChanged(QTableWidgetItem *item)
 {
 	// update properties
 	if(item->column() == COL_OP)
@@ -306,25 +288,25 @@ void BZDlg::TableItemChanged(QTableWidgetItem *item)
 			m_symops->setItem(item->row(), COL_PROP, new QTableWidgetItem(prop.c_str()));
 	}
 
-	if(!m_ignoreChanges)
+	if(!m_symOpIgnoreChanges)
 		CalcBZ(true);
 }
 
 
-void BZDlg::ShowTableContextMenu(const QPoint& pt)
+void BZDlg::ShowSymOpTableContextMenu(const QPoint& pt)
 {
 	auto ptGlob = m_symops->mapToGlobal(pt);
 
 	if(const auto* item = m_symops->itemAt(pt); item)
 	{
-		m_cursorRow = item->row();
-		ptGlob.setY(ptGlob.y() + m_tabContextMenu->sizeHint().height()/2);
-		m_tabContextMenu->popup(ptGlob);
+		m_symOpCursorRow = item->row();
+		ptGlob.setY(ptGlob.y() + m_symOpContextMenu->sizeHint().height()/2);
+		m_symOpContextMenu->popup(ptGlob);
 	}
 	else
 	{
-		ptGlob.setY(ptGlob.y() + m_tabContextMenuNoItem->sizeHint().height()/2);
-		m_tabContextMenuNoItem->popup(ptGlob);
+		ptGlob.setY(ptGlob.y() + m_symOpContextMenuNoItem->sizeHint().height()/2);
+		m_symOpContextMenuNoItem->popup(ptGlob);
 	}
 }
 
@@ -349,13 +331,13 @@ void BZDlg::GetSymOpsFromSG()
 		}
 
 		// remove original symops
-		//DelTabItem(0, orgRowCnt);
-		DelTabItem(-1);
+		//DelSymOpTabItem(0, orgRowCnt);
+		DelSymOpTabItem(-1);
 
 		// add symops
 		for(const auto& op : m_sg_ops[sgidx])
 		{
-			AddTabItem(-1, op);
+			AddSymOpTabItem(-1, op);
 		}
 	}
 	catch(const std::exception& ex)
@@ -381,7 +363,7 @@ std::vector<t_mat> BZDlg::GetSymOps(bool only_centring) const
 		auto *op_item = m_symops->item(row, COL_OP);
 		if(!op_item)
 		{
-			std::cerr << "Invalid entry in row " << row << "." << std::endl;
+			std::cerr << "Invalid entry in symop table row " << row << "." << std::endl;
 			continue;
 		}
 
