@@ -428,6 +428,8 @@ void BZDlg::CalcFormulas()
 	if(m_max_x < m_min_x)
 		return;
 
+	t_real plane_d = m_cutD->value() * m_cut_norm_scale;
+
 	std::vector<std::string> formulas = GetFormulas();
 	for(const std::string& formula : formulas)
 	{
@@ -448,7 +450,11 @@ void BZDlg::CalcFormulas()
 
 			for(t_real x=m_min_x; x<=m_max_x; x+=x_delta)
 			{
+				t_vec QinvA = m_cut_plane * tl2::create<t_vec>({ x, 0., plane_d });
+
 				parser.register_var("x", x);
+				parser.register_var("Qx", QinvA[0]);
+				parser.register_var("Qy", QinvA[1]);
 				t_real y = parser.eval();
 				if(y < m_min_y || y > m_max_y)
 					continue;
@@ -471,9 +477,9 @@ void BZDlg::CalcFormulas()
  */
 void BZDlg::BZCutMouseMoved(t_real x, t_real y)
 {
-	t_real d = m_cutD->value() * m_cut_norm_scale;
+	t_real plane_d = m_cutD->value() * m_cut_norm_scale;
 
-	t_vec QinvA = m_cut_plane * tl2::create<t_vec>({ x, y, d });
+	t_vec QinvA = m_cut_plane * tl2::create<t_vec>({ x, y, plane_d });
 	t_mat B_inv = m_crystA / (t_real(2)*tl2::pi<t_real>);
 	t_vec Qrlu = B_inv * QinvA;
 

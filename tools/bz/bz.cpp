@@ -268,7 +268,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_formulas->verticalHeader()->setVisible(false);
 		m_formulas->setAlternatingRowColors(true);
 		m_formulas->setColumnCount(NUM_FORMULAS_COLS);
-		m_formulas->setHorizontalHeaderItem(COL_FORMULA, new QTableWidgetItem{"Formula to Plot"});
+		m_formulas->setHorizontalHeaderItem(COL_FORMULA, new QTableWidgetItem{"Formula to Plot (Variables are Qx and Qy)"});
 		m_formulas->setColumnWidth(COL_FORMULA, 500);
 
 		QToolButton *btnAdd = new QToolButton(formulaspanel);
