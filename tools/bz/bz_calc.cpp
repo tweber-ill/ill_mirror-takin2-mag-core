@@ -245,19 +245,29 @@ void BZDlg::CalcBZCut()
 	bool calc_bzcut_hull = m_acCutHull->isChecked();
 
 	// get plane coordinate system
-	t_vec vec1 = m_crystB * tl2::create<t_vec>({ x, y, z });
-	t_vec norm = tl2::create<t_vec>({ nx, ny, nz });
-	norm = m_crystB * norm / tl2::norm<t_vec>(norm);
-	m_cut_norm_scale = tl2::norm<t_vec>(norm);
-	norm /= m_cut_norm_scale;
-	t_real d_invA = d_rlu *m_cut_norm_scale;
+	t_vec vec1_rlu = tl2::create<t_vec>({ x, y, z });
+	t_vec norm_rlu = tl2::create<t_vec>({ nx, ny, nz });
+	vec1_rlu /= tl2::norm<t_vec>(vec1_rlu);
+	norm_rlu /= tl2::norm<t_vec>(norm_rlu);
 
-	t_vec vec2 = tl2::cross<t_vec>(norm, vec1);
-	vec1 = tl2::cross<t_vec>(vec2, norm);
-	vec1 /= tl2::norm<t_vec>(vec1);
-	vec2 /= tl2::norm<t_vec>(vec2);
+	t_vec vec1_invA = m_crystB * vec1_rlu;
+	t_vec norm_invA = m_crystB * norm_rlu;
+	m_cut_norm_scale = tl2::norm<t_vec>(norm_invA);
+	norm_invA /= m_cut_norm_scale;
+	t_real d_invA = d_rlu*m_cut_norm_scale;
 
-	m_cut_plane = tl2::create<t_mat, t_vec>({ vec1, vec2, norm }, false);
+	t_vec vec2_invA = tl2::cross<t_vec>(norm_invA, vec1_invA);
+	vec1_invA = tl2::cross<t_vec>(vec2_invA, norm_invA);
+
+	vec1_invA /= tl2::norm<t_vec>(vec1_invA);
+	vec2_invA /= tl2::norm<t_vec>(vec2_invA);
+
+	t_mat B_inv = m_crystA / (t_real(2)*tl2::pi<t_real>);
+	t_vec vec2_rlu = B_inv * vec2_invA;
+	vec2_rlu /= tl2::norm<t_vec>(vec2_rlu);
+
+
+	m_cut_plane = tl2::create<t_mat, t_vec>({ vec1_invA, vec2_invA, norm_invA }, false);
 	m_cut_plane_inv = tl2::trans<t_mat>(m_cut_plane);
 
 	// [x, y, Q]
@@ -294,7 +304,7 @@ void BZDlg::CalcBZCut()
 						vec += Q_invA;
 
 					auto vecs = tl2::intersect_plane_poly<t_vec>(
-						norm, d_invA, bz_poly, g_eps);
+						norm_invA, d_invA, bz_poly, g_eps);
 					vecs = tl2::remove_duplicates(vecs, g_eps);
 
 					// calculate the hull of the bz cut
@@ -400,6 +410,26 @@ void BZDlg::CalcBZCut()
 	m_bzscene->AddCut(cut_lines);
 
 
+	// get description of the cut plane
+	tl2::set_eps_0(norm_invA, g_eps); tl2::set_eps_0(norm_rlu, g_eps);
+	tl2::set_eps_0(vec1_invA, g_eps); tl2::set_eps_0(vec1_rlu, g_eps);
+	tl2::set_eps_0(vec2_invA, g_eps); tl2::set_eps_0(vec2_rlu, g_eps);
+
+	ostr << "# Cutting plane";
+	ostr << "\nin relative lattice units:";
+	ostr << "\n\tnormal: " << norm_rlu << " rlu";
+	ostr << "\n\tin-plane vector 1: " << vec1_rlu << " rlu";
+	ostr << "\n\tin-plane vector 2: " << vec2_rlu << " rlu";
+	ostr << "\n\tplane offset: " << d_rlu << " rlu";
+
+	ostr << "\nin lab units:";
+	ostr << "\n\tnormal: " << norm_invA << " Å⁻¹";
+	ostr << "\n\tin-plane vector 1: " << vec1_invA << " Å⁻¹";
+	ostr << "\n\tin-plane vector 2: " << vec2_invA << " Å⁻¹";
+	ostr << "\n\tplane offset: " << d_invA << " Å⁻¹";
+	ostr << "\n" << std::endl;
+
+
 	// get description of bz cut
 	ostr << "# Brillouin zone cut" << std::endl;
 	for(std::size_t i=0; i<cut_lines000.size(); ++i)
@@ -413,7 +443,7 @@ void BZDlg::CalcBZCut()
 
 
 	// update calculation results
-	PlotSetPlane(norm, d_invA);
+	PlotSetPlane(norm_invA, d_invA);
 	UpdateBZDescription();
 	CalcFormulas();
 }

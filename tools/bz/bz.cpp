@@ -220,15 +220,15 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 		// cuts
 		grid->addWidget(m_bzview, 0,0, 1,4);
-		grid->addWidget(new QLabel("In-Plane Vector:"), 1,0, 1,1);
+		grid->addWidget(new QLabel("In-Plane Vector [rlu]:"), 1,0, 1,1);
 		grid->addWidget(m_cutX, 1,1, 1,1);
 		grid->addWidget(m_cutY, 1,2, 1,1);
 		grid->addWidget(m_cutZ, 1,3, 1,1);
-		grid->addWidget(new QLabel("Plane Normal:"), 2,0, 1,1);
+		grid->addWidget(new QLabel("Plane Normal [rlu]:"), 2,0, 1,1);
 		grid->addWidget(m_cutNX, 2,1, 1,1);
 		grid->addWidget(m_cutNY, 2,2, 1,1);
 		grid->addWidget(m_cutNZ, 2,3, 1,1);
-		grid->addWidget(new QLabel("Plane Offset:"), 3,0, 1,1);
+		grid->addWidget(new QLabel("Plane Offset [rlu]:"), 3,0, 1,1);
 		grid->addWidget(m_cutD, 3,1, 1,1);
 		grid->addWidget(new QLabel("Draw Order:"), 3,2,1,1);
 		grid->addWidget(m_BZDrawOrder, 3,3, 1,1);
