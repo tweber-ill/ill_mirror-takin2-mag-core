@@ -160,7 +160,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 	for(const t_vec& Q : Qs_invA)
 	{
 		//PlotAddBraggPeak(Q);
-		ofstrSites << Q[0] << " " << Q[1] << " " << Q[2] << std::endl;
+		ofstrSites << "(" << Q[0] << " " << Q[1] << " " << Q[2] << ")" << std::endl;
 	}
 #endif
 
@@ -176,7 +176,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 
 		PlotAddVoronoiVertex(voro);
 
-		ostr << "vertex " << idx << ": " << voro << std::endl;
+		ostr << "vertex " << idx << ": (" << voro << ")" << std::endl;
 	}
 
 	// calculate the faces of the BZ
@@ -207,8 +207,8 @@ void BZDlg::CalcBZ(bool full_recalc)
 			}
 
 			bz_all_triags.push_back(vert);
-			ostr << "\tvertex " << voroidx << ": "
-				<< vert << std::endl;
+			ostr << "\tvertex " << voroidx << ": ("
+				<< vert << ")" << std::endl;
 		}
 	}
 
@@ -417,15 +417,15 @@ void BZDlg::CalcBZCut()
 
 	ostr << "# Cutting plane";
 	ostr << "\nin relative lattice units:";
-	ostr << "\n\tnormal: " << norm_rlu << " rlu";
-	ostr << "\n\tin-plane vector 1: " << vec1_rlu << " rlu";
-	ostr << "\n\tin-plane vector 2: " << vec2_rlu << " rlu";
+	ostr << "\n\tnormal: [" << norm_rlu << "] rlu";
+	ostr << "\n\tin-plane vector 1: [" << vec1_rlu << "] rlu";
+	ostr << "\n\tin-plane vector 2: [" << vec2_rlu << "] rlu";
 	ostr << "\n\tplane offset: " << d_rlu << " rlu";
 
 	ostr << "\nin lab units:";
-	ostr << "\n\tnormal: " << norm_invA << " Å⁻¹";
-	ostr << "\n\tin-plane vector 1: " << vec1_invA << " Å⁻¹";
-	ostr << "\n\tin-plane vector 2: " << vec2_invA << " Å⁻¹";
+	ostr << "\n\tnormal: [" << norm_invA << "] Å⁻¹";
+	ostr << "\n\tin-plane vector 1: [" << vec1_invA << "] Å⁻¹";
+	ostr << "\n\tin-plane vector 2: [" << vec2_invA << "] Å⁻¹";
 	ostr << "\n\tplane offset: " << d_invA << " Å⁻¹";
 	ostr << "\n" << std::endl;
 
@@ -436,8 +436,8 @@ void BZDlg::CalcBZCut()
 	{
 		const auto& line = cut_lines000[i];
 
-		ostr << "line " << i << ":\n\tvertex 0: " << std::get<0>(line)
-			<< "\n\tvertex 1: " << std::get<1>(line) << std::endl;
+		ostr << "line " << i << ":\n\tvertex 0: (" << std::get<0>(line) << ")"
+			<< "\n\tvertex 1: (" << std::get<1>(line) << ")" << std::endl;
 	}
 	m_descrBZCut = ostr.str();
 
