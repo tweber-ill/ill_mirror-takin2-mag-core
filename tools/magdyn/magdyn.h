@@ -144,9 +144,6 @@ protected:
 	QDoubleSpinBox *m_rot_axis[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_rot_angle{};
 
-	// bragg peak
-	QDoubleSpinBox *m_bragg[3]{nullptr, nullptr, nullptr};
-
 	// temperature
 	QDoubleSpinBox *m_temperature{};
 

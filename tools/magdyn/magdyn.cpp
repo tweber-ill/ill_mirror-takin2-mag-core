@@ -665,11 +665,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		btn_rotate_ccw->setFocusPolicy(Qt::StrongFocus);
 		btn_rotate_cw->setFocusPolicy(Qt::StrongFocus);
 
-		// bragg peak
-		m_bragg[0] = new QDoubleSpinBox(m_samplepanel);
-		m_bragg[1] = new QDoubleSpinBox(m_samplepanel);
-		m_bragg[2] = new QDoubleSpinBox(m_samplepanel);
-
 		// temperature
 		m_temperature = new QDoubleSpinBox(m_samplepanel);
 		m_temperature->setDecimals(2);
@@ -699,14 +694,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_rot_axis[i]->setValue(i == 2 ? 1. : 0.);
 			m_rot_axis[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
-
-			m_bragg[i]->setDecimals(2);
-			m_bragg[i]->setMinimum(-99);
-			m_bragg[i]->setMaximum(+99);
-			m_bragg[i]->setSingleStep(0.1);
-			m_bragg[i]->setValue(i == 0 ? 1. : 0.);
-			m_bragg[i]->setSizePolicy(QSizePolicy{
-				QSizePolicy::Expanding, QSizePolicy::Fixed});
 		}
 
 		m_field_dir[0]->setPrefix("Bh = ");
@@ -730,7 +717,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
 		auto sep2 = new QFrame(m_samplepanel); sep2->setFrameStyle(QFrame::HLine);
-		auto sep3 = new QFrame(m_samplepanel); sep3->setFrameStyle(QFrame::HLine);
 
 		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -759,20 +745,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 
-		grid->addWidget(new QLabel(QString("Bragg Peak:"),
-			m_samplepanel), y,0,1,1);
-		grid->addWidget(m_bragg[0], y,1,1,1);
-		grid->addWidget(m_bragg[1], y,2,1,1);
-		grid->addWidget(m_bragg[2], y++,3,1,1);
-
-		grid->addItem(new QSpacerItem(16, 16,
-			QSizePolicy::Minimum, QSizePolicy::Fixed),
-			y++,0, 1,1);
-		grid->addWidget(sep3, y++,0, 1,4);
-		grid->addItem(new QSpacerItem(16, 16,
-			QSizePolicy::Minimum, QSizePolicy::Fixed),
-			y++,0, 1,1);
-
 		grid->addWidget(new QLabel(QString("Temperature:"),
 			m_samplepanel), y,0,1,1);
 		grid->addWidget(m_temperature, y++,1,1,1);
@@ -794,14 +766,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		for(int i=0; i<3; ++i)
 		{
 			connect(m_field_dir[i],
-				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-				[this]()
-			{
-				if(this->m_autocalc->isChecked())
-					this->SyncSitesAndTerms();
-			});
-
-			connect(m_bragg[i],
 				static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 				[this]()
 			{
@@ -2028,18 +1992,6 @@ void MagDynDlg::SyncSitesAndTerms()
 		field.align_spins = m_align_spins->isChecked();
 
 		m_dyn.SetExternalField(field);
-	}
-
-	// get bragg peak
-	{
-		const t_real bragg[]
-		{
-			m_bragg[0]->value(),
-			m_bragg[1]->value(),
-			m_bragg[2]->value(),
-		};
-
-		m_dyn.SetBraggPeak(bragg[0], bragg[1], bragg[2]);
 	}
 
 	// get temperature

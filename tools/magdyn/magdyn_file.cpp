@@ -157,15 +157,6 @@ bool MagDynDlg::Load(const QString& filename)
 		if(!m_use_field->isChecked())
 			m_dyn.ClearExternalField();
 
-		// bragg peak
-		const t_vec& bragg = m_dyn.GetBraggPeak();
-		if(bragg.size() == 3)
-		{
-			m_bragg[0]->setValue(bragg[0].real());
-			m_bragg[1]->setValue(bragg[1].real());
-			m_bragg[2]->setValue(bragg[2].real());
-		}
-
 		// ordering vector
 		const t_vec_real& ordering = m_dyn.GetOrderingWavevector();
 		if(ordering.size() == 3)

@@ -156,7 +156,7 @@ def get_prop_details(session_no, prop_no):
 			sched = row[4].strip()
 			if sched == "" and len(row_alt) > 0:
 				sched = row_alt[0].strip()
-			
+
 			infos["allschedules"].append(sched)
 
 
