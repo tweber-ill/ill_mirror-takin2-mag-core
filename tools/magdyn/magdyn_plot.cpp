@@ -65,14 +65,14 @@ void MagDynDlg::CalcDispersion()
 		return;
 	}
 
-	const t_real Q_start[]
+	t_real Q_start[]
 	{
 		m_q_start[0]->value(),
 		m_q_start[1]->value(),
 		m_q_start[2]->value(),
 	};
 
-	const t_real Q_end[]
+	t_real Q_end[]
 	{
 		m_q_end[0]->value(),
 		m_q_end[1]->value(),
@@ -123,6 +123,14 @@ void MagDynDlg::CalcDispersion()
 	using t_taskptr = std::shared_ptr<t_task>;
 	std::vector<t_taskptr> tasks;
 	tasks.reserve(num_pts);
+
+	// keep the scanned Q component in ascending order
+	if(Q_start[Q_idx] > Q_end[Q_idx])
+	{
+		std::swap(Q_start[0], Q_end[0]);
+		std::swap(Q_start[1], Q_end[1]);
+		std::swap(Q_start[2], Q_end[2]);
+	}
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
