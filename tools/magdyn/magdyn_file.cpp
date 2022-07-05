@@ -145,6 +145,36 @@ bool MagDynDlg::Load(const QString& filename)
 			m_rot_angle->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<int>("config.spacegroup_index"))
 			m_comboSG->setCurrentIndex(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_start_h"))
+			m_exportStartQ[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_start_k"))
+			m_exportStartQ[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_start_l"))
+			m_exportStartQ[2]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h1"))
+			m_exportEndQ1[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k1"))
+			m_exportEndQ1[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l1"))
+			m_exportEndQ1[2]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h2"))
+			m_exportEndQ2[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k2"))
+			m_exportEndQ2[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l2"))
+			m_exportEndQ2[2]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h3"))
+			m_exportEndQ3[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k3"))
+			m_exportEndQ3[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l3"))
+			m_exportEndQ3[2]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_size>("config.export_num_points_1"))
+			m_exportNumPoints[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_size>("config.export_num_points_2"))
+			m_exportNumPoints[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_size>("config.export_num_points_3"))
+			m_exportNumPoints[2]->setValue(*optVal);
 
 		m_dyn.Load(magdyn);
 
@@ -278,6 +308,22 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<t_real>("config.field_axis_l", m_rot_axis[2]->value());
 		magdyn.put<t_real>("config.field_angle", m_rot_angle->value());
 		magdyn.put<t_real>("config.spacegroup_index", m_comboSG->currentIndex());
+		magdyn.put<t_real>("config.export_start_h", m_exportStartQ[0]->value());
+		magdyn.put<t_real>("config.export_start_k", m_exportStartQ[1]->value());
+		magdyn.put<t_real>("config.export_start_l", m_exportStartQ[2]->value());
+		magdyn.put<t_real>("config.export_end_h1", m_exportEndQ1[0]->value());
+		magdyn.put<t_real>("config.export_end_k1", m_exportEndQ1[1]->value());
+		magdyn.put<t_real>("config.export_end_l1", m_exportEndQ1[2]->value());
+		magdyn.put<t_real>("config.export_end_h2", m_exportEndQ2[0]->value());
+		magdyn.put<t_real>("config.export_end_k2", m_exportEndQ2[1]->value());
+		magdyn.put<t_real>("config.export_end_l2", m_exportEndQ2[2]->value());
+		magdyn.put<t_real>("config.export_end_h3", m_exportEndQ3[0]->value());
+		magdyn.put<t_real>("config.export_end_k3", m_exportEndQ3[1]->value());
+		magdyn.put<t_real>("config.export_end_l3", m_exportEndQ3[2]->value());
+		magdyn.put<t_size>("config.export_num_points_1", m_exportNumPoints[0]->value());
+		magdyn.put<t_size>("config.export_num_points_2", m_exportNumPoints[1]->value());
+		magdyn.put<t_size>("config.export_num_points_3", m_exportNumPoints[2]->value());
+
 		m_dyn.Save(magdyn);
 
 		pt::ptree node;
@@ -357,4 +403,30 @@ void MagDynDlg::SaveDispersion()
 		Q_start[0], Q_start[1], Q_start[2],
 		Q_end[0], Q_end[1], Q_end[2],
 		num_pts);
+}
+
+
+/**
+ * show dialog and export S(Q, E) into a grid
+ */
+void MagDynDlg::ExportSQE()
+{
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getSaveFileName(
+		this, "Export S(Q,E)", dirLast, "Takin Grid Files (*.sqw)");
+	if(filename=="")
+		return;
+
+	if(ExportSQE(filename))
+		m_sett->setValue("dir", QFileInfo(filename).path());
+}
+
+
+/**
+ * export S(Q, E) into a grid
+ */
+bool MagDynDlg::ExportSQE(const QString& filename)
+{
+	// TODO
+	return true;
 }

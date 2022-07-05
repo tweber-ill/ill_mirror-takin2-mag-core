@@ -112,6 +112,7 @@ protected:
 	QWidget *m_varspanel{};
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
+	QWidget *m_exportpanel{};
 
 	// sites
 	QTableWidget *m_sitestab{};
@@ -146,6 +147,13 @@ protected:
 
 	// temperature
 	QDoubleSpinBox *m_temperature{};
+
+	// export
+	QDoubleSpinBox *m_exportStartQ[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_exportEndQ1[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_exportEndQ2[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_exportEndQ3[3]{nullptr, nullptr, nullptr};
+	QSpinBox *m_exportNumPoints[3]{nullptr, nullptr, nullptr};
 
 	// magnon dynamics calculator
 	MagDyn m_dyn{};
@@ -210,9 +218,11 @@ protected:
 	void Clear();
 	void Load();
 	void Save();
+	void ExportSQE();
 
 	bool Load(const QString& filename);
 	bool Save(const QString& filename);
+	bool ExportSQE(const QString& filename);
 
 	void SavePlotFigure();
 	void SaveDispersion();

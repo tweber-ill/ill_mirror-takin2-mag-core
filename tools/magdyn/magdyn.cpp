@@ -803,6 +803,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
+	const char* hklPrefix[] = { "h = ", "k = ","l = ", };
+
 	// dispersion panel
 	{
 		m_disppanel = new QWidget(this);
@@ -861,6 +863,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_q_start[i]->setSuffix(" rlu");
 			m_q_start[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q_start[i]->setPrefix(hklPrefix[i]);
 
 			m_q_end[i]->setDecimals(2);
 			m_q_end[i]->setMinimum(-99);
@@ -870,14 +873,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_q_end[i]->setSuffix(" rlu");
 			m_q_end[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q_end[i]->setPrefix(hklPrefix[i]);
 		}
-
-		m_q_start[0]->setPrefix("h = ");
-		m_q_start[1]->setPrefix("k = ");
-		m_q_start[2]->setPrefix("l = ");
-		m_q_end[0]->setPrefix("h = ");
-		m_q_end[1]->setPrefix("k = ");
-		m_q_end[2]->setPrefix("l = ");
 
 		m_q_start[0]->setValue(-1.);
 		m_q_end[0]->setValue(+1.);
@@ -983,11 +980,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_q[i]->setSuffix(" rlu");
 			m_q[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_q[i]->setPrefix(hklPrefix[i]);
 		}
-
-		m_q[0]->setPrefix("h = ");
-		m_q[1]->setPrefix("k = ");
-		m_q[2]->setPrefix("l = ");
 
 		auto grid = new QGridLayout(m_hamiltonianpanel);
 		grid->setSpacing(4);
@@ -1014,6 +1008,153 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		}
 
 		m_tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
+	}
+
+
+	// export panel
+	{
+		m_exportpanel = new QWidget(this);
+
+		// Q coordinates
+		m_exportStartQ[0] = new QDoubleSpinBox(m_exportpanel);
+		m_exportStartQ[1] = new QDoubleSpinBox(m_exportpanel);
+		m_exportStartQ[2] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ1[0] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ1[1] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ1[2] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ2[0] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ2[1] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ2[2] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ3[0] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ3[1] = new QDoubleSpinBox(m_exportpanel);
+		m_exportEndQ3[2] = new QDoubleSpinBox(m_exportpanel);
+
+		// number of grid points
+		for(int i=0; i<3; ++i)
+		{
+			m_exportNumPoints[i] = new QSpinBox(m_exportpanel);
+			m_exportNumPoints[i]->setMinimum(1);
+			m_exportNumPoints[i]->setMaximum(99999);
+			m_exportNumPoints[i]->setValue(128);
+			m_exportNumPoints[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+		}
+
+		// export
+		QPushButton *btn_export = new QPushButton(
+			QIcon::fromTheme("document-save-as"),
+			"Export...", m_exportpanel);
+		btn_export->setFocusPolicy(Qt::StrongFocus);
+
+		for(int i=0; i<3; ++i)
+		{
+			m_exportStartQ[i]->setDecimals(2);
+			m_exportStartQ[i]->setMinimum(-99);
+			m_exportStartQ[i]->setMaximum(+99);
+			m_exportStartQ[i]->setSingleStep(0.1);
+			m_exportStartQ[i]->setValue(0.);
+			m_exportStartQ[i]->setSuffix(" rlu");
+			m_exportStartQ[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_exportStartQ[i]->setPrefix(hklPrefix[i]);
+
+			m_exportEndQ1[i]->setDecimals(2);
+			m_exportEndQ1[i]->setMinimum(-99);
+			m_exportEndQ1[i]->setMaximum(+99);
+			m_exportEndQ1[i]->setSingleStep(0.1);
+			m_exportEndQ1[i]->setValue(i == 0 ? 1. : 0.);
+			m_exportEndQ1[i]->setSuffix(" rlu");
+			m_exportEndQ1[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_exportEndQ1[i]->setPrefix(hklPrefix[i]);
+
+			m_exportEndQ2[i]->setDecimals(2);
+			m_exportEndQ2[i]->setMinimum(-99);
+			m_exportEndQ2[i]->setMaximum(+99);
+			m_exportEndQ2[i]->setSingleStep(0.1);
+			m_exportEndQ2[i]->setValue(i == 1 ? 1. : 0.);
+			m_exportEndQ2[i]->setSuffix(" rlu");
+			m_exportEndQ2[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_exportEndQ2[i]->setPrefix(hklPrefix[i]);
+
+			m_exportEndQ3[i]->setDecimals(2);
+			m_exportEndQ3[i]->setMinimum(-99);
+			m_exportEndQ3[i]->setMaximum(+99);
+			m_exportEndQ3[i]->setSingleStep(0.1);
+			m_exportEndQ3[i]->setValue(i == 2 ? 1. : 0.);
+			m_exportEndQ3[i]->setSuffix(" rlu");
+			m_exportEndQ3[i]->setSizePolicy(QSizePolicy{
+				QSizePolicy::Expanding, QSizePolicy::Fixed});
+			m_exportEndQ3[i]->setPrefix(hklPrefix[i]);
+		}
+
+
+		auto grid = new QGridLayout(m_exportpanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
+
+		int y = 0;
+		grid->addWidget(new QLabel(QString("Export Ranges:"),
+			m_exportpanel), y++,0,1,4);
+		grid->addWidget(new QLabel(QString("Start Q:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportStartQ[0], y,1,1,1);
+		grid->addWidget(m_exportStartQ[1], y,2,1,1);
+		grid->addWidget(m_exportStartQ[2], y++,3,1,1);
+		grid->addWidget(new QLabel(QString("End Q 1:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportEndQ1[0], y,1,1,1);
+		grid->addWidget(m_exportEndQ1[1], y,2,1,1);
+		grid->addWidget(m_exportEndQ1[2], y++,3,1,1);
+		grid->addWidget(new QLabel(QString("End Q 2:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportEndQ2[0], y,1,1,1);
+		grid->addWidget(m_exportEndQ2[1], y,2,1,1);
+		grid->addWidget(m_exportEndQ2[2], y++,3,1,1);
+		grid->addWidget(new QLabel(QString("End Q 3:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportEndQ3[0], y,1,1,1);
+		grid->addWidget(m_exportEndQ3[1], y,2,1,1);
+		grid->addWidget(m_exportEndQ3[2], y++,3,1,1);
+
+		grid->addItem(new QSpacerItem(8, 8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep1, y++, 0,1,4);
+		grid->addItem(new QSpacerItem(8, 8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addWidget(new QLabel(QString("Number of Grid Points per Q Direction:"),
+			m_exportpanel), y++,0,1,4);
+		grid->addWidget(new QLabel(QString("Points:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportNumPoints[0], y,1,1,1);
+		grid->addWidget(m_exportNumPoints[1], y,2,1,1);
+		grid->addWidget(m_exportNumPoints[2], y++,3,1,1);
+
+		grid->addItem(new QSpacerItem(8, 8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		auto sep2 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
+		grid->addWidget(sep2, y++, 0,1,4);
+		grid->addItem(new QSpacerItem(8, 8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Expanding),
+			y++,0,1,4);
+
+		grid->addWidget(btn_export, y++,3,1,1);
+
+		// signals
+		connect(btn_export, &QAbstractButton::clicked, this,
+			static_cast<void (MagDynDlg::*)()>(&MagDynDlg::ExportSQE));
+
+		m_tabs->addTab(m_exportpanel, "Export");
 	}
 
 
@@ -1065,7 +1206,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(labelAuthor, y++,0, 1,1);
 		grid->addWidget(labelDate, y++,0, 1,1);
 
-		grid->addItem(new QSpacerItem(16,16,
+		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 		grid->addWidget(sep1, y++,0, 1,1);
@@ -1102,7 +1243,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		for(int i=0; i<4; ++i)
 			grid->addWidget(m_labelGlInfos[i], y++,0, 1,1);
 
-		grid->addItem(new QSpacerItem(16,16,
+		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0, 1,1);
 
@@ -1216,10 +1357,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		// help menu
 		auto menuHelp = new QMenu("Help", m_menu);
 		QAction *acAboutQt = new QAction(
-			QIcon::fromTheme("help-about"), 
+			QIcon::fromTheme("help-about"),
 			"About Qt...", menuHelp);
 		QAction *acAbout = new QAction(
-			QIcon::fromTheme("help-about"), 
+			QIcon::fromTheme("help-about"),
 			"About...", menuHelp);
 
 		acAboutQt->setMenuRole(QAction::AboutQtRole);
