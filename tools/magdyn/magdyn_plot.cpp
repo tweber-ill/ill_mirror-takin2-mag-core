@@ -107,11 +107,11 @@ void MagDynDlg::CalcDispersion()
 	bool use_goldstone = false;
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
 
-	bool only_energies = !m_use_weights->isChecked();
-	bool use_projector = m_use_projector->isChecked();
-	bool use_weights = m_use_weights->isChecked();
 	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
+	bool use_weights = m_use_weights->isChecked();
+	bool use_projector = m_use_projector->isChecked();
 
+	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
 		1, std::thread::hardware_concurrency()/2);
 	asio::thread_pool pool{num_threads};
@@ -137,7 +137,7 @@ void MagDynDlg::CalcDispersion()
 		auto task = [this, &mtx, &qs_data, &Es_data, &ws_data,
 			i, num_pts, Q_idx, E0,
 			weight_scale, weight_min, weight_max,
-			only_energies, use_projector, use_weights,
+			use_projector, use_weights,
 			&Q_start, &Q_end]()
 		{
 			t_real Q[]
@@ -162,7 +162,7 @@ void MagDynDlg::CalcDispersion()
 				Es_data.push_back(E);
 
 				// weights
-				if(!only_energies)
+				if(use_weights)
 				{
 					const t_mat& S = E_and_S.S;
 					t_real weight = E_and_S.weight;

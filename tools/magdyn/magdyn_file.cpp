@@ -34,7 +34,12 @@
 #include <fstream>
 #include <sstream>
 
+#include <future>
+#include <mutex>
+
 #include <boost/scope_exit.hpp>
+#include <boost/asio.hpp>
+namespace asio = boost::asio;
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -427,6 +432,136 @@ void MagDynDlg::ExportSQE()
  */
 bool MagDynDlg::ExportSQE(const QString& filename)
 {
-	// TODO
+	const t_vec_real Q0 = tl2::create<t_vec_real>({
+		m_exportStartQ[0]->value(),
+		m_exportStartQ[1]->value(),
+		m_exportStartQ[2]->value() });
+	const t_vec_real Q1 = tl2::create<t_vec_real>({
+		m_exportEndQ1[0]->value(),
+		m_exportEndQ1[1]->value(),
+		m_exportEndQ1[2]->value() });
+	const t_vec_real Q2 = tl2::create<t_vec_real>({
+		m_exportEndQ2[0]->value(),
+		m_exportEndQ2[1]->value(),
+		m_exportEndQ2[2]->value() });
+	const t_vec_real Q3 = tl2::create<t_vec_real>({
+		m_exportEndQ3[0]->value(),
+		m_exportEndQ3[1]->value(),
+		m_exportEndQ3[2]->value() });
+
+	const t_size num_pts1 = m_exportNumPoints[0]->value();
+	const t_size num_pts2 = m_exportNumPoints[1]->value();
+	const t_size num_pts3 = m_exportNumPoints[2]->value();
+
+	MagDyn dyn = m_dyn;
+	dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
+	bool use_weights = m_use_weights->isChecked();
+	bool use_projector = m_use_projector->isChecked();
+
+	const t_vec_real dir1 = Q1 - Q0;
+	const t_vec_real dir2 = Q2 - Q0;
+	const t_vec_real dir3 = Q3 - Q0;
+
+	const t_vec_real inc1 = dir1 / t_real(num_pts1-1);
+	const t_vec_real inc2 = dir2 / t_real(num_pts1-1);
+	const t_vec_real inc3 = dir3 / t_real(num_pts1-1);
+
+	// tread pool
+	unsigned int num_threads = std::max<unsigned int>(
+		1, std::thread::hardware_concurrency()/2);
+	asio::thread_pool pool{num_threads};
+
+
+	// h, k, l, E, S
+	using t_taskret = std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>;
+
+	// calculation task
+	auto task = [use_weights, use_projector, &dyn](t_real h, t_real k, t_real l) -> t_taskret
+	{
+		auto energies_and_correlations = dyn.GetEnergies(
+			h, k, l, !use_weights);
+
+		std::vector<t_real> Es, weights;
+		Es.reserve(energies_and_correlations.size());
+		weights.reserve(energies_and_correlations.size());
+
+		for(const auto& E_and_S : energies_and_correlations)
+		{
+			t_real E = E_and_S.E;
+			if(std::isnan(E) || std::isinf(E))
+				continue;
+
+			const t_mat& S = E_and_S.S;
+			t_real weight = E_and_S.weight;
+
+			if(!use_projector)
+				weight = tl2::trace<t_mat>(S).real();
+
+			if(std::isnan(weight) || std::isinf(weight))
+				weight = 0.;
+
+			Es.push_back(E);
+			weights.push_back(weight);
+		}
+
+		return std::make_tuple(h, k, l, Es, weights);
+	};
+
+
+	// tasks
+	using t_task = std::packaged_task<t_taskret(t_real, t_real, t_real)>;
+	using t_taskptr = std::shared_ptr<t_task>;
+	std::vector<t_taskptr> tasks;
+	std::vector<std::future<t_taskret>> futures;
+	tasks.reserve(num_pts1 * num_pts2 * num_pts3);
+	futures.reserve(num_pts1 * num_pts2 * num_pts3);
+
+
+	for(std::size_t i1=0; i1<num_pts1; ++i1)
+	{
+		for(std::size_t i2=0; i2<num_pts2; ++i2)
+		{
+			for(std::size_t i3=0; i3<num_pts3; ++i3)
+			{
+				t_vec_real Q = Q0 + inc1*t_real(i1) + inc2*t_real(i2) + inc3*t_real(i3);
+
+				// create tasks
+				t_taskptr taskptr = std::make_shared<t_task>(task);
+				tasks.push_back(taskptr);
+				futures.emplace_back(std::move(taskptr->get_future()));
+				asio::post(pool, [taskptr, Q]() { (*taskptr)(Q[0], Q[1], Q[2]); });
+			}
+		}
+	}
+
+	std::size_t i=0;
+	for(std::size_t i1=0; i1<num_pts1; ++i1)
+	{
+		for(std::size_t i2=0; i2<num_pts2; ++i2)
+		{
+			for(std::size_t i3=0; i3<num_pts3; ++i3)
+			{
+				auto result = futures[i].get();
+				std::cout
+					<< "Q = "
+					<< std::get<0>(result) << " "
+					<< std::get<1>(result) << " "
+					<< std::get<2>(result) << ":\n";
+
+				// iterate energies and weights
+				for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
+				{
+					std::cout
+						<< "\tE = " << std::get<3>(result)[j]
+						<< ", w = " << std::get<4>(result)[j] << std::endl;
+				}
+
+				++i;
+			}
+		}
+	}
+
+	pool.join();
+
 	return true;
 }
