@@ -33,9 +33,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
 #include <future>
 #include <mutex>
+#include <cstdlib>
 
 #include <boost/scope_exit.hpp>
 #include <boost/asio.hpp>
@@ -283,9 +283,19 @@ bool MagDynDlg::Save(const QString& filename)
 		// properties tree
 		pt::ptree magdyn;
 
+		const char* user = std::getenv("USER");
+		if(!user) user = "";
+
 		magdyn.put<std::string>("meta.info", "magdyn_tool");
 		magdyn.put<std::string>("meta.date",
 			tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+		magdyn.put<std::string>("meta.user", user);
+		magdyn.put<std::string>("meta.url",
+			"https://code.ill.fr/scientific-software/takin");
+		magdyn.put<std::string>("meta.doi",
+			"https://doi.org/10.5281/zenodo.4117437");
+		magdyn.put<std::string>("meta.doi_tlibs",
+			"https://doi.org/10.5281/zenodo.5717779");
 
 		// settings
 		magdyn.put<t_real>("config.h_start", m_q_start[0]->value());
@@ -546,7 +556,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 				// create tasks
 				t_taskptr taskptr = std::make_shared<t_task>(task);
 				tasks.push_back(taskptr);
-				futures.emplace_back(std::move(taskptr->get_future()));
+				futures.emplace_back(taskptr->get_future());
 				asio::post(pool, [taskptr, Q]() { (*taskptr)(Q[0], Q[1], Q[2]); });
 			}
 		}
