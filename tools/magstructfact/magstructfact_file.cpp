@@ -35,6 +35,7 @@
 #include <fstream>
 #include <random>
 #include <chrono>
+#include <cstdlib>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -208,8 +209,17 @@ void MagStructFactDlg::Save()
 
 
 	pt::ptree node;
+
+	// meta infos
+        const char* user = std::getenv("USER");
+        if(!user) user = "";
+
 	node.put<std::string>("sfact.meta.info", "magsfact_tool");
 	node.put<std::string>("sfact.meta.date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+	node.put<std::string>("sfact.meta.user", user);
+	node.put<std::string>("sfact.meta.url", "https://code.ill.fr/scientific-software/takin");
+	node.put<std::string>("sfact.meta.doi", "https://doi.org/10.5281/zenodo.4117437");
+	node.put<std::string>("sfact.meta.doi_tlibs", "https://doi.org/10.5281/zenodo.5717779");
 
 
 	// lattice
