@@ -1041,6 +1041,10 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		}
 
 		// export
+		m_exportFormat = new QComboBox(m_exportpanel);
+		m_exportFormat->addItem("Takin Grid File");
+		m_exportFormat->addItem("Text File");
+
 		QPushButton *btn_export = new QPushButton(
 			QIcon::fromTheme("document-save-as"),
 			"Export...", m_exportpanel);
@@ -1148,6 +1152,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QSizePolicy::Minimum, QSizePolicy::Expanding),
 			y++,0,1,4);
 
+		grid->addWidget(new QLabel(QString("Export Format:"),
+			m_exportpanel), y,0,1,1);
+		grid->addWidget(m_exportFormat, y,1,1,1);
 		grid->addWidget(btn_export, y++,3,1,1);
 
 		// signals

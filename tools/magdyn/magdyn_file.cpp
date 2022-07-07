@@ -416,9 +416,16 @@ void MagDynDlg::SaveDispersion()
  */
 void MagDynDlg::ExportSQE()
 {
+	QString extension;
+	switch(m_exportFormat->currentIndex())
+	{
+		case 0: extension = "Takin Grid Files (*.bin)"; break;
+		case 1: extension = "Text Files (*.txt)"; break;
+	}
+
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
-		this, "Export S(Q,E)", dirLast, "Takin Grid Files (*.sqw)");
+		this, "Export S(Q,E)", dirLast, extension);
 	if(filename=="")
 		return;
 
@@ -432,6 +439,15 @@ void MagDynDlg::ExportSQE()
  */
 bool MagDynDlg::ExportSQE(const QString& filename)
 {
+	std::ofstream ofstr(filename.toStdString());
+	ofstr.precision(g_prec);
+
+	if(!ofstr)
+	{
+		QMessageBox::critical(this, "Magnon Dynamics", "File could not be opened.");
+		return false;
+	}
+
 	const t_vec_real Q0 = tl2::create<t_vec_real>({
 		m_exportStartQ[0]->value(),
 		m_exportStartQ[1]->value(),
@@ -452,6 +468,8 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	const t_size num_pts1 = m_exportNumPoints[0]->value();
 	const t_size num_pts2 = m_exportNumPoints[1]->value();
 	const t_size num_pts3 = m_exportNumPoints[2]->value();
+
+	const int format = m_exportFormat->currentIndex();
 
 	MagDyn dyn = m_dyn;
 	dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
@@ -534,6 +552,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		}
 	}
 
+
 	std::size_t i=0;
 	for(std::size_t i1=0; i1<num_pts1; ++i1)
 	{
@@ -542,18 +561,25 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			for(std::size_t i3=0; i3<num_pts3; ++i3)
 			{
 				auto result = futures[i].get();
-				std::cout
-					<< "Q = "
-					<< std::get<0>(result) << " "
-					<< std::get<1>(result) << " "
-					<< std::get<2>(result) << ":\n";
+
+				if(format == 1)  // text format
+				{
+					ofstr
+						<< "Q = "
+						<< std::get<0>(result) << " "
+						<< std::get<1>(result) << " "
+						<< std::get<2>(result) << ":\n";
+				}
 
 				// iterate energies and weights
 				for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
 				{
-					std::cout
-						<< "\tE = " << std::get<3>(result)[j]
-						<< ", w = " << std::get<4>(result)[j] << std::endl;
+					if(format == 1)  // text format
+					{
+						ofstr
+							<< "\tE = " << std::get<3>(result)[j]
+							<< ", w = " << std::get<4>(result)[j] << std::endl;
+					}
 				}
 
 				++i;

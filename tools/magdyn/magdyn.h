@@ -154,6 +154,7 @@ protected:
 	QDoubleSpinBox *m_exportEndQ2[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_exportEndQ3[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_exportNumPoints[3]{nullptr, nullptr, nullptr};
+	QComboBox *m_exportFormat{nullptr};
 
 	// magnon dynamics calculator
 	MagDyn m_dyn{};
