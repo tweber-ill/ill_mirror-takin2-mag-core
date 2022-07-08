@@ -259,6 +259,10 @@ protected:
 	void StructPlotShowLabels(bool show);
 	void StructPlotCentreCamera();
 
+	// disable/enable gui input for threaded operations
+	void EnableInput();
+	void DisableInput();
+
 
 private:
 	int m_sites_cursor_row = -1;

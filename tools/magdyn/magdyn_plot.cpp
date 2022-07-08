@@ -138,6 +138,8 @@ void MagDynDlg::CalcDispersion()
 	m_progress->setMinimum(0);
 	m_progress->setMaximum(num_pts);
 	m_progress->setValue(0);
+	m_status->setText("Starting calculation.");
+	DisableInput();
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
@@ -196,6 +198,8 @@ void MagDynDlg::CalcDispersion()
 		asio::post(pool, [taskptr]() { (*taskptr)(); });
 	}
 
+	m_status->setText("Performing calculation.");
+
 	for(std::size_t task_idx=0; task_idx<tasks.size(); ++task_idx)
 	{
 		t_taskptr task = tasks[task_idx];
@@ -212,6 +216,7 @@ void MagDynDlg::CalcDispersion()
 	}
 
 	pool.join();
+	EnableInput();
 
 	if(m_stopRequested)
 		m_status->setText("Calculation stopped.");

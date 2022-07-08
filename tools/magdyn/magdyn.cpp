@@ -2344,3 +2344,23 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 	if(m_structplot_dlg)
 		m_sett->setValue("geo_struct_view", m_structplot_dlg->saveGeometry());
 }
+
+
+/**
+ * enable GUI inputs after calculation threads have finished
+ */
+void MagDynDlg::EnableInput()
+{
+	m_tabs->setEnabled(true);
+	m_menu->setEnabled(true);
+}
+
+
+/**
+ * disable GUI inputs for calculation threads
+ */
+void MagDynDlg::DisableInput()
+{
+	m_menu->setEnabled(false);
+	m_tabs->setEnabled(false);
+}

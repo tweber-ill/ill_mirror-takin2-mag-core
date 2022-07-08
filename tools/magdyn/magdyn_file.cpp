@@ -511,41 +511,55 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 
 	// h, k, l, E, S
-	using t_taskret = std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>;
+	using t_taskret = std::vector<
+		std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>>;
 
 	// calculation task
-	auto task = [this, use_weights, use_projector, &dyn](t_real h, t_real k, t_real l) -> t_taskret
+	auto task = [this, use_weights, use_projector, &dyn, &inc3, num_pts3]
+		(t_real h, t_real k, t_real l) -> t_taskret
 	{
-		auto energies_and_correlations = dyn.GetEnergies(
-			h, k, l, !use_weights);
+		t_taskret ret;
 
-		std::vector<t_real> Es, weights;
-		Es.reserve(energies_and_correlations.size());
-		weights.reserve(energies_and_correlations.size());
-
-		for(const auto& E_and_S : energies_and_correlations)
+		// iterate last Q dimension
+		for(std::size_t i3=0; i3<num_pts3; ++i3)
 		{
-			if(m_stopRequested)
-				break;
+			h += inc3[0] * t_real(i3);
+			k += inc3[1] * t_real(i3);
+			l += inc3[2] * t_real(i3);
 
-			t_real E = E_and_S.E;
-			if(std::isnan(E) || std::isinf(E))
-				continue;
+			auto energies_and_correlations = dyn.GetEnergies(
+				h, k, l, !use_weights);
 
-			const t_mat& S = E_and_S.S;
-			t_real weight = E_and_S.weight;
+			std::vector<t_real> Es, weights;
+			Es.reserve(energies_and_correlations.size());
+			weights.reserve(energies_and_correlations.size());
 
-			if(!use_projector)
-				weight = tl2::trace<t_mat>(S).real();
+			for(const auto& E_and_S : energies_and_correlations)
+			{
+				if(m_stopRequested)
+					break;
 
-			if(std::isnan(weight) || std::isinf(weight))
-				weight = 0.;
+				t_real E = E_and_S.E;
+				if(std::isnan(E) || std::isinf(E))
+					continue;
 
-			Es.push_back(E);
-			weights.push_back(weight);
+				const t_mat& S = E_and_S.S;
+				t_real weight = E_and_S.weight;
+
+				if(!use_projector)
+					weight = tl2::trace<t_mat>(S).real();
+
+				if(std::isnan(weight) || std::isinf(weight))
+					weight = 0.;
+
+				Es.push_back(E);
+				weights.push_back(weight);
+			}
+
+			ret.emplace_back(std::make_tuple(h, k, l, Es, weights));
 		}
 
-		return std::make_tuple(h, k, l, Es, weights);
+		return ret;
 	};
 
 
@@ -554,15 +568,18 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	using t_taskptr = std::shared_ptr<t_task>;
 	std::vector<t_taskptr> tasks;
 	std::vector<std::future<t_taskret>> futures;
-	tasks.reserve(num_pts1 * num_pts2 * num_pts3);
-	futures.reserve(num_pts1 * num_pts2 * num_pts3);
+	tasks.reserve(num_pts1 * num_pts2 /** num_pts3*/);
+	futures.reserve(num_pts1 * num_pts2 /** num_pts3*/);
 
 	m_stopRequested = false;
 	m_progress->setMinimum(0);
-	m_progress->setMaximum(num_pts1 * num_pts2 * num_pts3);
+	m_progress->setMaximum(num_pts1 * num_pts2 /** num_pts3*/);
 	m_progress->setValue(0);
+	m_status->setText("Starting calculation.");
+	DisableInput();
 
-
+	std::size_t task_idx = 0;
+	// iterate first two Q dimensions
 	for(std::size_t i1=0; i1<num_pts1; ++i1)
 	{
 		if(m_stopRequested)
@@ -573,23 +590,25 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			if(m_stopRequested)
 				break;
 
-			for(std::size_t i3=0; i3<num_pts3; ++i3)
-			{
-				qApp->processEvents();  // process events to see if the stop button was clicked
-				if(m_stopRequested)
-					break;
+			qApp->processEvents();  // process events to see if the stop button was clicked
+			if(m_stopRequested)
+				break;
 
-				t_vec_real Q = Q0 + inc1*t_real(i1) + inc2*t_real(i2) + inc3*t_real(i3);
+			t_vec_real Q = Q0 + inc1*t_real(i1) + inc2*t_real(i2) /*+ inc3*t_real(i3)*/;
 
-				// create tasks
-				t_taskptr taskptr = std::make_shared<t_task>(task);
-				tasks.push_back(taskptr);
-				futures.emplace_back(taskptr->get_future());
-				asio::post(pool, [taskptr, Q]() { (*taskptr)(Q[0], Q[1], Q[2]); });
-			}
+			// create tasks
+			t_taskptr taskptr = std::make_shared<t_task>(task);
+			tasks.push_back(taskptr);
+			futures.emplace_back(taskptr->get_future());
+			asio::post(pool, [taskptr, Q]() { (*taskptr)(Q[0], Q[1], Q[2]); });
+
+			++task_idx;
+			m_progress->setValue(task_idx);
 		}
 	}
 
+	m_progress->setValue(0);
+	m_status->setText("Performing calculation.");
 
 	for(std::size_t i=0; i<futures.size(); ++i)
 	{
@@ -600,25 +619,28 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			break;
 		}
 
-		auto result = futures[i].get();
+		auto results = futures[i].get();
 
-		if(format == 1)  // text format
-		{
-			ofstr
-				<< "Q = "
-				<< std::get<0>(result) << " "
-				<< std::get<1>(result) << " "
-				<< std::get<2>(result) << ":\n";
-		}
-
-		// iterate energies and weights
-		for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
+		for(const auto& result : results)
 		{
 			if(format == 1)  // text format
 			{
 				ofstr
-					<< "\tE = " << std::get<3>(result)[j]
-					<< ", w = " << std::get<4>(result)[j] << std::endl;
+					<< "Q = "
+					<< std::get<0>(result) << " "
+					<< std::get<1>(result) << " "
+					<< std::get<2>(result) << ":\n";
+			}
+
+			// iterate energies and weights
+			for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
+			{
+				if(format == 1)  // text format
+				{
+					ofstr
+						<< "\tE = " << std::get<3>(result)[j]
+						<< ", w = " << std::get<4>(result)[j] << std::endl;
+				}
 			}
 		}
 
@@ -626,6 +648,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	}
 
 	pool.join();
+	EnableInput();
 
 	if(m_stopRequested)
 		m_status->setText("Calculation stopped.");
