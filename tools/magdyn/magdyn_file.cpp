@@ -29,6 +29,7 @@
 #include "magdyn.h"
 
 #include <QtCore/QString>
+#include <QtWidgets/QApplication>
 
 #include <iostream>
 #include <fstream>
@@ -445,7 +446,7 @@ void MagDynDlg::ExportSQE()
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
 		this, "Export S(Q,E)", dirLast, extension);
-	if(filename=="")
+	if(filename == "")
 		return;
 
 	if(ExportSQE(filename))
@@ -513,7 +514,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	using t_taskret = std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>;
 
 	// calculation task
-	auto task = [use_weights, use_projector, &dyn](t_real h, t_real k, t_real l) -> t_taskret
+	auto task = [this, use_weights, use_projector, &dyn](t_real h, t_real k, t_real l) -> t_taskret
 	{
 		auto energies_and_correlations = dyn.GetEnergies(
 			h, k, l, !use_weights);
@@ -524,6 +525,9 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 		for(const auto& E_and_S : energies_and_correlations)
 		{
+			if(m_stopRequested)
+				break;
+
 			t_real E = E_and_S.E;
 			if(std::isnan(E) || std::isinf(E))
 				continue;
@@ -553,13 +557,28 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	tasks.reserve(num_pts1 * num_pts2 * num_pts3);
 	futures.reserve(num_pts1 * num_pts2 * num_pts3);
 
+	m_stopRequested = false;
+	m_progress->setMinimum(0);
+	m_progress->setMaximum(num_pts1 * num_pts2 * num_pts3);
+	m_progress->setValue(0);
+
 
 	for(std::size_t i1=0; i1<num_pts1; ++i1)
 	{
+		if(m_stopRequested)
+			break;
+
 		for(std::size_t i2=0; i2<num_pts2; ++i2)
 		{
+			if(m_stopRequested)
+				break;
+
 			for(std::size_t i3=0; i3<num_pts3; ++i3)
 			{
+				qApp->processEvents();  // process events to see if the stop button was clicked
+				if(m_stopRequested)
+					break;
+
 				t_vec_real Q = Q0 + inc1*t_real(i1) + inc2*t_real(i2) + inc3*t_real(i3);
 
 				// create tasks
@@ -572,41 +591,46 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	}
 
 
-	std::size_t i=0;
-	for(std::size_t i1=0; i1<num_pts1; ++i1)
+	for(std::size_t i=0; i<futures.size(); ++i)
 	{
-		for(std::size_t i2=0; i2<num_pts2; ++i2)
+		qApp->processEvents();  // process events to see if the stop button was clicked
+		if(m_stopRequested)
 		{
-			for(std::size_t i3=0; i3<num_pts3; ++i3)
+			pool.stop();
+			break;
+		}
+
+		auto result = futures[i].get();
+
+		if(format == 1)  // text format
+		{
+			ofstr
+				<< "Q = "
+				<< std::get<0>(result) << " "
+				<< std::get<1>(result) << " "
+				<< std::get<2>(result) << ":\n";
+		}
+
+		// iterate energies and weights
+		for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
+		{
+			if(format == 1)  // text format
 			{
-				auto result = futures[i].get();
-
-				if(format == 1)  // text format
-				{
-					ofstr
-						<< "Q = "
-						<< std::get<0>(result) << " "
-						<< std::get<1>(result) << " "
-						<< std::get<2>(result) << ":\n";
-				}
-
-				// iterate energies and weights
-				for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
-				{
-					if(format == 1)  // text format
-					{
-						ofstr
-							<< "\tE = " << std::get<3>(result)[j]
-							<< ", w = " << std::get<4>(result)[j] << std::endl;
-					}
-				}
-
-				++i;
+				ofstr
+					<< "\tE = " << std::get<3>(result)[j]
+					<< ", w = " << std::get<4>(result)[j] << std::endl;
 			}
 		}
+
+		m_progress->setValue(i+1);
 	}
 
 	pool.join();
+
+	if(m_stopRequested)
+		m_status->setText("Calculation stopped.");
+	else
+		m_status->setText("Calculation finished.");
 
 	return true;
 }

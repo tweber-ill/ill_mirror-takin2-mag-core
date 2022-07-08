@@ -34,6 +34,7 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -83,6 +84,7 @@ protected:
 	QSettings *m_sett{};
 	QMenuBar *m_menu{};
 	QLabel *m_status{};
+	QProgressBar *m_progress{};
 
 	QAction *m_autocalc{};
 	QAction *m_use_dmi{};
@@ -263,8 +265,9 @@ private:
 	int m_terms_cursor_row = -1;
 	int m_variables_cursor_row = -1;
 
-	bool m_ignoreTableChanges = 1;
-	bool m_ignoreCalc = 0;
+	bool m_ignoreTableChanges = true;
+	bool m_ignoreCalc = false;
+	bool m_stopRequested = false;
 };
 
 

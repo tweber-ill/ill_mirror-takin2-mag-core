@@ -28,6 +28,8 @@
 
 #include "magdyn.h"
 
+#include <QtWidgets/QApplication>
+
 #include <sstream>
 #include <thread>
 #include <future>
@@ -132,6 +134,11 @@ void MagDynDlg::CalcDispersion()
 		std::swap(Q_start[2], Q_end[2]);
 	}
 
+	m_stopRequested = false;
+	m_progress->setMinimum(0);
+	m_progress->setMaximum(num_pts);
+	m_progress->setValue(0);
+
 	for(t_size i=0; i<num_pts; ++i)
 	{
 		auto task = [this, &mtx, &qs_data, &Es_data, &ws_data,
@@ -152,6 +159,9 @@ void MagDynDlg::CalcDispersion()
 
 			for(const auto& E_and_S : energies_and_correlations)
 			{
+				if(m_stopRequested)
+					break;
+
 				t_real E = E_and_S.E - E0;
 				if(std::isnan(E) || std::isinf(E))
 					continue;
@@ -186,9 +196,27 @@ void MagDynDlg::CalcDispersion()
 		asio::post(pool, [taskptr]() { (*taskptr)(); });
 	}
 
-	for(t_taskptr task : tasks)
+	for(std::size_t task_idx=0; task_idx<tasks.size(); ++task_idx)
+	{
+		t_taskptr task = tasks[task_idx];
+
+		qApp->processEvents();  // process events to see if the stop button was clicked
+		if(m_stopRequested)
+		{
+			pool.stop();
+			break;
+		}
+
 		task->get_future().get();
+		m_progress->setValue(task_idx+1);
+	}
+
 	pool.join();
+
+	if(m_stopRequested)
+		m_status->setText("Calculation stopped.");
+	else
+		m_status->setText("Calculation finished.");
 
 	//m_plot->addGraph();
 	GraphWithWeights *graph = new GraphWithWeights(

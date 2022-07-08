@@ -30,8 +30,8 @@
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -1278,12 +1278,25 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
 	m_status->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+	// progress bar
+	m_progress = new QProgressBar(this);
+	m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	// stop button
+	QPushButton* btnStop = new QPushButton(QIcon::fromTheme("process-stop"), "Stop", this);
+	btnStop->setToolTip("Request stop to ongoing calculation.");
+	btnStop->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
 	// main grid
 	auto pmainGrid = new QGridLayout(this);
 	pmainGrid->setSpacing(4);
 	pmainGrid->setContentsMargins(6, 6, 6, 6);
-	pmainGrid->addWidget(m_tabs, 0,0, 1,1);
-	pmainGrid->addWidget(m_status, 1,0,1,1);
+	pmainGrid->addWidget(m_tabs, 0,0, 1,3);
+	pmainGrid->addWidget(m_status, 1,0, 1,1);
+	pmainGrid->addWidget(m_progress, 1,1, 1,1);
+	pmainGrid->addWidget(btnStop, 1,2, 1,1);
+
+	connect(btnStop, &QAbstractButton::clicked, [this]() { m_stopRequested = true; });
 
 	// menu bar
 	{
