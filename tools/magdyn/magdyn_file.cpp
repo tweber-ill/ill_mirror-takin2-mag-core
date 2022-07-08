@@ -501,8 +501,11 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	const t_vec_real dir3 = Q3 - Q0;
 
 	const t_vec_real inc1 = dir1 / t_real(num_pts1-1);
-	const t_vec_real inc2 = dir2 / t_real(num_pts1-1);
-	const t_vec_real inc3 = dir3 / t_real(num_pts1-1);
+	const t_vec_real inc2 = dir2 / t_real(num_pts2-1);
+	const t_vec_real inc3 = dir3 / t_real(num_pts3-1);
+
+	const t_vec_real Qend = Q0 + dir1 + dir2 + dir3;
+	const t_vec_real Qstep = inc1 + inc2 + inc3;
 
 	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
@@ -610,6 +613,23 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	m_progress->setValue(0);
 	m_status->setText("Performing calculation.");
 
+	std::vector<std::uint64_t> hklindices;
+	if(format == 0)  // Takin grid format
+	{
+		hklindices.reserve(futures.size());
+
+		std::uint64_t dummy = 0;  // to be filled by index block index
+		ofstr.write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
+		for(int i = 0; i<3; ++i)
+		{
+			ofstr.write(reinterpret_cast<const char*>(&Q0[0]), sizeof(Q0[0]));       // start
+			ofstr.write(reinterpret_cast<const char*>(&Qend[0]), sizeof(Qend[0]));   // end
+			ofstr.write(reinterpret_cast<const char*>(&Qstep[0]), sizeof(Qstep[0])); // step
+		}
+
+		ofstr << "Takin/Magdyn Grid File Version 2.";
+	}
+
 	for(std::size_t i=0; i<futures.size(); ++i)
 	{
 		qApp->processEvents();  // process events to see if the stop button was clicked
@@ -623,7 +643,17 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 		for(const auto& result : results)
 		{
-			if(format == 1)  // text format
+			std::size_t num_branches = std::get<3>(result).size();
+
+			if(format == 0)           // Takin grid format
+			{
+				hklindices.push_back(ofstr.tellp());
+
+				// write number of branches
+				std::uint32_t _num_branches = std::uint32_t(num_branches);
+				ofstr.write(reinterpret_cast<const char*>(&_num_branches), sizeof(_num_branches));
+			}
+			else if(format == 1)      // text format
 			{
 				ofstr
 					<< "Q = "
@@ -633,13 +663,23 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			}
 
 			// iterate energies and weights
-			for(std::size_t j=0; j<std::get<3>(result).size(); ++j)
+			for(std::size_t j=0; j<num_branches; ++j)
 			{
-				if(format == 1)  // text format
+				t_real energy = std::get<3>(result)[j];
+				t_real weight = std::get<4>(result)[j];
+
+				if(format == 0)       // Takin grid format
+				{
+					// write energies and weights
+					ofstr.write(reinterpret_cast<const char*>(&energy), sizeof(energy));
+					ofstr.write(reinterpret_cast<const char*>(&weight), sizeof(weight));
+				}
+				else if(format == 1)  // text format
 				{
 					ofstr
-						<< "\tE = " << std::get<3>(result)[j]
-						<< ", w = " << std::get<4>(result)[j] << std::endl;
+						<< "\tE = " << energy
+						<< ", S = " << weight
+						<< std::endl;
 				}
 			}
 		}
@@ -649,6 +689,20 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 	pool.join();
 	EnableInput();
+
+	if(format == 0)  // Takin grid format
+	{
+		std::uint64_t idxblock = ofstr.tellp();
+
+		// write hkl indices
+		for(std::uint64_t idx : hklindices)
+			ofstr.write(reinterpret_cast<const char*>(&idx), sizeof(idx));
+
+		// write index into index block
+		ofstr.seekp(0, std::ios_base::beg);
+		ofstr.write(reinterpret_cast<const char*>(&idxblock), sizeof(idxblock));
+		ofstr.flush();
+	}
 
 	if(m_stopRequested)
 		m_status->setText("Calculation stopped.");
