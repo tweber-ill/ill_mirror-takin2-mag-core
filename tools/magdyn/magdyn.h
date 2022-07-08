@@ -122,7 +122,7 @@ protected:
 	// terms, ordering vector, and rotation axis
 	QTableWidget *m_termstab{};
 	QDoubleSpinBox *m_ordering[3]{nullptr, nullptr, nullptr};
-	QDoubleSpinBox *m_rotaxis[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_normaxis[3]{nullptr, nullptr, nullptr};
 
 	// variables
 	QTableWidget *m_varstab{};

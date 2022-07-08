@@ -201,6 +201,15 @@ bool MagDynDlg::Load(const QString& filename)
 			m_ordering[2]->setValue(ordering[2]);
 		}
 
+		// normal axis
+		const t_vec_real& norm = m_dyn.GetRotationAxis();
+		if(norm.size() == 3)
+		{
+			m_normaxis[0]->setValue(norm[0]);
+			m_normaxis[1]->setValue(norm[1]);
+			m_normaxis[2]->setValue(norm[2]);
+		}
+
 		// temperature
 		t_real temp = m_dyn.GetTemperature();
 		if(temp >= 0.)
