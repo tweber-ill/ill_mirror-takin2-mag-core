@@ -34,7 +34,8 @@ fi
 # -----------------------------------------------------------------------------
 # install packages
 # -----------------------------------------------------------------------------
-if ! apt-get install g++-10 liblapacke-dev llvm llvm-dev
+if ! apt-get install g++-10 llvm llvm-dev \
+	liblapacke-dev libqcustomplot-dev libqhull-dev
 then
 	echo -e "Error: Could not install packages necessary for building."
 	exit -1
