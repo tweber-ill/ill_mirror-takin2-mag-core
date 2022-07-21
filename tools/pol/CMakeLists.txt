@@ -62,7 +62,9 @@ add_compile_options(-std=c++20)
 add_compile_options(${Boost_CXX_FLAGS})
 add_compile_options(-Wall -Wextra)
 
-include_directories("${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../..")
+include_directories("${PROJECT_SOURCE_DIR}"
+	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "../.."
+)
 # -----------------------------------------------------------------------------
 
 

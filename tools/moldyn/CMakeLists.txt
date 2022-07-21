@@ -56,7 +56,7 @@ endif()
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/.." "${PROJECT_SOURCE_DIR}/../.."
-	"${Boost_INCLUDE_DIRS}/.." "ext"
+	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "ext"
 )
 
 

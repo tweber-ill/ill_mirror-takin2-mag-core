@@ -56,7 +56,8 @@ add_compile_options(${Boost_CXX_FLAGS})
 add_compile_options(-Wall -Wextra)
 
 include_directories(
-	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
+	"${PROJECT_SOURCE_DIR}"
+	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "../.."
 	"ext" "ext/gemmi/include" "ext/gemmi/third_party"
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party"
 )

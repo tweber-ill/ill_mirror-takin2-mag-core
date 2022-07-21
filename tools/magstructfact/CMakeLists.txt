@@ -49,7 +49,8 @@ add_definitions(-std=c++20)
 add_definitions(${Boost_CXX_FLAGS})
 
 include_directories(
-	"${PROJECT_SOURCE_DIR}" "${Boost_INCLUDE_DIRS}/.." "../.."
+	"${PROJECT_SOURCE_DIR}"
+	"${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "../.."
 	"ext" "ext/gemmi/include" "ext/gemmi/third_party"
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party"
 )
