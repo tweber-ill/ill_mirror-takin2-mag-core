@@ -39,7 +39,7 @@
 #include <tuple>
 
 #include "tlibs2/libs/qt/glplot.h"
-#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/maths.h"
 
 #include "moldyn-loader.h"
 

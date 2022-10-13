@@ -24,7 +24,7 @@
  */
 
 #include "../structfact/loadcif.h"
-#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/maths.h"
 
 #include <gemmi/version.hpp>
 #include <iostream>

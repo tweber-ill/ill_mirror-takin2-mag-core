@@ -37,7 +37,7 @@
 #include <QtWidgets/QListWidgetItem>
 
 #include "tlibs2/libs/magsg.h"
-#include "tlibs2/libs/math20.h"
+#include "tlibs2/libs/maths.h"
 
 #include "ui_browser.h"
 
