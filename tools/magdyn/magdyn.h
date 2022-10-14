@@ -70,6 +70,61 @@ extern int g_prec;
 extern int g_prec_gui;
 
 
+/**
+ * columns of the sites table
+ */
+enum : int
+{
+	COL_SITE_NAME = 0,
+	COL_SITE_POS_X, COL_SITE_POS_Y, COL_SITE_POS_Z,
+	COL_SITE_SPIN_X, COL_SITE_SPIN_Y, COL_SITE_SPIN_Z,
+	COL_SITE_SPIN_MAG,
+
+	NUM_SITE_COLS
+};
+
+
+/**
+ * columns of the exchange terms table
+ */
+enum : int
+{
+	COL_XCH_NAME = 0,
+	COL_XCH_ATOM1_IDX, COL_XCH_ATOM2_IDX,
+	COL_XCH_DIST_X, COL_XCH_DIST_Y, COL_XCH_DIST_Z,
+	COL_XCH_INTERACTION,
+	COL_XCH_DMI_X, COL_XCH_DMI_Y, COL_XCH_DMI_Z,
+
+	NUM_XCH_COLS
+};
+
+
+/**
+ * columns of the variables table
+ */
+enum : int
+{
+	COL_VARS_NAME = 0,
+	COL_VARS_VALUE_REAL,
+	COL_VARS_VALUE_IMAG,
+
+	NUM_VARS_COLS
+};
+
+
+/**
+ * columns of table with saved fields
+ */
+enum : int
+{
+	COL_FIELD_H = 0, COL_FIELD_K, COL_FIELD_L,
+	COL_FIELD_MAG,
+
+	NUM_FIELD_COLS
+};
+
+
+
 class MagDynDlg : public QDialog
 {
 public:
@@ -146,6 +201,7 @@ protected:
 	QCheckBox *m_align_spins{};
 	QDoubleSpinBox *m_rot_axis[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_rot_angle{};
+	QTableWidget *m_fieldstab{};
 
 	// temperature
 	QDoubleSpinBox *m_temperature{};
@@ -190,7 +246,7 @@ protected:
 	std::vector<int> GetSelectedRows(
 		QTableWidget *pTab, bool sort_reversed = false) const;
 
-	void AddSiteTabItem(int row=-1,
+	void AddSiteTabItem(int row = -1,
 		const std::string& name = "n/a",
 		t_real x = 0., t_real y = 0., t_real z = 0.,
 		const std::string& sx = "0",
@@ -198,7 +254,7 @@ protected:
 		const std::string& sz = "1",
 		t_real S = 1.);
 
-	void AddTermTabItem(int row=-1,
+	void AddTermTabItem(int row = -1,
 		const std::string& name = "n/a",
 		t_size atom_1 = 0, t_size atom_2 = 0,
 		t_real dist_x = 0., t_real dist_y = 0., t_real dist_z = 0.,
@@ -207,9 +263,15 @@ protected:
 		const std::string& dmi_y = "0",
 		const std::string& dmi_z = "0");
 
-	void AddVariableTabItem(int row=-1,
-		const std::string& name="var",
+	void AddVariableTabItem(int row = -1,
+		const std::string& name = "var",
 		const t_cplx& var = t_cplx{0, 0});
+
+	void AddFieldTabItem(int row = -1,
+		t_real Bh = 0., t_real Bk = 0., t_real Bl = 1.,
+		t_real Bmag = 1.);
+
+	void SetCurrentField();
 
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
 	void UpdateVerticalHeader(QTableWidget *pTab);
@@ -268,6 +330,7 @@ private:
 	int m_sites_cursor_row = -1;
 	int m_terms_cursor_row = -1;
 	int m_variables_cursor_row = -1;
+	int m_fields_cursor_row = -1;
 
 	bool m_ignoreTableChanges = true;
 	bool m_ignoreCalc = false;

@@ -222,6 +222,7 @@ bool MagDynDlg::Load(const QString& filename)
 		DelTabItem(m_sitestab, -1);
 		DelTabItem(m_termstab, -1);
 		DelTabItem(m_varstab, -1);
+		DelTabItem(m_fieldstab, -1);
 
 		// variables
 		for(const auto& var : m_dyn.GetVariables())
@@ -248,6 +249,20 @@ bool MagDynDlg::Load(const QString& filename)
 				term.dist[0], term.dist[1], term.dist[2],
 				term.J,
 				term.dmi[0], term.dmi[1], term.dmi[2]);
+		}
+
+		// saved fields
+		if(auto vars = magdyn.get_child_optional("saved_fields"); vars)
+		{
+			for(const auto &var : *vars)
+			{
+				t_real Bh = var.second.get<t_real>("direction_h", 0.);
+				t_real Bk = var.second.get<t_real>("direction_k", 0.);
+				t_real Bl = var.second.get<t_real>("direction_l", 0.);
+				t_real Bmag = var.second.get<t_real>("magnitude", 0.);
+
+				AddFieldTabItem(-1, Bh, Bk, Bl, Bmag);
+			}
 		}
 	}
 	catch(const std::exception& ex)
@@ -349,7 +364,29 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<t_size>("config.export_num_points_2", m_exportNumPoints[1]->value());
 		magdyn.put<t_size>("config.export_num_points_3", m_exportNumPoints[2]->value());
 
+		// save magnon calculator configuration
 		m_dyn.Save(magdyn);
+
+		// saved fields
+		for(int field_row = 0; field_row < m_fieldstab->rowCount(); ++field_row)
+		{
+			const auto* Bh = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_fieldstab->item(field_row, COL_FIELD_H));
+			const auto* Bk = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_fieldstab->item(field_row, COL_FIELD_K));
+			const auto* Bl = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_fieldstab->item(field_row, COL_FIELD_L));
+			const auto* Bmag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_fieldstab->item(field_row, COL_FIELD_MAG));
+
+			boost::property_tree::ptree itemNode;
+			itemNode.put<t_real>("direction_h", Bh ? Bh->GetValue() : 0.);
+			itemNode.put<t_real>("direction_k", Bk ? Bk->GetValue() : 0.);
+			itemNode.put<t_real>("direction_l", Bl ? Bl->GetValue() : 0.);
+			itemNode.put<t_real>("magnitude", Bmag ? Bmag->GetValue() : 0.);
+
+			magdyn.add_child("saved_fields.field", itemNode);
+		}
 
 		pt::ptree node;
 		node.put_child("magdyn", magdyn);

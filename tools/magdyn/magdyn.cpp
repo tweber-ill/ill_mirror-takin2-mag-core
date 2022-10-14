@@ -1,5 +1,5 @@
 /**
- * magnon dynamics
+ * magnon dynamics -- gui
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -61,47 +61,6 @@ t_real g_eps = 1e-6;
 int g_prec = 6;
 int g_prec_gui = 3;
 
-
-/**
- * columns of the sites table
- */
-enum : int
-{
-	COL_SITE_NAME = 0,
-	COL_SITE_POS_X, COL_SITE_POS_Y, COL_SITE_POS_Z,
-	COL_SITE_SPIN_X, COL_SITE_SPIN_Y, COL_SITE_SPIN_Z,
-	COL_SITE_SPIN_MAG,
-
-	NUM_SITE_COLS
-};
-
-
-/**
- * columns of the exchange terms table
- */
-enum : int
-{
-	COL_XCH_NAME = 0,
-	COL_XCH_ATOM1_IDX, COL_XCH_ATOM2_IDX,
-	COL_XCH_DIST_X, COL_XCH_DIST_Y, COL_XCH_DIST_Z,
-	COL_XCH_INTERACTION,
-	COL_XCH_DMI_X, COL_XCH_DMI_Y, COL_XCH_DMI_Z,
-
-	NUM_XCH_COLS
-};
-
-
-/**
- * columns of the variables table
- */
-enum : int
-{
-	COL_VARS_NAME = 0,
-	COL_VARS_VALUE_REAL,
-	COL_VARS_VALUE_IMAG,
-
-	NUM_VARS_COLS
-};
 
 
 MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
@@ -251,7 +210,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QIcon::fromTheme("list-remove"),
 			"Delete Atom", this,
 			[this]() { this->DelTabItem(m_sitestab); });
-		//pTabContextMenuNoItem->addSeparator();
 
 
 		// signals
@@ -446,7 +404,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			QIcon::fromTheme("list-remove"),
 			"Delete Term", this,
 			[this]() { this->DelTabItem(m_termstab); });
-		//pTabContextMenuNoItem->addSeparator();
 
 
 		// signals
@@ -617,7 +574,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// field magnitude
 		m_field_mag = new QDoubleSpinBox(m_samplepanel);
-		m_field_mag->setDecimals(2);
+		m_field_mag->setDecimals(4);
 		m_field_mag->setMinimum(0);
 		m_field_mag->setMaximum(+99);
 		m_field_mag->setSingleStep(0.1);
@@ -634,7 +591,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// align spins along field (field-polarised state)
 		m_align_spins = new QCheckBox(
-			"Align Spins along Field Direction", m_samplepanel);
+			"Align Spins Along Field Direction", m_samplepanel);
 		m_align_spins->setChecked(false);
 		m_align_spins->setFocusPolicy(Qt::StrongFocus);
 
@@ -645,7 +602,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		// rotation angle
 		m_rot_angle = new QDoubleSpinBox(m_samplepanel);
-		m_rot_angle->setDecimals(2);
+		m_rot_angle->setDecimals(4);
 		m_rot_angle->setMinimum(-360);
 		m_rot_angle->setMaximum(+360);
 		m_rot_angle->setSingleStep(0.1);
@@ -665,9 +622,108 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		btn_rotate_ccw->setFocusPolicy(Qt::StrongFocus);
 		btn_rotate_cw->setFocusPolicy(Qt::StrongFocus);
 
+
+		// table with saved fields
+		m_fieldstab = new QTableWidget(m_samplepanel);
+		m_fieldstab->setShowGrid(true);
+		m_fieldstab->setSortingEnabled(true);
+		m_fieldstab->setMouseTracking(true);
+		m_fieldstab->setSelectionBehavior(QTableWidget::SelectRows);
+		m_fieldstab->setSelectionMode(QTableWidget::ContiguousSelection);
+		m_fieldstab->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		m_fieldstab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+		m_fieldstab->verticalHeader()->setVisible(true);
+
+		m_fieldstab->setColumnCount(NUM_FIELD_COLS);
+		m_fieldstab->setHorizontalHeaderItem(COL_FIELD_H,
+			new QTableWidgetItem{"Bh"});
+		m_fieldstab->setHorizontalHeaderItem(COL_FIELD_K,
+			new QTableWidgetItem{"Bk"});
+		m_fieldstab->setHorizontalHeaderItem(COL_FIELD_L,
+			new QTableWidgetItem{"Bl"});
+		m_fieldstab->setHorizontalHeaderItem(COL_FIELD_MAG,
+			new QTableWidgetItem{"|B|"});
+
+		m_fieldstab->setColumnWidth(COL_FIELD_H, 150);
+		m_fieldstab->setColumnWidth(COL_FIELD_K, 150);
+		m_fieldstab->setColumnWidth(COL_FIELD_L, 150);
+		m_fieldstab->setColumnWidth(COL_FIELD_MAG, 150);
+		m_fieldstab->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+		QPushButton *pTabBtnAddField = new QPushButton(
+			QIcon::fromTheme("list-add"),
+			"Add Field", m_samplepanel);
+		QPushButton *pTabBtnDelField = new QPushButton(
+			QIcon::fromTheme("list-remove"),
+			"Delete Field", m_samplepanel);
+		QPushButton *pTabBtnFieldUp = new QPushButton(
+			QIcon::fromTheme("go-up"),
+			"Move Field Up", m_samplepanel);
+		QPushButton *pTabBtnFieldDown = new QPushButton(
+			QIcon::fromTheme("go-down"),
+			"Move Field Down", m_samplepanel);
+
+		pTabBtnAddField->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnDelField->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnFieldUp->setFocusPolicy(Qt::StrongFocus);
+		pTabBtnFieldDown->setFocusPolicy(Qt::StrongFocus);
+
+		pTabBtnAddField->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnDelField->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnFieldUp->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+		pTabBtnFieldDown->setSizePolicy(QSizePolicy{
+			QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+
+		// table CustomContextMenu
+		QMenu *pTabContextMenu = new QMenu(m_fieldstab);
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Field Before", this,
+			[this]() { this->AddFieldTabItem(-2); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Field After", this,
+			[this]() { this->AddFieldTabItem(-3); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("edit-copy"),
+			"Clone Field", this,
+			[this]() { this->AddFieldTabItem(-4); });
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Field", this,
+			[this]() { this->DelTabItem(m_fieldstab); });
+		pTabContextMenu->addSeparator();
+		pTabContextMenu->addAction(
+			QIcon::fromTheme("go-home"),
+			"Set As Current Field", this,
+			[this]() { this->SetCurrentField(); });
+
+
+		// table CustomContextMenu in case nothing is selected
+		QMenu *pTabContextMenuNoItem = new QMenu(m_fieldstab);
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-add"),
+			"Add Field", this,
+			[this]() { this->AddFieldTabItem(-1,
+				m_field_dir[0]->value(),
+				m_field_dir[1]->value(),
+				m_field_dir[2]->value(),
+				m_field_mag->value()); });
+		pTabContextMenuNoItem->addAction(
+			QIcon::fromTheme("list-remove"),
+			"Delete Field", this,
+			[this]() { this->DelTabItem(m_fieldstab); });
+
+
 		// temperature
 		m_temperature = new QDoubleSpinBox(m_samplepanel);
-		m_temperature->setDecimals(2);
+		m_temperature->setDecimals(4);
 		m_temperature->setMinimum(0);
 		m_temperature->setMaximum(+999);
 		m_temperature->setSingleStep(0.1);
@@ -679,7 +735,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		for(int i=0; i<3; ++i)
 		{
-			m_field_dir[i]->setDecimals(2);
+			m_field_dir[i]->setDecimals(4);
 			m_field_dir[i]->setMinimum(-99);
 			m_field_dir[i]->setMaximum(+99);
 			m_field_dir[i]->setSingleStep(0.1);
@@ -687,7 +743,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_field_dir[i]->setSizePolicy(QSizePolicy{
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-			m_rot_axis[i]->setDecimals(2);
+			m_rot_axis[i]->setDecimals(4);
 			m_rot_axis[i]->setMinimum(-99);
 			m_rot_axis[i]->setMaximum(+99);
 			m_rot_axis[i]->setSingleStep(0.1);
@@ -717,6 +773,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
 		auto sep2 = new QFrame(m_samplepanel); sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(m_samplepanel); sep3->setFrameStyle(QFrame::HLine);
 
 		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -737,10 +794,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		grid->addWidget(btn_rotate_ccw, y,2,1,1);
 		grid->addWidget(btn_rotate_cw, y++,3,1,1);
 
-		grid->addItem(new QSpacerItem(16, 16,
+		grid->addItem(new QSpacerItem(8, 8,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
 		grid->addWidget(sep2, y++,0, 1,4);
+		grid->addItem(new QSpacerItem(8, 8,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+
+		grid->addWidget(new QLabel(QString("Saved Fields:"),
+			m_samplepanel), y++,0,1,4);
+		grid->addWidget(m_fieldstab, y,0,1,4);
+		grid->addWidget(pTabBtnAddField, ++y,0,1,1);
+		grid->addWidget(pTabBtnDelField, y,1,1,1);
+		grid->addWidget(pTabBtnFieldUp, y,2,1,1);
+		grid->addWidget(pTabBtnFieldDown, y++,3,1,1);
+
+		grid->addItem(new QSpacerItem(16, 16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		grid->addWidget(sep3, y++,0, 1,4);
 		grid->addItem(new QSpacerItem(16, 16,
 			QSizePolicy::Minimum, QSizePolicy::Fixed),
 			y++,0, 1,1);
@@ -799,6 +872,26 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			RotateField(false);
 		});
 
+		connect(pTabBtnAddField, &QAbstractButton::clicked, this,
+			[this]() { this->AddFieldTabItem(-1,
+				m_field_dir[0]->value(),
+				m_field_dir[1]->value(),
+				m_field_dir[2]->value(),
+				m_field_mag->value()); });
+		connect(pTabBtnDelField, &QAbstractButton::clicked, this,
+			[this]() { this->DelTabItem(m_fieldstab); });
+		connect(pTabBtnFieldUp, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemUp(m_fieldstab); });
+		connect(pTabBtnFieldDown, &QAbstractButton::clicked, this,
+			[this]() { this->MoveTabItemDown(m_fieldstab); });
+
+		connect(m_fieldstab, &QTableWidget::customContextMenuRequested, this,
+			[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+		{
+			this->ShowTableContextMenu(
+				m_fieldstab, pTabContextMenu, pTabContextMenuNoItem, pt);
+		});
+
 		m_tabs->addTab(m_samplepanel, "Sample");
 	}
 
@@ -855,7 +948,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		for(int i=0; i<3; ++i)
 		{
-			m_q_start[i]->setDecimals(2);
+			m_q_start[i]->setDecimals(4);
 			m_q_start[i]->setMinimum(-99);
 			m_q_start[i]->setMaximum(+99);
 			m_q_start[i]->setSingleStep(0.1);
@@ -865,7 +958,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 			m_q_start[i]->setPrefix(hklPrefix[i]);
 
-			m_q_end[i]->setDecimals(2);
+			m_q_end[i]->setDecimals(4);
 			m_q_end[i]->setMinimum(-99);
 			m_q_end[i]->setMaximum(+99);
 			m_q_end[i]->setSingleStep(0.1);
@@ -972,7 +1065,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		for(int i=0; i<3; ++i)
 		{
-			m_q[i]->setDecimals(2);
+			m_q[i]->setDecimals(4);
 			m_q[i]->setMinimum(-99);
 			m_q[i]->setMaximum(+99);
 			m_q[i]->setSingleStep(0.1);
@@ -1052,7 +1145,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		for(int i=0; i<3; ++i)
 		{
-			m_exportStartQ[i]->setDecimals(2);
+			m_exportStartQ[i]->setDecimals(4);
 			m_exportStartQ[i]->setMinimum(-99);
 			m_exportStartQ[i]->setMaximum(+99);
 			m_exportStartQ[i]->setSingleStep(0.1);
@@ -1062,7 +1155,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 			m_exportStartQ[i]->setPrefix(hklPrefix[i]);
 
-			m_exportEndQ1[i]->setDecimals(2);
+			m_exportEndQ1[i]->setDecimals(4);
 			m_exportEndQ1[i]->setMinimum(-99);
 			m_exportEndQ1[i]->setMaximum(+99);
 			m_exportEndQ1[i]->setSingleStep(0.1);
@@ -1072,7 +1165,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 			m_exportEndQ1[i]->setPrefix(hklPrefix[i]);
 
-			m_exportEndQ2[i]->setDecimals(2);
+			m_exportEndQ2[i]->setDecimals(4);
 			m_exportEndQ2[i]->setMinimum(-99);
 			m_exportEndQ2[i]->setMaximum(+99);
 			m_exportEndQ2[i]->setSingleStep(0.1);
@@ -1082,7 +1175,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 				QSizePolicy::Expanding, QSizePolicy::Fixed});
 			m_exportEndQ2[i]->setPrefix(hklPrefix[i]);
 
-			m_exportEndQ3[i]->setDecimals(2);
+			m_exportEndQ3[i]->setDecimals(4);
 			m_exportEndQ3[i]->setMinimum(-99);
 			m_exportEndQ3[i]->setMaximum(+99);
 			m_exportEndQ3[i]->setSingleStep(0.1);
@@ -1533,6 +1626,7 @@ void MagDynDlg::Clear()
 	DelTabItem(m_sitestab, -1);
 	DelTabItem(m_termstab, -1);
 	DelTabItem(m_varstab, -1);
+	DelTabItem(m_fieldstab, -1);
 
 	m_plot->clearPlottables();
 	m_plot->replot();
@@ -1879,11 +1973,96 @@ void MagDynDlg::AddVariableTabItem(int row,
 
 
 /**
+ * add a magnetic field
+ */
+void MagDynDlg::AddFieldTabItem(int row,
+	t_real Bh, t_real Bk, t_real Bl,
+	t_real Bmag)
+{
+	bool bclone = 0;
+
+	if(row == -1)	// append to end of table
+		row = m_fieldstab->rowCount();
+	else if(row == -2 && m_fields_cursor_row >= 0)	// use row from member variable
+		row = m_fields_cursor_row;
+	else if(row == -3 && m_fields_cursor_row >= 0)	// use row from member variable +1
+		row = m_fields_cursor_row + 1;
+	else if(row == -4 && m_fields_cursor_row >= 0)	// use row from member variable +1
+	{
+		row = m_fields_cursor_row + 1;
+		bclone = 1;
+	}
+
+	m_fieldstab->setSortingEnabled(false);
+	m_fieldstab->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<NUM_FIELD_COLS; ++thecol)
+		{
+			m_fieldstab->setItem(row, thecol,
+				m_fieldstab->item(m_fields_cursor_row, thecol)->clone());
+		}
+	}
+	else
+	{
+		m_fieldstab->setItem(row, COL_FIELD_H,
+			new tl2::NumericTableWidgetItem<t_real>(Bh));
+		m_fieldstab->setItem(row, COL_FIELD_K,
+			new tl2::NumericTableWidgetItem<t_real>(Bk));
+		m_fieldstab->setItem(row, COL_FIELD_L,
+			new tl2::NumericTableWidgetItem<t_real>(Bl));
+		m_fieldstab->setItem(row, COL_FIELD_MAG,
+			new tl2::NumericTableWidgetItem<t_real>(Bmag));
+	}
+
+	m_fieldstab->scrollToItem(m_fieldstab->item(row, 0));
+	m_fieldstab->setCurrentCell(row, 0);
+
+	m_fieldstab->setSortingEnabled(/*sorting*/ true);
+
+	UpdateVerticalHeader(m_fieldstab);
+}
+
+
+/**
+ * set selected field as current
+ */
+void MagDynDlg::SetCurrentField()
+{
+	if(m_fields_cursor_row < 0 || m_fields_cursor_row >= m_fieldstab->rowCount())
+		return;
+
+	const auto* Bh = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_H));
+	const auto* Bk = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_K));
+	const auto* Bl = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_L));
+	const auto* Bmag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_MAG));
+
+	if(!Bh || !Bk || !Bl || !Bmag)
+		return;
+
+	m_field_dir[0]->setValue(Bh->GetValue());
+	m_field_dir[1]->setValue(Bk->GetValue());
+	m_field_dir[2]->setValue(Bl->GetValue());
+	m_field_mag->setValue(Bmag->GetValue());
+}
+
+
+/**
  * delete table widget items
  */
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
-	m_ignoreTableChanges = 1;
+	bool needs_recalc = true;
+	if(pTab == m_fieldstab)
+		needs_recalc = false;
+
+	if(needs_recalc)
+		m_ignoreTableChanges = 1;
 
 	// if nothing is selected, clear all items
 	if(begin == -1 || pTab->selectedItems().count() == 0)
@@ -1908,15 +2087,23 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 
 	UpdateVerticalHeader(pTab);
 
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+	if(needs_recalc)
+	{
+		m_ignoreTableChanges = 0;
+		if(m_autocalc->isChecked())
+			SyncSitesAndTerms();
+	}
 }
 
 
 void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 {
-	m_ignoreTableChanges = 1;
+	bool needs_recalc = true;
+	if(pTab == m_fieldstab)
+		needs_recalc = false;
+
+	if(needs_recalc)
+		m_ignoreTableChanges = 1;
 	pTab->setSortingEnabled(false);
 
 	auto selected = GetSelectedRows(pTab, false);
@@ -1947,15 +2134,23 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 
 	UpdateVerticalHeader(pTab);
 
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+	if(needs_recalc)
+	{
+		m_ignoreTableChanges = 0;
+		if(m_autocalc->isChecked())
+			SyncSitesAndTerms();
+	}
 }
 
 
 void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 {
-	m_ignoreTableChanges = 1;
+	bool needs_recalc = true;
+	if(pTab == m_fieldstab)
+		needs_recalc = false;
+
+	if(needs_recalc)
+		m_ignoreTableChanges = 1;
 	pTab->setSortingEnabled(false);
 
 	auto selected = GetSelectedRows(pTab, true);
@@ -1986,9 +2181,12 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 
 	UpdateVerticalHeader(pTab);
 
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+	if(needs_recalc)
+	{
+		m_ignoreTableChanges = 0;
+		if(m_autocalc->isChecked())
+			SyncSitesAndTerms();
+	}
 }
 
 
@@ -2082,6 +2280,8 @@ void MagDynDlg::ShowTableContextMenu(
 			m_sites_cursor_row = item->row();
 		else if(pTab == m_varstab)
 			m_variables_cursor_row = item->row();
+		else if(pTab == m_fieldstab)
+			m_fields_cursor_row = item->row();
 
 		ptGlob.setY(ptGlob.y() + pMenu->sizeHint().height()/2);
 		pMenu->popup(ptGlob);
