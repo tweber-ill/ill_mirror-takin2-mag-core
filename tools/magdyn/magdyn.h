@@ -30,6 +30,7 @@
 #define __MAG_DYN_GUI_H__
 
 #include <QtCore/QSettings>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
@@ -159,6 +160,8 @@ protected:
 		return this->Load(filename);
 	};
 
+	QGridLayout *m_maingrid{};
+
 	// tab
 	QTabWidget *m_tabs{};
 
@@ -236,8 +239,22 @@ protected:
 	std::optional<std::size_t> m_structplot_cur_atom{};
 	std::optional<std::size_t> m_structplot_cur_term{};
 
+	// info dialog
+	QDialog *m_info_dlg{};
+
 
 protected:
+	// set up gui
+	void CreateSitesPanel();
+	void CreateExchangeTermsPanel();
+	void CreateVariablesPanel();
+	void CreateSampleEnvPanel();
+	void CreateDispersionPanel();
+	void CreateHamiltonPanel();
+	void CreateExportPanel();
+	void CreateInfoDlg();
+	void CreateMenuBar();
+
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
 	void MoveTabItemDown(QTableWidget *pTab);
