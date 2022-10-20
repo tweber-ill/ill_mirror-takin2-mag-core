@@ -181,6 +181,7 @@ protected:
 
 	// terms, ordering vector, and rotation axis
 	QTableWidget *m_termstab{};
+	QComboBox *m_comboSG2{};  // copy of m_comboSG
 	QDoubleSpinBox *m_ordering[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_normaxis[3]{nullptr, nullptr, nullptr};
 

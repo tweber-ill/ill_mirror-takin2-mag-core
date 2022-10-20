@@ -182,20 +182,32 @@ void MagDynDlg::CreateSitesPanel()
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked, this,
+	connect(pTabBtnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddSiteTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked, this,
+	connect(pTabBtnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_sitestab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked, this,
+	connect(pTabBtnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_sitestab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked, this,
+	connect(pTabBtnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_sitestab); });
 	connect(pTabBtnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateFromSG);
 
+	connect(m_comboSG, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		[this](int idx)
+	{
+		// synchronise with other sg combobox
+		if(m_comboSG2)
+		{
+			m_comboSG2->blockSignals(true);
+			m_comboSG2->setCurrentIndex(idx);
+			m_comboSG2->blockSignals(false);
+		}
+	});
+
 	connect(m_sitestab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::SitesTableItemChanged);
-	connect(m_sitestab, &QTableWidget::customContextMenuRequested, this,
+	connect(m_sitestab, &QTableWidget::customContextMenuRequested,
 		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 	{
 		this->ShowTableContextMenu(
@@ -284,6 +296,21 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	pTabBtnDown->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
+	m_comboSG2 = new QComboBox(m_termspanel);
+	QPushButton *pTabBtnSG = new QPushButton(
+		QIcon::fromTheme("insert-object"),
+		"Generate", m_sitespanel);
+	pTabBtnSG->setToolTip("Create couplings from space group symmetry operators.");
+
+	m_comboSG2->setFocusPolicy(Qt::StrongFocus);
+	pTabBtnSG->setFocusPolicy(Qt::StrongFocus);
+	pTabBtnSG->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+	// copy space groups from other combobox
+	for(int item_idx=0; item_idx<m_comboSG->count(); ++item_idx)
+		m_comboSG2->addItem(m_comboSG->itemText(item_idx), m_comboSG2->count());
+
 	// ordering vector
 	m_ordering[0] = new QDoubleSpinBox(m_termspanel);
 	m_ordering[1] = new QDoubleSpinBox(m_termspanel);
@@ -333,6 +360,9 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	grid->addWidget(pTabBtnDel, y,1,1,1);
 	grid->addWidget(pTabBtnUp, y,2,1,1);
 	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(new QLabel("Space Group:"), y,0,1,1);
+	grid->addWidget(m_comboSG2, y,1,1,2);
+	grid->addWidget(pTabBtnSG, y++,3,1,1);
 	grid->addWidget(new QLabel(QString("Ordering Vector:"),
 		m_termspanel), y,0,1,1);
 	grid->addWidget(m_ordering[0], y,1,1,1);
@@ -377,18 +407,30 @@ void MagDynDlg::CreateExchangeTermsPanel()
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked, this,
+	connect(pTabBtnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddTermTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked, this,
+	connect(pTabBtnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_termstab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked, this,
+	connect(pTabBtnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_termstab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked, this,
+	connect(pTabBtnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_termstab); });
+
+	connect(m_comboSG2, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		[this](int idx)
+	{
+		// synchronise with other sg combobox
+		if(m_comboSG)
+		{
+			m_comboSG->blockSignals(true);
+			m_comboSG->setCurrentIndex(idx);
+			m_comboSG->blockSignals(false);
+		}
+	});
 
 	connect(m_termstab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::TermsTableItemChanged);
-	connect(m_termstab, &QTableWidget::customContextMenuRequested, this,
+	connect(m_termstab, &QTableWidget::customContextMenuRequested,
 		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 		{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
@@ -519,18 +561,18 @@ void MagDynDlg::CreateVariablesPanel()
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked, this,
+	connect(pTabBtnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddVariableTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked, this,
+	connect(pTabBtnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_varstab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked, this,
+	connect(pTabBtnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_varstab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked, this,
+	connect(pTabBtnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_varstab); });
 
 	connect(m_varstab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::VariablesTableItemChanged);
-	connect(m_varstab, &QTableWidget::customContextMenuRequested, this,
+	connect(m_varstab, &QTableWidget::customContextMenuRequested,
 		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 		{ this->ShowTableContextMenu(m_varstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
@@ -844,20 +886,20 @@ void MagDynDlg::CreateSampleEnvPanel()
 		RotateField(false);
 	});
 
-	connect(pTabBtnAddField, &QAbstractButton::clicked, this,
+	connect(pTabBtnAddField, &QAbstractButton::clicked,
 		[this]() { this->AddFieldTabItem(-1,
 			m_field_dir[0]->value(),
 			m_field_dir[1]->value(),
 			m_field_dir[2]->value(),
 			m_field_mag->value()); });
-	connect(pTabBtnDelField, &QAbstractButton::clicked, this,
+	connect(pTabBtnDelField, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_fieldstab); });
-	connect(pTabBtnFieldUp, &QAbstractButton::clicked, this,
+	connect(pTabBtnFieldUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_fieldstab); });
-	connect(pTabBtnFieldDown, &QAbstractButton::clicked, this,
+	connect(pTabBtnFieldDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_fieldstab); });
 
-	connect(m_fieldstab, &QTableWidget::customContextMenuRequested, this,
+	connect(m_fieldstab, &QTableWidget::customContextMenuRequested,
 		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
 	{
 		this->ShowTableContextMenu(
@@ -1525,11 +1567,11 @@ void MagDynDlg::CreateMenuBar()
 		}
 	});
 
-	connect(acAboutQt, &QAction::triggered, this, []()
+	connect(acAboutQt, &QAction::triggered, []()
 	{
 		qApp->aboutQt();
 	});
-	connect(acAbout, &QAction::triggered, this, [this]()
+	connect(acAbout, &QAction::triggered, [this]()
 	{
 		if(!m_info_dlg)
 			return;
