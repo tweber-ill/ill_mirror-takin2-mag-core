@@ -191,7 +191,7 @@ void MagDynDlg::CreateSitesPanel()
 	connect(pTabBtnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_sitestab); });
 	connect(pTabBtnSG, &QAbstractButton::clicked,
-		this, &MagDynDlg::GenerateFromSG);
+		this, &MagDynDlg::GenerateSitesFromSG);
 
 	connect(m_comboSG, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)
@@ -415,6 +415,8 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		[this]() { this->MoveTabItemUp(m_termstab); });
 	connect(pTabBtnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_termstab); });
+	connect(pTabBtnSG, &QAbstractButton::clicked,
+		this, &MagDynDlg::GenerateCouplingsFromSG);
 
 	connect(m_comboSG2, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)

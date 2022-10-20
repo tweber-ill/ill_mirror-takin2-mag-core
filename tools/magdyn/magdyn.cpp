@@ -204,7 +204,7 @@ void MagDynDlg::RotateField(bool ccw)
 /**
  * generate atom sites form the space group symmetries
  */
-void MagDynDlg::GenerateFromSG()
+void MagDynDlg::GenerateSitesFromSG()
 {
 	m_ignoreCalc = 1;
 
@@ -228,7 +228,7 @@ void MagDynDlg::GenerateFromSG()
 			t_real                                 // spin magnitude
 			>> generatedsites;
 
-		// iterate sites
+		// iterate existing sites
 		int orgRowCnt = m_sitestab->rowCount();
 		for(int row=0; row<orgRowCnt; ++row)
 		{
@@ -270,11 +270,92 @@ void MagDynDlg::GenerateFromSG()
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "MagnonDynamics", ex.what());
+		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
 	}
 
 	m_ignoreCalc = 0;
 	CalcAll();
+}
+
+
+/**
+ * generate exchange terms from space group symmetries
+ */
+void MagDynDlg::GenerateCouplingsFromSG()
+{
+	m_ignoreCalc = 1;
+
+	try
+	{
+		// symops of current space group
+		auto sgidx = m_comboSG2->itemData(m_comboSG2->currentIndex()).toInt();
+		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
+		{
+			QMessageBox::critical(this, "Magnon Dynamics",
+				"Invalid space group selected.");
+			m_ignoreCalc = 0;
+			return;
+		}
+
+		const auto& sites = m_dyn.GetAtomSites();
+		const auto& ops = m_SGops[sgidx];
+
+		// iterate existing coupling terms
+		for(int row=0; row<m_termstab->rowCount(); ++row)
+		{
+			t_size atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
+				m_termstab->item(row, COL_XCH_ATOM1_IDX))->GetValue();
+			t_size atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
+				m_termstab->item(row, COL_XCH_ATOM2_IDX))->GetValue();
+			t_real sc_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DIST_X))->GetValue();
+			t_real sc_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DIST_Y))->GetValue();
+			t_real sc_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DIST_Z))->GetValue();
+			t_real dmi_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DMI_X))->GetValue();
+			t_real dmi_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DMI_Y))->GetValue();
+			t_real dmi_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_termstab->item(row, COL_XCH_DMI_Z))->GetValue();
+
+			// atom positions in unit cell
+			const t_vec_real& site1 = sites[atom_1_idx].pos;
+			const t_vec_real& site2 = sites[atom_2_idx].pos;
+
+			// position difference in super cell
+			t_vec_real diff = site2 - site1 + tl2::create<t_vec_real>({ sc_x, sc_y, sc_z });
+			t_vec_real dir_vec = tl2::create<t_vec_real>({ diff[0], diff[1], diff[2] });
+			auto newdirs = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
+				dir_vec, ops, g_eps, false);
+
+			for(const auto& newdir : newdirs)
+			{
+				using namespace tl2_ops;
+				std::cout << newdir << std::endl;
+
+				// TODO: identify atom index in new super cell
+			}
+
+			// generate dmi vectors
+			t_vec_real dmi = tl2::create<t_vec_real>({dmi_x, dmi_y, dmi_z, 0});
+			auto newdmis = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
+				dmi, ops, g_eps, false);
+
+			// remove original couplings
+			//DelTabItem(m_termstab, -1);
+
+			// TODO: add new couplings
+		}
+	}
+	catch(const std::exception& ex)
+	{
+		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+	}
+
+	m_ignoreCalc = 0;
+	//CalcAll();
 }
 
 

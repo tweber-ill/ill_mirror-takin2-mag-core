@@ -311,7 +311,8 @@ protected:
 	void SaveDispersion();
 
 	void RotateField(bool ccw = true);
-	void GenerateFromSG();
+	void GenerateSitesFromSG();
+	void GenerateCouplingsFromSG();
 
 	void SyncSitesAndTerms();
 
