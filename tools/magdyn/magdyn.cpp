@@ -395,7 +395,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	}
 
 	m_ignoreCalc = 0;
-	//CalcAll();
+	CalcAll();
 }
 
 
