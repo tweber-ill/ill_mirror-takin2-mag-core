@@ -274,6 +274,7 @@ void MagDynDlg::GenerateSitesFromSG()
 	}
 
 	m_ignoreCalc = 0;
+	SyncSitesAndTerms();
 	CalcAll();
 }
 
@@ -395,6 +396,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	}
 
 	m_ignoreCalc = 0;
+	SyncSitesAndTerms();
 	CalcAll();
 }
 
