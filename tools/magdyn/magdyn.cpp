@@ -297,6 +297,15 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			return;
 		}
 
+		std::vector<std::tuple<
+			std::string,                           // ident
+			t_size, t_size,                        // uc atom indices
+			t_real, t_real, t_real,                // supercell vector
+			std::string,                           // exchange term (not modified)
+			std::string, std::string, std::string  // dmi vector
+			>> generatedcouplings;
+
+
 		const auto& sites = m_dyn.GetAtomSites();
 		const auto& ops = m_SGops[sgidx];
 
@@ -304,11 +313,13 @@ void MagDynDlg::GenerateCouplingsFromSG()
 		std::vector<t_vec_real> allsites;
 		allsites.reserve(sites.size());
 		for(const auto& site: sites)
-			allsites.push_back(site.pos);
+			allsites.push_back(tl2::create<t_vec_real>({
+				site.pos[0], site.pos[1], site.pos[2], 1. }));
 
 		// iterate existing coupling terms
 		for(int row=0; row<m_termstab->rowCount(); ++row)
 		{
+			std::string ident = m_sitestab->item(row, COL_XCH_NAME)->text().toStdString();
 			t_size atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 				m_termstab->item(row, COL_XCH_ATOM1_IDX))->GetValue();
 			t_size atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
@@ -325,37 +336,57 @@ void MagDynDlg::GenerateCouplingsFromSG()
 				m_termstab->item(row, COL_XCH_DMI_Y))->GetValue();
 			t_real dmi_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_termstab->item(row, COL_XCH_DMI_Z))->GetValue();
+			std::string oldJ = m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString();
 
 			// atom positions in unit cell
 			const t_vec_real& site1 = allsites[atom_1_idx];
-			const t_vec_real& site2 = allsites[atom_2_idx];
+			t_vec_real site2 = allsites[atom_2_idx];
 
-			// position difference in super cell
-			t_vec_real diff = site2 - site1 + tl2::create<t_vec_real>({ sc_x, sc_y, sc_z });
-			t_vec_real dir_vec = tl2::create<t_vec_real>({ diff[0], diff[1], diff[2] });
-			auto newdirs = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
-				dir_vec, ops, g_eps, false);
+			// position in super cell
+			site2 += tl2::create<t_vec_real>({ sc_x, sc_y, sc_z, 0. });
 
-			for(const auto& newdir : newdirs)
-			{
-				using namespace tl2_ops;
-
-				// identify atom index in new super cell
-				t_vec_real site2_new = site1 + newdir;
-
-				auto [uc_found, uc_site_idx, sc_vec] = get_supercell(site2_new, allsites, g_eps);
-				std::cout << uc_found << ", sc: " <<site2_new << ", idx: " << atom_1_idx << " " << uc_site_idx << ", vec: " << sc_vec << std::endl;
-			}
+			// generate sites
+			auto newsites1 = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
+				site1, ops, g_eps, false, true, true);
+			auto newsites2 = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
+				site2, ops, g_eps, false, true, true);
 
 			// generate dmi vectors
 			t_vec_real dmi = tl2::create<t_vec_real>({dmi_x, dmi_y, dmi_z, 0});
 			auto newdmis = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
-				dmi, ops, g_eps, false);
+				dmi, ops, g_eps, false, true);
 
-			// remove original couplings
-			//DelTabItem(m_termstab, -1);
+			for(std::size_t op_idx=0; op_idx<newsites1.size(); ++op_idx)
+			{
+				const t_vec_real& newsite1 = newsites1[op_idx];
+				const t_vec_real& newsite2 = newsites2[op_idx];
+				const t_vec_real& newdmi = newdmis[op_idx];
 
-			// TODO: add new couplings
+				auto [sc1_ok, newsite1_idx, sc1] = tl2::get_supercell(newsite1, allsites, 3, g_eps);
+				auto [sc2_ok, newsite2_idx, sc2] = tl2::get_supercell(newsite2, allsites, 3, g_eps);
+				t_vec_real sc_dist = sc2 - sc1;
+
+				if(!sc1_ok || !sc2_ok)
+				{
+					std::cerr << "Could not find supercell for position generated from symop "
+						<< op_idx << "." << std::endl;
+				}
+
+				generatedcouplings.emplace_back(std::make_tuple(
+					ident, newsite1_idx, newsite2_idx,
+					sc_dist[0], sc_dist[1], sc_dist[2], oldJ,
+					tl2::var_to_str(newdmi[0]), tl2::var_to_str(newdmi[1]), tl2::var_to_str(newdmi[2])));
+			}
+		}
+
+		// remove original couplings
+		DelTabItem(m_termstab, -1);
+
+		// add new couplings
+		for(const auto& coupling : generatedcouplings)
+		{
+			std::apply(&MagDynDlg::AddTermTabItem,
+				std::tuple_cat(std::make_tuple(this, -1), coupling));
 		}
 	}
 	catch(const std::exception& ex)
