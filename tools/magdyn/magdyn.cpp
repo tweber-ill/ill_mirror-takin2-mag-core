@@ -300,6 +300,12 @@ void MagDynDlg::GenerateCouplingsFromSG()
 		const auto& sites = m_dyn.GetAtomSites();
 		const auto& ops = m_SGops[sgidx];
 
+		// get all site positions
+		std::vector<t_vec_real> allsites;
+		allsites.reserve(sites.size());
+		for(const auto& site: sites)
+			allsites.push_back(site.pos);
+
 		// iterate existing coupling terms
 		for(int row=0; row<m_termstab->rowCount(); ++row)
 		{
@@ -321,8 +327,8 @@ void MagDynDlg::GenerateCouplingsFromSG()
 				m_termstab->item(row, COL_XCH_DMI_Z))->GetValue();
 
 			// atom positions in unit cell
-			const t_vec_real& site1 = sites[atom_1_idx].pos;
-			const t_vec_real& site2 = sites[atom_2_idx].pos;
+			const t_vec_real& site1 = allsites[atom_1_idx];
+			const t_vec_real& site2 = allsites[atom_2_idx];
 
 			// position difference in super cell
 			t_vec_real diff = site2 - site1 + tl2::create<t_vec_real>({ sc_x, sc_y, sc_z });
@@ -333,9 +339,12 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			for(const auto& newdir : newdirs)
 			{
 				using namespace tl2_ops;
-				std::cout << newdir << std::endl;
 
-				// TODO: identify atom index in new super cell
+				// identify atom index in new super cell
+				t_vec_real site2_new = site1 + newdir;
+
+				auto [uc_found, uc_site_idx, sc_vec] = get_supercell(site2_new, allsites, g_eps);
+				std::cout << uc_found << ", sc: " <<site2_new << ", idx: " << atom_1_idx << " " << uc_site_idx << ", vec: " << sc_vec << std::endl;
 			}
 
 			// generate dmi vectors
