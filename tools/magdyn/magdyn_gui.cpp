@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- gui
+ * magnon dynamics -- gui setup
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file

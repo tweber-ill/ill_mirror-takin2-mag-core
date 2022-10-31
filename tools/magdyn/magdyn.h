@@ -59,6 +59,19 @@
 
 using namespace tl2_mag;
 
+
+using t_size = std::size_t;
+using t_real = double;
+using t_cplx = std::complex<t_real>;
+
+using t_vec_real = tl2::vec<t_real, std::vector>;
+using t_mat_real = tl2::mat<t_real, std::vector>;
+
+using t_vec = tl2::vec<t_cplx, std::vector>;
+using t_mat = tl2::mat<t_cplx, std::vector>;
+
+using t_magdyn = MagDyn<t_mat, t_vec, t_mat_real, t_vec_real, t_cplx, t_real, t_size>;
+
 using t_real_gl = tl2::t_real_gl;
 using t_vec2_gl = tl2::t_vec2_gl;
 using t_vec3_gl = tl2::t_vec3_gl;
@@ -219,7 +232,7 @@ protected:
 	QComboBox *m_exportFormat{nullptr};
 
 	// magnon dynamics calculator
-	MagDyn m_dyn{};
+	t_magdyn m_dyn{};
 
 	// structure plotter
 	QDialog *m_structplot_dlg{};
@@ -232,9 +245,9 @@ protected:
 	std::size_t m_structplot_sphere = 0;
 	std::size_t m_structplot_arrow = 0;
 	std::size_t m_structplot_cyl = 0;
-	std::unordered_map<std::size_t, const tl2_mag::AtomSite*>
+	std::unordered_map<std::size_t, const t_magdyn::AtomSite*>
 		m_structplot_atoms{};
-	std::unordered_map<std::size_t, const tl2_mag::ExchangeTerm*>
+	std::unordered_map<std::size_t, const t_magdyn::ExchangeTerm*>
 		m_structplot_terms{};
 	std::optional<std::size_t> m_structplot_cur_obj{};
 	std::optional<std::size_t> m_structplot_cur_atom{};

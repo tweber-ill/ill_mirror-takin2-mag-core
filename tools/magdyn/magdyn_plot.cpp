@@ -1,5 +1,5 @@
 /**
- * magnon dynamics
+ * magnon dynamics -- calculations for dispersion plot
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -320,7 +320,7 @@ void MagDynDlg::CalcHamiltonian()
 	if(only_energies)
 	{
 		// split into positive and negative energies
-		std::vector<EnergyAndWeight> Es_neg, Es_pos;
+		std::vector<t_magdyn::EnergyAndWeight> Es_neg, Es_pos;
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
 			t_real E = E_and_S.E;

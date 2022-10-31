@@ -1,5 +1,5 @@
 /**
- * magnon dynamics
+ * magnon dynamics -- calculations for structure plot
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -351,7 +351,7 @@ void MagDynDlg::StructPlotSync()
 
 
 	// calculate the hash of an atom site
-	auto get_atom_hash = [](const tl2_mag::AtomSite& site,
+	auto get_atom_hash = [](const t_magdyn::AtomSite& site,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 			-> std::size_t
 	{
@@ -370,7 +370,7 @@ void MagDynDlg::StructPlotSync()
 
 	// check if the atom site has already been seen
 	auto atom_not_yet_seen = [&atom_hashes, &get_atom_hash](
-		const tl2_mag::AtomSite& site,
+		const t_magdyn::AtomSite& site,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 	{
 		std::size_t hash = get_atom_hash(site, sc_x, sc_y, sc_z);
@@ -381,9 +381,9 @@ void MagDynDlg::StructPlotSync()
 	// add an atom site to the plot
 	auto add_atom_site = [this, &atom_hashes, &get_atom_hash,
 		is_incommensurate, &ordering, &rotaxis](
-		const tl2_mag::AtomSite& site,
-		const tl2_mag::AtomSiteCalc& site_calc,
-		const tl2_mag::ExternalField& field,
+		const t_magdyn::AtomSite& site,
+		const t_magdyn::AtomSiteCalc& site_calc,
+		const t_magdyn::ExternalField& field,
 		t_real_gl sc_x, t_real_gl sc_y, t_real_gl sc_z)
 	{
 		// super cell index
