@@ -214,7 +214,7 @@ void MagDynDlg::CreateSitesPanel()
 			m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt);
 	});
 
-	m_tabs->addTab(m_sitespanel, "Atoms");
+	m_tabs_in->addTab(m_sitespanel, "Atoms");
 }
 
 
@@ -455,7 +455,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		});
 	}
 
-	m_tabs->addTab(m_termspanel, "Couplings");
+	m_tabs_in->addTab(m_termspanel, "Couplings");
 }
 
 
@@ -579,7 +579,7 @@ void MagDynDlg::CreateVariablesPanel()
 		{ this->ShowTableContextMenu(m_varstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
 
 
-	m_tabs->addTab(m_varspanel, "Variables");
+	m_tabs_in->addTab(m_varspanel, "Variables");
 }
 
 
@@ -839,7 +839,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 	grid->addWidget(m_temperature, y++,1,1,1);
 
 	grid->addItem(new QSpacerItem(16, 16,
-		QSizePolicy::Minimum, QSizePolicy::Expanding),
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0,1,4);
 
 
@@ -908,7 +908,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 			m_fieldstab, pTabContextMenu, pTabContextMenuNoItem, pt);
 	});
 
-	m_tabs->addTab(m_samplepanel, "Sample");
+	m_tabs_in->addTab(m_samplepanel, "Sample");
 }
 
 
@@ -1058,7 +1058,7 @@ void MagDynDlg::CreateDispersionPanel()
 	connect(m_plot, &QCustomPlot::mouseMove,
 		this, &MagDynDlg::PlotMouseMove);
 
-	m_tabs->addTab(m_disppanel, "Dispersion");
+	m_tabs_out->addTab(m_disppanel, "Dispersion");
 }
 
 
@@ -1118,7 +1118,7 @@ void MagDynDlg::CreateHamiltonPanel()
 		});
 	}
 
-	m_tabs->addTab(m_hamiltonianpanel, "Hamiltonian");
+	m_tabs_out->addTab(m_hamiltonianpanel, "Hamiltonian");
 }
 
 
@@ -1274,7 +1274,7 @@ void MagDynDlg::CreateExportPanel()
 	connect(btn_export, &QAbstractButton::clicked, this,
 		static_cast<void (MagDynDlg::*)()>(&MagDynDlg::ExportSQE));
 
-	m_tabs->addTab(m_exportpanel, "Export");
+	m_tabs_out->addTab(m_exportpanel, "Export");
 }
 
 
@@ -1368,7 +1368,7 @@ void MagDynDlg::CreateInfoDlg()
 		y++,0, 1,1);
 
 	// add info panel as a tab
-	//m_tabs->addTab(infopanel, "Infos");
+	//m_tabs_out->addTab(infopanel, "Infos");
 
 	// show info panel as a dialog
 	m_info_dlg = new QDialog(this);

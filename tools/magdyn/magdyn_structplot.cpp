@@ -241,14 +241,14 @@ void MagDynDlg::StructPlotMouseDown(
 	if(left && m_structplot_cur_atom)
 	{
 		// select current site in table
-		m_tabs->setCurrentWidget(m_sitespanel);
+		m_tabs_in->setCurrentWidget(m_sitespanel);
 		m_sitestab->setCurrentCell(*m_structplot_cur_atom, 0);
 	}
 
 	if(left && m_structplot_cur_term)
 	{
 		// select current term in table
-		m_tabs->setCurrentWidget(m_termspanel);
+		m_tabs_in->setCurrentWidget(m_termspanel);
 		m_termstab->setCurrentCell(*m_structplot_cur_term, 0);
 	}
 }

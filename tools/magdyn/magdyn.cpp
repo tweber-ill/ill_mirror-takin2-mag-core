@@ -30,6 +30,7 @@
 
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QSplitter>
 #include <QtWidgets/QMessageBox>
 
 #include <iostream>
@@ -51,7 +52,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	setWindowTitle("Magnon Dynamics");
 	setSizeGripEnabled(true);
 
-	m_tabs = new QTabWidget(this);
+	m_tabs_in = new QTabWidget(this);
+	m_tabs_out = new QTabWidget(this);
 
 	// status
 	m_status = new QLabel(this);
@@ -67,14 +69,23 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	btnStop->setToolTip("Request stop to ongoing calculation.");
 	btnStop->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
+	// splitter for input and output tabs
+	QSplitter *split_inout = new QSplitter(this);
+	split_inout->setOrientation(Qt::Horizontal);
+	split_inout->setChildrenCollapsible(true);
+	split_inout->addWidget(m_tabs_in);
+	split_inout->addWidget(m_tabs_out);
+
 	// main grid
 	m_maingrid = new QGridLayout(this);
 	m_maingrid->setSpacing(4);
 	m_maingrid->setContentsMargins(6, 6, 6, 6);
-	m_maingrid->addWidget(m_tabs, 0,0, 1,3);
-	m_maingrid->addWidget(m_status, 1,0, 1,1);
-	m_maingrid->addWidget(m_progress, 1,1, 1,1);
-	m_maingrid->addWidget(btnStop, 1,2, 1,1);
+	//m_maingrid->addWidget(m_tabs_in, 0,0, 1,3);
+	//m_maingrid->addWidget(m_tabs_out, 0,3, 1,3);
+	m_maingrid->addWidget(split_inout, 0,0, 1,6);
+	m_maingrid->addWidget(m_status, 1,0, 1,3);
+	m_maingrid->addWidget(m_progress, 1,3, 1,2);
+	m_maingrid->addWidget(btnStop, 1,5, 1,1);
 
 	// create tab panels
 	CreateSitesPanel();
@@ -722,7 +733,7 @@ void MagDynDlg::closeEvent(QCloseEvent *)
  */
 void MagDynDlg::EnableInput()
 {
-	m_tabs->setEnabled(true);
+	m_tabs_in->setEnabled(true);
 	m_menu->setEnabled(true);
 }
 
@@ -733,5 +744,5 @@ void MagDynDlg::EnableInput()
 void MagDynDlg::DisableInput()
 {
 	m_menu->setEnabled(false);
-	m_tabs->setEnabled(false);
+	m_tabs_in->setEnabled(false);
 }
