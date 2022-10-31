@@ -138,17 +138,19 @@ void MagDynDlg::GenerateSitesFromSG()
 		// iterate and symmetrise existing sites
 		for(int row=0; row<m_sitestab->rowCount(); ++row)
 		{
-			std::string ident = m_sitestab->item(row, COL_SITE_NAME)
-				->text().toStdString();
+			std::string ident = m_sitestab->item(row, COL_SITE_NAME)->text().toStdString();
+
 			t_real x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_X))->GetValue();
 			t_real y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_Y))->GetValue();
 			t_real z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_POS_Z))->GetValue();
+
 			std::string sx = m_sitestab->item(row, COL_SITE_SPIN_X)->text().toStdString();
 			std::string sy = m_sitestab->item(row, COL_SITE_SPIN_Y)->text().toStdString();
 			std::string sz = m_sitestab->item(row, COL_SITE_SPIN_Z)->text().toStdString();
+
 			t_real S = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_sitestab->item(row, COL_SITE_SPIN_MAG))->GetValue();
 
@@ -251,32 +253,49 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			allsites.push_back(tl2::create<t_vec_real>({
 				site.pos[0], site.pos[1], site.pos[2], 1. }));
 
-		// TODO: if no previous coupling terms are available, add default ones
+		// if no previous coupling terms are available, add default ones
 		if(!m_termstab->rowCount())
 		{
-			//AddTermTabItem(-1, "term", );
+			AddTermTabItem(-1, "term",
+				0, 1,                             // atom indices
+				t_real(0), t_real(0), t_real(0),  // dist
+				"-1",                             // J
+				"0", "0", "0.1");                 // dmi
 		}
+
+		tl2::ExprParser parser = m_dyn.GetExprParser();
 
 		// iterate existing coupling terms
 		for(int row=0; row<m_termstab->rowCount(); ++row)
 		{
 			std::string ident = m_termstab->item(row, COL_XCH_NAME)->text().toStdString();
+
 			t_size atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 				m_termstab->item(row, COL_XCH_ATOM1_IDX))->GetValue();
 			t_size atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 				m_termstab->item(row, COL_XCH_ATOM2_IDX))->GetValue();
+
 			t_real sc_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_termstab->item(row, COL_XCH_DIST_X))->GetValue();
 			t_real sc_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_termstab->item(row, COL_XCH_DIST_Y))->GetValue();
 			t_real sc_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_termstab->item(row, COL_XCH_DIST_Z))->GetValue();
-			t_real dmi_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_termstab->item(row, COL_XCH_DMI_X))->GetValue();
-			t_real dmi_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_termstab->item(row, COL_XCH_DMI_Y))->GetValue();
-			t_real dmi_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-				m_termstab->item(row, COL_XCH_DMI_Z))->GetValue();
+
+			// have to evaluate the dmi vector here, because we can't transform its expression symbolically yet
+			bool dmi_x_ok = parser.parse(
+				m_termstab->item(row, COL_XCH_DMI_X)->text().toStdString());
+			t_real dmi_x = parser.eval().real();
+			bool dmi_y_ok = parser.parse(
+				m_termstab->item(row, COL_XCH_DMI_Y)->text().toStdString());
+			t_real dmi_y = parser.eval().real();
+			bool dmi_z_ok = parser.parse(
+				m_termstab->item(row, COL_XCH_DMI_Z)->text().toStdString());
+			t_real dmi_z = parser.eval().real();
+
+			if(!dmi_x_ok || !dmi_y_ok || !dmi_z_ok)
+				std::cerr << "Could not parse DMI vector expression." << std::endl;
+
 			std::string oldJ = m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString();
 
 			// atom positions in unit cell

@@ -51,6 +51,8 @@
 #include <sstream>
 #include <optional>
 
+#define USE_LAPACK 1
+
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
