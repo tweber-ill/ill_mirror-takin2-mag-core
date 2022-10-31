@@ -79,9 +79,9 @@ bool MagDynDlg::Load(const QString& filename)
 	{
 		BOOST_SCOPE_EXIT(this_)
 		{
-			this_->m_ignoreCalc = 0;
+			this_->m_ignoreCalc = false;
 		} BOOST_SCOPE_EXIT_END
-		m_ignoreCalc = 1;
+		m_ignoreCalc = true;
 
 		// properties tree
 		pt::ptree node;

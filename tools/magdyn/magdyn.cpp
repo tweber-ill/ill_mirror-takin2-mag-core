@@ -127,6 +127,10 @@ MagDynDlg::~MagDynDlg()
 void MagDynDlg::Clear()
 {
 	m_ignoreCalc = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+	} BOOST_SCOPE_EXIT_END
 
 	// clear old tables
 	DelTabItem(m_sitestab, -1);
@@ -156,8 +160,6 @@ void MagDynDlg::Clear()
 	m_weight_scale->setValue(1.);
 	m_weight_min->setValue(0.);
 	m_weight_max->setValue(9999.);
-
-	m_ignoreCalc = false;
 }
 
 
@@ -206,7 +208,13 @@ void MagDynDlg::RotateField(bool ccw)
  */
 void MagDynDlg::GenerateSitesFromSG()
 {
-	m_ignoreCalc = 1;
+	m_ignoreCalc = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		this_->SyncSitesAndTerms();
+		this_->CalcAll();
+	} BOOST_SCOPE_EXIT_END
 
 	try
 	{
@@ -216,7 +224,6 @@ void MagDynDlg::GenerateSitesFromSG()
 		{
 			QMessageBox::critical(this, "Magnon Dynamics",
 				"Invalid space group selected.");
-			m_ignoreCalc = 0;
 			return;
 		}
 
@@ -228,9 +235,36 @@ void MagDynDlg::GenerateSitesFromSG()
 			t_real                                 // spin magnitude
 			>> generatedsites;
 
-		// iterate existing sites
-		int orgRowCnt = m_sitestab->rowCount();
-		for(int row=0; row<orgRowCnt; ++row)
+		// avoids multiple occupation of the same site
+		auto remove_duplicate_sites = [&generatedsites]()
+		{
+			for(auto iter1 = generatedsites.begin(); iter1 != generatedsites.end(); ++iter1)
+			{
+				for(auto iter2 = std::next(iter1, 1); iter2 != generatedsites.end();)
+				{
+					bool same_x = tl2::equals<t_real>(std::get<1>(*iter1), std::get<1>(*iter2), g_eps);
+					bool same_y = tl2::equals<t_real>(std::get<2>(*iter1), std::get<2>(*iter2), g_eps);
+					bool same_z = tl2::equals<t_real>(std::get<3>(*iter1), std::get<3>(*iter2), g_eps);
+
+					if(same_x && same_y && same_z)
+						iter2 = generatedsites.erase(iter2);
+					else
+						++iter2;
+				}
+			}
+		};
+
+		// if no previous positions are available, symmetrise based on the (000) position
+		if(!m_sitestab->rowCount())
+		{
+			t_real x = 0, y = 0, z = 1;
+			std::string sx = "0", sy = "0", sz = "1";
+			t_real S = 1;
+			AddSiteTabItem(-1, "pos", x, y, z, sx, sy, sz, S);
+		}
+
+		// iterate and symmetrise existing sites
+		for(int row=0; row<m_sitestab->rowCount(); ++row)
 		{
 			std::string ident = m_sitestab->item(row, COL_SITE_NAME)
 				->text().toStdString();
@@ -250,12 +284,17 @@ void MagDynDlg::GenerateSitesFromSG()
 			auto newsitepos = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
 				sitepos, ops, g_eps);
 
-			for(const auto& newsite : newsitepos)
+			for(std::size_t newsite_idx=0; newsite_idx<newsitepos.size(); ++newsite_idx)
 			{
+				const auto& newsite = newsitepos[newsite_idx];
+
 				generatedsites.emplace_back(std::make_tuple(
-					ident, newsite[0], newsite[1], newsite[2],
+					ident + "_" + tl2::var_to_str(newsite_idx),
+					newsite[0], newsite[1], newsite[2],
 					sx, sy, sz, S));
 			}
+
+			remove_duplicate_sites();
 		}
 
 		// remove original sites
@@ -272,10 +311,6 @@ void MagDynDlg::GenerateSitesFromSG()
 	{
 		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
 	}
-
-	m_ignoreCalc = 0;
-	SyncSitesAndTerms();
-	CalcAll();
 }
 
 
@@ -284,7 +319,13 @@ void MagDynDlg::GenerateSitesFromSG()
  */
 void MagDynDlg::GenerateCouplingsFromSG()
 {
-	m_ignoreCalc = 1;
+	m_ignoreCalc = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		this_->SyncSitesAndTerms();
+		this_->CalcAll();
+	} BOOST_SCOPE_EXIT_END
 
 	try
 	{
@@ -294,7 +335,6 @@ void MagDynDlg::GenerateCouplingsFromSG()
 		{
 			QMessageBox::critical(this, "Magnon Dynamics",
 				"Invalid space group selected.");
-			m_ignoreCalc = 0;
 			return;
 		}
 
@@ -306,6 +346,27 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			std::string, std::string, std::string  // dmi vector
 			>> generatedcouplings;
 
+		// avoids duplicate coupling terms
+		auto remove_duplicate_terms = [&generatedcouplings]()
+		{
+			for(auto iter1 = generatedcouplings.begin(); iter1 != generatedcouplings.end(); ++iter1)
+			{
+				for(auto iter2 = std::next(iter1, 1); iter2 != generatedcouplings.end();)
+				{
+					bool same_uc_idx1 = (std::get<1>(*iter1) == std::get<1>(*iter2));
+					bool same_uc_idx2 = (std::get<2>(*iter1) == std::get<2>(*iter2));
+
+					bool same_sc_x = tl2::equals<t_real>(std::get<3>(*iter1), std::get<3>(*iter2), g_eps);
+					bool same_sc_y = tl2::equals<t_real>(std::get<4>(*iter1), std::get<4>(*iter2), g_eps);
+					bool same_sc_z = tl2::equals<t_real>(std::get<5>(*iter1), std::get<5>(*iter2), g_eps);
+
+					if(same_uc_idx1 && same_uc_idx2 && same_sc_x && same_sc_y && same_sc_z)
+						iter2 = generatedcouplings.erase(iter2);
+					else
+						++iter2;
+				}
+			}
+		};
 
 		const auto& sites = m_dyn.GetAtomSites();
 		const auto& ops = m_SGops[sgidx];
@@ -317,10 +378,16 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			allsites.push_back(tl2::create<t_vec_real>({
 				site.pos[0], site.pos[1], site.pos[2], 1. }));
 
+		// TODO: if no previous coupling terms are available, add default ones
+		if(!m_termstab->rowCount())
+		{
+			//AddTermTabItem(-1, "term", );
+		}
+
 		// iterate existing coupling terms
 		for(int row=0; row<m_termstab->rowCount(); ++row)
 		{
-			std::string ident = m_sitestab->item(row, COL_XCH_NAME)->text().toStdString();
+			std::string ident = m_termstab->item(row, COL_XCH_NAME)->text().toStdString();
 			t_size atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
 				m_termstab->item(row, COL_XCH_ATOM1_IDX))->GetValue();
 			t_size atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
@@ -340,6 +407,12 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			std::string oldJ = m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString();
 
 			// atom positions in unit cell
+			if(atom_1_idx >= allsites.size() || atom_2_idx >= allsites.size())
+			{
+				std::cerr << "Atom indices for  term " << row << " (\""
+					<< ident << "\") are out of bounds, skipping." << std::endl;
+				continue;
+			}
 			const t_vec_real& site1 = allsites[atom_1_idx];
 			t_vec_real site2 = allsites[atom_2_idx];
 
@@ -374,10 +447,18 @@ void MagDynDlg::GenerateCouplingsFromSG()
 				}
 
 				generatedcouplings.emplace_back(std::make_tuple(
-					ident, newsite1_idx, newsite2_idx,
+					ident + "_" + tl2::var_to_str(op_idx), newsite1_idx, newsite2_idx,
 					sc_dist[0], sc_dist[1], sc_dist[2], oldJ,
 					tl2::var_to_str(newdmi[0]), tl2::var_to_str(newdmi[1]), tl2::var_to_str(newdmi[2])));
 			}
+
+			remove_duplicate_terms();
+		}
+
+		if(!generatedcouplings.size())
+		{
+			QMessageBox::critical(this, "Magnon Dynamics", "No couplings could be generated.");
+			return;
 		}
 
 		// remove original couplings
@@ -394,10 +475,6 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	{
 		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
 	}
-
-	m_ignoreCalc = 0;
-	SyncSitesAndTerms();
-	CalcAll();
 }
 
 
@@ -412,8 +489,14 @@ void MagDynDlg::AddSiteTabItem(int row,
 	const std::string& sz,
 	t_real S)
 {
-	bool bclone = 0;
-	m_ignoreTableChanges = 1;
+	bool bclone = false;
+	m_ignoreTableChanges = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreTableChanges = false;
+		if(this_->m_autocalc->isChecked())
+			this_->SyncSitesAndTerms();
+	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
 		row = m_sitestab->rowCount();
@@ -460,14 +543,9 @@ void MagDynDlg::AddSiteTabItem(int row,
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
 	m_sitestab->setCurrentCell(row, 0);
-
 	m_sitestab->setSortingEnabled(/*sorting*/ true);
 
 	UpdateVerticalHeader(m_sitestab);
-
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
 }
 
 
@@ -484,7 +562,13 @@ void MagDynDlg::AddTermTabItem(int row,
 	const std::string& dmi_z)
 {
 	bool bclone = 0;
-	m_ignoreTableChanges = 1;
+	m_ignoreTableChanges = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreTableChanges = false;
+		if(this_->m_autocalc->isChecked())
+			this_->SyncSitesAndTerms();
+	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
 		row = m_termstab->rowCount();
@@ -535,14 +619,9 @@ void MagDynDlg::AddTermTabItem(int row,
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
 	m_termstab->setCurrentCell(row, 0);
-
 	m_termstab->setSortingEnabled(/*sorting*/ true);
 
 	UpdateVerticalHeader(m_termstab);
-
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
 }
 
 
@@ -553,7 +632,13 @@ void MagDynDlg::AddVariableTabItem(int row,
 	const std::string& name, const t_cplx& value)
 {
 	bool bclone = 0;
-	m_ignoreTableChanges = 1;
+	m_ignoreTableChanges = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreTableChanges = false;
+		if(this_->m_autocalc->isChecked())
+			this_->SyncSitesAndTerms();
+	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
 		row = m_varstab->rowCount();
@@ -590,14 +675,9 @@ void MagDynDlg::AddVariableTabItem(int row,
 
 	m_varstab->scrollToItem(m_varstab->item(row, 0));
 	m_varstab->setCurrentCell(row, 0);
-
 	m_varstab->setSortingEnabled(/*sorting*/ true);
 
 	UpdateVerticalHeader(m_varstab);
-
-	m_ignoreTableChanges = 0;
-	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
 }
 
 
@@ -647,7 +727,6 @@ void MagDynDlg::AddFieldTabItem(int row,
 
 	m_fieldstab->scrollToItem(m_fieldstab->item(row, 0));
 	m_fieldstab->setCurrentCell(row, 0);
-
 	m_fieldstab->setSortingEnabled(/*sorting*/ true);
 
 	UpdateVerticalHeader(m_fieldstab);
@@ -691,7 +770,16 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 		needs_recalc = false;
 
 	if(needs_recalc)
-		m_ignoreTableChanges = 1;
+		m_ignoreTableChanges = true;
+	BOOST_SCOPE_EXIT(this_, needs_recalc)
+	{
+		if(needs_recalc)
+		{
+			this_->m_ignoreTableChanges = false;
+			if(this_->m_autocalc->isChecked())
+				this_->SyncSitesAndTerms();
+		}
+	} BOOST_SCOPE_EXIT_END
 
 	// if nothing is selected, clear all items
 	if(begin == -1 || pTab->selectedItems().count() == 0)
@@ -715,13 +803,6 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 	}
 
 	UpdateVerticalHeader(pTab);
-
-	if(needs_recalc)
-	{
-		m_ignoreTableChanges = 0;
-		if(m_autocalc->isChecked())
-			SyncSitesAndTerms();
-	}
 }
 
 
@@ -732,8 +813,17 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 		needs_recalc = false;
 
 	if(needs_recalc)
-		m_ignoreTableChanges = 1;
+		m_ignoreTableChanges = true;
 	pTab->setSortingEnabled(false);
+	BOOST_SCOPE_EXIT(this_, needs_recalc)
+	{
+		if(needs_recalc)
+		{
+			this_->m_ignoreTableChanges = false;
+			if(this_->m_autocalc->isChecked())
+				this_->SyncSitesAndTerms();
+		}
+	} BOOST_SCOPE_EXIT_END
 
 	auto selected = GetSelectedRows(pTab, false);
 	for(int row : selected)
@@ -762,13 +852,6 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 	}
 
 	UpdateVerticalHeader(pTab);
-
-	if(needs_recalc)
-	{
-		m_ignoreTableChanges = 0;
-		if(m_autocalc->isChecked())
-			SyncSitesAndTerms();
-	}
 }
 
 
@@ -779,8 +862,17 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 		needs_recalc = false;
 
 	if(needs_recalc)
-		m_ignoreTableChanges = 1;
+		m_ignoreTableChanges = true;
 	pTab->setSortingEnabled(false);
+	BOOST_SCOPE_EXIT(this_, needs_recalc)
+	{
+		if(needs_recalc)
+		{
+			this_->m_ignoreTableChanges = false;
+			if(this_->m_autocalc->isChecked())
+				this_->SyncSitesAndTerms();
+		}
+	} BOOST_SCOPE_EXIT_END
 
 	auto selected = GetSelectedRows(pTab, true);
 	for(int row : selected)
@@ -809,13 +901,6 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 	}
 
 	UpdateVerticalHeader(pTab);
-
-	if(needs_recalc)
-	{
-		m_ignoreTableChanges = 0;
-		if(m_autocalc->isChecked())
-			SyncSitesAndTerms();
-	}
 }
 
 
