@@ -89,16 +89,16 @@ void MagDynDlg::CreateSitesPanel()
 
 	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
-		"Add Atom", m_sitespanel);
+		"Add", m_sitespanel);
 	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
-		"Delete Atom", m_sitespanel);
+		"Delete", m_sitespanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Atom Up", m_sitespanel);
+		"Move Up", m_sitespanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Atom Down", m_sitespanel);
+		"Move Down", m_sitespanel);
 
 	QPushButton *btnShowStruct = new QPushButton("3D View...", m_sitespanel);
 
@@ -297,16 +297,21 @@ void MagDynDlg::CreateExchangeTermsPanel()
 
 	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
-		"Add Term", m_termspanel);
+		"Add", m_termspanel);
 	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
-		"Delete Term", m_termspanel);
+		"Delete", m_termspanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Term Up", m_termspanel);
+		"Move Up", m_termspanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Term Down", m_termspanel);
+		"Move Down", m_termspanel);
+
+	btnAdd->setToolTip("Add an exchange term.");
+	btnDel->setToolTip("Delete selected exchange term(s).");
+	btnUp->setToolTip("Move selected exchange term(s) up.");
+	btnDown->setToolTip("Move selected exchange term(s) down.");
 
 	QPushButton *btnShowStruct = new QPushButton("3D View...", m_termspanel);
 
@@ -552,16 +557,22 @@ void MagDynDlg::CreateVariablesPanel()
 
 	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
-		"Add Variable", m_varspanel);
+		"Add", m_varspanel);
 	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
-		"Delete Variable", m_varspanel);
+		"Delete", m_varspanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Variable Up", m_varspanel);
+		"Move Up", m_varspanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Variable Down", m_varspanel);
+		"Move Down", m_varspanel);
+
+	btnAdd->setToolTip("Add a variable.");
+	btnDel->setToolTip("Delete selected variables(s).");
+	btnUp->setToolTip("Move selected variable(s) up.");
+	btnDown->setToolTip("Move selected variable(s) down.");
+
 	btnAdd->setFocusPolicy(Qt::StrongFocus);
 	btnDel->setFocusPolicy(Qt::StrongFocus);
 	btnUp->setFocusPolicy(Qt::StrongFocus);
@@ -739,32 +750,37 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 	QPushButton *btnAddField = new QPushButton(
 		QIcon::fromTheme("list-add"),
-		"Add Field", m_samplepanel);
+		"Add", m_samplepanel);
 	QPushButton *btnDelField = new QPushButton(
 		QIcon::fromTheme("list-remove"),
-		"Delete Field", m_samplepanel);
-	QPushButton *pTabBtnFieldUp = new QPushButton(
+		"Delete", m_samplepanel);
+	QPushButton *btnFieldUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Field Up", m_samplepanel);
-	QPushButton *pTabBtnFieldDown = new QPushButton(
+		"Move Up", m_samplepanel);
+	QPushButton *btnFieldDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Field Down", m_samplepanel);
+		"Move Down", m_samplepanel);
+
+	btnAddField->setToolTip("Add a magnetic field.");
+	btnDelField->setToolTip("Delete selected magnetic field(s).");
+	btnFieldUp->setToolTip("Move selected magnetic field(s) up.");
+	btnFieldDown->setToolTip("Move selected magnetic field(s) down.");
 
 	QPushButton *btnSetField = new QPushButton("Set Field", m_samplepanel);
 	btnSetField->setToolTip("Set the selected field as the currently active one.");
 
 	btnAddField->setFocusPolicy(Qt::StrongFocus);
 	btnDelField->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnFieldUp->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnFieldDown->setFocusPolicy(Qt::StrongFocus);
+	btnFieldUp->setFocusPolicy(Qt::StrongFocus);
+	btnFieldDown->setFocusPolicy(Qt::StrongFocus);
 
 	btnAddField->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 	btnDelField->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnFieldUp->setSizePolicy(QSizePolicy{
+	btnFieldUp->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnFieldDown->setSizePolicy(QSizePolicy{
+	btnFieldDown->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 
@@ -895,8 +911,8 @@ void MagDynDlg::CreateSampleEnvPanel()
 	grid->addWidget(m_fieldstab, y,0,1,4);
 	grid->addWidget(btnAddField, ++y,0,1,1);
 	grid->addWidget(btnDelField, y,1,1,1);
-	grid->addWidget(pTabBtnFieldUp, y,2,1,1);
-	grid->addWidget(pTabBtnFieldDown, y++,3,1,1);
+	grid->addWidget(btnFieldUp, y,2,1,1);
+	grid->addWidget(btnFieldDown, y++,3,1,1);
 	grid->addWidget(btnSetField, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
@@ -965,9 +981,9 @@ void MagDynDlg::CreateSampleEnvPanel()
 			m_field_mag->value()); });
 	connect(btnDelField, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_fieldstab); });
-	connect(pTabBtnFieldUp, &QAbstractButton::clicked,
+	connect(btnFieldUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_fieldstab); });
-	connect(pTabBtnFieldDown, &QAbstractButton::clicked,
+	connect(btnFieldDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_fieldstab); });
 
 	connect(btnSetField, &QAbstractButton::clicked,
