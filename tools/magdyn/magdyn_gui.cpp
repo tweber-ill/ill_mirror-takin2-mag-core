@@ -100,6 +100,8 @@ void MagDynDlg::CreateSitesPanel()
 		QIcon::fromTheme("go-down"),
 		"Move Atom Down", m_sitespanel);
 
+	QPushButton *btnShowStruct = new QPushButton("3D View...", m_sitespanel);
+
 	m_comboSG = new QComboBox(m_sitespanel);
 	QPushButton *pTabBtnSG = new QPushButton(
 		QIcon::fromTheme("insert-object"),
@@ -138,12 +140,24 @@ void MagDynDlg::CreateSitesPanel()
 	grid->setSpacing(4);
 	grid->setContentsMargins(6, 6, 6, 6);
 
+	auto sep = new QFrame(m_samplepanel); sep->setFrameStyle(QFrame::HLine);
+
 	int y = 0;
 	grid->addWidget(m_sitestab, y,0,1,4);
 	grid->addWidget(pTabBtnAdd, ++y,0,1,1);
 	grid->addWidget(pTabBtnDel, y,1,1,1);
 	grid->addWidget(pTabBtnUp, y,2,1,1);
-	grid->addWidget(pTabBtnDown, y,3,1,1);
+	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(btnShowStruct, y++,3,1,1);
+
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+	grid->addWidget(sep, y++,0, 1,4);
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+
 	grid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
 	grid->addWidget(m_comboSG, y,1,1,2);
 	grid->addWidget(pTabBtnSG, y,3,1,1);
@@ -192,6 +206,8 @@ void MagDynDlg::CreateSitesPanel()
 		[this]() { this->MoveTabItemDown(m_sitestab); });
 	connect(pTabBtnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateSitesFromSG);
+
+	connect(btnShowStruct, &QPushButton::clicked, this, &MagDynDlg::ShowStructurePlot);
 
 	connect(m_comboSG, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)
@@ -282,6 +298,9 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	QPushButton *pTabBtnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
 		"Move Term Down", m_termspanel);
+
+	QPushButton *btnShowStruct = new QPushButton("3D View...", m_termspanel);
+
 	pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
 	pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
 	pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
@@ -348,6 +367,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	m_normaxis[1]->setPrefix("Nk = ");
 	m_normaxis[2]->setPrefix("Nl = ");
 
+	auto sep = new QFrame(m_samplepanel); sep->setFrameStyle(QFrame::HLine);
 
 	// grid
 	auto grid = new QGridLayout(m_termspanel);
@@ -360,6 +380,16 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	grid->addWidget(pTabBtnDel, y,1,1,1);
 	grid->addWidget(pTabBtnUp, y,2,1,1);
 	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(btnShowStruct, y++,3,1,1);
+
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+	grid->addWidget(sep, y++,0, 1,4);
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+
 	grid->addWidget(new QLabel("Space Group:"), y,0,1,1);
 	grid->addWidget(m_comboSG2, y,1,1,2);
 	grid->addWidget(pTabBtnSG, y++,3,1,1);
@@ -417,6 +447,8 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		[this]() { this->MoveTabItemDown(m_termstab); });
 	connect(pTabBtnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateCouplingsFromSG);
+
+	connect(btnShowStruct, &QPushButton::clicked, this, &MagDynDlg::ShowStructurePlot);
 
 	connect(m_comboSG2, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)
@@ -826,21 +858,17 @@ void MagDynDlg::CreateSampleEnvPanel()
 	grid->addWidget(pTabBtnFieldUp, y,2,1,1);
 	grid->addWidget(pTabBtnFieldDown, y++,3,1,1);
 
-	grid->addItem(new QSpacerItem(16, 16,
+	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
 	grid->addWidget(sep3, y++,0, 1,4);
-	grid->addItem(new QSpacerItem(16, 16,
+	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
 
 	grid->addWidget(new QLabel(QString("Temperature:"),
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_temperature, y++,1,1,1);
-
-	grid->addItem(new QSpacerItem(16, 16,
-		QSizePolicy::Minimum, QSizePolicy::Fixed),
-		y++,0,1,4);
 
 
 	// signals
@@ -1402,7 +1430,7 @@ void MagDynDlg::CreateMenuBar()
 
 	// structure menu
 	auto menuStruct = new QMenu("Structure", m_menu);
-	auto acStructView = new QAction("Show...", menuStruct);
+	auto acStructView = new QAction("3D View...", menuStruct);
 
 	// dispersion menu
 	auto menuDisp = new QMenu("Dispersion", m_menu);

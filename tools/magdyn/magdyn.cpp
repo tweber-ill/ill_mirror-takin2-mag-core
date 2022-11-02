@@ -30,7 +30,6 @@
 
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QSplitter>
 #include <QtWidgets/QMessageBox>
 
 #include <iostream>
@@ -70,11 +69,11 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	btnStop->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
 	// splitter for input and output tabs
-	QSplitter *split_inout = new QSplitter(this);
-	split_inout->setOrientation(Qt::Horizontal);
-	split_inout->setChildrenCollapsible(true);
-	split_inout->addWidget(m_tabs_in);
-	split_inout->addWidget(m_tabs_out);
+	m_split_inout = new QSplitter(this);
+	m_split_inout->setOrientation(Qt::Horizontal);
+	m_split_inout->setChildrenCollapsible(true);
+	m_split_inout->addWidget(m_tabs_in);
+	m_split_inout->addWidget(m_tabs_out);
 
 	// main grid
 	m_maingrid = new QGridLayout(this);
@@ -82,7 +81,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	m_maingrid->setContentsMargins(6, 6, 6, 6);
 	//m_maingrid->addWidget(m_tabs_in, 0,0, 1,3);
 	//m_maingrid->addWidget(m_tabs_out, 0,3, 1,3);
-	m_maingrid->addWidget(split_inout, 0,0, 1,6);
+	m_maingrid->addWidget(m_split_inout, 0,0, 1,6);
 	m_maingrid->addWidget(m_status, 1,0, 1,3);
 	m_maingrid->addWidget(m_progress, 1,3, 1,2);
 	m_maingrid->addWidget(btnStop, 1,5, 1,1);
@@ -111,6 +110,9 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 		if(m_sett->contains("recent_files"))
 			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());
+
+		if(m_sett->contains("splitter"))
+			m_split_inout->restoreState(m_sett->value("splitter").toByteArray());
 	}
 
 	m_ignoreTableChanges = false;
@@ -722,6 +724,9 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 	m_sett->setValue("recent_files", m_recent.GetRecentFiles());
 
 	m_sett->setValue("geo", saveGeometry());
+
+	if(m_split_inout)
+		m_sett->setValue("splitter", m_split_inout->saveState());
 
 	if(m_structplot_dlg)
 		m_sett->setValue("geo_struct_view", m_structplot_dlg->saveGeometry());

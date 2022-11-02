@@ -31,6 +31,7 @@
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QGridLayout>
+#include <QtWidgets/QSplitter>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
@@ -50,8 +51,6 @@
 #include <unordered_map>
 #include <sstream>
 #include <optional>
-
-#define USE_LAPACK 1
 
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
@@ -154,6 +153,7 @@ public:
 protected:
 	QSettings *m_sett{};
 	QMenuBar *m_menu{};
+	QSplitter *m_split_inout{};
 	QLabel *m_status{};
 	QProgressBar *m_progress{};
 
