@@ -98,8 +98,8 @@ include_directories(
 add_executable(takin_magdyn
 	main.cpp graph.h
 	magdyn.cpp magdyn.h
-	magdyn_gui.cpp magdyn_sites.cpp magdyn_file.cpp
-	magdyn_plot.cpp magdyn_structplot.cpp
+	magdyn_gui.cpp magdyn_struct.cpp magdyn_file.cpp
+	magdyn_disp.cpp magdyn_structplot.cpp
 
 	../../tlibs2/libs/magdyn.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h

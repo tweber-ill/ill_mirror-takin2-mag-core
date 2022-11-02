@@ -432,33 +432,6 @@ void MagDynDlg::AddFieldTabItem(int row,
 
 
 /**
- * set selected field as current
- */
-void MagDynDlg::SetCurrentField()
-{
-	if(m_fields_cursor_row < 0 || m_fields_cursor_row >= m_fieldstab->rowCount())
-		return;
-
-	const auto* Bh = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_H));
-	const auto* Bk = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_K));
-	const auto* Bl = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_L));
-	const auto* Bmag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
-		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_MAG));
-
-	if(!Bh || !Bk || !Bl || !Bmag)
-		return;
-
-	m_field_dir[0]->setValue(Bh->GetValue());
-	m_field_dir[1]->setValue(Bk->GetValue());
-	m_field_dir[2]->setValue(Bl->GetValue());
-	m_field_mag->setValue(Bmag->GetValue());
-}
-
-
-/**
  * delete table widget items
  */
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
@@ -686,15 +659,6 @@ void MagDynDlg::ShowTableContextMenu(
 
 	if(const auto* item = pTab->itemAt(pt); item)
 	{
-		if(pTab == m_termstab)
-			m_terms_cursor_row = item->row();
-		else if(pTab == m_sitestab)
-			m_sites_cursor_row = item->row();
-		else if(pTab == m_varstab)
-			m_variables_cursor_row = item->row();
-		else if(pTab == m_fieldstab)
-			m_fields_cursor_row = item->row();
-
 		ptGlob.setY(ptGlob.y() + pMenu->sizeHint().height()/2);
 		pMenu->popup(ptGlob);
 	}

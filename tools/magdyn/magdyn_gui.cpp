@@ -87,43 +87,43 @@ void MagDynDlg::CreateSitesPanel()
 	m_sitestab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-	QPushButton *pTabBtnAdd = new QPushButton(
+	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
 		"Add Atom", m_sitespanel);
-	QPushButton *pTabBtnDel = new QPushButton(
+	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
 		"Delete Atom", m_sitespanel);
-	QPushButton *pTabBtnUp = new QPushButton(
+	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
 		"Move Atom Up", m_sitespanel);
-	QPushButton *pTabBtnDown = new QPushButton(
+	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
 		"Move Atom Down", m_sitespanel);
 
 	QPushButton *btnShowStruct = new QPushButton("3D View...", m_sitespanel);
 
 	m_comboSG = new QComboBox(m_sitespanel);
-	QPushButton *pTabBtnSG = new QPushButton(
+	QPushButton *btnSG = new QPushButton(
 		QIcon::fromTheme("insert-object"),
 		"Generate", m_sitespanel);
-	pTabBtnSG->setToolTip("Create atom site positions from space group symmetry operators.");
+	btnSG->setToolTip("Create atom site positions from space group symmetry operators.");
 
-	pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+	btnAdd->setFocusPolicy(Qt::StrongFocus);
+	btnDel->setFocusPolicy(Qt::StrongFocus);
+	btnUp->setFocusPolicy(Qt::StrongFocus);
+	btnDown->setFocusPolicy(Qt::StrongFocus);
 	m_comboSG->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnSG->setFocusPolicy(Qt::StrongFocus);
+	btnSG->setFocusPolicy(Qt::StrongFocus);
 
-	pTabBtnAdd->setSizePolicy(QSizePolicy{
+	btnAdd->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDel->setSizePolicy(QSizePolicy{
+	btnDel->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnUp->setSizePolicy(QSizePolicy{
+	btnUp->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDown->setSizePolicy(QSizePolicy{
+	btnDown->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnSG->setSizePolicy(QSizePolicy{
+	btnSG->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 	// get space groups and symops
@@ -144,10 +144,10 @@ void MagDynDlg::CreateSitesPanel()
 
 	int y = 0;
 	grid->addWidget(m_sitestab, y,0,1,4);
-	grid->addWidget(pTabBtnAdd, ++y,0,1,1);
-	grid->addWidget(pTabBtnDel, y,1,1,1);
-	grid->addWidget(pTabBtnUp, y,2,1,1);
-	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(btnAdd, ++y,0,1,1);
+	grid->addWidget(btnDel, y,1,1,1);
+	grid->addWidget(btnUp, y,2,1,1);
+	grid->addWidget(btnDown, y++,3,1,1);
 	grid->addWidget(btnShowStruct, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
@@ -160,54 +160,54 @@ void MagDynDlg::CreateSitesPanel()
 
 	grid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
 	grid->addWidget(m_comboSG, y,1,1,2);
-	grid->addWidget(pTabBtnSG, y,3,1,1);
+	grid->addWidget(btnSG, y,3,1,1);
 
 
 	// table CustomContextMenu
-	QMenu *pTabContextMenu = new QMenu(m_sitestab);
-	pTabContextMenu->addAction(
+	QMenu *menuTableContext = new QMenu(m_sitestab);
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Atom Before", this,
 		[this]() { this->AddSiteTabItem(-2); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Atom After", this,
 		[this]() { this->AddSiteTabItem(-3); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("edit-copy"),
 		"Clone Atom", this,
 		[this]() { this->AddSiteTabItem(-4); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Atom",this,
 		[this]() { this->DelTabItem(m_sitestab); });
 
 
 	// table CustomContextMenu in case nothing is selected
-	QMenu *pTabContextMenuNoItem = new QMenu(m_sitestab);
-	pTabContextMenuNoItem->addAction(
+	QMenu *menuTableContextNoItem = new QMenu(m_sitestab);
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Atom", this,
 		[this]() { this->AddSiteTabItem(); });
-	pTabContextMenuNoItem->addAction(
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Atom", this,
 		[this]() { this->DelTabItem(m_sitestab); });
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked,
+	connect(btnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddSiteTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked,
+	connect(btnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_sitestab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked,
+	connect(btnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_sitestab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked,
+	connect(btnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_sitestab); });
-	connect(pTabBtnSG, &QAbstractButton::clicked,
+	connect(btnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateSitesFromSG);
 
-	connect(btnShowStruct, &QPushButton::clicked, this, &MagDynDlg::ShowStructurePlot);
+	connect(btnShowStruct, &QAbstractButton::clicked, this, &MagDynDlg::ShowStructurePlot);
 
 	connect(m_comboSG, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)
@@ -221,13 +221,22 @@ void MagDynDlg::CreateSitesPanel()
 		}
 	});
 
+	connect(m_sitestab, &QTableWidget::itemSelectionChanged, [this]()
+	{
+		QList<QTableWidgetItem*> selected = m_sitestab->selectedItems();
+		if(selected.size())
+		{
+			const QTableWidgetItem* item = *selected.begin();
+			m_sites_cursor_row = item->row();
+		}
+	});
 	connect(m_sitestab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::SitesTableItemChanged);
 	connect(m_sitestab, &QTableWidget::customContextMenuRequested,
-		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
 	{
 		this->ShowTableContextMenu(
-			m_sitestab, pTabContextMenu, pTabContextMenuNoItem, pt);
+			m_sitestab, menuTableContext, menuTableContextNoItem, pt);
 	});
 
 	m_tabs_in->addTab(m_sitespanel, "Atoms");
@@ -286,44 +295,44 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	m_termstab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-	QPushButton *pTabBtnAdd = new QPushButton(
+	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
 		"Add Term", m_termspanel);
-	QPushButton *pTabBtnDel = new QPushButton(
+	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
 		"Delete Term", m_termspanel);
-	QPushButton *pTabBtnUp = new QPushButton(
+	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
 		"Move Term Up", m_termspanel);
-	QPushButton *pTabBtnDown = new QPushButton(
+	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
 		"Move Term Down", m_termspanel);
 
 	QPushButton *btnShowStruct = new QPushButton("3D View...", m_termspanel);
 
-	pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+	btnAdd->setFocusPolicy(Qt::StrongFocus);
+	btnDel->setFocusPolicy(Qt::StrongFocus);
+	btnUp->setFocusPolicy(Qt::StrongFocus);
+	btnDown->setFocusPolicy(Qt::StrongFocus);
 
-	pTabBtnAdd->setSizePolicy(QSizePolicy{
+	btnAdd->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDel->setSizePolicy(QSizePolicy{
+	btnDel->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnUp->setSizePolicy(QSizePolicy{
+	btnUp->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDown->setSizePolicy(QSizePolicy{
+	btnDown->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 	m_comboSG2 = new QComboBox(m_termspanel);
-	QPushButton *pTabBtnSG = new QPushButton(
+	QPushButton *btnSG = new QPushButton(
 		QIcon::fromTheme("insert-object"),
 		"Generate", m_sitespanel);
-	pTabBtnSG->setToolTip("Create couplings from space group symmetry operators.");
+	btnSG->setToolTip("Create couplings from space group symmetry operators.");
 
 	m_comboSG2->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnSG->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnSG->setSizePolicy(QSizePolicy{
+	btnSG->setFocusPolicy(Qt::StrongFocus);
+	btnSG->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 	// copy space groups from other combobox
@@ -377,10 +386,10 @@ void MagDynDlg::CreateExchangeTermsPanel()
 
 	int y = 0;
 	grid->addWidget(m_termstab, y++,0,1,4);
-	grid->addWidget(pTabBtnAdd, y,0,1,1);
-	grid->addWidget(pTabBtnDel, y,1,1,1);
-	grid->addWidget(pTabBtnUp, y,2,1,1);
-	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(btnAdd, y,0,1,1);
+	grid->addWidget(btnDel, y,1,1,1);
+	grid->addWidget(btnUp, y,2,1,1);
+	grid->addWidget(btnDown, y++,3,1,1);
 	grid->addWidget(btnShowStruct, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
@@ -393,7 +402,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 
 	grid->addWidget(new QLabel("Space Group:"), y,0,1,1);
 	grid->addWidget(m_comboSG2, y,1,1,2);
-	grid->addWidget(pTabBtnSG, y++,3,1,1);
+	grid->addWidget(btnSG, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -415,50 +424,50 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	grid->addWidget(m_normaxis[2], y++,3,1,1);
 
 	// table CustomContextMenu
-	QMenu *pTabContextMenu = new QMenu(m_termstab);
-	pTabContextMenu->addAction(
+	QMenu *menuTableContext = new QMenu(m_termstab);
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Term Before", this,
 		[this]() { this->AddTermTabItem(-2); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Term After", this,
 		[this]() { this->AddTermTabItem(-3); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("edit-copy"),
 		"Clone Term", this,
 		[this]() { this->AddTermTabItem(-4); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Term", this,
 		[this]() { this->DelTabItem(m_termstab); });
 
 
 	// table CustomContextMenu in case nothing is selected
-	QMenu *pTabContextMenuNoItem = new QMenu(m_termstab);
-	pTabContextMenuNoItem->addAction(
+	QMenu *menuTableContextNoItem = new QMenu(m_termstab);
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Term", this,
 		[this]() { this->AddTermTabItem(); });
-	pTabContextMenuNoItem->addAction(
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Term", this,
 		[this]() { this->DelTabItem(m_termstab); });
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked,
+	connect(btnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddTermTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked,
+	connect(btnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_termstab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked,
+	connect(btnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_termstab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked,
+	connect(btnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_termstab); });
-	connect(pTabBtnSG, &QAbstractButton::clicked,
+	connect(btnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateCouplingsFromSG);
 
-	connect(btnShowStruct, &QPushButton::clicked, this, &MagDynDlg::ShowStructurePlot);
+	connect(btnShowStruct, &QAbstractButton::clicked, this, &MagDynDlg::ShowStructurePlot);
 
 	connect(m_comboSG2, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[this](int idx)
@@ -472,11 +481,20 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		}
 	});
 
+	connect(m_termstab, &QTableWidget::itemSelectionChanged, [this]()
+	{
+		QList<QTableWidgetItem*> selected = m_termstab->selectedItems();
+		if(selected.size())
+		{
+			const QTableWidgetItem* item = *selected.begin();
+			m_terms_cursor_row = item->row();
+		}
+	});
 	connect(m_termstab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::TermsTableItemChanged);
 	connect(m_termstab, &QTableWidget::customContextMenuRequested,
-		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
-		{ this->ShowTableContextMenu(m_termstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
+		{ this->ShowTableContextMenu(m_termstab, menuTableContext, menuTableContextNoItem, pt); });
 
 	for(int i=0; i<3; ++i)
 	{
@@ -532,30 +550,30 @@ void MagDynDlg::CreateVariablesPanel()
 	m_varstab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-	QPushButton *pTabBtnAdd = new QPushButton(
+	QPushButton *btnAdd = new QPushButton(
 		QIcon::fromTheme("list-add"),
 		"Add Variable", m_varspanel);
-	QPushButton *pTabBtnDel = new QPushButton(
+	QPushButton *btnDel = new QPushButton(
 		QIcon::fromTheme("list-remove"),
 		"Delete Variable", m_varspanel);
-	QPushButton *pTabBtnUp = new QPushButton(
+	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
 		"Move Variable Up", m_varspanel);
-	QPushButton *pTabBtnDown = new QPushButton(
+	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
 		"Move Variable Down", m_varspanel);
-	pTabBtnAdd->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDel->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnUp->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDown->setFocusPolicy(Qt::StrongFocus);
+	btnAdd->setFocusPolicy(Qt::StrongFocus);
+	btnDel->setFocusPolicy(Qt::StrongFocus);
+	btnUp->setFocusPolicy(Qt::StrongFocus);
+	btnDown->setFocusPolicy(Qt::StrongFocus);
 
-	pTabBtnAdd->setSizePolicy(QSizePolicy{
+	btnAdd->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDel->setSizePolicy(QSizePolicy{
+	btnDel->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnUp->setSizePolicy(QSizePolicy{
+	btnUp->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDown->setSizePolicy(QSizePolicy{
+	btnDown->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 
@@ -566,59 +584,68 @@ void MagDynDlg::CreateVariablesPanel()
 
 	int y = 0;
 	grid->addWidget(m_varstab, y++,0,1,4);
-	grid->addWidget(pTabBtnAdd, y,0,1,1);
-	grid->addWidget(pTabBtnDel, y,1,1,1);
-	grid->addWidget(pTabBtnUp, y,2,1,1);
-	grid->addWidget(pTabBtnDown, y++,3,1,1);
+	grid->addWidget(btnAdd, y,0,1,1);
+	grid->addWidget(btnDel, y,1,1,1);
+	grid->addWidget(btnUp, y,2,1,1);
+	grid->addWidget(btnDown, y++,3,1,1);
 
 
 	// table CustomContextMenu
-	QMenu *pTabContextMenu = new QMenu(m_varstab);
-	pTabContextMenu->addAction(
+	QMenu *menuTableContext = new QMenu(m_varstab);
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Variable Before", this,
 		[this]() { this->AddVariableTabItem(-2); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Variable After", this,
 		[this]() { this->AddVariableTabItem(-3); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("edit-copy"),
 		"Clone Variable", this,
 		[this]() { this->AddVariableTabItem(-4); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Variable", this,
 		[this]() { this->DelTabItem(m_varstab); });
 
 
 	// table CustomContextMenu in case nothing is selected
-	QMenu *pTabContextMenuNoItem = new QMenu(m_varstab);
-	pTabContextMenuNoItem->addAction(
+	QMenu *menuTableContextNoItem = new QMenu(m_varstab);
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Variable", this,
 		[this]() { this->AddVariableTabItem(); });
-	pTabContextMenuNoItem->addAction(
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Variable", this,
 		[this]() { this->DelTabItem(m_varstab); });
 
 
 	// signals
-	connect(pTabBtnAdd, &QAbstractButton::clicked,
+	connect(btnAdd, &QAbstractButton::clicked,
 		[this]() { this->AddVariableTabItem(-1); });
-	connect(pTabBtnDel, &QAbstractButton::clicked,
+	connect(btnDel, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_varstab); });
-	connect(pTabBtnUp, &QAbstractButton::clicked,
+	connect(btnUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_varstab); });
-	connect(pTabBtnDown, &QAbstractButton::clicked,
+	connect(btnDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_varstab); });
 
+	connect(m_varstab, &QTableWidget::itemSelectionChanged, [this]()
+	{
+		QList<QTableWidgetItem*> selected = m_varstab->selectedItems();
+		if(selected.size())
+		{
+			const QTableWidgetItem* item = *selected.begin();
+			m_variables_cursor_row = item->row();
+		}
+	});
 	connect(m_varstab, &QTableWidget::itemChanged,
 		this, &MagDynDlg::VariablesTableItemChanged);
 	connect(m_varstab, &QTableWidget::customContextMenuRequested,
-		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
-		{ this->ShowTableContextMenu(m_varstab, pTabContextMenu, pTabContextMenuNoItem, pt); });
+		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
+		{ this->ShowTableContextMenu(m_varstab, menuTableContext, menuTableContextNoItem, pt); });
 
 
 	m_tabs_in->addTab(m_varspanel, "Variables");
@@ -710,10 +737,10 @@ void MagDynDlg::CreateSampleEnvPanel()
 	m_fieldstab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 
-	QPushButton *pTabBtnAddField = new QPushButton(
+	QPushButton *btnAddField = new QPushButton(
 		QIcon::fromTheme("list-add"),
 		"Add Field", m_samplepanel);
-	QPushButton *pTabBtnDelField = new QPushButton(
+	QPushButton *btnDelField = new QPushButton(
 		QIcon::fromTheme("list-remove"),
 		"Delete Field", m_samplepanel);
 	QPushButton *pTabBtnFieldUp = new QPushButton(
@@ -723,14 +750,17 @@ void MagDynDlg::CreateSampleEnvPanel()
 		QIcon::fromTheme("go-down"),
 		"Move Field Down", m_samplepanel);
 
-	pTabBtnAddField->setFocusPolicy(Qt::StrongFocus);
-	pTabBtnDelField->setFocusPolicy(Qt::StrongFocus);
+	QPushButton *btnSetField = new QPushButton("Set Field", m_samplepanel);
+	btnSetField->setToolTip("Set the selected field as the currently active one.");
+
+	btnAddField->setFocusPolicy(Qt::StrongFocus);
+	btnDelField->setFocusPolicy(Qt::StrongFocus);
 	pTabBtnFieldUp->setFocusPolicy(Qt::StrongFocus);
 	pTabBtnFieldDown->setFocusPolicy(Qt::StrongFocus);
 
-	pTabBtnAddField->setSizePolicy(QSizePolicy{
+	btnAddField->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
-	pTabBtnDelField->setSizePolicy(QSizePolicy{
+	btnDelField->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
 	pTabBtnFieldUp->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -739,33 +769,33 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 
 	// table CustomContextMenu
-	QMenu *pTabContextMenu = new QMenu(m_fieldstab);
-	pTabContextMenu->addAction(
+	QMenu *menuTableContext = new QMenu(m_fieldstab);
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Field Before", this,
 		[this]() { this->AddFieldTabItem(-2); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Field After", this,
 		[this]() { this->AddFieldTabItem(-3); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("edit-copy"),
 		"Clone Field", this,
 		[this]() { this->AddFieldTabItem(-4); });
-	pTabContextMenu->addAction(
+	menuTableContext->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Field", this,
 		[this]() { this->DelTabItem(m_fieldstab); });
-	pTabContextMenu->addSeparator();
-	pTabContextMenu->addAction(
+	menuTableContext->addSeparator();
+	menuTableContext->addAction(
 		QIcon::fromTheme("go-home"),
 		"Set As Current Field", this,
 		[this]() { this->SetCurrentField(); });
 
 
 	// table CustomContextMenu in case nothing is selected
-	QMenu *pTabContextMenuNoItem = new QMenu(m_fieldstab);
-	pTabContextMenuNoItem->addAction(
+	QMenu *menuTableContextNoItem = new QMenu(m_fieldstab);
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-add"),
 		"Add Field", this,
 		[this]() { this->AddFieldTabItem(-1,
@@ -773,7 +803,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 			m_field_dir[1]->value(),
 			m_field_dir[2]->value(),
 			m_field_mag->value()); });
-	pTabContextMenuNoItem->addAction(
+	menuTableContextNoItem->addAction(
 		QIcon::fromTheme("list-remove"),
 		"Delete Field", this,
 		[this]() { this->DelTabItem(m_fieldstab); });
@@ -863,10 +893,11 @@ void MagDynDlg::CreateSampleEnvPanel()
 	grid->addWidget(new QLabel(QString("Saved Fields:"),
 		m_samplepanel), y++,0,1,4);
 	grid->addWidget(m_fieldstab, y,0,1,4);
-	grid->addWidget(pTabBtnAddField, ++y,0,1,1);
-	grid->addWidget(pTabBtnDelField, y,1,1,1);
+	grid->addWidget(btnAddField, ++y,0,1,1);
+	grid->addWidget(btnDelField, y,1,1,1);
 	grid->addWidget(pTabBtnFieldUp, y,2,1,1);
 	grid->addWidget(pTabBtnFieldDown, y++,3,1,1);
+	grid->addWidget(btnSetField, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
@@ -926,24 +957,36 @@ void MagDynDlg::CreateSampleEnvPanel()
 		RotateField(false);
 	});
 
-	connect(pTabBtnAddField, &QAbstractButton::clicked,
+	connect(btnAddField, &QAbstractButton::clicked,
 		[this]() { this->AddFieldTabItem(-1,
 			m_field_dir[0]->value(),
 			m_field_dir[1]->value(),
 			m_field_dir[2]->value(),
 			m_field_mag->value()); });
-	connect(pTabBtnDelField, &QAbstractButton::clicked,
+	connect(btnDelField, &QAbstractButton::clicked,
 		[this]() { this->DelTabItem(m_fieldstab); });
 	connect(pTabBtnFieldUp, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemUp(m_fieldstab); });
 	connect(pTabBtnFieldDown, &QAbstractButton::clicked,
 		[this]() { this->MoveTabItemDown(m_fieldstab); });
 
+	connect(btnSetField, &QAbstractButton::clicked,
+		[this]() { this->SetCurrentField(); });
+
+	connect(m_fieldstab, &QTableWidget::itemSelectionChanged, [this]()
+	{
+		QList<QTableWidgetItem*> selected = m_fieldstab->selectedItems();
+		if(selected.size())
+		{
+			const QTableWidgetItem* item = *selected.begin();
+			m_fields_cursor_row = item->row();
+		}
+	});
 	connect(m_fieldstab, &QTableWidget::customContextMenuRequested,
-		[this, pTabContextMenu, pTabContextMenuNoItem](const QPoint& pt)
+		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
 	{
 		this->ShowTableContextMenu(
-			m_fieldstab, pTabContextMenu, pTabContextMenuNoItem, pt);
+			m_fieldstab, menuTableContext, menuTableContextNoItem, pt);
 	});
 
 	m_tabs_in->addTab(m_samplepanel, "Sample");
@@ -1471,33 +1514,36 @@ void MagDynDlg::CreateMenuBar()
 	acSaveFigure->setIcon(QIcon::fromTheme("image-x-generic"));
 	acSaveDisp->setIcon(QIcon::fromTheme("text-x-generic"));
 
-	// options menu
-	auto menuOptions = new QMenu("Options", m_menu);
-	m_autocalc = new QAction("Automatically Calculate", menuOptions);
+	// calculation menu
+	auto menuCalc = new QMenu("Calculation", m_menu);
+	m_autocalc = new QAction("Automatically Calculate", menuCalc);
 	m_autocalc->setToolTip("Automatically calculate the results.");
 	m_autocalc->setCheckable(true);
 	m_autocalc->setChecked(true);
-	m_use_dmi = new QAction("Use DMI", menuOptions);
+	QAction *acCalc = new QAction("Calculate", menuCalc);
+	acCalc->setToolTip("Calculate all results.");
+	//acCalc->setIcon(QIcon::fromTheme("accessories-calculator"));
+	m_use_dmi = new QAction("Use DMI", menuCalc);
 	m_use_dmi->setToolTip("Enables the Dzyaloshinskij-Moriya interaction.");
 	m_use_dmi->setCheckable(true);
 	m_use_dmi->setChecked(true);
-	m_use_field = new QAction("Use External Field", menuOptions);
+	m_use_field = new QAction("Use External Field", menuCalc);
 	m_use_field->setToolTip("Enables an external field.");
 	m_use_field->setCheckable(true);
 	m_use_field->setChecked(true);
-	m_use_temperature = new QAction("Use Bose Factor", menuOptions);
+	m_use_temperature = new QAction("Use Bose Factor", menuCalc);
 	m_use_temperature->setToolTip("Enables the Bose factor.");
 	m_use_temperature->setCheckable(true);
 	m_use_temperature->setChecked(true);
-	m_use_weights = new QAction("Use Spectral Weights", menuOptions);
+	m_use_weights = new QAction("Use Spectral Weights", menuCalc);
 	m_use_weights->setToolTip("Enables calculation of the spin correlation function.");
 	m_use_weights->setCheckable(true);
 	m_use_weights->setChecked(false);
-	m_use_projector = new QAction("Use Neutron Weights", menuOptions);
+	m_use_projector = new QAction("Use Neutron Weights", menuCalc);
 	m_use_projector->setToolTip("Enables the neutron orthogonal projector.");
 	m_use_projector->setCheckable(true);
 	m_use_projector->setChecked(true);
-	m_unite_degeneracies = new QAction("Unite Degenerate Energies", menuOptions);
+	m_unite_degeneracies = new QAction("Unite Degenerate Energies", menuCalc);
 	m_unite_degeneracies->setToolTip("Unites the weight factors corresponding to degenerate eigenenergies.");
 	m_unite_degeneracies->setCheckable(true);
 	m_unite_degeneracies->setChecked(true);
@@ -1531,15 +1577,16 @@ void MagDynDlg::CreateMenuBar()
 	menuDisp->addAction(acSaveFigure);
 	menuDisp->addAction(acSaveDisp);
 
-	menuOptions->addAction(m_autocalc);
-	menuOptions->addSeparator();
-	menuOptions->addAction(m_use_dmi);
-	menuOptions->addAction(m_use_field);
-	menuOptions->addAction(m_use_temperature);
-	menuOptions->addSeparator();
-	menuOptions->addAction(m_use_weights);
-	menuOptions->addAction(m_use_projector);
-	menuOptions->addAction(m_unite_degeneracies);
+	menuCalc->addAction(m_autocalc);
+	menuCalc->addAction(acCalc);
+	menuCalc->addSeparator();
+	menuCalc->addAction(m_use_dmi);
+	menuCalc->addAction(m_use_field);
+	menuCalc->addAction(m_use_temperature);
+	menuCalc->addSeparator();
+	menuCalc->addAction(m_use_weights);
+	menuCalc->addAction(m_use_projector);
+	menuCalc->addAction(m_unite_degeneracies);
 
 	menuHelp->addAction(acAboutQt);
 	menuHelp->addAction(acAbout);
@@ -1607,6 +1654,12 @@ void MagDynDlg::CreateMenuBar()
 		}
 	});
 
+	connect(acCalc, &QAction::triggered, [this]()
+	{
+		this->SyncSitesAndTerms();
+		//this->CalcAll();
+	});
+
 	connect(acAboutQt, &QAction::triggered, []()
 	{
 		qApp->aboutQt();
@@ -1625,7 +1678,7 @@ void MagDynDlg::CreateMenuBar()
 	m_menu->addMenu(menuFile);
 	m_menu->addMenu(menuStruct);
 	m_menu->addMenu(menuDisp);
-	m_menu->addMenu(menuOptions);
+	m_menu->addMenu(menuCalc);
 	m_menu->addMenu(menuHelp);
 	m_maingrid->setMenuBar(m_menu);
 }

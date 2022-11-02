@@ -74,6 +74,40 @@ void MagDynDlg::RotateField(bool ccw)
 };
 
 
+/**
+ * set selected field as current
+ */
+void MagDynDlg::SetCurrentField()
+{
+	if(m_fields_cursor_row < 0 || m_fields_cursor_row >= m_fieldstab->rowCount())
+		return;
+
+	const auto* Bh = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_H));
+	const auto* Bk = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_K));
+	const auto* Bl = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_L));
+	const auto* Bmag = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_fieldstab->item(m_fields_cursor_row, COL_FIELD_MAG));
+
+	if(!Bh || !Bk || !Bl || !Bmag)
+		return;
+
+	m_ignoreCalc = true;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		if(this_->m_autocalc->isChecked())
+			this_->SyncSitesAndTerms();
+	} BOOST_SCOPE_EXIT_END
+
+	m_field_dir[0]->setValue(Bh->GetValue());
+	m_field_dir[1]->setValue(Bk->GetValue());
+	m_field_dir[2]->setValue(Bl->GetValue());
+	m_field_mag->setValue(Bmag->GetValue());
+}
+
 
 /**
  * generate atom sites form the space group symmetries
@@ -83,8 +117,11 @@ void MagDynDlg::GenerateSitesFromSG()
 	BOOST_SCOPE_EXIT(this_)
 	{
 		this_->m_ignoreCalc = false;
-		this_->SyncSitesAndTerms();
-		this_->CalcAll();
+		if(this_->m_autocalc->isChecked())
+		{
+			this_->SyncSitesAndTerms();
+			//this_->CalcAll();
+		}
 	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = true;
 
@@ -197,8 +234,11 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	BOOST_SCOPE_EXIT(this_)
 	{
 		this_->m_ignoreCalc = false;
-		this_->SyncSitesAndTerms();
-		this_->CalcAll();
+		if(this_->m_autocalc->isChecked())
+		{
+			this_->SyncSitesAndTerms();
+			//this_->CalcAll();
+		}
 	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = true;
 
