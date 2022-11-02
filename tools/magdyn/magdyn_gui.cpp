@@ -1064,7 +1064,7 @@ void MagDynDlg::CreateDispersionPanel()
 		m_q_start[i]->setDecimals(4);
 		m_q_start[i]->setMinimum(-99);
 		m_q_start[i]->setMaximum(+99);
-		m_q_start[i]->setSingleStep(0.1);
+		m_q_start[i]->setSingleStep(0.01);
 		m_q_start[i]->setValue(0.);
 		m_q_start[i]->setSuffix(" rlu");
 		m_q_start[i]->setSizePolicy(QSizePolicy{
@@ -1074,7 +1074,7 @@ void MagDynDlg::CreateDispersionPanel()
 		m_q_end[i]->setDecimals(4);
 		m_q_end[i]->setMinimum(-99);
 		m_q_end[i]->setMaximum(+99);
-		m_q_end[i]->setSingleStep(0.1);
+		m_q_end[i]->setSingleStep(0.01);
 		m_q_end[i]->setValue(0.);
 		m_q_end[i]->setSuffix(" rlu");
 		m_q_end[i]->setSizePolicy(QSizePolicy{
@@ -1183,7 +1183,7 @@ void MagDynDlg::CreateHamiltonPanel()
 		m_q[i]->setDecimals(4);
 		m_q[i]->setMinimum(-99);
 		m_q[i]->setMaximum(+99);
-		m_q[i]->setSingleStep(0.1);
+		m_q[i]->setSingleStep(0.01);
 		m_q[i]->setValue(0.);
 		m_q[i]->setSuffix(" rlu");
 		m_q[i]->setSizePolicy(QSizePolicy{
@@ -1265,7 +1265,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportStartQ[i]->setDecimals(4);
 		m_exportStartQ[i]->setMinimum(-99);
 		m_exportStartQ[i]->setMaximum(+99);
-		m_exportStartQ[i]->setSingleStep(0.1);
+		m_exportStartQ[i]->setSingleStep(0.01);
 		m_exportStartQ[i]->setValue(0.);
 		m_exportStartQ[i]->setSuffix(" rlu");
 		m_exportStartQ[i]->setSizePolicy(QSizePolicy{
@@ -1275,7 +1275,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportEndQ1[i]->setDecimals(4);
 		m_exportEndQ1[i]->setMinimum(-99);
 		m_exportEndQ1[i]->setMaximum(+99);
-		m_exportEndQ1[i]->setSingleStep(0.1);
+		m_exportEndQ1[i]->setSingleStep(0.01);
 		m_exportEndQ1[i]->setValue(i == 0 ? 1. : 0.);
 		m_exportEndQ1[i]->setSuffix(" rlu");
 		m_exportEndQ1[i]->setSizePolicy(QSizePolicy{
@@ -1285,7 +1285,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportEndQ2[i]->setDecimals(4);
 		m_exportEndQ2[i]->setMinimum(-99);
 		m_exportEndQ2[i]->setMaximum(+99);
-		m_exportEndQ2[i]->setSingleStep(0.1);
+		m_exportEndQ2[i]->setSingleStep(0.01);
 		m_exportEndQ2[i]->setValue(i == 1 ? 1. : 0.);
 		m_exportEndQ2[i]->setSuffix(" rlu");
 		m_exportEndQ2[i]->setSizePolicy(QSizePolicy{
@@ -1295,7 +1295,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportEndQ3[i]->setDecimals(4);
 		m_exportEndQ3[i]->setMinimum(-99);
 		m_exportEndQ3[i]->setMaximum(+99);
-		m_exportEndQ3[i]->setSingleStep(0.1);
+		m_exportEndQ3[i]->setSingleStep(0.01);
 		m_exportEndQ3[i]->setValue(i == 2 ? 1. : 0.);
 		m_exportEndQ3[i]->setSuffix(" rlu");
 		m_exportEndQ3[i]->setSizePolicy(QSizePolicy{

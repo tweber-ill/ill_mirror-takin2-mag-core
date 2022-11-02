@@ -170,9 +170,6 @@ void MagDynDlg::CalcDispersion()
 
 				std::lock_guard<std::mutex> _lck{mtx};
 
-				qs_data.push_back(Q[Q_idx]);
-				Es_data.push_back(E);
-
 				// weights
 				if(use_weights)
 				{
@@ -181,15 +178,19 @@ void MagDynDlg::CalcDispersion()
 
 					if(!use_projector)
 						weight = tl2::trace<t_mat>(S).real();
-
 					if(std::isnan(weight) || std::isinf(weight))
-						weight = 0.;
+						continue;
 
 					t_real scaled_weight = weight * weight_scale;
 					if(weight_max >= 0. && weight_min >= 0. && weight_min <= weight_max)
 						scaled_weight = tl2::clamp(scaled_weight, weight_min, weight_max);
 					ws_data.push_back(scaled_weight);
+
+					//std::cout << Q[Q_idx] << " " << E << " " << scaled_weight << std::endl;
 				}
+
+				qs_data.push_back(Q[Q_idx]);
+				Es_data.push_back(E);
 			}
 		};
 
@@ -222,6 +223,20 @@ void MagDynDlg::CalcDispersion()
 		m_status->setText("Calculation stopped.");
 	else
 		m_status->setText("Calculation finished.");
+
+	// sort vectors by q component
+	//std::vector<std::size_t> perm = tl2::get_perm(qs_data);
+	std::vector<std::size_t> perm = tl2::get_perm(qs_data.size(),
+		[&qs_data, &Es_data](std::size_t idx1, std::size_t idx2) -> bool
+	{
+		// if q components are equal, sort by E
+		if(tl2::equals(qs_data[idx1], qs_data[idx2], g_eps))
+			return Es_data[idx1] < Es_data[idx2];
+		return qs_data[idx1] < qs_data[idx2];
+	});
+	qs_data = tl2::reorder(qs_data, perm);
+	Es_data = tl2::reorder(Es_data, perm);
+	ws_data = tl2::reorder(ws_data, perm);
 
 	//m_plot->addGraph();
 	GraphWithWeights *graph = new GraphWithWeights(

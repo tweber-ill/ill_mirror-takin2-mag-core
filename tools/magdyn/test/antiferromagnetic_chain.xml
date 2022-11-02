@@ -49,8 +49,8 @@
 		<l>0</l>
 	</ordering>
 	<rotation_axis>
-		<h>1</h>
-		<k>0</k>
+		<h>0</h>
+		<k>1</k>
 		<l>0</l>
 	</rotation_axis>
 	<temperature>-1</temperature>

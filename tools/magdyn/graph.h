@@ -56,7 +56,7 @@ public:
 		style.applyTo(paint, pen());
 
 		const int num_points = points.size();
-		const bool has_weights = m_weights.size() == num_points;
+		const bool has_weights = (m_weights.size() == num_points);
 		const qreal size_saved = style.size();
 
 		// iterate all data points
