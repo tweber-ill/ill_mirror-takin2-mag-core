@@ -367,7 +367,8 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	m_normaxis[1]->setPrefix("Nk = ");
 	m_normaxis[2]->setPrefix("Nl = ");
 
-	auto sep = new QFrame(m_samplepanel); sep->setFrameStyle(QFrame::HLine);
+	auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
+	auto sep2 = new QFrame(m_samplepanel); sep2->setFrameStyle(QFrame::HLine);
 
 	// grid
 	auto grid = new QGridLayout(m_termspanel);
@@ -385,7 +386,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
-	grid->addWidget(sep, y++,0, 1,4);
+	grid->addWidget(sep1, y++,0, 1,4);
 	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
@@ -393,6 +394,15 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	grid->addWidget(new QLabel("Space Group:"), y,0,1,1);
 	grid->addWidget(m_comboSG2, y,1,1,2);
 	grid->addWidget(pTabBtnSG, y++,3,1,1);
+
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+	grid->addWidget(sep2, y++,0, 1,4);
+	grid->addItem(new QSpacerItem(8, 8,
+		QSizePolicy::Minimum, QSizePolicy::Fixed),
+		y++,0, 1,1);
+
 	grid->addWidget(new QLabel(QString("Ordering Vector:"),
 		m_termspanel), y,0,1,1);
 	grid->addWidget(m_ordering[0], y,1,1,1);
