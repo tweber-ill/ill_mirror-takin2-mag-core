@@ -57,6 +57,7 @@
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 #include "tlibs2/libs/qt/recent.h"
 #include "tlibs2/libs/qt/glplot.h"
+#include "graph.h"
 
 using namespace tl2_mag;
 
@@ -205,6 +206,7 @@ protected:
 
 	// dispersion
 	QCustomPlot *m_plot{};
+	std::vector<GraphWithWeights*> m_graphs{};
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};

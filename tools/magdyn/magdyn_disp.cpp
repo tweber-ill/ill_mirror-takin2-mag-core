@@ -41,8 +41,6 @@ namespace asio = boost::asio;
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 
-#include "graph.h"
-
 using namespace tl2_ops;
 
 extern t_real g_eps;
@@ -58,6 +56,7 @@ void MagDynDlg::CalcDispersion()
 	if(m_ignoreCalc)
 		return;
 
+	m_graphs.clear();
 	m_plot->clearPlottables();
 
 	// nothing to calculate?
@@ -102,10 +101,6 @@ void MagDynDlg::CalcDispersion()
 	Es_data.reserve(num_pts*10);
 	ws_data.reserve(num_pts*10);
 
-	const t_real weight_scale = m_weight_scale->value();
-	const t_real weight_min = m_weight_min->value();
-	const t_real weight_max = m_weight_max->value();
-
 	bool use_goldstone = false;
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
 
@@ -145,7 +140,6 @@ void MagDynDlg::CalcDispersion()
 	{
 		auto task = [this, &mtx, &qs_data, &Es_data, &ws_data,
 			i, num_pts, Q_idx, E0,
-			weight_scale, weight_min, weight_max,
 			use_projector, use_weights,
 			&Q_start, &Q_end]()
 		{
@@ -181,12 +175,8 @@ void MagDynDlg::CalcDispersion()
 					if(std::isnan(weight) || std::isinf(weight))
 						continue;
 
-					t_real scaled_weight = weight * weight_scale;
-					if(weight_max >= 0. && weight_min >= 0. && weight_min <= weight_max)
-						scaled_weight = tl2::clamp(scaled_weight, weight_min, weight_max);
-					ws_data.push_back(scaled_weight);
-
-					//std::cout << Q[Q_idx] << " " << E << " " << scaled_weight << std::endl;
+					ws_data.push_back(weight);
+					//std::cout << Q[Q_idx] << " " << E << " " << weight << std::endl;
 				}
 
 				qs_data.push_back(Q[Q_idx]);
@@ -239,8 +229,7 @@ void MagDynDlg::CalcDispersion()
 	ws_data = tl2::reorder(ws_data, perm);
 
 	//m_plot->addGraph();
-	GraphWithWeights *graph = new GraphWithWeights(
-		m_plot->xAxis, m_plot->yAxis);
+	GraphWithWeights *graph = new GraphWithWeights(m_plot->xAxis, m_plot->yAxis);
 	QPen pen = graph->pen();
 	pen.setColor(QColor(0xff, 0x00, 0x00));
 	pen.setWidthF(1.);
@@ -248,10 +237,13 @@ void MagDynDlg::CalcDispersion()
 	graph->setBrush(QBrush(pen.color(), Qt::SolidPattern));
 	graph->setLineStyle(QCPGraph::lsNone);
 	graph->setScatterStyle(QCPScatterStyle(
-		QCPScatterStyle::ssDisc, weight_scale));
+		QCPScatterStyle::ssDisc, m_weight_scale->value()));
 	graph->setAntialiased(true);
 	graph->setData(qs_data, Es_data, true /*already sorted*/);
 	graph->SetWeights(ws_data);
+	graph->SetWeightScale(m_weight_scale->value(), m_weight_min->value(), m_weight_max->value());
+	m_graphs.push_back(graph);
+
 
 	auto [min_E_iter, max_E_iter] =
 		std::minmax_element(Es_data.begin(), Es_data.end());

@@ -1147,8 +1147,11 @@ void MagDynDlg::CreateDispersionPanel()
 			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
 			[this]()
 		{
-			if(this->m_autocalc->isChecked())
-				this->CalcDispersion();
+			// update graph weights
+			for(GraphWithWeights* graph : m_graphs)
+				graph->SetWeightScale(m_weight_scale->value(), m_weight_min->value(), m_weight_max->value());
+			if(m_plot)
+				m_plot->replot();
 		});
 	}
 
