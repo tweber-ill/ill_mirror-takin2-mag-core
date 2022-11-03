@@ -765,10 +765,10 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 	QPushButton *btn_rotate_ccw = new QPushButton(
 		QIcon::fromTheme("object-rotate-left"),
-		"Rotate Field CCW", m_samplepanel);
+		"Rotate CCW", m_samplepanel);
 	QPushButton *btn_rotate_cw = new QPushButton(
 		QIcon::fromTheme("object-rotate-right"),
-		"Rotate Field CW", m_samplepanel);
+		"Rotate CW", m_samplepanel);
 	btn_rotate_ccw->setToolTip("Rotate the magnetic field in the counter-clockwise direction.");
 	btn_rotate_cw->setToolTip("Rotate the magnetic field in the clockwise direction.");
 	btn_rotate_ccw->setFocusPolicy(Qt::StrongFocus);
@@ -921,15 +921,17 @@ void MagDynDlg::CreateSampleEnvPanel()
 	grid->setContentsMargins(6, 6, 6, 6);
 
 	int y = 0;
-	grid->addWidget(new QLabel(QString("Field Magnitude:"),
+	grid->addWidget(new QLabel(QString("Magnetic Field:"),
+		m_samplepanel), y++,0,1,2);
+	grid->addWidget(new QLabel(QString("Magnitude:"),
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_field_mag, y++,1,1,1);
-	grid->addWidget(new QLabel(QString("Field Direction:"),
+	grid->addWidget(new QLabel(QString("Direction:"),
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_field_dir[0], y,1,1,1);
 	grid->addWidget(m_field_dir[1], y,2,1,1);
 	grid->addWidget(m_field_dir[2], y++,3,1,1);
-	grid->addWidget(m_align_spins, y++,0,1,2);
+	grid->addWidget(m_align_spins, y++,0,1,4);
 
 	auto sep1 = new QFrame(m_samplepanel); sep1->setFrameStyle(QFrame::HLine);
 	auto sep2 = new QFrame(m_samplepanel); sep2->setFrameStyle(QFrame::HLine);
