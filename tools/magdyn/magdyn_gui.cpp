@@ -151,12 +151,12 @@ void MagDynDlg::CreateSitesPanel()
 		"Delete", m_sitespanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Up", m_sitespanel);
+		"Up", m_sitespanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Down", m_sitespanel);
+		"Down", m_sitespanel);
 
-	QPushButton *btnShowStruct = new QPushButton("3D View...", m_sitespanel);
+	QPushButton *btnShowStruct = new QPushButton("View...", m_sitespanel);
 
 	m_comboSG = new QComboBox(m_sitespanel);
 	QPushButton *btnSG = new QPushButton(
@@ -214,8 +214,8 @@ void MagDynDlg::CreateSitesPanel()
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
 
-	grid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
-	grid->addWidget(m_comboSG, y,1,1,2);
+	grid->addWidget(new QLabel("Generate Atom Sites From Space Group:"), y++,0,1,4);
+	grid->addWidget(m_comboSG, y,0,1,3);
 	grid->addWidget(btnSG, y,3,1,1);
 
 
@@ -359,17 +359,17 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		"Delete", m_termspanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Up", m_termspanel);
+		"Up", m_termspanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Down", m_termspanel);
+		"Down", m_termspanel);
 
 	btnAdd->setToolTip("Add an exchange term.");
 	btnDel->setToolTip("Delete selected exchange term(s).");
 	btnUp->setToolTip("Move selected exchange term(s) up.");
 	btnDown->setToolTip("Move selected exchange term(s) down.");
 
-	QPushButton *btnShowStruct = new QPushButton("3D View...", m_termspanel);
+	QPushButton *btnShowStruct = new QPushButton("View...", m_termspanel);
 
 	btnAdd->setFocusPolicy(Qt::StrongFocus);
 	btnDel->setFocusPolicy(Qt::StrongFocus);
@@ -461,8 +461,8 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
 
-	grid->addWidget(new QLabel("Space Group:"), y,0,1,1);
-	grid->addWidget(m_comboSG2, y,1,1,2);
+	grid->addWidget(new QLabel("Generate Coupling Terms From Space Group:"), y++,0,1,4);
+	grid->addWidget(m_comboSG2, y,0,1,3);
 	grid->addWidget(btnSG, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
@@ -619,10 +619,10 @@ void MagDynDlg::CreateVariablesPanel()
 		"Delete", m_varspanel);
 	QPushButton *btnUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Up", m_varspanel);
+		"Up", m_varspanel);
 	QPushButton *btnDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Down", m_varspanel);
+		"Down", m_varspanel);
 
 	btnAdd->setToolTip("Add a variable.");
 	btnDel->setToolTip("Delete selected variables(s).");
@@ -726,7 +726,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 	// field magnitude
 	m_field_mag = new QDoubleSpinBox(m_samplepanel);
-	m_field_mag->setDecimals(4);
+	m_field_mag->setDecimals(3);
 	m_field_mag->setMinimum(0);
 	m_field_mag->setMaximum(+99);
 	m_field_mag->setSingleStep(0.1);
@@ -754,7 +754,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 	// rotation angle
 	m_rot_angle = new QDoubleSpinBox(m_samplepanel);
-	m_rot_angle->setDecimals(4);
+	m_rot_angle->setDecimals(3);
 	m_rot_angle->setMinimum(-360);
 	m_rot_angle->setMaximum(+360);
 	m_rot_angle->setSingleStep(0.1);
@@ -812,10 +812,10 @@ void MagDynDlg::CreateSampleEnvPanel()
 		"Delete", m_samplepanel);
 	QPushButton *btnFieldUp = new QPushButton(
 		QIcon::fromTheme("go-up"),
-		"Move Up", m_samplepanel);
+		"Up", m_samplepanel);
 	QPushButton *btnFieldDown = new QPushButton(
 		QIcon::fromTheme("go-down"),
-		"Move Down", m_samplepanel);
+		"Down", m_samplepanel);
 
 	btnAddField->setToolTip("Add a magnetic field.");
 	btnDelField->setToolTip("Delete selected magnetic field(s).");
@@ -883,7 +883,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 	// temperature
 	m_temperature = new QDoubleSpinBox(m_samplepanel);
-	m_temperature->setDecimals(4);
+	m_temperature->setDecimals(2);
 	m_temperature->setMinimum(0);
 	m_temperature->setMaximum(+999);
 	m_temperature->setSingleStep(0.1);
@@ -945,12 +945,14 @@ void MagDynDlg::CreateSampleEnvPanel()
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
 		y++,0, 1,1);
 
-	grid->addWidget(new QLabel(QString("Rotation Axis:"),
+	grid->addWidget(new QLabel(QString("Rotate Magnetic Field:"),
+		m_samplepanel), y++,0,1,2);
+	grid->addWidget(new QLabel(QString("Axis:"),
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_rot_axis[0], y,1,1,1);
 	grid->addWidget(m_rot_axis[1], y,2,1,1);
 	grid->addWidget(m_rot_axis[2], y++,3,1,1);
-	grid->addWidget(new QLabel(QString("Rotation Angle:"),
+	grid->addWidget(new QLabel(QString("Angle:"),
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_rot_angle, y,1,1,1);
 	grid->addWidget(btn_rotate_ccw, y,2,1,1);
@@ -1150,17 +1152,17 @@ void MagDynDlg::CreateDispersionPanel()
 	int y = 0;
 	grid->addWidget(m_plot, y++,0,1,4);
 	grid->addWidget(
-		new QLabel(QString("Starting Q:"), m_disppanel), y,0,1,1);
+		new QLabel(QString("Start Q:"), m_disppanel), y,0,1,1);
 	grid->addWidget(m_q_start[0], y,1,1,1);
 	grid->addWidget(m_q_start[1], y,2,1,1);
 	grid->addWidget(m_q_start[2], y++,3,1,1);
 	grid->addWidget(
-		new QLabel(QString("Ending Q:"), m_disppanel), y,0,1,1);
+		new QLabel(QString("End Q:"), m_disppanel), y,0,1,1);
 	grid->addWidget(m_q_end[0], y,1,1,1);
 	grid->addWidget(m_q_end[1], y,2,1,1);
 	grid->addWidget(m_q_end[2], y++,3,1,1);
 	grid->addWidget(
-		new QLabel(QString("Number of Qs:"), m_disppanel), y,0,1,1);
+		new QLabel(QString("Q Count:"), m_disppanel), y,0,1,1);
 	grid->addWidget(m_num_points, y,1,1,1);
 	grid->addWidget(
 		new QLabel(QString("Weight Scale:"), m_disppanel), y,2,1,1);
@@ -1560,7 +1562,7 @@ void MagDynDlg::CreateMenuBar()
 
 	// structure menu
 	auto menuStruct = new QMenu("Structure", m_menu);
-	auto acStructView = new QAction("3D View...", menuStruct);
+	auto acStructView = new QAction("View...", menuStruct);
 
 	// dispersion menu
 	m_menuDisp = new QMenu("Dispersion", m_menu);

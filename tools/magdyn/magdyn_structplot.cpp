@@ -44,7 +44,7 @@ void MagDynDlg::ShowStructurePlot()
 	if(!m_structplot_dlg)
 	{
 		m_structplot_dlg = new QDialog(this);
-		m_structplot_dlg->setWindowTitle("Atom Sites");
+		m_structplot_dlg->setWindowTitle("Structure Viewer");
 
 		m_structplot = new tl2::GlPlot(this);
 		m_structplot->GetRenderer()->SetRestrictCamTheta(false);
