@@ -28,7 +28,6 @@
 
 #include "magdyn.h"
 
-#include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
 
@@ -48,45 +47,8 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	m_dyn.SetEpsilon(g_eps);
 	m_dyn.SetPrecision(g_prec);
 
-	setWindowTitle("Magnon Dynamics");
-	setSizeGripEnabled(true);
-
-	m_tabs_in = new QTabWidget(this);
-	m_tabs_out = new QTabWidget(this);
-
-	// status
-	m_status = new QLabel(this);
-	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-	m_status->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-	// progress bar
-	m_progress = new QProgressBar(this);
-	m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-	// stop button
-	QPushButton* btnStop = new QPushButton(QIcon::fromTheme("process-stop"), "Stop", this);
-	btnStop->setToolTip("Request stop to ongoing calculation.");
-	btnStop->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-	// splitter for input and output tabs
-	m_split_inout = new QSplitter(this);
-	m_split_inout->setOrientation(Qt::Horizontal);
-	m_split_inout->setChildrenCollapsible(true);
-	m_split_inout->addWidget(m_tabs_in);
-	m_split_inout->addWidget(m_tabs_out);
-
-	// main grid
-	m_maingrid = new QGridLayout(this);
-	m_maingrid->setSpacing(4);
-	m_maingrid->setContentsMargins(6, 6, 6, 6);
-	//m_maingrid->addWidget(m_tabs_in, 0,0, 1,3);
-	//m_maingrid->addWidget(m_tabs_out, 0,3, 1,3);
-	m_maingrid->addWidget(m_split_inout, 0,0, 1,6);
-	m_maingrid->addWidget(m_status, 1,0, 1,3);
-	m_maingrid->addWidget(m_progress, 1,3, 1,2);
-	m_maingrid->addWidget(btnStop, 1,5, 1,1);
-
-	// create tab panels
+	// create gui
+	CreateMainWindow();
 	CreateSitesPanel();
 	CreateExchangeTermsPanel();
 	CreateVariablesPanel();
@@ -96,9 +58,6 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	CreateExportPanel();
 	CreateInfoDlg();
 	CreateMenuBar();
-
-	// signals
-	connect(btnStop, &QAbstractButton::clicked, [this]() { m_stopRequested = true; });
 
 	if(m_sett)
 	{
@@ -703,7 +662,9 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 void MagDynDlg::EnableInput()
 {
 	m_tabs_in->setEnabled(true);
+	m_tabs_out->setEnabled(true);
 	m_menu->setEnabled(true);
+	m_btnStart->setEnabled(true);
 }
 
 
@@ -713,5 +674,7 @@ void MagDynDlg::EnableInput()
 void MagDynDlg::DisableInput()
 {
 	m_menu->setEnabled(false);
+	m_tabs_out->setEnabled(false);
 	m_tabs_in->setEnabled(false);
+	m_btnStart->setEnabled(false);
 }

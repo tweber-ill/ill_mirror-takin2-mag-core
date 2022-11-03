@@ -35,6 +35,7 @@
 #include <future>
 #include <mutex>
 
+#include <boost/scope_exit.hpp>
 #include <boost/asio.hpp>
 namespace asio = boost::asio;
 
@@ -55,6 +56,12 @@ void MagDynDlg::CalcDispersion()
 {
 	if(m_ignoreCalc)
 		return;
+
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->EnableInput();
+	} BOOST_SCOPE_EXIT_END
+	DisableInput();
 
 	m_graphs.clear();
 	m_plot->clearPlottables();
@@ -134,7 +141,6 @@ void MagDynDlg::CalcDispersion()
 	m_progress->setMaximum(num_pts);
 	m_progress->setValue(0);
 	m_status->setText("Starting calculation.");
-	DisableInput();
 
 	for(t_size i=0; i<num_pts; ++i)
 	{
@@ -207,7 +213,6 @@ void MagDynDlg::CalcDispersion()
 	}
 
 	pool.join();
-	EnableInput();
 
 	if(m_stopRequested)
 		m_status->setText("Calculation stopped.");

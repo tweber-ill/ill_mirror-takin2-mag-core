@@ -42,6 +42,62 @@ namespace algo = boost::algorithm;
 #include "../structfact/loadcif.h"
 
 
+void MagDynDlg::CreateMainWindow()
+{
+	setWindowTitle("Magnon Dynamics");
+	setSizeGripEnabled(true);
+
+	m_tabs_in = new QTabWidget(this);
+	m_tabs_out = new QTabWidget(this);
+
+	// status
+	m_status = new QLabel(this);
+	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+	m_status->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	// progress bar
+	m_progress = new QProgressBar(this);
+	m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	// start button
+	m_btnStart = new QPushButton(QIcon::fromTheme("media-playback-start"), "Calculate", this);
+	m_btnStart->setToolTip("Start calculation.");
+	m_btnStart->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+	// stop button
+	QPushButton* btnStop = new QPushButton(QIcon::fromTheme("media-playback-stop"), "Stop", this);
+	btnStop->setToolTip("Request stop to ongoing calculation.");
+	btnStop->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+	// splitter for input and output tabs
+	m_split_inout = new QSplitter(this);
+	m_split_inout->setOrientation(Qt::Horizontal);
+	m_split_inout->setChildrenCollapsible(true);
+	m_split_inout->addWidget(m_tabs_in);
+	m_split_inout->addWidget(m_tabs_out);
+
+	// main grid
+	m_maingrid = new QGridLayout(this);
+	m_maingrid->setSpacing(4);
+	m_maingrid->setContentsMargins(6, 6, 6, 6);
+	//m_maingrid->addWidget(m_tabs_in, 0,0, 1,3);
+	//m_maingrid->addWidget(m_tabs_out, 0,3, 1,3);
+	m_maingrid->addWidget(m_split_inout, 0,0, 1,7);
+	m_maingrid->addWidget(m_status, 1,0, 1,3);
+	m_maingrid->addWidget(m_progress, 1,3, 1,2);
+	m_maingrid->addWidget(m_btnStart, 1,5, 1,1);
+	m_maingrid->addWidget(btnStop, 1,6, 1,1);
+
+	// signals
+	connect(m_btnStart, &QAbstractButton::clicked, [this]()
+	{
+		this->SyncSitesAndTerms();
+		//this->CalcAll();
+	});
+	connect(btnStop, &QAbstractButton::clicked, [this]() { m_stopRequested = true; });
+}
+
+
 
 void MagDynDlg::CreateSitesPanel()
 {
@@ -1538,8 +1594,8 @@ void MagDynDlg::CreateMenuBar()
 	m_autocalc = new QAction("Automatically Calculate", menuCalc);
 	m_autocalc->setToolTip("Automatically calculate the results.");
 	m_autocalc->setCheckable(true);
-	m_autocalc->setChecked(true);
-	QAction *acCalc = new QAction("Calculate", menuCalc);
+	m_autocalc->setChecked(false);
+	QAction *acCalc = new QAction("Start Calculation", menuCalc);
 	acCalc->setToolTip("Calculate all results.");
 	//acCalc->setIcon(QIcon::fromTheme("accessories-calculator"));
 	m_use_dmi = new QAction("Use DMI", menuCalc);

@@ -37,6 +37,7 @@
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QProgressBar>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -157,6 +158,7 @@ protected:
 	QSplitter *m_split_inout{};
 	QLabel *m_status{};
 	QProgressBar *m_progress{};
+	QPushButton* m_btnStart{};
 
 	QAction *m_autocalc{};
 	QAction *m_use_dmi{};
@@ -264,6 +266,7 @@ protected:
 
 protected:
 	// set up gui
+	void CreateMainWindow();
 	void CreateSitesPanel();
 	void CreateExchangeTermsPanel();
 	void CreateVariablesPanel();
