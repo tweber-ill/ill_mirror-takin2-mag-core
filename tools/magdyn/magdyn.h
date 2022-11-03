@@ -207,6 +207,7 @@ protected:
 	// dispersion
 	QCustomPlot *m_plot{};
 	std::vector<GraphWithWeights*> m_graphs{};
+	QMenu *m_menuDisp{};
 	QDoubleSpinBox *m_q_start[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_q_end[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_num_points{};
@@ -338,6 +339,7 @@ protected:
 	void CalcHamiltonian();
 
 	void PlotMouseMove(QMouseEvent* evt);
+	void PlotMousePress(QMouseEvent* evt);
 
 	virtual void mousePressEvent(QMouseEvent *evt) override;
 	virtual void closeEvent(QCloseEvent *evt) override;

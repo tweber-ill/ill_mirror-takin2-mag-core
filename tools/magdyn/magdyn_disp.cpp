@@ -479,3 +479,19 @@ void MagDynDlg::PlotMouseMove(QMouseEvent* evt)
 	status = status.arg(Q, 0, 'g', g_prec_gui).arg(E, 0, 'g', g_prec_gui);
 	m_status->setText(status);
 }
+
+
+/**
+ * mouse button has been pressed in the plot
+ */
+void MagDynDlg::PlotMousePress(QMouseEvent* evt)
+{
+	// show context menu
+	if(evt->buttons() & Qt::RightButton)
+	{
+		if(!m_menuDisp)
+			return;
+		m_menuDisp->popup(evt->globalPos());
+		evt->accept();
+	}
+}

@@ -1155,8 +1155,8 @@ void MagDynDlg::CreateDispersionPanel()
 		});
 	}
 
-	connect(m_plot, &QCustomPlot::mouseMove,
-		this, &MagDynDlg::PlotMouseMove);
+	connect(m_plot, &QCustomPlot::mouseMove, this, &MagDynDlg::PlotMouseMove);
+	connect(m_plot, &QCustomPlot::mousePress, this, &MagDynDlg::PlotMousePress);
 
 	m_tabs_out->addTab(m_disppanel, "Dispersion");
 }
@@ -1505,10 +1505,10 @@ void MagDynDlg::CreateMenuBar()
 	auto acStructView = new QAction("3D View...", menuStruct);
 
 	// dispersion menu
-	auto menuDisp = new QMenu("Dispersion", m_menu);
-	auto acRescalePlot = new QAction("Rescale Axes", menuDisp);
-	auto acSaveFigure = new QAction("Save Figure...", menuDisp);
-	auto acSaveDisp = new QAction("Save Data...", menuDisp);
+	m_menuDisp = new QMenu("Dispersion", m_menu);
+	auto acRescalePlot = new QAction("Rescale Axes", m_menuDisp);
+	auto acSaveFigure = new QAction("Save Figure...", m_menuDisp);
+	auto acSaveDisp = new QAction("Save Data...", m_menuDisp);
 
 	// recent files menu
 	m_menuOpenRecent = new QMenu("Open Recent", menuFile);
@@ -1591,10 +1591,10 @@ void MagDynDlg::CreateMenuBar()
 
 	menuStruct->addAction(acStructView);
 
-	menuDisp->addAction(acRescalePlot);
-	menuDisp->addSeparator();
-	menuDisp->addAction(acSaveFigure);
-	menuDisp->addAction(acSaveDisp);
+	m_menuDisp->addAction(acRescalePlot);
+	m_menuDisp->addSeparator();
+	m_menuDisp->addAction(acSaveFigure);
+	m_menuDisp->addAction(acSaveDisp);
 
 	menuCalc->addAction(m_autocalc);
 	menuCalc->addAction(acCalc);
@@ -1696,7 +1696,7 @@ void MagDynDlg::CreateMenuBar()
 	// menu bar
 	m_menu->addMenu(menuFile);
 	m_menu->addMenu(menuStruct);
-	m_menu->addMenu(menuDisp);
+	m_menu->addMenu(m_menuDisp);
 	m_menu->addMenu(menuCalc);
 	m_menu->addMenu(menuHelp);
 	m_maingrid->setMenuBar(m_menu);
