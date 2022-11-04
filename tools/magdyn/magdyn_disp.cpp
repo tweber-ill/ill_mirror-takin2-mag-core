@@ -50,6 +50,21 @@ extern int g_prec_gui;
 
 
 /**
+ * clears the dispersion graph
+ */
+void MagDynDlg::ClearDispersion(bool replot)
+{
+	m_graphs.clear();
+	if(m_plot)
+	{
+		m_plot->clearPlottables();
+		if(replot)
+			m_plot->replot();
+	}
+}
+
+
+/**
  * calculate the dispersion branches
  */
 void MagDynDlg::CalcDispersion()
@@ -63,8 +78,7 @@ void MagDynDlg::CalcDispersion()
 	} BOOST_SCOPE_EXIT_END
 	DisableInput();
 
-	m_graphs.clear();
-	m_plot->clearPlottables();
+	ClearDispersion(false);
 
 	// nothing to calculate?
 	if(m_dyn.GetAtomSites().size()==0 || m_dyn.GetExchangeTerms().size()==0)
@@ -271,9 +285,9 @@ void MagDynDlg::CalcDispersion()
 
 
 /**
- * calculate all output values
+ * calculate all magnon dynamics
  */
-void MagDynDlg::CalcAll()
+void MagDynDlg::CalcAllDynamics()
 {
 	CalcDispersion();
 	CalcHamiltonian();

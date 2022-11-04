@@ -44,7 +44,7 @@ namespace algo = boost::algorithm;
 
 void MagDynDlg::CreateMainWindow()
 {
-	setWindowTitle("Magnon Dynamics");
+	SetCurrentFile("");
 	setSizeGripEnabled(true);
 
 	m_tabs_in = new QTabWidget(this);
@@ -89,11 +89,7 @@ void MagDynDlg::CreateMainWindow()
 	m_maingrid->addWidget(btnStop, 1,6, 1,1);
 
 	// signals
-	connect(m_btnStart, &QAbstractButton::clicked, [this]()
-	{
-		this->SyncSitesAndTerms();
-		//this->CalcAll();
-	});
+	connect(m_btnStart, &QAbstractButton::clicked, [this]() { this->CalcAll(); });
 	connect(btnStop, &QAbstractButton::clicked, [this]() { m_stopRequested = true; });
 }
 
@@ -557,23 +553,19 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
 		{ this->ShowTableContextMenu(m_termstab, menuTableContext, menuTableContextNoItem, pt); });
 
+	auto calc_all = [this]()
+	{
+		if(this->m_autocalc->isChecked())
+			this->CalcAll();
+	};
+
 	for(int i=0; i<3; ++i)
 	{
 		connect(m_ordering[i],
-			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]()
-		{
-			if(this->m_autocalc->isChecked())
-				this->SyncSitesAndTerms();
-		});
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), calc_all);
 
 		connect(m_normaxis[i],
-			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]()
-		{
-			if(this->m_autocalc->isChecked())
-				this->SyncSitesAndTerms();
-		});
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), calc_all);
 	}
 
 	m_tabs_in->addTab(m_termspanel, "Couplings");
@@ -987,41 +979,26 @@ void MagDynDlg::CreateSampleEnvPanel()
 		m_samplepanel), y,0,1,1);
 	grid->addWidget(m_temperature, y++,1,1,1);
 
+	auto calc_all = [this]()
+	{
+		if(this->m_autocalc->isChecked())
+			this->CalcAll();
+	};
 
 	// signals
 	connect(m_field_mag,
-		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-		[this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
+		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), calc_all);
 
 	for(int i=0; i<3; ++i)
 	{
 		connect(m_field_dir[i],
-			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-			[this]()
-		{
-			if(this->m_autocalc->isChecked())
-				this->SyncSitesAndTerms();
-		});
+			static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), calc_all);
 	}
 
 	connect(m_temperature,
-		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-		[this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
+		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), calc_all);
 
-	connect(m_align_spins, &QCheckBox::toggled,
-		[this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
+	connect(m_align_spins, &QCheckBox::toggled, calc_all);
 
 	connect(btn_rotate_ccw, &QAbstractButton::clicked, [this]()
 	{
@@ -1557,7 +1534,8 @@ void MagDynDlg::CreateMenuBar()
 	auto menuFile = new QMenu("File", m_menu);
 	auto acNew = new QAction("New", menuFile);
 	auto acLoad = new QAction("Open...", menuFile);
-	auto acSave = new QAction("Save...", menuFile);
+	auto acSave = new QAction("Save", menuFile);
+	auto acSaveAs = new QAction("Save As...", menuFile);
 	auto acExit = new QAction("Quit", menuFile);
 
 	// structure menu
@@ -1581,6 +1559,7 @@ void MagDynDlg::CreateMenuBar()
 	acNew->setShortcut(QKeySequence::New);
 	acLoad->setShortcut(QKeySequence::Open);
 	acSave->setShortcut(QKeySequence::Save);
+	acSaveAs->setShortcut(QKeySequence::SaveAs);
 	acExit->setShortcut(QKeySequence::Quit);
 	acExit->setMenuRole(QAction::QuitRole);
 
@@ -1588,6 +1567,7 @@ void MagDynDlg::CreateMenuBar()
 	acNew->setIcon(QIcon::fromTheme("document-new"));
 	acLoad->setIcon(QIcon::fromTheme("document-open"));
 	acSave->setIcon(QIcon::fromTheme("document-save"));
+	acSaveAs->setIcon(QIcon::fromTheme("document-save-as"));
 	acExit->setIcon(QIcon::fromTheme("application-exit"));
 	m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
 	acSaveFigure->setIcon(QIcon::fromTheme("image-x-generic"));
@@ -1646,6 +1626,7 @@ void MagDynDlg::CreateMenuBar()
 	menuFile->addMenu(m_menuOpenRecent);
 	menuFile->addSeparator();
 	menuFile->addAction(acSave);
+	menuFile->addAction(acSaveAs);
 	menuFile->addSeparator();
 	menuFile->addAction(acExit);
 
@@ -1675,7 +1656,9 @@ void MagDynDlg::CreateMenuBar()
 	connect(acLoad, &QAction::triggered,
 		this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Load));
 	connect(acSave, &QAction::triggered,
-		this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Save));
+			this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::Save));
+	connect(acSaveAs, &QAction::triggered,
+		this, static_cast<void (MagDynDlg::*)()>(&MagDynDlg::SaveAs));
 	connect(acExit, &QAction::triggered, this, &QDialog::close);
 
 	connect(acSaveFigure, &QAction::triggered,
@@ -1692,51 +1675,35 @@ void MagDynDlg::CreateMenuBar()
 		m_plot->replot();
 	});
 
+	auto calc_all = [this]()
+	{
+		if(this->m_autocalc->isChecked())
+			this->CalcAll();
+	};
+
+	auto calc_all_dyn = [this]()
+	{
+		if(this->m_autocalc->isChecked())
+			this->CalcAllDynamics();
+	};
+
 	connect(acStructView, &QAction::triggered,
 		this, &MagDynDlg::ShowStructurePlot);
-	connect(m_use_dmi, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
-	connect(m_use_field, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
-	connect(m_use_temperature, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->SyncSitesAndTerms();
-	});
-	connect(m_use_weights, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->CalcAll();
-	});
-	connect(m_use_projector, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->CalcAll();
-	});
-	connect(m_unite_degeneracies, &QAction::toggled, [this]()
-	{
-		if(this->m_autocalc->isChecked())
-			this->CalcAll();
-	});
+	connect(m_use_dmi, &QAction::toggled, calc_all);
+	connect(m_use_field, &QAction::toggled, calc_all);
+	connect(m_use_temperature, &QAction::toggled, calc_all);
+	connect(m_use_weights, &QAction::toggled, calc_all_dyn);
+	connect(m_use_projector, &QAction::toggled, calc_all_dyn);
+	connect(m_unite_degeneracies, &QAction::toggled, calc_all_dyn);
 	connect(m_autocalc, &QAction::toggled, [this](bool checked)
 	{
 		if(checked)
-		{
-			this->SyncSitesAndTerms();
-			//this->CalcAll();
-		}
+			this->CalcAll();
 	});
 
 	connect(acCalc, &QAction::triggered, [this]()
 	{
-		this->SyncSitesAndTerms();
-		//this->CalcAll();
+		this->CalcAll();
 	});
 
 	connect(acAboutQt, &QAction::triggered, []()

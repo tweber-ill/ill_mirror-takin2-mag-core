@@ -51,6 +51,59 @@ namespace pt = boost::property_tree;
 extern int g_prec;
 
 
+void MagDynDlg::Clear()
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		//this_->SyncSitesAndTerms();
+		this_->StructPlotSync();
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
+
+	// clear old tables
+	DelTabItem(m_sitestab, -1);
+	DelTabItem(m_termstab, -1);
+	DelTabItem(m_varstab, -1);
+	DelTabItem(m_fieldstab, -1);
+
+	ClearDispersion(true);
+	m_hamiltonian->clear();
+	m_dyn.Clear();
+
+	SetCurrentFile("");
+
+	// set some defaults
+	m_comboSG->setCurrentIndex(0);
+
+	m_ordering[0]->setValue(0.);
+	m_ordering[1]->setValue(0.);
+	m_ordering[2]->setValue(0.);
+
+	m_normaxis[0]->setValue(1.);
+	m_normaxis[1]->setValue(0.);
+	m_normaxis[2]->setValue(0.);
+
+	m_weight_scale->setValue(1.);
+	m_weight_min->setValue(0.);
+	m_weight_max->setValue(9999.);
+}
+
+
+/**
+ * set the currently open file and the corresponding window title
+ */
+void MagDynDlg::SetCurrentFile(const QString& filename)
+{
+	m_recent.SetCurFile(filename);
+
+	QString title = "Magnon Dynamics";
+	if(filename != "")
+		title += " - " + filename;
+	setWindowTitle(title);
+}
+
+
 /**
  * load magnetic structure configuration
  */
@@ -58,14 +111,17 @@ void MagDynDlg::Load()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getOpenFileName(
-		this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+		this, "Load File", dirLast, "Magnon Dynamics Files (*.magdyn *.xml)");
 	if(filename=="" || !QFile::exists(filename))
 		return;
+
+	Clear();
 
 	if(Load(filename))
 	{
 		m_sett->setValue("dir", QFileInfo(filename).path());
 		m_recent.AddRecentFile(filename);
+		SetCurrentFile(filename);
 	}
 }
 
@@ -80,6 +136,8 @@ bool MagDynDlg::Load(const QString& filename)
 		BOOST_SCOPE_EXIT(this_)
 		{
 			this_->m_ignoreCalc = false;
+			if(this_->m_autocalc->isChecked())
+				this_->CalcAll();
 		} BOOST_SCOPE_EXIT_END
 		m_ignoreCalc = true;
 
@@ -271,10 +329,6 @@ bool MagDynDlg::Load(const QString& filename)
 		return false;
 	}
 
-	//SyncSitesAndTerms();
-	CalcAll();
-	StructPlotSync();
-
 	return true;
 }
 
@@ -284,9 +338,22 @@ bool MagDynDlg::Load(const QString& filename)
  */
 void MagDynDlg::Save()
 {
+	const QString& curFile = m_recent.GetCurFile();
+	if(curFile == "")
+		SaveAs();
+	else
+		Save(curFile);
+}
+
+
+/**
+ * save current magnetic structure configuration
+ */
+void MagDynDlg::SaveAs()
+{
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
-		this, "Save File", dirLast, "XML Files (*.xml)");
+		this, "Save File", dirLast, "Magnon Dynamics Files (*.magdyn)");
 	if(filename=="")
 		return;
 
@@ -294,6 +361,7 @@ void MagDynDlg::Save()
 	{
 		m_sett->setValue("dir", QFileInfo(filename).path());
 		m_recent.AddRecentFile(filename);
+		SetCurrentFile(filename);
 	}
 }
 
@@ -305,6 +373,8 @@ bool MagDynDlg::Save(const QString& filename)
 {
 	try
 	{
+		SyncSitesAndTerms();
+
 		// properties tree
 		pt::ptree magdyn;
 

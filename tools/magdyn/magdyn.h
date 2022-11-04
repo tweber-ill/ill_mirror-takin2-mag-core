@@ -175,6 +175,8 @@ protected:
 	std::function<bool(const QString& filename)> m_open_func
 		= [this](const QString& filename) -> bool
 	{
+		this->Clear();
+		this->SetCurrentFile(filename);
 		return this->Load(filename);
 	};
 
@@ -319,9 +321,12 @@ protected:
 	void TermsTableItemChanged(QTableWidgetItem *item);
 	void VariablesTableItemChanged(QTableWidgetItem *item);
 
+	void ClearDispersion(bool replot = false);
+	void SetCurrentFile(const QString& filename);
 	void Clear();
 	void Load();
 	void Save();
+	void SaveAs();
 	void ExportSQE();
 
 	bool Load(const QString& filename);
@@ -338,6 +343,7 @@ protected:
 	void SyncSitesAndTerms();
 
 	void CalcAll();
+	void CalcAllDynamics();
 	void CalcDispersion();
 	void CalcHamiltonian();
 

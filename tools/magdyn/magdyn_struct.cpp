@@ -70,7 +70,7 @@ void MagDynDlg::RotateField(bool ccw)
 	}
 
 	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+		CalcAll();
 };
 
 
@@ -99,7 +99,7 @@ void MagDynDlg::SetCurrentField()
 	{
 		this_->m_ignoreCalc = false;
 		if(this_->m_autocalc->isChecked())
-			this_->SyncSitesAndTerms();
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 
 	m_field_dir[0]->setValue(Bh->GetValue());
@@ -118,10 +118,7 @@ void MagDynDlg::GenerateSitesFromSG()
 	{
 		this_->m_ignoreCalc = false;
 		if(this_->m_autocalc->isChecked())
-		{
-			this_->SyncSitesAndTerms();
-			//this_->CalcAll();
-		}
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = true;
 
@@ -235,10 +232,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	{
 		this_->m_ignoreCalc = false;
 		if(this_->m_autocalc->isChecked())
-		{
-			this_->SyncSitesAndTerms();
-			//this_->CalcAll();
-		}
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = true;
 
@@ -412,7 +406,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 
 
 /**
- * get the sitesm exchange terms, and variables from the table
+ * get the sites, exchange terms, and variables from the table
  * and transfer them to the dynamics calculator
  */
 void MagDynDlg::SyncSitesAndTerms()
@@ -632,7 +626,4 @@ void MagDynDlg::SyncSitesAndTerms()
 
 	m_dyn.CalcExchangeTerms();
 	//m_dyn.CalcIndices();
-
-	CalcAll();
-	StructPlotSync();
 }

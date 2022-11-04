@@ -96,45 +96,6 @@ MagDynDlg::~MagDynDlg()
 }
 
 
-void MagDynDlg::Clear()
-{
-	m_ignoreCalc = true;
-	BOOST_SCOPE_EXIT(this_)
-	{
-		this_->m_ignoreCalc = false;
-	} BOOST_SCOPE_EXIT_END
-
-	// clear old tables
-	DelTabItem(m_sitestab, -1);
-	DelTabItem(m_termstab, -1);
-	DelTabItem(m_varstab, -1);
-	DelTabItem(m_fieldstab, -1);
-
-	m_plot->clearPlottables();
-	m_plot->replot();
-	m_hamiltonian->clear();
-
-	m_dyn.Clear();
-
-	StructPlotSync();
-
-	// set some defaults
-	m_comboSG->setCurrentIndex(0);
-
-	m_ordering[0]->setValue(0.);
-	m_ordering[1]->setValue(0.);
-	m_ordering[2]->setValue(0.);
-
-	m_normaxis[0]->setValue(1.);
-	m_normaxis[1]->setValue(0.);
-	m_normaxis[2]->setValue(0.);
-
-	m_weight_scale->setValue(1.);
-	m_weight_min->setValue(0.);
-	m_weight_max->setValue(9999.);
-}
-
-
 /**
  * add an atom site
  */
@@ -152,7 +113,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 	{
 		this_->m_ignoreTableChanges = false;
 		if(this_->m_autocalc->isChecked())
-			this_->SyncSitesAndTerms();
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
@@ -224,7 +185,7 @@ void MagDynDlg::AddTermTabItem(int row,
 	{
 		this_->m_ignoreTableChanges = false;
 		if(this_->m_autocalc->isChecked())
-			this_->SyncSitesAndTerms();
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
@@ -294,7 +255,7 @@ void MagDynDlg::AddVariableTabItem(int row,
 	{
 		this_->m_ignoreTableChanges = false;
 		if(this_->m_autocalc->isChecked())
-			this_->SyncSitesAndTerms();
+			this_->CalcAll();
 	} BOOST_SCOPE_EXIT_END
 
 	if(row == -1)	// append to end of table
@@ -407,7 +368,7 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 		{
 			this_->m_ignoreTableChanges = false;
 			if(this_->m_autocalc->isChecked())
-				this_->SyncSitesAndTerms();
+				this_->CalcAll();
 		}
 	} BOOST_SCOPE_EXIT_END
 
@@ -451,7 +412,7 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 		{
 			this_->m_ignoreTableChanges = false;
 			if(this_->m_autocalc->isChecked())
-				this_->SyncSitesAndTerms();
+				this_->CalcAll();
 		}
 	} BOOST_SCOPE_EXIT_END
 
@@ -500,7 +461,7 @@ void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 		{
 			this_->m_ignoreTableChanges = false;
 			if(this_->m_autocalc->isChecked())
-				this_->SyncSitesAndTerms();
+				this_->CalcAll();
 		}
 	} BOOST_SCOPE_EXIT_END
 
@@ -581,7 +542,7 @@ void MagDynDlg::SitesTableItemChanged(QTableWidgetItem * /*item*/)
 		return;
 
 	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+		CalcAll();
 }
 
 
@@ -594,7 +555,7 @@ void MagDynDlg::TermsTableItemChanged(QTableWidgetItem * /*item*/)
 		return;
 
 	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+		CalcAll();
 }
 
 
@@ -607,7 +568,7 @@ void MagDynDlg::VariablesTableItemChanged(QTableWidgetItem * /*item*/)
 		return;
 
 	if(m_autocalc->isChecked())
-		SyncSitesAndTerms();
+		CalcAll();
 }
 
 
@@ -653,6 +614,17 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 
 	if(m_structplot_dlg)
 		m_sett->setValue("geo_struct_view", m_structplot_dlg->saveGeometry());
+}
+
+
+/**
+ * refresh and calculate everything
+ */
+void MagDynDlg::CalcAll()
+{
+	SyncSitesAndTerms();
+	StructPlotSync();
+	CalcAllDynamics();
 }
 
 
