@@ -152,7 +152,11 @@ void MagDynDlg::CreateSitesPanel()
 		QIcon::fromTheme("go-down"),
 		"Down", m_sitespanel);
 
+	QPushButton *btnMirrorAtoms = new QPushButton("Mirror", m_sitespanel);
 	QPushButton *btnShowStruct = new QPushButton("View...", m_sitespanel);
+
+	btnMirrorAtoms->setToolTip("Flip the coordinates of the atom positions.");
+	btnShowStruct->setToolTip("Show a 3D view of the atom positions and couplings.");
 
 	m_comboSG = new QComboBox(m_sitespanel);
 	QPushButton *btnSG = new QPushButton(
@@ -200,6 +204,7 @@ void MagDynDlg::CreateSitesPanel()
 	grid->addWidget(btnDel, y,1,1,1);
 	grid->addWidget(btnUp, y,2,1,1);
 	grid->addWidget(btnDown, y++,3,1,1);
+	grid->addWidget(btnMirrorAtoms, y,0,1,1);
 	grid->addWidget(btnShowStruct, y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
@@ -259,6 +264,7 @@ void MagDynDlg::CreateSitesPanel()
 	connect(btnSG, &QAbstractButton::clicked,
 		this, &MagDynDlg::GenerateSitesFromSG);
 
+	connect(btnMirrorAtoms, &QAbstractButton::clicked, this, &MagDynDlg::MirrorAtoms);
 	connect(btnShowStruct, &QAbstractButton::clicked, this, &MagDynDlg::ShowStructurePlot);
 
 	connect(m_comboSG, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -366,6 +372,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	btnDown->setToolTip("Move selected exchange term(s) down.");
 
 	QPushButton *btnShowStruct = new QPushButton("View...", m_termspanel);
+	btnShowStruct->setToolTip("Show a 3D view of the atom positions and couplings.");
 
 	btnAdd->setFocusPolicy(Qt::StrongFocus);
 	btnDel->setFocusPolicy(Qt::StrongFocus);

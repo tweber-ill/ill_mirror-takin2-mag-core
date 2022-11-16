@@ -336,6 +336,7 @@ protected:
 	void SavePlotFigure();
 	void SaveDispersion();
 
+	void MirrorAtoms();
 	void RotateField(bool ccw = true);
 	void GenerateSitesFromSG();
 	void GenerateCouplingsFromSG();

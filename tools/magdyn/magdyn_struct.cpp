@@ -33,6 +33,43 @@
 #include <boost/scope_exit.hpp>
 
 
+/**
+ * flip the coordinates of the atom positions
+ * (e.g. to get the negative phase factor for weights)
+ */
+void MagDynDlg::MirrorAtoms()
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		if(this_->m_autocalc->isChecked())
+			this_->CalcAll();
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
+
+	// iterate the atom sites
+	for(int row=0; row<m_sitestab->rowCount(); ++row)
+	{
+		auto *pos_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_X));
+		auto *pos_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_Y));
+		auto *pos_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+			m_sitestab->item(row, COL_SITE_POS_Z));
+
+		if(!pos_x || !pos_y || !pos_z)
+		{
+			std::cerr << "Invalid entry in sites table row "
+				<< row << "." << std::endl;
+			continue;
+		}
+
+		pos_x->SetValue(-pos_x->GetValue());
+		pos_y->SetValue(-pos_y->GetValue());
+		pos_z->SetValue(-pos_z->GetValue());
+	}
+}
+
 
 /**
  * rotate the direction of the magnetic field
