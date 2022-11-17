@@ -163,15 +163,14 @@ void MagDynDlg::CalcDispersion()
 			use_projector, use_weights,
 			&Q_start, &Q_end]()
 		{
-			t_real Q[]
+			const t_vec_real Q = tl2::create<t_vec_real>(
 			{
 				std::lerp(Q_start[0], Q_end[0], t_real(i)/t_real(num_pts-1)),
 				std::lerp(Q_start[1], Q_end[1], t_real(i)/t_real(num_pts-1)),
 				std::lerp(Q_start[2], Q_end[2], t_real(i)/t_real(num_pts-1)),
-			};
+			});
 
-			auto energies_and_correlations = m_dyn.GetEnergies(
-				Q[0], Q[1], Q[2], !use_weights);
+			auto energies_and_correlations = m_dyn.GetEnergies(Q, !use_weights);
 
 			for(const auto& E_and_S : energies_and_correlations)
 			{
@@ -304,18 +303,18 @@ void MagDynDlg::CalcHamiltonian()
 
 	m_hamiltonian->clear();
 
-	const t_real Q[]
+	const t_vec_real Q = tl2::create<t_vec_real>(
 	{
 		m_q[0]->value(),
 		m_q[1]->value(),
 		m_q[2]->value(),
-	};
+	});
 
 	std::ostringstream ostr;
 	ostr.precision(g_prec_gui);
 
 	// get hamiltonian
-	t_mat H = m_dyn.GetHamiltonian(Q[0], Q[1], Q[2]);
+	t_mat H = m_dyn.GetHamiltonian(Q);
 
 	ostr << "<p><h3>Hamiltonian</h3>";
 	ostr << "<table style=\"border:0px\">";
@@ -340,7 +339,7 @@ void MagDynDlg::CalcHamiltonian()
 	bool use_projector = m_use_projector->isChecked();
 	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
 
-	auto energies_and_correlations = m_dyn.GetEnergies(H, Q[0], Q[1], Q[2], only_energies);
+	auto energies_and_correlations = m_dyn.GetEnergiesFromHamiltonian(H, Q, only_energies);
 	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
 
 	if(only_energies)
