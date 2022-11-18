@@ -39,6 +39,8 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QTabWidget>
+#include <QtWidgets/QSplitter>
 #include <QtCore/QSettings>
 
 #include <vector>
@@ -86,6 +88,10 @@ protected:
 	QSettings *m_sett = nullptr;
 	QMenuBar *m_menu = nullptr;
 	QLabel *m_status = nullptr;
+	QSplitter *m_split_inout{};
+
+	// tabs
+	QTabWidget *m_tabs_in{}, *m_tabs_out{};
 
 	// 3d plotter
 	QDialog *m_dlgPlot = nullptr;
@@ -98,12 +104,12 @@ protected:
 	QCheckBox *m_plot_plane = nullptr;
 
 	// symops panel
-	QLineEdit *m_editA = nullptr;
-	QLineEdit *m_editB = nullptr;
-	QLineEdit *m_editC = nullptr;
-	QLineEdit *m_editAlpha = nullptr;
-	QLineEdit *m_editBeta = nullptr;
-	QLineEdit *m_editGamma = nullptr;
+	QDoubleSpinBox *m_editA = nullptr;
+	QDoubleSpinBox *m_editB = nullptr;
+	QDoubleSpinBox *m_editC = nullptr;
+	QDoubleSpinBox *m_editAlpha = nullptr;
+	QDoubleSpinBox *m_editBeta = nullptr;
+	QDoubleSpinBox *m_editGamma = nullptr;
 	QTableWidget *m_symops = nullptr;
 	QComboBox *m_comboSG = nullptr;
 	QMenu *m_symOpContextMenu = nullptr;         // menu in case a symop is selected

@@ -65,7 +65,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 		if(m_sett->contains("geo"))
 			restoreGeometry(m_sett->value("geo").toByteArray());
 		else
-			resize(600, 600);
+			resize(800, 600);
 
 		if(m_sett->contains("recent_files"))
 			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());

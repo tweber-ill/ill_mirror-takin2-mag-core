@@ -182,7 +182,7 @@ protected:
 
 	QGridLayout *m_maingrid{};
 
-	// tab
+	// tabs
 	QTabWidget *m_tabs_in{}, *m_tabs_out{};
 
 	// panels

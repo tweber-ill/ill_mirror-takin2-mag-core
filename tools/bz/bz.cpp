@@ -30,7 +30,6 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
-#include <QtWidgets/QTabWidget>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QPushButton>
@@ -54,7 +53,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
 
-	auto tabs = new QTabWidget(this);
+	m_tabs_in = new QTabWidget(this);
+	m_tabs_out = new QTabWidget(this);
 
 
 	{ // symops panel
@@ -83,7 +83,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		QToolButton *btnDel = new QToolButton(symopspanel);
 		QToolButton *btnUp = new QToolButton(symopspanel);
 		QToolButton *btnDown = new QToolButton(symopspanel);
-		QPushButton *btnSG = new QPushButton("Get SymOps", symopspanel);
+		QPushButton *btnSG = new QPushButton(symopspanel);
 
 		m_symops->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Expanding});
 		btnAdd->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -92,17 +92,47 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		btnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		btnSG->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		btnAdd->setText("Add SymOp");
-		btnDel->setText("Delete SymOp");
-		btnUp->setText("Move SymOp Up");
-		btnDown->setText("Move SymOp Down");
+		btnAdd->setText("Add");
+		btnDel->setText("Delete");
+		btnUp->setText("Up");
+		btnDown->setText("Down");
+		btnSG->setText("Get");
 
-		m_editA = new QLineEdit("5", symopspanel);
-		m_editB = new QLineEdit("5", symopspanel);
-		m_editC = new QLineEdit("5", symopspanel);
-		m_editAlpha = new QLineEdit("90", symopspanel);
-		m_editBeta = new QLineEdit("90", symopspanel);
-		m_editGamma = new QLineEdit("90", symopspanel);
+		btnAdd->setToolTip("Add a new symmetry operation.");
+		btnDel->setToolTip("Delete the selected symmetry operation.");
+		btnUp->setToolTip("Move the selected symmetry operation up.");
+		btnDown->setToolTip("Move the selected symmetry operation down.");
+		btnSG->setToolTip("Get the symmetry operations from the selected space group.");
+
+		btnAdd->setIcon(QIcon::fromTheme("list-add"));
+		btnDel->setIcon(QIcon::fromTheme("list-remove"));
+		btnUp->setIcon(QIcon::fromTheme("go-up"));
+		btnDown->setIcon(QIcon::fromTheme("go-down"));
+
+		m_editA = new QDoubleSpinBox(symopspanel);
+		m_editB = new QDoubleSpinBox(symopspanel);
+		m_editC = new QDoubleSpinBox(symopspanel);
+		m_editAlpha = new QDoubleSpinBox(symopspanel);
+		m_editBeta = new QDoubleSpinBox(symopspanel);
+		m_editGamma = new QDoubleSpinBox(symopspanel);
+
+		for(QDoubleSpinBox* spin : {m_editA, m_editB, m_editC})
+		{
+			spin->setMinimum(0.);
+			spin->setMaximum(999.);
+			spin->setValue(5.);
+			spin->setDecimals(3);
+			spin->setSingleStep(0.1);
+		}
+
+		for(QDoubleSpinBox* spin : {m_editAlpha, m_editBeta, m_editGamma})
+		{
+			spin->setMinimum(0.);
+			spin->setMaximum(360.);
+			spin->setValue(90.);
+			spin->setDecimals(2);
+			spin->setSingleStep(1.);
+		}
 
 		m_comboSG = new QComboBox(symopspanel);
 
@@ -128,13 +158,15 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		tabGrid->addWidget(btnUp, y,2,1,1);
 		tabGrid->addWidget(btnDown, y,3,1,1);
 
-		tabGrid->addWidget(new QLabel("Space Group:"), ++y,0,1,1);
-		tabGrid->addWidget(m_comboSG, y,1,1,2);
-		tabGrid->addWidget(btnSG, y,3,1,1);
-
-
 		auto sep1 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
 		tabGrid->addWidget(sep1, ++y,0, 1,4);
+
+		tabGrid->addWidget(new QLabel("Get Symmetry Operations From Space Group:"), ++y,0,1,4);
+		tabGrid->addWidget(m_comboSG, ++y,0,1,3);
+		tabGrid->addWidget(btnSG, y,3,1,1);
+
+		auto sep2 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
+		tabGrid->addWidget(sep2, ++y,0, 1,4);
 
 		tabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
 		tabGrid->addWidget(m_editA, y,1,1,1);
@@ -148,22 +180,23 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 		// table CustomContextMenu
 		m_symOpContextMenu = new QMenu(m_symops);
-		m_symOpContextMenu->addAction("Add SymOp Before", this, [this]() { this->AddSymOpTabItem(-2); });
-		m_symOpContextMenu->addAction("Add SymOp After", this, [this]() { this->AddSymOpTabItem(-3); });
-		m_symOpContextMenu->addAction("Clone SymOp", this, [this]() { this->AddSymOpTabItem(-4); });
-		m_symOpContextMenu->addAction("Delete SymOp", this, [this]() { BZDlg::DelSymOpTabItem(); });
+		m_symOpContextMenu->addAction("Add Symmetry Operation Before", this, [this]() { this->AddSymOpTabItem(-2); });
+		m_symOpContextMenu->addAction("Add Symmetry Operation After", this, [this]() { this->AddSymOpTabItem(-3); });
+		m_symOpContextMenu->addAction("Clone Symmetry Operation", this, [this]() { this->AddSymOpTabItem(-4); });
+		m_symOpContextMenu->addAction("Delete Symmetry Operation", this, [this]() { BZDlg::DelSymOpTabItem(); });
 
 
 		// table CustomContextMenu in case nothing is selected
 		m_symOpContextMenuNoItem = new QMenu(m_symops);
-		m_symOpContextMenuNoItem->addAction("Add SymOp", this, [this]() { this->AddSymOpTabItem(); });
-		m_symOpContextMenuNoItem->addAction("Delete SymOp", this, [this]() { BZDlg::DelSymOpTabItem(); });
+		m_symOpContextMenuNoItem->addAction("Add Symmetry Operation", this, [this]() { this->AddSymOpTabItem(); });
+		m_symOpContextMenuNoItem->addAction("Delete Symmetry Operation", this, [this]() { BZDlg::DelSymOpTabItem(); });
 		//m_symOpContextMenuNoItem->addSeparator();
 
 
 		// signals
-		for(auto* edit : std::vector<QLineEdit*>{{ m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma }})
-			connect(edit, &QLineEdit::textEdited, this, [this]() { this->CalcB(); });
+		for(QDoubleSpinBox* spin : { m_editA, m_editB, m_editC, m_editAlpha, m_editBeta, m_editGamma })
+			connect(spin, static_cast<void (QDoubleSpinBox::*)(double)>(
+				&QDoubleSpinBox::valueChanged), this, &BZDlg::CalcB);
 
 		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddSymOpTabItem(-1); });
 		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelSymOpTabItem(); });
@@ -174,7 +207,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_symops, &QTableWidget::itemChanged, this, &BZDlg::SymOpTableItemChanged);
 		connect(m_symops, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowSymOpTableContextMenu);
 
-		tabs->addTab(symopspanel, "Crystal");
+		m_tabs_in->addTab(symopspanel, "Crystal");
 	}
 
 
@@ -251,7 +284,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 				this, [this]() { this->CalcBZ(); });
 		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
 
-		tabs->addTab(bzpanel, "Brillouin Zone");
+		m_tabs_out->addTab(bzpanel, "Brillouin Zone");
 	}
 
 
@@ -320,7 +353,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		connect(m_formulas, &QTableWidget::itemChanged, this, &BZDlg::FormulaTableItemChanged);
 		connect(m_formulas, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowFormulaTableContextMenu);
 
-		tabs->addTab(formulaspanel, "Formulas");
+		m_tabs_in->addTab(formulaspanel, "Formulas");
 	}
 
 
@@ -337,20 +370,27 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 		grid->addWidget(m_bzresults, 0,0, 1,4);
 
-		tabs->addTab(resultspanel, "Results");
+		m_tabs_out->addTab(resultspanel, "Results");
 	}
 
 
 	// status bar
 	m_status = new QLabel(this);
 	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-	m_status->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+	m_status->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	// splitter for input and output tabs
+	m_split_inout = new QSplitter(this);
+	m_split_inout->setOrientation(Qt::Horizontal);
+	m_split_inout->setChildrenCollapsible(true);
+	m_split_inout->addWidget(m_tabs_in);
+	m_split_inout->addWidget(m_tabs_out);
 
 	// main grid
 	auto main_grid = new QGridLayout(this);
 	main_grid->setSpacing(4);
 	main_grid->setContentsMargins(4,4,4,4);
-	main_grid->addWidget(tabs, 0,0, 1,1);
+	main_grid->addWidget(m_split_inout, 0,0, 1,1);
 	main_grid->addWidget(m_status, 1,0, 1,1);
 
 
@@ -573,10 +613,13 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		if(m_sett->contains("geo"))
 			restoreGeometry(m_sett->value("geo").toByteArray());
 		else
-			resize(600, 500);
+			resize(800, 600);
 
 		if(m_sett->contains("recent_files"))
 			m_recent.SetRecentFiles(m_sett->value("recent_files").toStringList());
+
+		if(m_sett->contains("splitter"))
+			m_split_inout->restoreState(m_sett->value("splitter").toByteArray());
 	}
 
 	m_symOpIgnoreChanges = 0;
@@ -594,6 +637,9 @@ void BZDlg::closeEvent(QCloseEvent *)
 		m_sett->setValue("geo", saveGeometry());
 		if(m_dlgPlot)
 			m_sett->setValue("geo_3dview", m_dlgPlot->saveGeometry());
+
+		if(m_split_inout)
+			m_sett->setValue("splitter", m_split_inout->saveState());
 	}
 }
 

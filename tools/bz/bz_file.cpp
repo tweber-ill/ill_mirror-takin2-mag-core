@@ -59,12 +59,12 @@ void BZDlg::NewFile()
 
 	// set some defaults
 	m_comboSG->setCurrentIndex(0);
-	m_editA->setText("5");
-	m_editB->setText("5");
-	m_editC->setText("5");
-	m_editAlpha->setText("90");
-	m_editBeta->setText("90");
-	m_editGamma->setText("90");
+	m_editA->setValue(5.);
+	m_editB->setValue(5.);
+	m_editC->setValue(5.);
+	m_editAlpha->setValue(90.);
+	m_editBeta->setValue(90.);
+	m_editGamma->setValue(90.);
 
 	m_cutX->setValue(1);
 	m_cutY->setValue(0);
@@ -107,75 +107,37 @@ bool BZDlg::Load(const QString& filename)
 		DelSymOpTabItem(-1);
 
 		if(auto opt = node.get_optional<t_real>("bz.xtal.a"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editA->setText(ostr.str().c_str());
-		}
+			m_editA->setValue(*opt);
 		if(auto opt = node.get_optional<t_real>("bz.xtal.b"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editB->setText(ostr.str().c_str());
-		}
+			m_editB->setValue(*opt);
 		if(auto opt = node.get_optional<t_real>("bz.xtal.c"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editC->setText(ostr.str().c_str());
-		}
+			m_editC->setValue(*opt);
 		if(auto opt = node.get_optional<t_real>("bz.xtal.alpha"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editAlpha->setText(ostr.str().c_str());
-		}
+			m_editAlpha->setValue(*opt);
 		if(auto opt = node.get_optional<t_real>("bz.xtal.beta"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editBeta->setText(ostr.str().c_str());
-		}
+			m_editBeta->setValue(*opt);
 		if(auto opt = node.get_optional<t_real>("bz.xtal.gamma"); opt)
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << *opt;
-			m_editGamma->setText(ostr.str().c_str());
-		}
+			m_editGamma->setValue(*opt);
 		if(auto opt = node.get_optional<int>("bz.order"); opt)
-		{
 			m_BZCalcOrder->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<int>("bz.cut.order"); opt)
-		{
 			m_BZDrawOrder->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.x"); opt)
-		{
 			m_cutX->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.y"); opt)
-		{
 			m_cutY->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.z"); opt)
-		{
 			m_cutZ->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.nx"); opt)
-		{
 			m_cutNX->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.ny"); opt)
-		{
 			m_cutNY->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.nz"); opt)
-		{
 			m_cutNZ->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<t_real>("bz.cut.d"); opt)
-		{
 			m_cutD->setValue(*opt);
-		}
 		if(auto opt = node.get_optional<int>("bz.sg_idx"); opt)
-		{
 			m_comboSG->setCurrentIndex(*opt);
-		}
 
 
 		// symops
@@ -231,20 +193,12 @@ bool BZDlg::Save(const QString& filename)
 	node.put<std::string>("bz.meta.doi_tlibs", "https://doi.org/10.5281/zenodo.5717779");
 
 	// lattice
-	t_real a,b,c, alpha,beta,gamma;
-	std::istringstream{m_editA->text().toStdString()} >> a;
-	std::istringstream{m_editB->text().toStdString()} >> b;
-	std::istringstream{m_editC->text().toStdString()} >> c;
-	std::istringstream{m_editAlpha->text().toStdString()} >> alpha;
-	std::istringstream{m_editBeta->text().toStdString()} >> beta;
-	std::istringstream{m_editGamma->text().toStdString()} >> gamma;
-
-	node.put<t_real>("bz.xtal.a", a);
-	node.put<t_real>("bz.xtal.b", b);
-	node.put<t_real>("bz.xtal.c", c);
-	node.put<t_real>("bz.xtal.alpha", alpha);
-	node.put<t_real>("bz.xtal.beta", beta);
-	node.put<t_real>("bz.xtal.gamma", gamma);
+	node.put<t_real>("bz.xtal.a", m_editA->value());
+	node.put<t_real>("bz.xtal.b", m_editB->value());
+	node.put<t_real>("bz.xtal.c", m_editC->value());
+	node.put<t_real>("bz.xtal.alpha", m_editAlpha->value());
+	node.put<t_real>("bz.xtal.beta", m_editBeta->value());
+	node.put<t_real>("bz.xtal.gamma", m_editGamma->value());
 	node.put<int>("bz.order", m_BZCalcOrder->value());
 	node.put<int>("bz.cut.order", m_BZDrawOrder->value());
 	node.put<t_real>("bz.cut.x", m_cutX->value());
@@ -352,30 +306,12 @@ void BZDlg::ImportCIF()
 		DelSymOpTabItem(-1);
 
 		// lattice
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.a;
-			m_editA->setText(ostr.str().c_str());
-		}
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.b;
-			m_editB->setText(ostr.str().c_str());
-		}
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.c;
-			m_editC->setText(ostr.str().c_str());
-		}
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.alpha;
-			m_editAlpha->setText(ostr.str().c_str());
-		}
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.beta;
-			m_editBeta->setText(ostr.str().c_str());
-		}
-		{
-			std::ostringstream ostr; ostr.precision(g_prec); ostr << lattice.gamma;
-			m_editGamma->setText(ostr.str().c_str());
-		}
+		m_editA->setValue(lattice.a);
+		m_editB->setValue(lattice.b);
+		m_editC->setValue(lattice.c);
+		m_editAlpha->setValue(lattice.alpha);
+		m_editBeta->setValue(lattice.beta);
+		m_editGamma->setValue(lattice.gamma);
 
 
 		// symops
