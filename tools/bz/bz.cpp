@@ -31,8 +31,8 @@
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QToolButton>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QToolButton>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
@@ -158,14 +158,16 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		tabGrid->addWidget(btnUp, y,2,1,1);
 		tabGrid->addWidget(btnDown, y,3,1,1);
 
-		auto sep1 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep1 = new QFrame(symopspanel);
+		sep1->setFrameStyle(QFrame::HLine);
 		tabGrid->addWidget(sep1, ++y,0, 1,4);
 
 		tabGrid->addWidget(new QLabel("Get Symmetry Operations From Space Group:"), ++y,0,1,4);
 		tabGrid->addWidget(m_comboSG, ++y,0,1,3);
 		tabGrid->addWidget(btnSG, y,3,1,1);
 
-		auto sep2 = new QFrame(symopspanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(symopspanel);
+		sep2->setFrameStyle(QFrame::HLine);
 		tabGrid->addWidget(sep2, ++y,0, 1,4);
 
 		tabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
@@ -198,14 +200,21 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			connect(spin, static_cast<void (QDoubleSpinBox::*)(double)>(
 				&QDoubleSpinBox::valueChanged), this, &BZDlg::CalcB);
 
-		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddSymOpTabItem(-1); });
-		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelSymOpTabItem(); });
-		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveSymOpTabItemUp);
-		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveSymOpTabItemDown);
-		connect(btnSG, &QPushButton::clicked, this, &BZDlg::GetSymOpsFromSG);
+		connect(btnAdd, &QAbstractButton::clicked,
+			[this]() { this->AddSymOpTabItem(-1); });
+		connect(btnDel, &QAbstractButton::clicked,
+			[this]() { BZDlg::DelSymOpTabItem(); });
+		connect(btnUp, &QAbstractButton::clicked,
+			this, &BZDlg::MoveSymOpTabItemUp);
+		connect(btnDown, &QAbstractButton::clicked,
+			this, &BZDlg::MoveSymOpTabItemDown);
+		connect(btnSG, &QAbstractButton::clicked,
+			this, &BZDlg::GetSymOpsFromSG);
 
-		connect(m_symops, &QTableWidget::itemChanged, this, &BZDlg::SymOpTableItemChanged);
-		connect(m_symops, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowSymOpTableContextMenu);
+		connect(m_symops, &QTableWidget::itemChanged,
+			this, &BZDlg::SymOpTableItemChanged);
+		connect(m_symops, &QTableWidget::customContextMenuRequested,
+			this, &BZDlg::ShowSymOpTableContextMenu);
 
 		m_tabs_in->addTab(symopspanel, "Crystal");
 	}
@@ -232,8 +241,8 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 			(*cut)->setValue(0);
 
 			// signals
-			connect(*cut, static_cast<void (QDoubleSpinBox::*)(double)>
-					(&QDoubleSpinBox::valueChanged),
+			connect(*cut, static_cast<void (QDoubleSpinBox::*)(double)>(
+				&QDoubleSpinBox::valueChanged),
 				this, &BZDlg::CalcBZCut);
 		}
 		m_cutX->setValue(1);
@@ -276,12 +285,12 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		// signals
 		connect(m_BZDrawOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-				this, [this]() { this->CalcBZCut(); });
+			[this]() { this->CalcBZCut(); });
 		connect(m_bzview, &BZCutView::SignalMouseCoordinates,
 			this, &BZDlg::BZCutMouseMoved);
 		connect(m_BZCalcOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-				this, [this]() { this->CalcBZ(); });
+			[this]() { this->CalcBZ(); });
 		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
 
 		m_tabs_out->addTab(bzpanel, "Brillouin Zone");
@@ -315,10 +324,20 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		btnUp->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 		btnDown->setSizePolicy(QSizePolicy{QSizePolicy::Expanding, QSizePolicy::Fixed});
 
-		btnAdd->setText("Add Formula");
-		btnDel->setText("Delete Formula");
-		btnUp->setText("Move Formula Up");
-		btnDown->setText("Move Formula Down");
+		btnAdd->setText("Add");
+		btnDel->setText("Delete");
+		btnUp->setText("Up");
+		btnDown->setText("Down");
+
+		btnAdd->setToolTip("Add a new formula.");
+		btnDel->setToolTip("Delete the selected formula.");
+		btnUp->setToolTip("Move the selected formula up.");
+		btnDown->setToolTip("Move the selected formula down.");
+
+		btnAdd->setIcon(QIcon::fromTheme("list-add"));
+		btnDel->setIcon(QIcon::fromTheme("list-remove"));
+		btnUp->setIcon(QIcon::fromTheme("go-up"));
+		btnDown->setIcon(QIcon::fromTheme("go-down"));
 
 		auto tabGrid = new QGridLayout(formulaspanel);
 		tabGrid->setSpacing(2);
@@ -345,13 +364,19 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 
 
 		// signals
-		connect(btnAdd, &QToolButton::clicked, this, [this]() { this->AddFormulaTabItem(-1); });
-		connect(btnDel, &QToolButton::clicked, this, [this]() { BZDlg::DelFormulaTabItem(); });
-		connect(btnUp, &QToolButton::clicked, this, &BZDlg::MoveFormulaTabItemUp);
-		connect(btnDown, &QToolButton::clicked, this, &BZDlg::MoveFormulaTabItemDown);
+		connect(btnAdd, &QAbstractButton::clicked,
+			[this]() { this->AddFormulaTabItem(-1); });
+		connect(btnDel, &QAbstractButton::clicked,
+			[this]() { BZDlg::DelFormulaTabItem(); });
+		connect(btnUp, &QAbstractButton::clicked,
+			this, &BZDlg::MoveFormulaTabItemUp);
+		connect(btnDown, &QAbstractButton::clicked,
+			this, &BZDlg::MoveFormulaTabItemDown);
 
-		connect(m_formulas, &QTableWidget::itemChanged, this, &BZDlg::FormulaTableItemChanged);
-		connect(m_formulas, &QTableWidget::customContextMenuRequested, this, &BZDlg::ShowFormulaTableContextMenu);
+		connect(m_formulas, &QTableWidget::itemChanged,
+			this, &BZDlg::FormulaTableItemChanged);
+		connect(m_formulas, &QTableWidget::customContextMenuRequested,
+			this, &BZDlg::ShowFormulaTableContextMenu);
 
 		m_tabs_in->addTab(formulaspanel, "Formulas");
 	}
@@ -579,18 +604,20 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		menuHelp->addAction(acAbout);
 
 		connect(acNew, &QAction::triggered, this, &BZDlg::NewFile);
-		connect(acLoad, &QAction::triggered, this, static_cast<void (BZDlg::*)()>(&BZDlg::Load));
-		connect(acSave, &QAction::triggered, this, static_cast<void (BZDlg::*)()>(&BZDlg::Save));
+		connect(acLoad, &QAction::triggered, this,
+			static_cast<void (BZDlg::*)()>(&BZDlg::Load));
+		connect(acSave, &QAction::triggered, this,
+			static_cast<void (BZDlg::*)()>(&BZDlg::Save));
 		connect(acImportCIF, &QAction::triggered, this, &BZDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 		connect(ac3DView, &QAction::triggered, this, &BZDlg::ShowBZPlot);
 		connect(acCutSVG, &QAction::triggered, this, &BZDlg::SaveCutSVG);
 		connect(m_acCutHull, &QAction::triggered, this, &BZDlg::CalcBZCut);
-		connect(acAboutQt, &QAction::triggered, this, []()
+		connect(acAboutQt, &QAction::triggered, []()
 		{
 			qApp->aboutQt();
 		});
-		connect(acAbout, &QAction::triggered, this, [dlgInfo]()
+		connect(acAbout, &QAction::triggered, [dlgInfo]()
 		{
 			if(!dlgInfo)
 				return;
