@@ -45,14 +45,16 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 find_package(Boost REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Svg)
-find_package(Qhull)
 
+find_package(Qhull)
 if(Qhull_FOUND)
 	add_definitions(-DUSE_QHULL)
 	include_directories("${Qhull_INCLUDE_DIRS}")
 endif()
 
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Svg)
+include_directories("${Qt5Core_INCLUDE_DIRS}/..")
+list(APPEND QtLibraries Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Svg)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -89,5 +91,5 @@ endif()
 target_link_libraries(takin_bz
 	${Boost_LIBRARIES}
 	${Qhull_LIBRARIES}
-	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Svg
+	${QtLibraries}
 )

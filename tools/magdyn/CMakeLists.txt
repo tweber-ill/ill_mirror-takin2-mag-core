@@ -75,15 +75,13 @@ add_definitions(-DUSE_LAPACK=1)
 include_directories("${Lapacke_INCLUDE_DIRS}")
 
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+include_directories("${Qt5Core_INCLUDE_DIRS}/..")
+list(APPEND QtLibraries Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-
 find_package(QCP)
-if(QCP_FOUND)
-	include_directories("${QCP_INCLUDE_DIRS}")
-endif()
-
+include_directories("${QCP_INCLUDE_DIRS}")
 
 
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -117,10 +115,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	)
 endif()
 
-
 target_link_libraries(takin_magdyn
-	Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport
 	Threads::Threads
+	${QtLibraries}
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
-	"${Lapacke_LIBRARIES}")
+	${Lapacke_LIBRARIES}
+)
