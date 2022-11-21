@@ -42,9 +42,13 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QTextEdit>
-#include <QtWidgets/QAction>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	#include <QtWidgets/QAction>
+#else
+	#include <QtGui/QAction>
+#endif
 
 #include <qcustomplot.h>
 

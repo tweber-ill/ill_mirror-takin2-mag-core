@@ -25,7 +25,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(magstructfact)
 
+set(QT_VER 5)
+
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
+set(CMAKE_CXX_STANDARD 20)
+add_definitions(-std=c++20)
 option(BUILD_LIB "build as dynamic library" FALSE)
 
 # system specific settings
@@ -35,18 +39,27 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	# pass linker --subsystem option
 	add_compile_options(-Wl,--subsystem,windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-	add_compile_options(-mmacosx-version-min=10.10)
+	add_compile_options(-mmacosx-version-min=10.15)
 endif()
 
 find_package(Boost REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+add_definitions(${Boost_CXX_FLAGS})
+
+message("Trying to select Qt version ${QT_VER}.")
+if(QT_VER EQUAL 6)
+	find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGLWidgets)
+	include_directories("${Qt6Core_INCLUDE_DIRS}/..")
+	list(APPEND QtLibraries Qt6::Core Qt6::Gui Qt6::Widgets Qt6::OpenGLWidgets)
+elseif(QT_VER EQUAL 5)
+	find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+	include_directories("${Qt5Core_INCLUDE_DIRS}/..")
+	list(APPEND QtLibraries Qt5::Core Qt5::Gui Qt5::Widgets)
+else()
+        message(FATAL_ERROR "Tried to select a non-supported Qt version ${QT_VER}.")
+endif()
 
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTOMOC TRUE)
-
-set(CMAKE_CXX_STANDARD 20)
-add_definitions(-std=c++20)
-add_definitions(${Boost_CXX_FLAGS})
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}"
@@ -81,4 +94,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	)
 endif()
 
-target_link_libraries(takin_magstructfact ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries(takin_magstructfact
+	${Boost_LIBRARIES}
+	${QtLibraries}
+)

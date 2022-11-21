@@ -282,7 +282,11 @@ void StructFactDlg::TableItemChanged(QTableWidgetItem *item)
 			std::istringstream{itemz->text().toStdString()} >> posz;
 			std::istringstream{itemsc->text().toStdString()} >> scale;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 			qreal r=1, g=1, b=1;
+#else
+			float r=1, g=1, b=1;
+#endif
 			QColor col{itemCol->text()};
 			col.getRgbF(&r, &g, &b);
 

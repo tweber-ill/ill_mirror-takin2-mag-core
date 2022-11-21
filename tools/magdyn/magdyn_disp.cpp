@@ -530,7 +530,12 @@ void MagDynDlg::PlotMousePress(QMouseEvent* evt)
 	{
 		if(!m_menuDisp)
 			return;
-		m_menuDisp->popup(evt->globalPos());
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		QPoint pos = evt->globalPos();
+#else
+		QPoint pos = evt->globalPosition().toPoint();
+#endif
+		m_menuDisp->popup(pos);
 		evt->accept();
 	}
 }

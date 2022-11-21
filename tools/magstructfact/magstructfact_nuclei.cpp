@@ -853,7 +853,11 @@ void MagStructFactDlg::Calc()
 			auto moment = tl2::create<t_vec_cplx>({0, 0, 0});
 			auto fourier_conj = tl2::conj(fourier);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 			qreal r=1, g=1, b=1;
+#else
+			float r=1, g=1, b=1;
+#endif
 			QColor col{colstr.c_str()};
 			col.getRgbF(&r, &g, &b);
 

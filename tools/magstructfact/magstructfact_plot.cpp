@@ -114,7 +114,11 @@ void MagStructFactDlg::Sync3DItem(int row)
 	std::istringstream{itemImMZ->text().toStdString()} >> ImMZ;
 	std::istringstream{itemsc->text().toStdString()} >> scale;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qreal r=1, g=1, b=1;
+#else
+	float r=1, g=1, b=1;
+#endif
 	QColor col{itemCol->text()};
 	col.getRgbF(&r, &g, &b);
 
@@ -131,7 +135,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 		1,                                         // post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),          // post-translate
 		tl2::create<t_vec_gl>({0, 0, 1}),          // from
-		M*scale,                                   // pre-scale
+		M * scale,                                 // pre-scale
 		tl2::create<t_vec_gl>({posx, posy, posz})  // pre-translate
 	);
 
@@ -140,7 +144,7 @@ void MagStructFactDlg::Sync3DItem(int row)
 		1,                                         // post-scale
 		tl2::create<t_vec_gl>({0, 0, 0}),          // post-translate
 		tl2::create<t_vec_gl>({0, 0, 1}),          // from
-		M*scale,                                   // pre-scale
+		M * scale,                                 // pre-scale
 		tl2::create<t_vec_gl>({posx, posy, posz})  // pre-translate
 	);
 
