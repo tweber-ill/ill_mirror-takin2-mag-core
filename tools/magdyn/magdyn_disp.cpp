@@ -122,12 +122,14 @@ void MagDynDlg::CalcDispersion()
 	Es_data.reserve(num_pts*10);
 	ws_data.reserve(num_pts*10);
 
-	bool use_goldstone = false;
-	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
+	const bool use_goldstone = false;
+	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
+	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
+	const bool use_weights = m_use_weights->isChecked();
+	const bool use_projector = m_use_projector->isChecked();
 
-	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
-	bool use_weights = m_use_weights->isChecked();
-	bool use_projector = m_use_projector->isChecked();
+	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
+	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
 
 	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
@@ -160,7 +162,7 @@ void MagDynDlg::CalcDispersion()
 	{
 		auto task = [this, &mtx, &qs_data, &Es_data, &ws_data,
 			i, num_pts, Q_idx, E0,
-			use_projector, use_weights,
+			use_projector, use_weights, ignore_annihilation,
 			&Q_start, &Q_end]()
 		{
 			const t_vec_real Q = tl2::create<t_vec_real>(
@@ -179,6 +181,8 @@ void MagDynDlg::CalcDispersion()
 
 				t_real E = E_and_S.E - E0;
 				if(std::isnan(E) || std::isinf(E))
+					continue;
+				if(ignore_annihilation && E < t_real(0))
 					continue;
 
 				std::lock_guard<std::mutex> _lck{mtx};
@@ -272,7 +276,13 @@ void MagDynDlg::CalcDispersion()
 	if(min_E_iter != Es_data.end() && max_E_iter != Es_data.end())
 	{
 		t_real E_range = *max_E_iter - *min_E_iter;
-		m_plot->yAxis->setRange(*min_E_iter - E_range*0.05, *max_E_iter + E_range*0.05);
+
+		t_real Emin = *min_E_iter - E_range*0.05;
+		t_real Emax = *max_E_iter + E_range*0.05;
+		//if(ignore_annihilation)
+		//	Emin = t_real(0);
+
+		m_plot->yAxis->setRange(Emin, Emax);
 	}
 	else
 	{
@@ -335,9 +345,12 @@ void MagDynDlg::CalcHamiltonian()
 
 
 	// get energies and correlation functions
-	bool only_energies = !m_use_weights->isChecked();
-	bool use_projector = m_use_projector->isChecked();
-	m_dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
+	const bool only_energies = !m_use_weights->isChecked();
+	const bool use_projector = m_use_projector->isChecked();
+	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
+	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
+
+	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
 
 	auto energies_and_correlations = m_dyn.GetEnergiesFromHamiltonian(H, Q, only_energies);
 	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
@@ -350,7 +363,7 @@ void MagDynDlg::CalcHamiltonian()
 		{
 			t_real E = E_and_S.E;
 
-			if(E < 0.)
+			if(E < t_real(0))
 				Es_neg.push_back(E_and_S);
 			else
 				Es_pos.push_back(E_and_S);
@@ -386,17 +399,21 @@ void MagDynDlg::CalcHamiltonian()
 		}
 		ostr << "</tr>";
 
-		ostr << "<tr>";
-		ostr << "<th style=\"padding-right:8px\">Annihilation</th>";
-		for(const t_E_and_S& E_and_S : Es_neg)
+		if(!ignore_annihilation)
 		{
-			t_real E = E_and_S.E;
-			tl2::set_eps_0(E);
+			ostr << "<tr>";
+			ostr << "<th style=\"padding-right:8px\">Annihilation</th>";
+			for(const t_E_and_S& E_and_S : Es_neg)
+			{
+				t_real E = E_and_S.E;
+				tl2::set_eps_0(E);
 
-			ostr << "<td style=\"padding-right:8px\">"
-				<< E << " meV" << "</td>";
+				ostr << "<td style=\"padding-right:8px\">"
+					<< E << " meV" << "</td>";
+			}
+			ostr << "</tr>";
 		}
-		ostr << "</tr>";
+
 		ostr << "</table></p>";
 	}
 	else
@@ -417,10 +434,13 @@ void MagDynDlg::CalcHamiltonian()
 		ostr << "<th style=\"padding-right:16px\">Neutron S⟂(Q, E)</td>";
 		ostr << "<th style=\"padding-right:16px\">Weight</td>";
 		ostr << "</tr>";
+
 		for(const t_E_and_S& E_and_S : energies_and_correlations)
 		{
-			ostr << "<tr>";
 			t_real E = E_and_S.E;
+			if(ignore_annihilation && E < t_real(0))
+				continue;
+
 			const t_mat& S = E_and_S.S;
 			const t_mat& S_perp = E_and_S.S_perp;
 			t_real weight = E_and_S.weight;
@@ -431,6 +451,7 @@ void MagDynDlg::CalcHamiltonian()
 			tl2::set_eps_0(weight);
 
 			// E
+			ostr << "<tr>";
 			ostr << "<td style=\"padding-right:16px\">"
 				<< E << " meV" << "</td>";
 

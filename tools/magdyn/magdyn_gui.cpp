@@ -1613,6 +1613,10 @@ void MagDynDlg::CreateMenuBar()
 	m_unite_degeneracies->setToolTip("Unites the weight factors corresponding to degenerate eigenenergies.");
 	m_unite_degeneracies->setCheckable(true);
 	m_unite_degeneracies->setChecked(true);
+	m_ignore_annihilation = new QAction("Ignore Magnon Annihilation", menuCalc);
+	m_ignore_annihilation->setToolTip("Calculate only magnon creation..");
+	m_ignore_annihilation->setCheckable(true);
+	m_ignore_annihilation->setChecked(false);
 
 	// help menu
 	auto menuHelp = new QMenu("Help", m_menu);
@@ -1653,7 +1657,9 @@ void MagDynDlg::CreateMenuBar()
 	menuCalc->addSeparator();
 	menuCalc->addAction(m_use_weights);
 	menuCalc->addAction(m_use_projector);
+	menuCalc->addSeparator();
 	menuCalc->addAction(m_unite_degeneracies);
+	menuCalc->addAction(m_ignore_annihilation);
 
 	menuHelp->addAction(acAboutQt);
 	menuHelp->addAction(acAbout);
@@ -1702,6 +1708,7 @@ void MagDynDlg::CreateMenuBar()
 	connect(m_use_weights, &QAction::toggled, calc_all_dyn);
 	connect(m_use_projector, &QAction::toggled, calc_all_dyn);
 	connect(m_unite_degeneracies, &QAction::toggled, calc_all_dyn);
+	connect(m_ignore_annihilation, &QAction::toggled, calc_all_dyn);
 	connect(m_autocalc, &QAction::toggled, [this](bool checked)
 	{
 		if(checked)
