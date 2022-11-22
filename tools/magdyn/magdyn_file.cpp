@@ -610,9 +610,9 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	const t_vec_real dir2 = Q2 - Q0;
 	const t_vec_real dir3 = Q3 - Q0;
 
-	const t_vec_real inc1 = dir1 / t_real(num_pts1-1);
-	const t_vec_real inc2 = dir2 / t_real(num_pts2-1);
-	const t_vec_real inc3 = dir3 / t_real(num_pts3-1);
+	const t_vec_real inc1 = dir1 / t_real(num_pts1);
+	const t_vec_real inc2 = dir2 / t_real(num_pts2);
+	const t_vec_real inc3 = dir3 / t_real(num_pts3);
 
 	const t_vec_real Qend = Q0 + dir1 + dir2 + dir3;
 	const t_vec_real Qstep = inc1 + inc2 + inc3;
@@ -629,19 +629,18 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 	// calculation task
 	auto task = [this, use_weights, use_projector, &dyn, &inc3, num_pts3]
-		(t_real h, t_real k, t_real l) -> t_taskret
+		(t_real h_pos, t_real k_pos, t_real l_pos) -> t_taskret
 	{
 		t_taskret ret;
 
 		// iterate last Q dimension
 		for(std::size_t i3=0; i3<num_pts3; ++i3)
 		{
-			h += inc3[0] * t_real(i3);
-			k += inc3[1] * t_real(i3);
-			l += inc3[2] * t_real(i3);
+			t_real h = h_pos + inc3[0]*t_real(i3);
+			t_real k = k_pos + inc3[1]*t_real(i3);
+			t_real l = l_pos + inc3[2]*t_real(i3);
 
-			auto energies_and_correlations = dyn.GetEnergies(
-				h, k, l, !use_weights);
+			auto energies_and_correlations = dyn.GetEnergies(h, k, l, !use_weights);
 
 			std::vector<t_real> Es, weights;
 			Es.reserve(energies_and_correlations.size());
@@ -732,9 +731,9 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		ofstr.write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
 		for(int i = 0; i<3; ++i)
 		{
-			ofstr.write(reinterpret_cast<const char*>(&Q0[0]), sizeof(Q0[0]));       // start
-			ofstr.write(reinterpret_cast<const char*>(&Qend[0]), sizeof(Qend[0]));   // end
-			ofstr.write(reinterpret_cast<const char*>(&Qstep[0]), sizeof(Qstep[0])); // step
+			ofstr.write(reinterpret_cast<const char*>(&Q0[i]), sizeof(Q0[i]));       // start
+			ofstr.write(reinterpret_cast<const char*>(&Qend[i]), sizeof(Qend[i]));   // end
+			ofstr.write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i])); // step
 		}
 
 		ofstr << "Takin/Magdyn Grid File Version 2.";
