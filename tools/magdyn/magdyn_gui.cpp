@@ -1438,7 +1438,7 @@ void MagDynDlg::CreateInfoDlg()
 	std::string strBoost = BOOST_LIB_VERSION;
 	algo::replace_all(strBoost, "_", ".");
 
-	auto labelTitle = new QLabel("Magnon Dynamics Calculator", infopanel);
+	auto labelTitle = new QLabel("Takin / Magnon Dynamics Calculator", infopanel);
 	auto fontTitle = labelTitle->font();
 	fontTitle.setBold(true);
 	labelTitle->setFont(fontTitle);

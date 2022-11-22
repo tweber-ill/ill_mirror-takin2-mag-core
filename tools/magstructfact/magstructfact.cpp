@@ -405,7 +405,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
 
-		auto labelTitle = new QLabel("Magnetic Structure Factor Calculator", infopanel);
+		auto labelTitle = new QLabel("Takin / Magnetic Structure Factor Calculator", infopanel);
 		auto fontTitle = labelTitle->font();
 		fontTitle.setBold(true);
 		labelTitle->setFont(fontTitle);

@@ -368,7 +368,7 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 		std::string strBoost = BOOST_LIB_VERSION;
 		algo::replace_all(strBoost, "_", ".");
 
-		auto labelTitle = new QLabel("Nuclear Structure Factor Calculator", infopanel);
+		auto labelTitle = new QLabel("Takin / Nuclear Structure Factor Calculator", infopanel);
 		auto fontTitle = labelTitle->font();
 		fontTitle.setBold(true);
 		labelTitle->setFont(fontTitle);
