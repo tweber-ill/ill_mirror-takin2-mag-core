@@ -217,24 +217,12 @@ bool MagDynDlg::Load(const QString& filename)
 			m_exportStartQ[1]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.export_start_l"))
 			m_exportStartQ[2]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h1"))
-			m_exportEndQ1[0]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k1"))
-			m_exportEndQ1[1]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l1"))
-			m_exportEndQ1[2]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h2"))
-			m_exportEndQ2[0]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k2"))
-			m_exportEndQ2[1]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l2"))
-			m_exportEndQ2[2]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h3"))
-			m_exportEndQ3[0]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k3"))
-			m_exportEndQ3[1]->setValue(*optVal);
-		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l3"))
-			m_exportEndQ3[2]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_h"))
+			m_exportEndQ[0]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_k"))
+			m_exportEndQ[1]->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<t_real>("config.export_end_l"))
+			m_exportEndQ[2]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_size>("config.export_num_points_1"))
 			m_exportNumPoints[0]->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_size>("config.export_num_points_2"))
@@ -424,15 +412,9 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<t_real>("config.export_start_h", m_exportStartQ[0]->value());
 		magdyn.put<t_real>("config.export_start_k", m_exportStartQ[1]->value());
 		magdyn.put<t_real>("config.export_start_l", m_exportStartQ[2]->value());
-		magdyn.put<t_real>("config.export_end_h1", m_exportEndQ1[0]->value());
-		magdyn.put<t_real>("config.export_end_k1", m_exportEndQ1[1]->value());
-		magdyn.put<t_real>("config.export_end_l1", m_exportEndQ1[2]->value());
-		magdyn.put<t_real>("config.export_end_h2", m_exportEndQ2[0]->value());
-		magdyn.put<t_real>("config.export_end_k2", m_exportEndQ2[1]->value());
-		magdyn.put<t_real>("config.export_end_l2", m_exportEndQ2[2]->value());
-		magdyn.put<t_real>("config.export_end_h3", m_exportEndQ3[0]->value());
-		magdyn.put<t_real>("config.export_end_k3", m_exportEndQ3[1]->value());
-		magdyn.put<t_real>("config.export_end_l3", m_exportEndQ3[2]->value());
+		magdyn.put<t_real>("config.export_end_h", m_exportEndQ[0]->value());
+		magdyn.put<t_real>("config.export_end_k", m_exportEndQ[1]->value());
+		magdyn.put<t_real>("config.export_end_l", m_exportEndQ[2]->value());
 		magdyn.put<t_size>("config.export_num_points_1", m_exportNumPoints[0]->value());
 		magdyn.put<t_size>("config.export_num_points_2", m_exportNumPoints[1]->value());
 		magdyn.put<t_size>("config.export_num_points_3", m_exportNumPoints[2]->value());
@@ -578,26 +560,18 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		return false;
 	}
 
-	const t_vec_real Q0 = tl2::create<t_vec_real>({
+	const t_vec_real Qstart = tl2::create<t_vec_real>({
 		m_exportStartQ[0]->value(),
 		m_exportStartQ[1]->value(),
 		m_exportStartQ[2]->value() });
-	const t_vec_real Q1 = tl2::create<t_vec_real>({
-		m_exportEndQ1[0]->value(),
-		m_exportEndQ1[1]->value(),
-		m_exportEndQ1[2]->value() });
-	const t_vec_real Q2 = tl2::create<t_vec_real>({
-		m_exportEndQ2[0]->value(),
-		m_exportEndQ2[1]->value(),
-		m_exportEndQ2[2]->value() });
-	const t_vec_real Q3 = tl2::create<t_vec_real>({
-		m_exportEndQ3[0]->value(),
-		m_exportEndQ3[1]->value(),
-		m_exportEndQ3[2]->value() });
+	const t_vec_real Qend = tl2::create<t_vec_real>({
+		m_exportEndQ[0]->value(),
+		m_exportEndQ[1]->value(),
+		m_exportEndQ[2]->value() });
 
-	const t_size num_pts1 = m_exportNumPoints[0]->value();
-	const t_size num_pts2 = m_exportNumPoints[1]->value();
-	const t_size num_pts3 = m_exportNumPoints[2]->value();
+	const t_size num_pts_h = m_exportNumPoints[0]->value();
+	const t_size num_pts_k = m_exportNumPoints[1]->value();
+	const t_size num_pts_l = m_exportNumPoints[2]->value();
 
 	const int format = m_exportFormat->currentIndex();
 
@@ -606,16 +580,10 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	bool use_weights = m_use_weights->isChecked();
 	bool use_projector = m_use_projector->isChecked();
 
-	const t_vec_real dir1 = Q1 - Q0;
-	const t_vec_real dir2 = Q2 - Q0;
-	const t_vec_real dir3 = Q3 - Q0;
-
-	const t_vec_real inc1 = dir1 / t_real(num_pts1);
-	const t_vec_real inc2 = dir2 / t_real(num_pts2);
-	const t_vec_real inc3 = dir3 / t_real(num_pts3);
-
-	const t_vec_real Qend = Q0 + dir1 + dir2 + dir3;
-	const t_vec_real Qstep = inc1 + inc2 + inc3;
+	const t_vec_real dir = Qend - Qstart;
+	t_real inc_h = dir[0] / t_real(num_pts_h);
+	t_real inc_k = dir[1] / t_real(num_pts_k);
+	t_real inc_l = dir[2] / t_real(num_pts_l);
 
 	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
@@ -628,19 +596,17 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>>;
 
 	// calculation task
-	auto task = [this, use_weights, use_projector, &dyn, &inc3, num_pts3]
+	auto task = [this, use_weights, use_projector, &dyn, inc_l, num_pts_l]
 		(t_real h_pos, t_real k_pos, t_real l_pos) -> t_taskret
 	{
 		t_taskret ret;
 
 		// iterate last Q dimension
-		for(std::size_t i3=0; i3<num_pts3; ++i3)
+		for(std::size_t i3=0; i3<num_pts_l; ++i3)
 		{
-			t_real h = h_pos + inc3[0]*t_real(i3);
-			t_real k = k_pos + inc3[1]*t_real(i3);
-			t_real l = l_pos + inc3[2]*t_real(i3);
-
-			auto energies_and_correlations = dyn.GetEnergies(h, k, l, !use_weights);
+			t_real l = l_pos + inc_l*t_real(i3);
+			auto energies_and_correlations = dyn.GetEnergies(
+				h_pos, k_pos, l, !use_weights);
 
 			std::vector<t_real> Es, weights;
 			Es.reserve(energies_and_correlations.size());
@@ -668,7 +634,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 				weights.push_back(weight);
 			}
 
-			ret.emplace_back(std::make_tuple(h, k, l, Es, weights));
+			ret.emplace_back(std::make_tuple(h_pos, k_pos, l, Es, weights));
 		}
 
 		return ret;
@@ -680,24 +646,24 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	using t_taskptr = std::shared_ptr<t_task>;
 	std::vector<t_taskptr> tasks;
 	std::vector<std::future<t_taskret>> futures;
-	tasks.reserve(num_pts1 * num_pts2 /** num_pts3*/);
-	futures.reserve(num_pts1 * num_pts2 /** num_pts3*/);
+	tasks.reserve(num_pts_h * num_pts_k /** num_pts_l*/);
+	futures.reserve(num_pts_h * num_pts_k /** num_pts_l*/);
 
 	m_stopRequested = false;
 	m_progress->setMinimum(0);
-	m_progress->setMaximum(num_pts1 * num_pts2 /** num_pts3*/);
+	m_progress->setMaximum(num_pts_h * num_pts_k /** num_pts_l*/);
 	m_progress->setValue(0);
 	m_status->setText("Starting calculation.");
 	DisableInput();
 
 	std::size_t task_idx = 0;
 	// iterate first two Q dimensions
-	for(std::size_t i1=0; i1<num_pts1; ++i1)
+	for(std::size_t i1=0; i1<num_pts_h; ++i1)
 	{
 		if(m_stopRequested)
 			break;
 
-		for(std::size_t i2=0; i2<num_pts2; ++i2)
+		for(std::size_t i2=0; i2<num_pts_k; ++i2)
 		{
 			if(m_stopRequested)
 				break;
@@ -706,7 +672,10 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			if(m_stopRequested)
 				break;
 
-			t_vec_real Q = Q0 + inc1*t_real(i1) + inc2*t_real(i2) /*+ inc3*t_real(i3)*/;
+			t_vec_real Q = Qstart;
+			Q[0] += inc_h*t_real(i1);
+			Q[1] += inc_k*t_real(i2);
+			//Q[2] += inc_l*t_real(i3);
 
 			// create tasks
 			t_taskptr taskptr = std::make_shared<t_task>(task);
@@ -729,11 +698,13 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 		std::uint64_t dummy = 0;  // to be filled by index block index
 		ofstr.write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
+
+		t_vec_real Qstep = tl2::create<t_vec_real>({inc_h, inc_k, inc_l});
 		for(int i = 0; i<3; ++i)
 		{
-			ofstr.write(reinterpret_cast<const char*>(&Q0[i]), sizeof(Q0[i]));       // start
-			ofstr.write(reinterpret_cast<const char*>(&Qend[i]), sizeof(Qend[i]));   // end
-			ofstr.write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i])); // step
+			ofstr.write(reinterpret_cast<const char*>(&Qstart[i]), sizeof(Qstart[i]));
+			ofstr.write(reinterpret_cast<const char*>(&Qend[i]), sizeof(Qend[i]));
+			ofstr.write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i]));
 		}
 
 		ofstr << "Takin/Magdyn Grid File Version 2.";

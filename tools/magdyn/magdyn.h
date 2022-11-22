@@ -239,9 +239,7 @@ protected:
 
 	// export
 	QDoubleSpinBox *m_exportStartQ[3]{nullptr, nullptr, nullptr};
-	QDoubleSpinBox *m_exportEndQ1[3]{nullptr, nullptr, nullptr};
-	QDoubleSpinBox *m_exportEndQ2[3]{nullptr, nullptr, nullptr};
-	QDoubleSpinBox *m_exportEndQ3[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_exportEndQ[3]{nullptr, nullptr, nullptr};
 	QSpinBox *m_exportNumPoints[3]{nullptr, nullptr, nullptr};
 	QComboBox *m_exportFormat{nullptr};
 

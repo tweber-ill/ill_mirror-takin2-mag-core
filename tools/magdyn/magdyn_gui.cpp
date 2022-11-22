@@ -1276,15 +1276,9 @@ void MagDynDlg::CreateExportPanel()
 	m_exportStartQ[0] = new QDoubleSpinBox(m_exportpanel);
 	m_exportStartQ[1] = new QDoubleSpinBox(m_exportpanel);
 	m_exportStartQ[2] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ1[0] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ1[1] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ1[2] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ2[0] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ2[1] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ2[2] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ3[0] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ3[1] = new QDoubleSpinBox(m_exportpanel);
-	m_exportEndQ3[2] = new QDoubleSpinBox(m_exportpanel);
+	m_exportEndQ[0] = new QDoubleSpinBox(m_exportpanel);
+	m_exportEndQ[1] = new QDoubleSpinBox(m_exportpanel);
+	m_exportEndQ[2] = new QDoubleSpinBox(m_exportpanel);
 
 	// number of grid points
 	for(int i=0; i<3; ++i)
@@ -1319,35 +1313,15 @@ void MagDynDlg::CreateExportPanel()
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 		m_exportStartQ[i]->setPrefix(hklPrefix[i]);
 
-		m_exportEndQ1[i]->setDecimals(4);
-		m_exportEndQ1[i]->setMinimum(-99);
-		m_exportEndQ1[i]->setMaximum(+99);
-		m_exportEndQ1[i]->setSingleStep(0.01);
-		m_exportEndQ1[i]->setValue(i == 0 ? 1. : 0.);
-		m_exportEndQ1[i]->setSuffix(" rlu");
-		m_exportEndQ1[i]->setSizePolicy(QSizePolicy{
+		m_exportEndQ[i]->setDecimals(4);
+		m_exportEndQ[i]->setMinimum(-99);
+		m_exportEndQ[i]->setMaximum(+99);
+		m_exportEndQ[i]->setSingleStep(0.01);
+		m_exportEndQ[i]->setValue(i == 0 ? 1. : 0.);
+		m_exportEndQ[i]->setSuffix(" rlu");
+		m_exportEndQ[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_exportEndQ1[i]->setPrefix(hklPrefix[i]);
-
-		m_exportEndQ2[i]->setDecimals(4);
-		m_exportEndQ2[i]->setMinimum(-99);
-		m_exportEndQ2[i]->setMaximum(+99);
-		m_exportEndQ2[i]->setSingleStep(0.01);
-		m_exportEndQ2[i]->setValue(i == 1 ? 1. : 0.);
-		m_exportEndQ2[i]->setSuffix(" rlu");
-		m_exportEndQ2[i]->setSizePolicy(QSizePolicy{
-			QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_exportEndQ2[i]->setPrefix(hklPrefix[i]);
-
-		m_exportEndQ3[i]->setDecimals(4);
-		m_exportEndQ3[i]->setMinimum(-99);
-		m_exportEndQ3[i]->setMaximum(+99);
-		m_exportEndQ3[i]->setSingleStep(0.01);
-		m_exportEndQ3[i]->setValue(i == 2 ? 1. : 0.);
-		m_exportEndQ3[i]->setSuffix(" rlu");
-		m_exportEndQ3[i]->setSizePolicy(QSizePolicy{
-			QSizePolicy::Expanding, QSizePolicy::Fixed});
-		m_exportEndQ3[i]->setPrefix(hklPrefix[i]);
+		m_exportEndQ[i]->setPrefix(hklPrefix[i]);
 	}
 
 
@@ -1363,21 +1337,11 @@ void MagDynDlg::CreateExportPanel()
 	grid->addWidget(m_exportStartQ[0], y,1,1,1);
 	grid->addWidget(m_exportStartQ[1], y,2,1,1);
 	grid->addWidget(m_exportStartQ[2], y++,3,1,1);
-	grid->addWidget(new QLabel(QString("End Q 1:"),
+	grid->addWidget(new QLabel(QString("End Q:"),
 		m_exportpanel), y,0,1,1);
-	grid->addWidget(m_exportEndQ1[0], y,1,1,1);
-	grid->addWidget(m_exportEndQ1[1], y,2,1,1);
-	grid->addWidget(m_exportEndQ1[2], y++,3,1,1);
-	grid->addWidget(new QLabel(QString("End Q 2:"),
-		m_exportpanel), y,0,1,1);
-	grid->addWidget(m_exportEndQ2[0], y,1,1,1);
-	grid->addWidget(m_exportEndQ2[1], y,2,1,1);
-	grid->addWidget(m_exportEndQ2[2], y++,3,1,1);
-	grid->addWidget(new QLabel(QString("End Q 3:"),
-		m_exportpanel), y,0,1,1);
-	grid->addWidget(m_exportEndQ3[0], y,1,1,1);
-	grid->addWidget(m_exportEndQ3[1], y,2,1,1);
-	grid->addWidget(m_exportEndQ3[2], y++,3,1,1);
+	grid->addWidget(m_exportEndQ[0], y,1,1,1);
+	grid->addWidget(m_exportEndQ[1], y,2,1,1);
+	grid->addWidget(m_exportEndQ[2], y++,3,1,1);
 
 	grid->addItem(new QSpacerItem(8, 8,
 		QSizePolicy::Minimum, QSizePolicy::Fixed),
