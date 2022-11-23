@@ -1293,8 +1293,11 @@ void MagDynDlg::CreateExportPanel()
 
 	// export
 	m_exportFormat = new QComboBox(m_exportpanel);
-	m_exportFormat->addItem("Takin Grid File");
-	m_exportFormat->addItem("Text File");
+#ifdef USE_HDF5
+	m_exportFormat->addItem("HDF5 File", EXPORT_HDF5);
+#endif
+	m_exportFormat->addItem("Takin Grid File", EXPORT_GRID);
+	m_exportFormat->addItem("Text File", EXPORT_TEXT);
 
 	QPushButton *btn_export = new QPushButton(
 		QIcon::fromTheme("document-save-as"),

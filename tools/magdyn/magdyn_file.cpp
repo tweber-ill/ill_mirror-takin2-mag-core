@@ -48,6 +48,11 @@ namespace pt = boost::property_tree;
 
 #include "tlibs2/libs/log.h"
 
+#ifdef USE_HDF5
+	#include "tlibs2/libs/h5file.h"
+#endif
+
+
 extern int g_prec;
 
 
@@ -529,10 +534,11 @@ void MagDynDlg::SaveDispersion()
 void MagDynDlg::ExportSQE()
 {
 	QString extension;
-	switch(m_exportFormat->currentIndex())
+	switch(m_exportFormat->currentData().toInt())
 	{
-		case 0: extension = "Takin Grid Files (*.bin)"; break;
-		case 1: extension = "Text Files (*.txt)"; break;
+		case EXPORT_HDF5: extension = "HDF5 Files (*.hdf)"; break;
+		case EXPORT_GRID: extension = "Takin Grid Files (*.bin)"; break;
+		case EXPORT_TEXT: extension = "Text Files (*.txt)"; break;
 	}
 
 	QString dirLast = m_sett->value("dir", "").toString();
@@ -551,10 +557,29 @@ void MagDynDlg::ExportSQE()
  */
 bool MagDynDlg::ExportSQE(const QString& filename)
 {
-	std::ofstream ofstr(filename.toStdString());
-	ofstr.precision(g_prec);
+#ifdef USE_HDF5
+	std::unique_ptr<H5::H5File> h5file;
+#endif
+	std::unique_ptr<std::ofstream> ofstr;
+	bool file_opened = false;
 
-	if(!ofstr)
+	const int format = m_exportFormat->currentData().toInt();
+	if(format == EXPORT_GRID || format == EXPORT_TEXT)
+	{
+		ofstr = std::make_unique<std::ofstream>(filename.toStdString());
+		ofstr->precision(g_prec);
+		file_opened = ofstr->operator bool();
+	}
+
+#ifdef USE_HDF5
+	else if(format == EXPORT_HDF5)
+	{
+		h5file = std::make_unique<H5::H5File>(filename.toStdString().c_str(), H5F_ACC_TRUNC);
+		file_opened = true;
+	}
+#endif
+
+	if(!file_opened)
 	{
 		QMessageBox::critical(this, "Magnon Dynamics", "File could not be opened.");
 		return false;
@@ -572,8 +597,6 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	const t_size num_pts_h = m_exportNumPoints[0]->value();
 	const t_size num_pts_k = m_exportNumPoints[1]->value();
 	const t_size num_pts_l = m_exportNumPoints[2]->value();
-
-	const int format = m_exportFormat->currentIndex();
 
 	MagDyn dyn = m_dyn;
 	dyn.SetUniteDegenerateEnergies(m_unite_degeneracies->isChecked());
@@ -692,22 +715,22 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	m_status->setText("Performing calculation.");
 
 	std::vector<std::uint64_t> hklindices;
-	if(format == 0)  // Takin grid format
+	if(format == EXPORT_GRID)  // Takin grid format
 	{
 		hklindices.reserve(futures.size());
 
 		std::uint64_t dummy = 0;  // to be filled by index block index
-		ofstr.write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
+		ofstr->write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
 
 		t_vec_real Qstep = tl2::create<t_vec_real>({inc_h, inc_k, inc_l});
 		for(int i = 0; i<3; ++i)
 		{
-			ofstr.write(reinterpret_cast<const char*>(&Qstart[i]), sizeof(Qstart[i]));
-			ofstr.write(reinterpret_cast<const char*>(&Qend[i]), sizeof(Qend[i]));
-			ofstr.write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i]));
+			ofstr->write(reinterpret_cast<const char*>(&Qstart[i]), sizeof(Qstart[i]));
+			ofstr->write(reinterpret_cast<const char*>(&Qend[i]), sizeof(Qend[i]));
+			ofstr->write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i]));
 		}
 
-		ofstr << "Takin/Magdyn Grid File Version 2.";
+		(*ofstr) << "Takin/Magdyn Grid File Version 2.";
 	}
 
 	for(std::size_t i=0; i<futures.size(); ++i)
@@ -725,17 +748,17 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		{
 			std::size_t num_branches = std::get<3>(result).size();
 
-			if(format == 0)           // Takin grid format
+			if(format == EXPORT_GRID)           // Takin grid format
 			{
-				hklindices.push_back(ofstr.tellp());
+				hklindices.push_back(ofstr->tellp());
 
 				// write number of branches
 				std::uint32_t _num_branches = std::uint32_t(num_branches);
-				ofstr.write(reinterpret_cast<const char*>(&_num_branches), sizeof(_num_branches));
+				ofstr->write(reinterpret_cast<const char*>(&_num_branches), sizeof(_num_branches));
 			}
-			else if(format == 1)      // text format
+			else if(format == EXPORT_TEXT)      // text format
 			{
-				ofstr
+				(*ofstr)
 					<< "Q = "
 					<< std::get<0>(result) << " "
 					<< std::get<1>(result) << " "
@@ -748,19 +771,25 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 				t_real energy = std::get<3>(result)[j];
 				t_real weight = std::get<4>(result)[j];
 
-				if(format == 0)       // Takin grid format
+				if(format == EXPORT_GRID)       // Takin grid format
 				{
 					// write energies and weights
-					ofstr.write(reinterpret_cast<const char*>(&energy), sizeof(energy));
-					ofstr.write(reinterpret_cast<const char*>(&weight), sizeof(weight));
+					ofstr->write(reinterpret_cast<const char*>(&energy), sizeof(energy));
+					ofstr->write(reinterpret_cast<const char*>(&weight), sizeof(weight));
 				}
-				else if(format == 1)  // text format
+				else if(format == EXPORT_TEXT)  // text format
 				{
-					ofstr
+					(*ofstr)
 						<< "\tE = " << energy
 						<< ", S = " << weight
 						<< std::endl;
 				}
+#ifdef USE_HDF5
+				else if(format == EXPORT_HDF5)  // hdf5 format
+				{
+					// TODO
+				}
+#endif
 			}
 		}
 
@@ -770,19 +799,25 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	pool.join();
 	EnableInput();
 
-	if(format == 0)  // Takin grid format
+	if(format == EXPORT_GRID)  // Takin grid format
 	{
-		std::uint64_t idxblock = ofstr.tellp();
+		std::uint64_t idxblock = ofstr->tellp();
 
 		// write hkl indices
 		for(std::uint64_t idx : hklindices)
-			ofstr.write(reinterpret_cast<const char*>(&idx), sizeof(idx));
+			ofstr->write(reinterpret_cast<const char*>(&idx), sizeof(idx));
 
 		// write index into index block
-		ofstr.seekp(0, std::ios_base::beg);
-		ofstr.write(reinterpret_cast<const char*>(&idxblock), sizeof(idxblock));
-		ofstr.flush();
+		ofstr->seekp(0, std::ios_base::beg);
+		ofstr->write(reinterpret_cast<const char*>(&idxblock), sizeof(idxblock));
+		ofstr->flush();
 	}
+#ifdef USE_HDF5
+	else if(format == EXPORT_HDF5)
+	{
+		h5file->close();
+	}
+#endif
 
 	if(m_stopRequested)
 		m_status->setText("Calculation stopped.");

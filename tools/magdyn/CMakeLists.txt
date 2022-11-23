@@ -92,6 +92,18 @@ set(CMAKE_AUTOMOC TRUE)
 find_package(QCP)
 include_directories("${QCP_INCLUDE_DIRS}")
 
+find_package(HDF5 COMPONENTS CXX)
+
+if(HDF5_FOUND)
+	message("Using HDF5 version ${HDF5_VERSION}.")
+	include_directories("${HDF5_CXX_INCLUDE_DIRS}")
+	add_definitions(-DUSE_HDF5)
+else()
+	message("Disabling HDF5 file support.")
+	set(HDF5_CXX_LIBRARIES "")
+endif()
+
+
 
 include_directories("${PROJECT_SOURCE_DIR}")
 
@@ -130,4 +142,5 @@ target_link_libraries(takin_magdyn
 	${QCP_LIBRARIES}
 	${Boost_LIBRARIES}
 	${Lapacke_LIBRARIES}
+	${HDF5_CXX_LIBRARIES}
 )

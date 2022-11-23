@@ -92,6 +92,17 @@ extern int g_prec_gui;
 
 
 /**
+ * export file types
+ */
+enum : int
+{
+	EXPORT_HDF5 = 0,
+	EXPORT_GRID = 1,
+	EXPORT_TEXT = 2,
+};
+
+
+/**
  * columns of the sites table
  */
 enum : int
