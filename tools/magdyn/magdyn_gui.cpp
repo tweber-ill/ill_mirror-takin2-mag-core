@@ -1307,7 +1307,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportStartQ[i]->setMinimum(-99);
 		m_exportStartQ[i]->setMaximum(+99);
 		m_exportStartQ[i]->setSingleStep(0.01);
-		m_exportStartQ[i]->setValue(0.);
+		m_exportStartQ[i]->setValue(-1.);
 		m_exportStartQ[i]->setSuffix(" rlu");
 		m_exportStartQ[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -1317,7 +1317,7 @@ void MagDynDlg::CreateExportPanel()
 		m_exportEndQ[i]->setMinimum(-99);
 		m_exportEndQ[i]->setMaximum(+99);
 		m_exportEndQ[i]->setSingleStep(0.01);
-		m_exportEndQ[i]->setValue(i == 0 ? 1. : 0.);
+		m_exportEndQ[i]->setValue(1.);
 		m_exportEndQ[i]->setSuffix(" rlu");
 		m_exportEndQ[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
