@@ -575,6 +575,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	else if(format == EXPORT_HDF5)
 	{
 		h5file = std::make_unique<H5::H5File>(filename.toStdString().c_str(), H5F_ACC_TRUNC);
+		h5file->createGroup("data");
 		file_opened = true;
 	}
 #endif
@@ -604,9 +605,10 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	bool use_projector = m_use_projector->isChecked();
 
 	const t_vec_real dir = Qend - Qstart;
-	t_real inc_h = dir[0] / t_real(num_pts_h);
-	t_real inc_k = dir[1] / t_real(num_pts_k);
-	t_real inc_l = dir[2] / t_real(num_pts_l);
+	const t_real inc_h = dir[0] / t_real(num_pts_h);
+	const t_real inc_k = dir[1] / t_real(num_pts_k);
+	const t_real inc_l = dir[2] / t_real(num_pts_l);
+	const t_vec_real Qstep = tl2::create<t_vec_real>({inc_h, inc_k, inc_l});
 
 	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
@@ -722,7 +724,6 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		std::uint64_t dummy = 0;  // to be filled by index block index
 		ofstr->write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
 
-		t_vec_real Qstep = tl2::create<t_vec_real>({inc_h, inc_k, inc_l});
 		for(int i = 0; i<3; ++i)
 		{
 			ofstr->write(reinterpret_cast<const char*>(&Qstart[i]), sizeof(Qstart[i]));
@@ -730,7 +731,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			ofstr->write(reinterpret_cast<const char*>(&Qstep[i]), sizeof(Qstep[i]));
 		}
 
-		(*ofstr) << "Takin/Magdyn Grid File Version 2.";
+		(*ofstr) << "Takin/Magdyn Grid File Version 2 (doi: https://doi.org/10.5281/zenodo.4117437).";
 	}
 
 	for(std::size_t i=0; i<futures.size(); ++i)
@@ -815,6 +816,23 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 #ifdef USE_HDF5
 	else if(format == EXPORT_HDF5)
 	{
+		h5file->createGroup("meta_infos");
+		const char* user = std::getenv("USER");
+		if(!user) user = "";
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/format", "Takin/Magdyn grid format");
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/user", user);
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/url", "https://code.ill.fr/scientific-software/takin");
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/doi", "https://doi.org/10.5281/zenodo.4117437");
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/doi_tlibs", "https://doi.org/10.5281/zenodo.5717779");
+
+		h5file->createGroup("infos");
+		tl2::set_h5_string<std::string>(*h5file, "infos/shape", "cuboid");
+		tl2::set_h5_vector(*h5file, "infos/Q_start", static_cast<const std::vector<t_real>&>(Qstart));
+		tl2::set_h5_vector(*h5file, "infos/Q_end", static_cast<const std::vector<t_real>&>(Qend));
+		tl2::set_h5_vector(*h5file, "infos/dimensions", std::vector<std::size_t>{{ num_pts_h, num_pts_k, num_pts_l }});
+		tl2::set_h5_vector(*h5file, "infos/Q_steps", static_cast<const std::vector<t_real>&>(Qstep));
+
 		h5file->close();
 	}
 #endif
