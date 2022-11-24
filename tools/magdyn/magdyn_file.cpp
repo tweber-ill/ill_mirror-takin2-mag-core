@@ -36,6 +36,8 @@
 #include <sstream>
 #include <future>
 #include <mutex>
+#include <vector>
+#include <deque>
 #include <cstdlib>
 
 #include <boost/scope_exit.hpp>
@@ -576,6 +578,9 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	{
 		h5file = std::make_unique<H5::H5File>(filename.toStdString().c_str(), H5F_ACC_TRUNC);
 		h5file->createGroup("data");
+		//H5::Group data_group = h5file->openGroup("data");
+		//data_group.createGroup("chunks");
+
 		file_opened = true;
 	}
 #endif
@@ -616,20 +621,21 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	asio::thread_pool pool{num_threads};
 
 
-	// h, k, l, E, S
-	using t_taskret = std::vector<
-		std::tuple<t_real, t_real, t_real, std::vector<t_real>, std::vector<t_real>>>;
+	using t_taskret = std::deque<
+		std::tuple<t_real, t_real, t_real,          // h, k, l
+		std::vector<t_real>, std::vector<t_real>,   // E, S
+		std::size_t, std::size_t, std::size_t>>;    // h_idx, k_idx, l_idx
 
 	// calculation task
 	auto task = [this, use_weights, use_projector, &dyn, inc_l, num_pts_l]
-		(t_real h_pos, t_real k_pos, t_real l_pos) -> t_taskret
+		(t_real h_pos, t_real k_pos, t_real l_pos, std::size_t h_idx, std::size_t k_idx) -> t_taskret
 	{
 		t_taskret ret;
 
 		// iterate last Q dimension
-		for(std::size_t i3=0; i3<num_pts_l; ++i3)
+		for(std::size_t l_idx=0; l_idx<num_pts_l; ++l_idx)
 		{
-			t_real l = l_pos + inc_l*t_real(i3);
+			t_real l = l_pos + inc_l*t_real(l_idx);
 			auto energies_and_correlations = dyn.GetEnergies(
 				h_pos, k_pos, l, !use_weights);
 
@@ -659,7 +665,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 				weights.push_back(weight);
 			}
 
-			ret.emplace_back(std::make_tuple(h_pos, k_pos, l, Es, weights));
+			ret.emplace_back(std::make_tuple(h_pos, k_pos, l, Es, weights, h_idx, k_idx, l_idx));
 		}
 
 		return ret;
@@ -667,12 +673,10 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 
 	// tasks
-	using t_task = std::packaged_task<t_taskret(t_real, t_real, t_real)>;
+	using t_task = std::packaged_task<t_taskret(t_real, t_real, t_real, std::size_t, std::size_t)>;
 	using t_taskptr = std::shared_ptr<t_task>;
-	std::vector<t_taskptr> tasks;
-	std::vector<std::future<t_taskret>> futures;
-	tasks.reserve(num_pts_h * num_pts_k /** num_pts_l*/);
-	futures.reserve(num_pts_h * num_pts_k /** num_pts_l*/);
+	std::deque<t_taskptr> tasks;
+	std::deque<std::future<t_taskret>> futures;
 
 	m_stopRequested = false;
 	m_progress->setMinimum(0);
@@ -683,12 +687,12 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 	std::size_t task_idx = 0;
 	// iterate first two Q dimensions
-	for(std::size_t i1=0; i1<num_pts_h; ++i1)
+	for(std::size_t h_idx=0; h_idx<num_pts_h; ++h_idx)
 	{
 		if(m_stopRequested)
 			break;
 
-		for(std::size_t i2=0; i2<num_pts_k; ++i2)
+		for(std::size_t k_idx=0; k_idx<num_pts_k; ++k_idx)
 		{
 			if(m_stopRequested)
 				break;
@@ -698,15 +702,18 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 				break;
 
 			t_vec_real Q = Qstart;
-			Q[0] += inc_h*t_real(i1);
-			Q[1] += inc_k*t_real(i2);
-			//Q[2] += inc_l*t_real(i3);
+			Q[0] += inc_h*t_real(h_idx);
+			Q[1] += inc_k*t_real(k_idx);
+			//Q[2] += inc_l*t_real(l_idx);
 
 			// create tasks
 			t_taskptr taskptr = std::make_shared<t_task>(task);
 			tasks.push_back(taskptr);
 			futures.emplace_back(taskptr->get_future());
-			asio::post(pool, [taskptr, Q]() { (*taskptr)(Q[0], Q[1], Q[2]); });
+			asio::post(pool, [taskptr, Q, h_idx, k_idx]()
+			{
+				(*taskptr)(Q[0], Q[1], Q[2], h_idx, k_idx);
+			});
 
 			++task_idx;
 			m_progress->setValue(task_idx);
@@ -716,11 +723,9 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	m_progress->setValue(0);
 	m_status->setText("Performing calculation.");
 
-	std::vector<std::uint64_t> hklindices;
+	std::deque<std::uint64_t> hklindices;
 	if(format == EXPORT_GRID)  // Takin grid format
 	{
-		hklindices.reserve(futures.size());
-
 		std::uint64_t dummy = 0;  // to be filled by index block index
 		ofstr->write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
 
@@ -734,7 +739,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		(*ofstr) << "Takin/Magdyn Grid File Version 2 (doi: https://doi.org/10.5281/zenodo.4117437).";
 	}
 
-	for(std::size_t i=0; i<futures.size(); ++i)
+	for(std::size_t future_idx=0; future_idx<futures.size(); ++future_idx)
 	{
 		qApp->processEvents();  // process events to see if the stop button was clicked
 		if(m_stopRequested)
@@ -743,11 +748,21 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			break;
 		}
 
-		auto results = futures[i].get();
+		auto results = futures[future_idx].get();
 
-		for(const auto& result : results)
+		for(std::size_t result_idx=0; result_idx<results.size(); ++result_idx)
 		{
+			const auto& result = results[result_idx];
 			std::size_t num_branches = std::get<3>(result).size();
+
+			const t_real qh = std::get<0>(result);
+			const t_real qk = std::get<1>(result);
+			const t_real ql = std::get<2>(result);
+			const auto& energies = std::get<3>(result);
+			const auto& weights = std::get<4>(result);
+			const std::size_t h_idx = std::get<5>(result);
+			const std::size_t k_idx = std::get<6>(result);
+			const std::size_t l_idx = std::get<7>(result);
 
 			if(format == EXPORT_GRID)           // Takin grid format
 			{
@@ -759,18 +774,30 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			}
 			else if(format == EXPORT_TEXT)      // text format
 			{
-				(*ofstr)
-					<< "Q = "
-					<< std::get<0>(result) << " "
-					<< std::get<1>(result) << " "
-					<< std::get<2>(result) << ":\n";
+				(*ofstr) << "Q = " << qh << " " << qk << " " << ql << ":\n";
 			}
+#ifdef USE_HDF5
+			else if(format == EXPORT_HDF5)  // hdf5 format
+			{
+				std::ostringstream chunk_name;
+				chunk_name << std::hex << h_idx << "_" << k_idx << "_" << l_idx;
+				H5::Group data_group = h5file->openGroup("data");
+				data_group.createGroup(chunk_name.str());
+
+				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/h", qh);
+				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/k", qk);
+				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/l", ql);
+
+				tl2::set_h5_vector(*h5file, "data/" + chunk_name.str() + "/E", energies);
+				tl2::set_h5_vector(*h5file, "data/" + chunk_name.str() + "/S", weights);
+			}
+#endif
 
 			// iterate energies and weights
 			for(std::size_t j=0; j<num_branches; ++j)
 			{
-				t_real energy = std::get<3>(result)[j];
-				t_real weight = std::get<4>(result)[j];
+				t_real energy = energies[j];
+				t_real weight = weights[j];
 
 				if(format == EXPORT_GRID)       // Takin grid format
 				{
@@ -785,16 +812,10 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 						<< ", S = " << weight
 						<< std::endl;
 				}
-#ifdef USE_HDF5
-				else if(format == EXPORT_HDF5)  // hdf5 format
-				{
-					// TODO
-				}
-#endif
 			}
 		}
 
-		m_progress->setValue(i+1);
+		m_progress->setValue(future_idx+1);
 	}
 
 	pool.join();
