@@ -1,5 +1,5 @@
 #
-# @author Tobias Weber
+# @author Tobias Weber <tweber@ill.fr>
 # @date dec-2018
 # @license GPLv3, see 'LICENSE' file
 #
