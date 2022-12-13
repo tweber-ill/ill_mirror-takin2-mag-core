@@ -55,6 +55,10 @@ namespace pt = boost::property_tree;
 #endif
 
 
+// for debugging: write individual data chunks in hdf5 file
+//#define WRITE_HDF5_CHUNKS
+
+
 extern int g_prec;
 
 
@@ -577,9 +581,12 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	else if(format == EXPORT_HDF5)
 	{
 		h5file = std::make_unique<H5::H5File>(filename.toStdString().c_str(), H5F_ACC_TRUNC);
+		h5file->createGroup("meta_infos");
+		h5file->createGroup("infos");
 		h5file->createGroup("data");
-		//H5::Group data_group = h5file->openGroup("data");
-		//data_group.createGroup("chunks");
+#ifdef WRITE_HDF5_CHUNKS
+		h5file->createGroup("chunks");
+#endif
 
 		file_opened = true;
 	}
@@ -739,6 +746,15 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		(*ofstr) << "Takin/Magdyn Grid File Version 2 (doi: https://doi.org/10.5281/zenodo.4117437).";
 	}
 
+#ifdef USE_HDF5
+	std::vector<t_real> data_energies, data_weights;
+	std::vector<std::size_t> data_indices, data_num_branches;
+	data_energies.reserve(num_pts_h * num_pts_k * num_pts_l * 32);
+	data_weights.reserve(num_pts_h * num_pts_k * num_pts_l * 32);
+	data_indices.reserve(num_pts_h * num_pts_k * num_pts_l);
+	data_num_branches.reserve(num_pts_h * num_pts_k * num_pts_l);
+#endif
+
 	for(std::size_t future_idx=0; future_idx<futures.size(); ++future_idx)
 	{
 		qApp->processEvents();  // process events to see if the stop button was clicked
@@ -760,9 +776,6 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 			const t_real ql = std::get<2>(result);
 			const auto& energies = std::get<3>(result);
 			const auto& weights = std::get<4>(result);
-			const std::size_t h_idx = std::get<5>(result);
-			const std::size_t k_idx = std::get<6>(result);
-			const std::size_t l_idx = std::get<7>(result);
 
 			if(format == EXPORT_GRID)           // Takin grid format
 			{
@@ -779,17 +792,29 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 #ifdef USE_HDF5
 			else if(format == EXPORT_HDF5)  // hdf5 format
 			{
+#ifdef WRITE_HDF5_CHUNKS
+				const std::size_t h_idx = std::get<5>(result);
+				const std::size_t k_idx = std::get<6>(result);
+				const std::size_t l_idx = std::get<7>(result);
+
 				std::ostringstream chunk_name;
 				chunk_name << std::hex << h_idx << "_" << k_idx << "_" << l_idx;
-				H5::Group data_group = h5file->openGroup("data");
+				H5::Group data_group = h5file->openGroup("chunks");
 				data_group.createGroup(chunk_name.str());
 
-				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/h", qh);
-				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/k", qk);
-				tl2::set_h5_scalar(*h5file, "data/" + chunk_name.str() + "/l", ql);
+				tl2::set_h5_scalar(*h5file, "chunks/" + chunk_name.str() + "/h", qh);
+				tl2::set_h5_scalar(*h5file, "chunks/" + chunk_name.str() + "/k", qk);
+				tl2::set_h5_scalar(*h5file, "chunks/" + chunk_name.str() + "/l", ql);
 
-				tl2::set_h5_vector(*h5file, "data/" + chunk_name.str() + "/E", energies);
-				tl2::set_h5_vector(*h5file, "data/" + chunk_name.str() + "/S", weights);
+				tl2::set_h5_vector(*h5file, "chunks/" + chunk_name.str() + "/E", energies);
+				tl2::set_h5_vector(*h5file, "chunks/" + chunk_name.str() + "/S", weights);
+#endif
+
+				// TODO: write this incrementally to the hdf5 file, without these large temporary vectors
+				data_num_branches.push_back(energies.size());
+				data_indices.push_back(data_energies.size());
+				data_energies.insert(data_energies.end(), energies.begin(), energies.end());
+				data_weights.insert(data_weights.end(), weights.begin(), weights.end());
 			}
 #endif
 
@@ -837,7 +862,6 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 #ifdef USE_HDF5
 	else if(format == EXPORT_HDF5)
 	{
-		h5file->createGroup("meta_infos");
 		const char* user = std::getenv("USER");
 		if(!user) user = "";
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/format", "Takin/Magdyn grid format");
@@ -847,12 +871,16 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/doi", "https://doi.org/10.5281/zenodo.4117437");
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/doi_tlibs", "https://doi.org/10.5281/zenodo.5717779");
 
-		h5file->createGroup("infos");
 		tl2::set_h5_string<std::string>(*h5file, "infos/shape", "cuboid");
 		tl2::set_h5_vector(*h5file, "infos/Q_start", static_cast<const std::vector<t_real>&>(Qstart));
 		tl2::set_h5_vector(*h5file, "infos/Q_end", static_cast<const std::vector<t_real>&>(Qend));
 		tl2::set_h5_vector(*h5file, "infos/dimensions", std::vector<std::size_t>{{ num_pts_h, num_pts_k, num_pts_l }});
 		tl2::set_h5_vector(*h5file, "infos/Q_steps", static_cast<const std::vector<t_real>&>(Qstep));
+
+		tl2::set_h5_vector(*h5file, "data/indices", data_indices);
+		tl2::set_h5_vector(*h5file, "data/branches", data_num_branches);
+		tl2::set_h5_vector(*h5file, "data/energies", data_energies);
+		tl2::set_h5_vector(*h5file, "data/weights", data_weights);
 
 		h5file->close();
 	}
