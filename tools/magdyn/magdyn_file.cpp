@@ -864,7 +864,8 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 	{
 		const char* user = std::getenv("USER");
 		if(!user) user = "";
-		tl2::set_h5_string<std::string>(*h5file, "meta_infos/format", "Takin/Magdyn grid format");
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/type", "takin_grid");
+		tl2::set_h5_string<std::string>(*h5file, "meta_infos/description", "Takin/Magdyn grid format");
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/user", user);
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/date", tl2::epoch_to_str<t_real>(tl2::epoch<t_real>()));
 		tl2::set_h5_string<std::string>(*h5file, "meta_infos/url", "https://code.ill.fr/scientific-software/takin");
@@ -874,11 +875,21 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 		tl2::set_h5_string<std::string>(*h5file, "infos/shape", "cuboid");
 		tl2::set_h5_vector(*h5file, "infos/Q_start", static_cast<const std::vector<t_real>&>(Qstart));
 		tl2::set_h5_vector(*h5file, "infos/Q_end", static_cast<const std::vector<t_real>&>(Qend));
-		tl2::set_h5_vector(*h5file, "infos/dimensions", std::vector<std::size_t>{{ num_pts_h, num_pts_k, num_pts_l }});
 		tl2::set_h5_vector(*h5file, "infos/Q_steps", static_cast<const std::vector<t_real>&>(Qstep));
+		tl2::set_h5_vector(*h5file, "infos/Q_dimensions", std::vector<std::size_t>{{ num_pts_h, num_pts_k, num_pts_l }});
 
-		tl2::set_h5_vector(*h5file, "data/indices", data_indices);
-		tl2::set_h5_vector(*h5file, "data/branches", data_num_branches);
+		std::vector<std::string> labels{{"h", "k", "l", "E", "S_perp"}};
+		tl2::set_h5_string_vector(*h5file, "infos/labels", labels);
+
+		std::vector<std::string> units{{"rlu", "rlu", "rlu", "meV", "a.u."}};
+		tl2::set_h5_string_vector(*h5file, "infos/units", units);
+
+		hsize_t index_dims[] = { num_pts_h, num_pts_k, num_pts_l };
+		tl2::set_h5_multidim(*h5file, "data/indices", 3, index_dims, data_indices.data());
+		tl2::set_h5_multidim(*h5file, "data/branches", 3, index_dims, data_num_branches.data());
+		//tl2::set_h5_vector(*h5file, "data/indices", data_indices);
+		//tl2::set_h5_vector(*h5file, "data/branches", data_num_branches);
+
 		tl2::set_h5_vector(*h5file, "data/energies", data_energies);
 		tl2::set_h5_vector(*h5file, "data/weights", data_weights);
 
