@@ -678,6 +678,8 @@ void MagDynDlg::ShowTableImporter()
 
 		connect(m_table_import_dlg, &TableImportDlg::SetAtomsSignal,
 			this, &MagDynDlg::ImportAtoms);
+		connect(m_table_import_dlg, &TableImportDlg::SetCouplingsSignal,
+				this, &MagDynDlg::ImportCouplings);
 	}
 
 	m_table_import_dlg->show();
@@ -700,8 +702,7 @@ void MagDynDlg::ImportAtoms(const std::vector<TableImportAtom>& atompos_vec)
 	} BOOST_SCOPE_EXIT_END
 	m_ignoreCalc = true;
 
-	// remove original sites
-	DelTabItem(m_sitestab, -1);
+	DelTabItem(m_sitestab, -1);  // remove original sites
 
 	for(const TableImportAtom& atompos : atompos_vec)
 	{
@@ -722,5 +723,46 @@ void MagDynDlg::ImportAtoms(const std::vector<TableImportAtom>& atompos_vec)
 		AddSiteTabItem(-1, name,
 			pos_x, pos_y, pos_z,
 			spin_x, spin_y, spin_z, spin_mag);
+	}
+}
+
+
+/**
+ * import magnetic couplings from table dialog
+ */
+void MagDynDlg::ImportCouplings(const std::vector<TableImportCoupling>& couplings)
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		if(this_->m_autocalc->isChecked())
+			this_->CalcAll();
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
+
+	DelTabItem(m_termstab, -1);  // remove original couplings
+
+	for(const TableImportCoupling& coupling : couplings)
+	{
+		std::string name = "n/a";
+		t_size atom_1 = 0, atom_2 = 0;
+		t_real dist_x = 0, dist_y = 0, dist_z = 0;
+		std::string J = "0";
+		std::string dmi_x = "0", dmi_y = "0", dmi_z = "0";
+
+		if(coupling.name) name = *coupling.name;
+		if(coupling.atomidx1) atom_1 = *coupling.atomidx1;
+		if(coupling.atomidx2) atom_2 = *coupling.atomidx2;
+		if(coupling.dx) dist_x = *coupling.dx;
+		if(coupling.dy) dist_y = *coupling.dy;
+		if(coupling.dz) dist_z = *coupling.dz;
+		if(coupling.J) J = tl2::var_to_str(*coupling.J);
+		if(coupling.dmix) dmi_x = tl2::var_to_str(*coupling.dmix);
+		if(coupling.dmiy) dmi_y = tl2::var_to_str(*coupling.dmiy);
+		if(coupling.dmiz) dmi_z = tl2::var_to_str(*coupling.dmiz);
+
+		AddTermTabItem(-1, name, atom_1, atom_2,
+			dist_x, dist_y, dist_z,
+			J, dmi_x, dmi_y, dmi_z);
 	}
 }

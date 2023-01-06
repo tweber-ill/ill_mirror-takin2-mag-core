@@ -32,6 +32,7 @@
 #include <QtCore/QSettings>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QTextEdit>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QSpinBox>
 
 #include <optional>
@@ -46,6 +47,17 @@ struct TableImportAtom
 	std::optional<t_real> x{std::nullopt}, y{std::nullopt}, z{std::nullopt};
 	std::optional<t_real> Sx{std::nullopt}, Sy{std::nullopt}, Sz{std::nullopt};
 	std::optional<t_real> Smag{std::nullopt};
+};
+
+
+
+struct TableImportCoupling
+{
+	std::optional<std::string> name{std::nullopt};
+	std::optional<t_size> atomidx1{std::nullopt}, atomidx2{std::nullopt};
+	std::optional<t_real> dx{std::nullopt}, dy{std::nullopt}, dz{std::nullopt};
+	std::optional<t_real> J{std::nullopt};
+	std::optional<t_real> dmix{std::nullopt}, dmiy{std::nullopt}, dmiz{std::nullopt};
 };
 
 
@@ -70,17 +82,28 @@ protected:
 private:
 	QSettings *m_sett{};
 
+	// edit boxes
 	QTextEdit *m_editAtoms{};
 	QTextEdit *m_editCouplings{};
 
+	// atom table column indices
 	QSpinBox *m_spinAtomName{};
 	QSpinBox *m_spinAtomX{}, *m_spinAtomY{}, *m_spinAtomZ{};
 	QSpinBox *m_spinAtomSX{}, *m_spinAtomSY{}, *m_spinAtomSZ{};
 	QSpinBox *m_spinAtomSMag{};
 
+	// coupling table column
+	QSpinBox *m_spinCouplingName{};
+	QSpinBox *m_spinCouplingAtom1{}, *m_spinCouplingAtom2{};
+	QCheckBox *m_checkIndices1Based{};
+	QSpinBox *m_spinCouplingDX{}, *m_spinCouplingDY{}, *m_spinCouplingDZ{};
+	QSpinBox *m_spinCouplingJ{};
+	QSpinBox *m_spinCouplingDMIX{}, *m_spinCouplingDMIY{}, *m_spinCouplingDMIZ{};
+
 
 signals:
 	void SetAtomsSignal(const std::vector<TableImportAtom>&);
+	void SetCouplingsSignal(const std::vector<TableImportCoupling>&);
 };
 
 

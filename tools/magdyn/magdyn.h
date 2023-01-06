@@ -353,6 +353,7 @@ protected:
 	// table importer
 	void ShowTableImporter();
 	void ImportAtoms(const std::vector<TableImportAtom>&);
+	void ImportCouplings(const std::vector<TableImportCoupling>&);
 
 	// structure plotter
 	void ShowStructurePlot();
