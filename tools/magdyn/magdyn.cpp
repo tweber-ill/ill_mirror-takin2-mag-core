@@ -35,11 +35,6 @@
 #include <boost/scope_exit.hpp>
 
 
-t_real g_eps = 1e-6;
-int g_prec = 6;
-int g_prec_gui = 3;
-
-
 
 MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	m_sett{new QSettings{"takin", "magdyn"}}
@@ -61,7 +56,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 	if(m_sett)
 	{
-		// restory window size and position
+		// restore window size and position
 		if(m_sett->contains("geo"))
 			restoreGeometry(m_sett->value("geo").toByteArray());
 		else
@@ -86,6 +81,12 @@ MagDynDlg::~MagDynDlg()
 	{
 		delete m_structplot_dlg;
 		m_structplot_dlg = nullptr;
+	}
+
+	if(m_table_import_dlg)
+	{
+		delete m_table_import_dlg;
+		m_table_import_dlg = nullptr;
 	}
 
 	if(m_info_dlg)

@@ -119,6 +119,8 @@ add_executable(takin_magdyn
 	magdyn.cpp magdyn.h
 	magdyn_gui.cpp magdyn_struct.cpp magdyn_file.cpp
 	magdyn_disp.cpp magdyn_structplot.cpp
+	defs.cpp defs.h
+	table_import.cpp table_import.h
 
 	../../tlibs2/libs/magdyn.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h

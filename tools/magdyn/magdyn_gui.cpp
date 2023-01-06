@@ -1514,6 +1514,7 @@ void MagDynDlg::CreateMenuBar()
 
 	// structure menu
 	auto menuStruct = new QMenu("Structure", m_menu);
+	auto acStructImport = new QAction("Import From Table...", menuStruct);
 	auto acStructView = new QAction("View...", menuStruct);
 
 	// dispersion menu
@@ -1608,6 +1609,8 @@ void MagDynDlg::CreateMenuBar()
 	menuFile->addSeparator();
 	menuFile->addAction(acExit);
 
+	menuStruct->addAction(acStructImport);
+	menuStruct->addSeparator();
 	menuStruct->addAction(acStructView);
 
 	m_menuDisp->addAction(acRescalePlot);
@@ -1667,8 +1670,8 @@ void MagDynDlg::CreateMenuBar()
 			this->CalcAllDynamics();
 	};
 
-	connect(acStructView, &QAction::triggered,
-		this, &MagDynDlg::ShowStructurePlot);
+	connect(acStructView, &QAction::triggered, this, &MagDynDlg::ShowStructurePlot);
+	connect(acStructImport, &QAction::triggered, this, &MagDynDlg::ShowTableImporter);
 	connect(m_use_dmi, &QAction::toggled, calc_all);
 	connect(m_use_field, &QAction::toggled, calc_all);
 	connect(m_use_temperature, &QAction::toggled, calc_all);

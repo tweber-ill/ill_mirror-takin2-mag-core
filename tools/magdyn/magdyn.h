@@ -57,38 +57,20 @@
 #include <sstream>
 #include <optional>
 
-#include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/magdyn.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 #include "tlibs2/libs/qt/recent.h"
 #include "tlibs2/libs/qt/glplot.h"
+
+#include "defs.h"
 #include "graph.h"
+#include "table_import.h"
 
 using namespace tl2_mag;
 
 
-using t_size = std::size_t;
-using t_real = double;
-using t_cplx = std::complex<t_real>;
-
-using t_vec_real = tl2::vec<t_real, std::vector>;
-using t_mat_real = tl2::mat<t_real, std::vector>;
-
-using t_vec = tl2::vec<t_cplx, std::vector>;
-using t_mat = tl2::mat<t_cplx, std::vector>;
-
 using t_magdyn = MagDyn<t_mat, t_vec, t_mat_real, t_vec_real, t_cplx, t_real, t_size>;
 
-using t_real_gl = tl2::t_real_gl;
-using t_vec2_gl = tl2::t_vec2_gl;
-using t_vec3_gl = tl2::t_vec3_gl;
-using t_vec_gl = tl2::t_vec_gl;
-using t_mat_gl = tl2::t_mat_gl;
-
-
-extern t_real g_eps;
-extern int g_prec;
-extern int g_prec_gui;
 
 
 /**
@@ -276,8 +258,8 @@ protected:
 	std::optional<std::size_t> m_structplot_cur_atom{};
 	std::optional<std::size_t> m_structplot_cur_term{};
 
-	// info dialog
-	QDialog *m_info_dlg{};
+	TableImportDlg *m_table_import_dlg{};  // table import dialog
+	QDialog *m_info_dlg{};                 // info dialog
 
 
 protected:
@@ -367,6 +349,10 @@ protected:
 
 	virtual void mousePressEvent(QMouseEvent *evt) override;
 	virtual void closeEvent(QCloseEvent *evt) override;
+
+	// table importer
+	void ShowTableImporter();
+	void ImportAtoms(const std::vector<TableImportAtom>&);
 
 	// structure plotter
 	void ShowStructurePlot();

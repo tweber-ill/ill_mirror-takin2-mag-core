@@ -664,3 +664,63 @@ void MagDynDlg::SyncSitesAndTerms()
 	m_dyn.CalcExchangeTerms();
 	//m_dyn.CalcIndices();
 }
+
+
+
+/**
+ * open the table import dialog
+ */
+void MagDynDlg::ShowTableImporter()
+{
+	if(!m_table_import_dlg)
+	{
+		m_table_import_dlg = new TableImportDlg(this, m_sett);
+
+		connect(m_table_import_dlg, &TableImportDlg::SetAtomsSignal,
+			this, &MagDynDlg::ImportAtoms);
+	}
+
+	m_table_import_dlg->show();
+	m_table_import_dlg->raise();
+	m_table_import_dlg->activateWindow();
+}
+
+
+
+/**
+ * import atom positions from table dialog
+ */
+void MagDynDlg::ImportAtoms(const std::vector<TableImportAtom>& atompos_vec)
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+		if(this_->m_autocalc->isChecked())
+			this_->CalcAll();
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
+
+	// remove original sites
+	DelTabItem(m_sitestab, -1);
+
+	for(const TableImportAtom& atompos : atompos_vec)
+	{
+		std::string name = "n/a";
+		t_real pos_x = 0, pos_y = 0, pos_z = 0;
+		std::string spin_x = "0", spin_y = "0", spin_z = "1";
+		t_real spin_mag = 1;
+
+		if(atompos.name) name = *atompos.name;
+		if(atompos.x) pos_x = *atompos.x;
+		if(atompos.y) pos_y = *atompos.y;
+		if(atompos.z) pos_z = *atompos.z;
+		if(atompos.Sx) spin_x = tl2::var_to_str(*atompos.Sx);
+		if(atompos.Sy) spin_y = tl2::var_to_str(*atompos.Sy);
+		if(atompos.Sz) spin_z = tl2::var_to_str(*atompos.Sz);
+		if(atompos.Smag) spin_mag = *atompos.Smag;
+
+		AddSiteTabItem(-1, name,
+			pos_x, pos_y, pos_z,
+			spin_x, spin_y, spin_z, spin_mag);
+	}
+}
