@@ -67,9 +67,10 @@ License: GNU GPL version 3.
 -------------------------------------------------------------------------------- 
 Gemmi
 URL: https://github.com/project-gemmi/gemmi
+URL: https://doi.org/10.21105/joss.04200
 License URL: https://github.com/project-gemmi/gemmi/blob/master/LICENSE.txt
 
-Copyright (C) 2017-2020 Global Phasing Ltd.
+Copyright (C) 2017-2022 Global Phasing Ltd., Cambridge, UK / Marcin Wojdyr
 
 License: MPLv2, or (at your option) LGPLv3 (see below).
 --------------------------------------------------------------------------------
