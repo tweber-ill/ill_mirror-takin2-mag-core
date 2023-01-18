@@ -52,6 +52,9 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
+	//QFont font = this->font();
+	//font.setPointSize(14);
+	//setFont(font);
 
 	m_tabs_in = new QTabWidget(this);
 	m_tabs_out = new QTabWidget(this);
