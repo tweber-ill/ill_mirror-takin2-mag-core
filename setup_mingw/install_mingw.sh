@@ -31,9 +31,12 @@ MINGW_LIB_DIR=/usr/x86_64-w64-mingw32/sys-root/mingw/lib/
 INSTALL_DIR=~/.wine/drive_c/takin2tools
 
 
+
 # binaries
 mkdir -vp ${INSTALL_DIR}
 
+cp -v tools/bz/build/moldyn.exe				${INSTALL_DIR}/
+cp -v tools/magdyn/build/moldyn.exe			${INSTALL_DIR}/
 cp -v tools/moldyn/build/moldyn.exe			${INSTALL_DIR}/
 cp -v tools/pol/build/pol.exe				${INSTALL_DIR}/
 cp -v tools/structfact/build/structfact.exe		${INSTALL_DIR}/
