@@ -25,32 +25,9 @@
  * ----------------------------------------------------------------------------
  */
 
-#ifndef __BZTOOL_GLOBALS_H__
-#define __BZTOOL_GLOBALS_H__
+#include "globals.h"
 
 
-#include <boost/math/quaternion.hpp>
-namespace math = boost::math;
-
-#include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/qt/gl.h"
-
-
-using t_real = double;
-using t_vec = tl2::vec<t_real, std::vector>;
-using t_mat = tl2::mat<t_real, std::vector>;
-using t_quat = math::quaternion<t_real>;
-
-using t_real_gl = tl2::t_real_gl;
-using t_vec2_gl = tl2::t_vec2_gl;
-using t_vec3_gl = tl2::t_vec3_gl;
-using t_vec_gl = tl2::t_vec_gl;
-using t_mat_gl = tl2::t_mat_gl;
-
-
-extern t_real g_eps;
-extern int g_prec;
-extern int g_prec_gui;
-
-
-#endif
+t_real g_eps = 1e-6;
+int g_prec = 6;
+int g_prec_gui = 4;

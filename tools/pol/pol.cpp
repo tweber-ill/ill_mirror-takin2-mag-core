@@ -302,6 +302,20 @@ public:
 		setWindowTitle("Polarisation Vectors");
 		setSizeGripEnabled(true);
 
+		// restore settings done from takin main settings dialog
+		QSettings sett_core("takin", "core");
+		if(sett_core.contains("main/font_gen"))
+		{
+			QString font_str = sett_core.value("main/font_gen").toString();
+			QFont font = this->font();
+			if(font.fromString(font_str))
+				setFont(font);
+		}
+		if(sett_core.contains("main/prec"))
+		{
+			m_prec = sett_core.value("main/prec").toInt();
+		}
+
 		auto tabs = new QTabWidget(this);
 
 

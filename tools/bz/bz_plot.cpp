@@ -42,10 +42,7 @@ void BZDlg::ShowBZPlot()
 	{
 		m_dlgPlot = new QDialog(this);
 		m_dlgPlot->setWindowTitle("Brillouin Zone - 3D View");
-
-		//QFont font = m_dlgPlot->font();
-		//font.setPointSize(14);
-		//m_dlgPlot->setFont(font);
+		m_dlgPlot->setFont(this->font());
 
 		m_plot = std::make_shared<tl2::GlPlot>(this);
 		m_plot->GetRenderer()->SetRestrictCamTheta(false);

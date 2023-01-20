@@ -52,12 +52,32 @@ namespace algo = boost::algorithm;
 using namespace tl2_ops;
 
 
+t_real g_eps = 1e-6;
+int g_prec = 6;
+
+
 MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 	m_sett{new QSettings{"takin", "magstructfact"}}
 {
 	setWindowTitle("Magnetic Structure Factors");
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
+
+
+	// restore settings done from takin main settings dialog
+	QSettings sett_core("takin", "core");
+	if(sett_core.contains("main/font_gen"))
+	{
+		QString font_str = sett_core.value("main/font_gen").toString();
+		QFont font = this->font();
+		if(font.fromString(font_str))
+			setFont(font);
+	}
+	if(sett_core.contains("main/prec"))
+	{
+		g_prec = sett_core.value("main/prec").toInt();
+		g_eps = std::pow(t_real(10), -t_real(g_prec));
+	}
 
 
 	auto tabs = new QTabWidget(this);
@@ -511,6 +531,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 			{
 				m_dlgPlot = new QDialog(this);
 				m_dlgPlot->setWindowTitle("Unit Cell");
+				m_dlgPlot->setFont(this->font());
 
 				m_plot = std::make_shared<tl2::GlPlot>(this);
 				m_plot->setFormat(tl2::gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8, m_plot->format()));
@@ -573,6 +594,7 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 			{
 				m_dlgPlotSC = new QDialog(this);
 				m_dlgPlotSC->setWindowTitle("Super Cell");
+				m_dlgPlotSC->setFont(this->font());
 
 				m_plotSC = std::make_shared<tl2::GlPlot>(this);
 				m_plotSC->setFormat(tl2::gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8, m_plotSC->format()));

@@ -51,6 +51,9 @@ namespace algo = boost::algorithm;
 using namespace tl2_ops;
 
 
+t_real g_eps = 1e-6;
+int g_prec = 6;
+
 
 // ----------------------------------------------------------------------------
 StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
@@ -59,6 +62,22 @@ StructFactDlg::StructFactDlg(QWidget* pParent) : QDialog{pParent},
 	setWindowTitle("Nuclear Structure Factors");
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
+
+
+	// restore settings done from takin main settings dialog
+	QSettings sett_core("takin", "core");
+	if(sett_core.contains("main/font_gen"))
+	{
+		QString font_str = sett_core.value("main/font_gen").toString();
+		QFont font = this->font();
+		if(font.fromString(font_str))
+			setFont(font);
+	}
+	if(sett_core.contains("main/prec"))
+	{
+		g_prec = sett_core.value("main/prec").toInt();
+		g_eps = std::pow(t_real(10), -t_real(g_prec));
+	}
 
 
 	auto tabs = new QTabWidget(this);

@@ -39,8 +39,30 @@
 MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	m_sett{new QSettings{"takin", "magdyn"}}
 {
+	// restore settings done from takin main settings dialog
+	QSettings sett_core("takin", "core");
+	if(sett_core.contains("main/font_gen"))
+	{
+		QString font_str = sett_core.value("main/font_gen").toString();
+		QFont font = this->font();
+		if(font.fromString(font_str))
+			setFont(font);
+	}
+	if(sett_core.contains("main/prec"))
+	{
+		g_prec = sett_core.value("main/prec").toInt();
+		g_eps = std::pow(t_real(10), -t_real(g_prec));
+	}
+	if(sett_core.contains("main/prec_gfx"))
+	{
+		g_prec_gui = sett_core.value("main/prec_gfx").toInt();
+	}
+
+
+	// calculator settings
 	m_dyn.SetEpsilon(g_eps);
 	m_dyn.SetPrecision(g_prec);
+
 
 	// create gui
 	CreateMainWindow();
@@ -54,6 +76,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	CreateInfoDlg();
 	CreateMenuBar();
 
+	// restore settings
 	if(m_sett)
 	{
 		// restore window size and position

@@ -64,8 +64,8 @@ using t_vec_gl = tl2::t_vec_gl;
 using t_mat_gl = tl2::t_mat_gl;
 
 
-constexpr t_real g_eps = 1e-6;
-constexpr int g_prec = 6;
+extern t_real g_eps;
+extern int g_prec;
 
 
 enum : int

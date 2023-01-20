@@ -45,6 +45,7 @@ void MagDynDlg::ShowStructurePlot()
 	{
 		m_structplot_dlg = new QDialog(this);
 		m_structplot_dlg->setWindowTitle("Structure Viewer");
+		m_structplot_dlg->setFont(this->font());
 
 		m_structplot = new tl2::GlPlot(this);
 		m_structplot->GetRenderer()->SetRestrictCamTheta(false);

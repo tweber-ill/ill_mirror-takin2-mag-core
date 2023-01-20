@@ -52,9 +52,27 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	setSizeGripEnabled(true);
 	setFont(QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
-	//QFont font = this->font();
-	//font.setPointSize(14);
-	//setFont(font);
+
+	// restore settings done from takin main settings dialog
+	QSettings sett_core("takin", "core");
+	if(sett_core.contains("main/font_gen"))
+	{
+		QString font_str = sett_core.value("main/font_gen").toString();
+		QFont font = this->font();
+		//font.setPointSize(14);
+		if(font.fromString(font_str))
+			setFont(font);
+	}
+	if(sett_core.contains("main/prec"))
+	{
+		g_prec = sett_core.value("main/prec").toInt();
+		g_eps = std::pow(t_real(10), -t_real(g_prec));
+	}
+	if(sett_core.contains("main/prec_gfx"))
+	{
+		g_prec_gui = sett_core.value("main/prec_gfx").toInt();
+	}
+
 
 	m_tabs_in = new QTabWidget(this);
 	m_tabs_out = new QTabWidget(this);
@@ -521,6 +539,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		dlgInfo = new QDialog(this);
 		dlgInfo->setWindowTitle("About");
 		dlgInfo->setSizeGripEnabled(true);
+		dlgInfo->setFont(this->font());
 
 		QPushButton *infoDlgOk = new QPushButton("OK", dlgInfo);
 		connect(infoDlgOk, &QAbstractButton::clicked,
@@ -651,6 +670,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		if(m_sett->contains("splitter"))
 			m_split_inout->restoreState(m_sett->value("splitter").toByteArray());
 	}
+
 
 	m_symOpIgnoreChanges = 0;
 	m_formulaIgnoreChanges = 0;

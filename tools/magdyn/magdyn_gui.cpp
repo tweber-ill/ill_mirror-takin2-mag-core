@@ -1485,6 +1485,7 @@ void MagDynDlg::CreateInfoDlg()
 	m_info_dlg = new QDialog(this);
 	m_info_dlg->setWindowTitle("About");
 	m_info_dlg->setSizeGripEnabled(true);
+	m_info_dlg->setFont(this->font());
 
 	QPushButton *infoDlgOk = new QPushButton("OK", m_info_dlg);
 	connect(infoDlgOk, &QAbstractButton::clicked,

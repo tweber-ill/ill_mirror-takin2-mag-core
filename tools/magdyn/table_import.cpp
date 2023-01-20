@@ -42,6 +42,7 @@ TableImportDlg::TableImportDlg(QWidget* parent, QSettings* sett)
 {
 	setWindowTitle("Table Importer");
 	setSizeGripEnabled(true);
+	setFont(parent->font());
 
 	// gui elements
 	// --------------------------------------------------------------------------------

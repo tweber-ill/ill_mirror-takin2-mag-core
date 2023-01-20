@@ -44,6 +44,7 @@ void StructFactDlg::ShowStructPlot()
 	{
 		m_dlgPlot = new QDialog(this);
 		m_dlgPlot->setWindowTitle("Unit Cell - 3D View");
+		m_dlgPlot->setFont(this->font());
 
 		m_plot = std::make_shared<tl2::GlPlot>(this);
 		m_plot->GetRenderer()->SetRestrictCamTheta(false);
