@@ -210,6 +210,8 @@ bool MagDynDlg::Load(const QString& filename)
 			m_unite_degeneracies->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.ignore_annihilation"))
 			m_ignore_annihilation->setChecked(*optVal);
+		if(auto optVal = magdyn.get_optional<bool>("config.force_incommensurate"))
+			m_force_incommensurate->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_projector"))
 			m_use_projector->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.field_axis_h"))
@@ -414,6 +416,7 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<bool>("config.use_weights", m_use_weights->isChecked());
 		magdyn.put<bool>("config.unite_degeneracies", m_unite_degeneracies->isChecked());
 		magdyn.put<bool>("config.ignore_annihilation", m_ignore_annihilation->isChecked());
+		magdyn.put<bool>("config.force_incommensurate", m_force_incommensurate->isChecked());
 		magdyn.put<bool>("config.use_projector", m_use_projector->isChecked());
 		magdyn.put<t_real>("config.field_axis_h", m_rot_axis[0]->value());
 		magdyn.put<t_real>("config.field_axis_k", m_rot_axis[1]->value());

@@ -165,6 +165,7 @@ protected:
 	QAction *m_use_projector{};
 	QAction *m_unite_degeneracies{};
 	QAction *m_ignore_annihilation{};
+	QAction *m_force_incommensurate{};
 
 	// recently opened files
 	tl2::RecentFiles m_recent{};

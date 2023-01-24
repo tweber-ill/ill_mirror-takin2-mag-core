@@ -122,14 +122,17 @@ void MagDynDlg::CalcDispersion()
 	Es_data.reserve(num_pts*10);
 	ws_data.reserve(num_pts*10);
 
+	// options
 	const bool use_goldstone = false;
 	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
 	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
 	const bool use_weights = m_use_weights->isChecked();
 	const bool use_projector = m_use_projector->isChecked();
+	const bool force_incommensurate = m_force_incommensurate->isChecked();
 
 	t_real E0 = use_goldstone ? m_dyn.GetGoldstoneEnergy() : 0.;
 	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
+	m_dyn.SetForceIncommensurate(force_incommensurate);
 
 	// tread pool
 	unsigned int num_threads = std::max<unsigned int>(
@@ -344,14 +347,17 @@ void MagDynDlg::CalcHamiltonian()
 	ostr << "</table></p>";
 
 
-	// get energies and correlation functions
+	// options
 	const bool only_energies = !m_use_weights->isChecked();
 	const bool use_projector = m_use_projector->isChecked();
 	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
 	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
+	const bool force_incommensurate = m_force_incommensurate->isChecked();
 
 	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
+	m_dyn.SetForceIncommensurate(force_incommensurate);
 
+	// get energies and correlation functions
 	auto energies_and_correlations = m_dyn.GetEnergiesFromHamiltonian(H, Q, only_energies);
 	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
 

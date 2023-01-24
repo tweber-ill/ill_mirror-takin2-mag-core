@@ -1586,6 +1586,10 @@ void MagDynDlg::CreateMenuBar()
 	m_ignore_annihilation->setToolTip("Calculate only magnon creation..");
 	m_ignore_annihilation->setCheckable(true);
 	m_ignore_annihilation->setChecked(false);
+	m_force_incommensurate = new QAction("Force Incommensurate", menuCalc);
+	m_force_incommensurate->setToolTip("Enforce incommensurate calculation even for commensurate magnetic structures..");
+	m_force_incommensurate->setCheckable(true);
+	m_force_incommensurate->setChecked(false);
 
 	// help menu
 	auto menuHelp = new QMenu("Help", m_menu);
@@ -1631,6 +1635,7 @@ void MagDynDlg::CreateMenuBar()
 	menuCalc->addSeparator();
 	menuCalc->addAction(m_unite_degeneracies);
 	menuCalc->addAction(m_ignore_annihilation);
+	menuCalc->addAction(m_force_incommensurate);
 
 	menuHelp->addAction(acAboutQt);
 	menuHelp->addAction(acAbout);
@@ -1680,6 +1685,7 @@ void MagDynDlg::CreateMenuBar()
 	connect(m_use_projector, &QAction::toggled, calc_all_dyn);
 	connect(m_unite_degeneracies, &QAction::toggled, calc_all_dyn);
 	connect(m_ignore_annihilation, &QAction::toggled, calc_all_dyn);
+	connect(m_force_incommensurate, &QAction::toggled, calc_all_dyn);
 	connect(m_autocalc, &QAction::toggled, [this](bool checked)
 	{
 		if(checked)
