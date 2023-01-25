@@ -314,6 +314,16 @@ void MagDynDlg::CalcHamiltonian()
 	if(m_ignoreCalc)
 		return;
 
+	// options
+	const bool only_energies = !m_use_weights->isChecked();
+	const bool use_projector = m_use_projector->isChecked();
+	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
+	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
+	const bool force_incommensurate = m_force_incommensurate->isChecked();
+
+	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
+	m_dyn.SetForceIncommensurate(force_incommensurate);
+
 	m_hamiltonian->clear();
 
 	const t_vec_real Q = tl2::create<t_vec_real>(
@@ -329,37 +339,66 @@ void MagDynDlg::CalcHamiltonian()
 	// get hamiltonian
 	t_mat H = m_dyn.GetHamiltonian(Q);
 
-	ostr << "<p><h3>Hamiltonian</h3>";
-	ostr << "<table style=\"border:0px\">";
-
-	for(std::size_t i=0; i<H.size1(); ++i)
+	// print hamiltonian
+	auto print_H = [&ostr](const t_mat& H, const t_vec_real& Qvec)
 	{
-		ostr << "<tr>";
-		for(std::size_t j=0; j<H.size2(); ++j)
+		ostr << "<p><h3>Hamiltonian at Q = ("
+			<< Qvec[0] << ", " << Qvec[1] << ", " << Qvec[2] << ")</h3>";
+		ostr << "<table style=\"border:0px\">";
+
+		for(std::size_t i=0; i<H.size1(); ++i)
 		{
-			t_cplx elem = H(i, j);
-			tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
-			ostr << "<td style=\"padding-right:8px\">"
-				<< elem << "</td>";
+			ostr << "<tr>";
+			for(std::size_t j=0; j<H.size2(); ++j)
+			{
+				t_cplx elem = H(i, j);
+				tl2::set_eps_0<t_cplx, t_real>(elem, g_eps);
+				ostr << "<td style=\"padding-right:8px\">"
+					<< elem << "</td>";
+			}
+			ostr << "</tr>";
 		}
-		ostr << "</tr>";
+		ostr << "</table></p>";
+	};
+
+	print_H(H, Q);
+
+	// print shifted hamiltonians for incommensurate case
+	if(m_dyn.IsIncommensurate())
+	{
+		const t_vec_real O = tl2::create<t_vec_real>(
+		{
+			m_ordering[0]->value(),
+			m_ordering[1]->value(),
+			m_ordering[2]->value(),
+		});
+
+		if(!tl2::equals_0<t_vec_real>(O, g_eps))
+		{
+			t_mat H_p = m_dyn.GetHamiltonian(Q + O);
+			t_mat H_m = m_dyn.GetHamiltonian(Q - O);
+
+			print_H(H_p, Q + O);
+			print_H(H_m, Q - O);
+		}
 	}
-	ostr << "</table></p>";
-
-
-	// options
-	const bool only_energies = !m_use_weights->isChecked();
-	const bool use_projector = m_use_projector->isChecked();
-	const bool ignore_annihilation = m_ignore_annihilation->isChecked();
-	const bool unite_degeneracies = m_unite_degeneracies->isChecked();
-	const bool force_incommensurate = m_force_incommensurate->isChecked();
-
-	m_dyn.SetUniteDegenerateEnergies(unite_degeneracies);
-	m_dyn.SetForceIncommensurate(force_incommensurate);
 
 	// get energies and correlation functions
-	auto energies_and_correlations = m_dyn.GetEnergiesFromHamiltonian(H, Q, only_energies);
-	using t_E_and_S = typename decltype(energies_and_correlations)::value_type;
+	using t_E_and_S = typename decltype(m_dyn)::EnergyAndWeight;
+	std::vector<t_E_and_S> energies_and_correlations;
+
+	if(m_dyn.IsIncommensurate())
+	{
+		energies_and_correlations = m_dyn.GetEnergies(Q, only_energies);
+	}
+	else
+	{
+		energies_and_correlations = m_dyn.GetEnergiesFromHamiltonian(H, Q, only_energies);
+		if(!only_energies)
+			m_dyn.GetIntensities(Q, energies_and_correlations);
+		if(unite_degeneracies)
+			energies_and_correlations = m_dyn.UniteEnergies(energies_and_correlations);
+	}
 
 	if(only_energies)
 	{

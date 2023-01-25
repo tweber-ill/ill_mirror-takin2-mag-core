@@ -2,7 +2,11 @@
 <magdyn>
 	<meta>
 		<info>magdyn_tool</info>
-		<date>jeu. 2022-mars-10 12:26:29 CET</date>
+		<date>mer. 2023-janv.-25 08:54:11 CET</date>
+		<user>tw</user>
+		<url>https://code.ill.fr/scientific-software/takin</url>
+		<doi>https://doi.org/10.5281/zenodo.4117437</doi>
+		<doi_tlibs>https://doi.org/10.5281/zenodo.5717779</doi_tlibs>
 	</meta>
 	<config>
 		<h_start>0</h_start>
@@ -17,19 +21,30 @@
 		<num_Q_points>512</num_Q_points>
 		<weight_scale>1</weight_scale>
 		<weight_min>0</weight_min>
-		<weight_max>100</weight_max>
+		<weight_max>50</weight_max>
 		<auto_calc>true</auto_calc>
 		<use_DMI>true</use_DMI>
 		<use_field>false</use_field>
 		<use_temperature>false</use_temperature>
 		<use_weights>true</use_weights>
 		<unite_degeneracies>true</unite_degeneracies>
-		<use_projector>false</use_projector>
+		<ignore_annihilation>false</ignore_annihilation>
+		<force_incommensurate>false</force_incommensurate>
+		<use_projector>true</use_projector>
 		<field_axis_h>0</field_axis_h>
 		<field_axis_k>0</field_axis_k>
 		<field_axis_l>1</field_axis_l>
 		<field_angle>90</field_angle>
 		<spacegroup_index>0</spacegroup_index>
+		<export_start_h>-1</export_start_h>
+		<export_start_k>-1</export_start_k>
+		<export_start_l>-1</export_start_l>
+		<export_end_h>1</export_end_h>
+		<export_end_k>1</export_end_k>
+		<export_end_l>1</export_end_l>
+		<export_num_points_1>128</export_num_points_1>
+		<export_num_points_2>128</export_num_points_2>
+		<export_num_points_3>128</export_num_points_3>
 	</config>
 	<field>
 		<direction_h>1</direction_h>
@@ -38,11 +53,6 @@
 		<magnitude>0</magnitude>
 		<align_spins>false</align_spins>
 	</field>
-	<bragg>
-		<h>1</h>
-		<k>0</k>
-		<l>0</l>
-	</bragg>
 	<ordering>
 		<h>0</h>
 		<k>0</k>
@@ -57,7 +67,7 @@
 	<variables>
 		<variable>
 			<name>J</name>
-			<value>(1,0)</value>
+			<value>(0.5,0)</value>
 		</variable>
 	</variables>
 	<atom_sites>
