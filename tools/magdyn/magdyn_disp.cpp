@@ -83,7 +83,12 @@ void MagDynDlg::ClearDispersion(bool replot)
  */
 void MagDynDlg::PlotDispersion()
 {
+	if(!m_plot)
+		return;
+
+	m_plot->clearPlottables();
 	m_graphs.clear();
+
 	const bool plot_channels = m_plot_channels->isChecked();
 
 	// create plot curves
