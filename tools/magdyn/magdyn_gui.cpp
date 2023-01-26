@@ -1520,6 +1520,10 @@ void MagDynDlg::CreateMenuBar()
 
 	// dispersion menu
 	m_menuDisp = new QMenu("Dispersion", m_menu);
+	m_plot_channels = new QAction("Plot Channels", m_menuDisp);
+	m_plot_channels->setToolTip("Plot individual channels.");
+	m_plot_channels->setCheckable(true);
+	m_plot_channels->setChecked(false);
 	auto acRescalePlot = new QAction("Rescale Axes", m_menuDisp);
 	auto acSaveFigure = new QAction("Save Figure...", m_menuDisp);
 	auto acSaveDisp = new QAction("Save Data...", m_menuDisp);
@@ -1618,6 +1622,8 @@ void MagDynDlg::CreateMenuBar()
 	menuStruct->addSeparator();
 	menuStruct->addAction(acStructView);
 
+	m_menuDisp->addAction(m_plot_channels);
+	m_menuDisp->addSeparator();
 	m_menuDisp->addAction(acRescalePlot);
 	m_menuDisp->addSeparator();
 	m_menuDisp->addAction(acSaveFigure);
@@ -1690,6 +1696,11 @@ void MagDynDlg::CreateMenuBar()
 	{
 		if(checked)
 			this->CalcAll();
+	});
+
+	connect(m_plot_channels, &QAction::toggled, [this](bool)
+	{
+		this->PlotDispersion();
 	});
 
 	connect(acCalc, &QAction::triggered, [this]()

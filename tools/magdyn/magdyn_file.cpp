@@ -196,6 +196,8 @@ bool MagDynDlg::Load(const QString& filename)
 			m_weight_min->setValue(*optVal);
 		if(auto optVal = magdyn.get_optional<t_real>("config.weight_max"))
 			m_weight_max->setValue(*optVal);
+		if(auto optVal = magdyn.get_optional<bool>("config.plot_channels"))
+			m_plot_channels->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.auto_calc"))
 			m_autocalc->setChecked(*optVal);
 		if(auto optVal = magdyn.get_optional<bool>("config.use_DMI"))
@@ -409,6 +411,7 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<t_real>("config.weight_scale", m_weight_scale->value());
 		magdyn.put<t_real>("config.weight_min", m_weight_min->value());
 		magdyn.put<t_real>("config.weight_max", m_weight_max->value());
+		magdyn.put<bool>("config.plot_channels", m_plot_channels->isChecked());
 		magdyn.put<bool>("config.auto_calc", m_autocalc->isChecked());
 		magdyn.put<bool>("config.use_DMI", m_use_dmi->isChecked());
 		magdyn.put<bool>("config.use_field", m_use_field->isChecked());

@@ -166,6 +166,7 @@ protected:
 	QAction *m_unite_degeneracies{};
 	QAction *m_ignore_annihilation{};
 	QAction *m_force_incommensurate{};
+	QAction *m_plot_channels{};
 
 	// recently opened files
 	tl2::RecentFiles m_recent{};
@@ -248,13 +249,8 @@ protected:
 	QMenu *m_structplot_context{};
 	QLabel *m_labelGlInfos[4]{nullptr, nullptr, nullptr, nullptr};
 	tl2::GlPlot *m_structplot{};
-	std::size_t m_structplot_sphere = 0;
-	std::size_t m_structplot_arrow = 0;
-	std::size_t m_structplot_cyl = 0;
-	std::unordered_map<std::size_t, const t_magdyn::AtomSite*>
-		m_structplot_atoms{};
-	std::unordered_map<std::size_t, const t_magdyn::ExchangeTerm*>
-		m_structplot_terms{};
+	std::unordered_map<std::size_t, const t_magdyn::AtomSite*> m_structplot_atoms{};
+	std::unordered_map<std::size_t, const t_magdyn::ExchangeTerm*> m_structplot_terms{};
 	std::optional<std::size_t> m_structplot_cur_obj{};
 	std::optional<std::size_t> m_structplot_cur_atom{};
 	std::optional<std::size_t> m_structplot_cur_term{};
@@ -345,6 +341,8 @@ protected:
 	void CalcDispersion();
 	void CalcHamiltonian();
 
+	void PlotDispersion();
+
 	void PlotMouseMove(QMouseEvent* evt);
 	void PlotMousePress(QMouseEvent* evt);
 
@@ -385,6 +383,17 @@ private:
 	bool m_ignoreTableChanges = true;
 	bool m_ignoreCalc = false;
 	bool m_stopRequested = false;
+
+	// data for dispersion plot
+	QVector<t_real> m_qs_data{}, m_Es_data{}, m_ws_data{};
+	QVector<t_real> m_qs_data_channel[3]{}, m_Es_data_channel[3]{}, m_ws_data_channel[3]{};
+	t_size m_Q_idx{};                 // plot x axis
+	t_real m_Q_start{}, m_Q_end{};    // plot x axis range
+
+	// reference object handles
+	std::size_t m_structplot_sphere = 0;
+	std::size_t m_structplot_arrow = 0;
+	std::size_t m_structplot_cyl = 0;
 };
 
 
