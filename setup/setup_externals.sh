@@ -34,16 +34,17 @@ UZIP=unzip
 
 # -----------------------------------------------------------------------------
 # URLs for external libs
-TLIBS=https://forge.frm2.tum.de/cgit/cgit.cgi/frm2/mira/tlibs.git/snapshot/tlibs-master.tar.bz2
 QCP=https://www.qcustomplot.com/release/2.0.1/QCustomPlot-source.tar.gz
 GEMMI=https://github.com/project-gemmi/gemmi/archive/master.zip
 MAGDATA=https://stokes.byu.edu/iso/magnetic_data.txt
+PATHSLIB=https://code.ill.fr/scientific-software/takin/paths/-/archive/master/paths-master.tar.bz2
+#TLIBS=https://forge.frm2.tum.de/cgit/cgit.cgi/frm2/mira/tlibs.git/snapshot/tlibs-master.tar.bz2
 
 # local file names
-TLIBS_LOCAL=${TLIBS##*[/\\]}
 QCP_LOCAL=${QCP##*[/\\]}
 GEMMI_LOCAL=${GEMMI##*[/\\]}
 MAGDATA_LOCAL=${MAGDATA##*[/\\]}
+PATHSLIB_LOCAL=${PATHSLIB##*[/\\]}
 # -----------------------------------------------------------------------------
 
 
@@ -53,12 +54,14 @@ function clean_dirs()
 {
 	rm -rf qcp
 	rm -rf gemmi
+	rm -rf paths
 }
 
 function clean_files()
 {
 	rm -f ${QCP_LOCAL}
 	rm -f ${GEMMI_LOCAL}
+	rm -f ${PATHSLIB_LOCAL}
 }
 # -----------------------------------------------------------------------------
 
@@ -102,6 +105,25 @@ function dl_gemmi()
 }
 
 
+function dl_pathslib()
+{
+	if ! ${WGET} ${PATHSLIB}
+	then
+		echo -e "Error downloading TAS-Paths.";
+		exit -1;
+	fi
+
+
+	if ! ${TAR} xjvf ${PATHSLIB_LOCAL}
+	then
+		echo -e "Error extracting TAS-Paths.";
+		exit -1;
+	fi
+
+	mv paths-master paths
+}
+
+
 function dl_magdata()
 {
 	if ! ${WGET} ${MAGDATA}
@@ -135,6 +157,11 @@ echo -e "Installing external Gemmi library...\n"
 dl_gemmi
 echo -e "--------------------------------------------------------------------------------\n"
 
+echo -e "\n--------------------------------------------------------------------------------"
+echo -e "Installing external TAS-Paths library...\n"
+dl_pathslib
+echo -e "--------------------------------------------------------------------------------\n"
+
 #echo -e "\n--------------------------------------------------------------------------------"
 #echo -e "Downloading magnetic space group data...\n"
 #dl_magdata
@@ -143,4 +170,13 @@ echo -e "-----------------------------------------------------------------------
 echo -e "\n--------------------------------------------------------------------------------"
 echo -e "Removing temporary files...\n"
 clean_files
+echo -e "--------------------------------------------------------------------------------\n"
+
+cd ..
+
+echo -e "\n--------------------------------------------------------------------------------"
+echo -e "Setting up links...\n"
+if [ ! -L pathslib ]; then
+	ln -sfv ext/paths/src pathslib
+fi
 echo -e "--------------------------------------------------------------------------------\n"
