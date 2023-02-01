@@ -547,7 +547,7 @@ Data operator *(t_real_dat d, const Data& dat1)
 
 Data operator /(const Data& dat1, t_real d)
 {
-	return dat1 * t_real(1)/d;
+	return dat1 * (t_real(1)/d);
 }
 
 

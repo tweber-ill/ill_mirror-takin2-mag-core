@@ -25,6 +25,14 @@
 
 #define MAX_RECENT_FILES 16
 
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QDialog>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
+namespace algo = boost::algorithm;
+
 #include "mainwnd.h"
 #include "globals.h"
 #include "funcs.h"
@@ -32,10 +40,6 @@
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/str.h"
 #include "tlibs2/libs/qt/helper.h"
-
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QFileDialog>
-#include <QtWidgets/QDialog>
 
 #include <iostream>
 
@@ -79,10 +83,10 @@ MainWnd::MainWnd(QSettings* pSettings)
 	menuFile->addAction(acSave);
 	menuFile->addAction(acSaveAs);
 	menuFile->addSeparator();
-	auto *acPrefs = new QAction("Preferences...", m_pMenu);
-	acPrefs->setMenuRole(QAction::PreferencesRole);
-	menuFile->addAction(acPrefs);
-	menuFile->addSeparator();
+	//auto *acPrefs = new QAction("Preferences...", m_pMenu);
+	//acPrefs->setMenuRole(QAction::PreferencesRole);
+	//menuFile->addAction(acPrefs);   TODO
+	//menuFile->addSeparator();
 	auto *acQuit = new QAction(QIcon::fromTheme("application-exit"), "Quit", m_pMenu);
 	acQuit->setMenuRole(QAction::QuitRole);
 	menuFile->addAction(acQuit);
@@ -94,12 +98,12 @@ MainWnd::MainWnd(QSettings* pSettings)
 	//menuView->addAction(m_pCurPlot->toggleViewAction());
 
 	// help
-	auto *acAbout = new QAction(QIcon::fromTheme("help-about"), "About...", m_pMenu);
 	auto *acAboutQt = new QAction(QIcon::fromTheme("help-about"), "About Qt...", m_pMenu);
-	acAbout->setMenuRole(QAction::AboutRole);
+	auto *acAbout = new QAction(QIcon::fromTheme("help-about"), "About...", m_pMenu);
 	acAboutQt->setMenuRole(QAction::AboutQtRole);
-	menuHelp->addAction(acAbout);
+	acAbout->setMenuRole(QAction::AboutRole);
 	menuHelp->addAction(acAboutQt);
+	menuHelp->addAction(acAbout);
 
 	m_pMenu->addMenu(menuFile);
 	m_pMenu->addMenu(menuView);
@@ -126,6 +130,99 @@ MainWnd::MainWnd(QSettings* pSettings)
 
 
 	// ------------------------------------------------------------------------
+	// info dialog
+	QDialog *dlgInfo = nullptr;
+	{
+		auto infopanel = new QWidget(this);
+		auto grid = new QGridLayout(infopanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(6, 6, 6, 6);
+
+		auto sep1 = new QFrame(infopanel); sep1->setFrameStyle(QFrame::HLine);
+		auto sep2 = new QFrame(infopanel); sep2->setFrameStyle(QFrame::HLine);
+		auto sep3 = new QFrame(infopanel); sep3->setFrameStyle(QFrame::HLine);
+
+		std::string strBoost = BOOST_LIB_VERSION;
+		algo::replace_all(strBoost, "_", ".");
+
+		auto labelTitle = new QLabel("Takin / Scan Browser", infopanel);
+		auto fontTitle = labelTitle->font();
+		fontTitle.setBold(true);
+		labelTitle->setFont(fontTitle);
+		labelTitle->setAlignment(Qt::AlignHCenter);
+
+		auto labelAuthor = new QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel);
+		labelAuthor->setAlignment(Qt::AlignHCenter);
+
+		auto labelDate = new QLabel("2018.", infopanel);
+		labelDate->setAlignment(Qt::AlignHCenter);
+
+		int y = 0;
+		grid->addWidget(labelTitle, y++,0, 1,1);
+		grid->addWidget(labelAuthor, y++,0, 1,1);
+		grid->addWidget(labelDate, y++,0, 1,1);
+
+		grid->addItem(new QSpacerItem(16,16,
+			QSizePolicy::Minimum, QSizePolicy::Fixed),
+			y++,0, 1,1);
+		grid->addWidget(sep1, y++,0, 1,1);
+
+		grid->addWidget(new QLabel(
+			QString("Compiler: ") +
+			QString(BOOST_COMPILER) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("C++ Library: ") +
+			QString(BOOST_STDLIB) + ".",
+			infopanel), y++,0, 1,1);
+		grid->addWidget(new QLabel(
+			QString("Build Date: ") +
+			QString(__DATE__) + ", " +
+			QString(__TIME__) + ".",
+			infopanel), y++,0, 1,1);
+
+		grid->addWidget(sep2, y++,0, 1,1);
+
+		auto labelQt = new QLabel(QString(
+			"<a href=\"http://code.qt.io/cgit/\">Qt</a>"
+			" Version: %1.").arg(QT_VERSION_STR),
+			infopanel);
+		labelQt->setOpenExternalLinks(true);
+		grid->addWidget(labelQt, y++,0, 1,1);
+
+		auto labelBoost = new QLabel(QString(
+			"<a href=\"http://www.boost.org\">Boost</a>"
+			" Version: %1.").arg(strBoost.c_str()),
+			infopanel);
+		labelBoost->setOpenExternalLinks(true);
+		grid->addWidget(labelBoost, y++,0, 1,1);
+
+		grid->addWidget(sep3, y++,0, 1,1);
+
+		grid->addItem(new QSpacerItem(16,16,
+		QSizePolicy::Minimum, QSizePolicy::Expanding),
+			y++,0, 1,1);
+
+		dlgInfo = new QDialog(this);
+		dlgInfo->setWindowTitle("About");
+		dlgInfo->setSizeGripEnabled(true);
+		dlgInfo->setFont(this->font());
+
+		QPushButton *infoDlgOk = new QPushButton("OK", dlgInfo);
+		connect(infoDlgOk, &QAbstractButton::clicked,
+			dlgInfo, &QDialog::accept);
+
+		auto dlgGrid = new QGridLayout(dlgInfo);
+		dlgGrid->setSpacing(8);
+		dlgGrid->setContentsMargins(8, 8, 8, 8);
+		dlgGrid->addWidget(infopanel, 0,0, 1,4);
+		dlgGrid->addWidget(infoDlgOk, 1,3, 1,1);
+	}
+	// ------------------------------------------------------------------------
+
+
+
+	// ------------------------------------------------------------------------
 	// connections
 	connect(m_pBrowser->GetWidget(), &FileBrowserWidget::TransferFiles, m_pWS->GetWidget(), &WorkSpaceWidget::ReceiveFiles);
 	connect(m_pWS->GetWidget(), &WorkSpaceWidget::PlotDataset, m_pCurPlot, &Plotter::Plot);
@@ -135,7 +232,16 @@ MainWnd::MainWnd(QSettings* pSettings)
 	connect(acSave, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::SaveFile));
 	connect(acSaveAs, &QAction::triggered, this, &MainWnd::SaveFileAs);
 	//connect(acPrefs, &QAction::triggered, this, ....);	TODO
-	//connect(acAbout, &QAction::triggered, this, ....);	TODO
+	connect(acAbout, &QAction::triggered, [dlgInfo]()
+	{
+		if(!dlgInfo)
+			return;
+
+		dlgInfo->show();
+		dlgInfo->raise();
+		dlgInfo->activateWindow();
+	});
+
 	connect(acAboutQt, &QAction::triggered, this, []() { qApp->aboutQt(); });
 	connect(acQuit, &QAction::triggered, this, &QMainWindow::close);
 

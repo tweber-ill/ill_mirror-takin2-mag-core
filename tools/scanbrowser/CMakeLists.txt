@@ -56,7 +56,7 @@ find_package(QCP REQUIRED)
 # Minuit
 find_package(Minuit2 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(OpenMP REQUIRED)
+#find_package(OpenMP REQUIRED)
 # -----------------------------------------------------------------------------
 
 
@@ -123,6 +123,6 @@ qt5_use_modules(takin_scanbrowser Core Gui Widgets OpenGL)
 target_link_libraries(takin_scanbrowser
 	${Boost_LIBRARIES}
 	${QCP_LIBRARIES}
-	${Minuit2_LIBRARIES} Threads::Threads OpenMP::OpenMP_CXX
+	${Minuit2_LIBRARIES} Threads::Threads #OpenMP::OpenMP_CXX
 	-ldl
 )

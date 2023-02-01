@@ -150,7 +150,7 @@ void CommandLineWidget::UpdateCompleter()
 /**
  * clicked on a completer item
  */
-void CommandLineWidget::CompleterActivated(const QString& str)
+void CommandLineWidget::CompleterActivated(const QString& /*str*/)
 {
 	//std::cout << str.toStdString() << std::endl;
 }
