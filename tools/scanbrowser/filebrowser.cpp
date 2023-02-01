@@ -164,7 +164,7 @@ void FileBrowserWidget::SetFolder(const QString& dir)
 		QString fileFull = dir + QDir::separator() + strFile;
 
 		// load file to get a description
-		std::unique_ptr<tl2::FileInstrBase<t_real>> pInstr(tl2::FileInstrBase<t_real>::LoadInstr(fileFull.toStdString().c_str()));
+		std::shared_ptr<tl2::FileInstrBase<t_real>> pInstr = tl2::FileInstrBase<t_real>::LoadInstr(fileFull.toStdString().c_str());
 		if(pInstr && pInstr->GetColNames().size())	// only valid files with a non-zero column count
 		{
 			QString strDescr;

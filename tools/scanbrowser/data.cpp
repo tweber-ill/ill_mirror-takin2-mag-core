@@ -43,7 +43,7 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 
 
 	// load instrument data file
-	std::unique_ptr<tl2::FileInstrBase<t_real>> pInstr(tl2::FileInstrBase<t_real>::LoadInstr(pcFile));
+	std::shared_ptr<tl2::FileInstrBase<t_real>> pInstr = tl2::FileInstrBase<t_real>::LoadInstr(pcFile);
 	if(!pInstr)
 		return std::make_tuple(false, dataset);
 	const auto &colnames = pInstr->GetColNames();
@@ -218,6 +218,133 @@ Data Data::add_pointwise(const Data& dat1, const Data& dat2)
 			datret.m_monitors_err[detidx][cntidx] =
 				std::sqrt(dat1.m_monitors_err[detidx][cntidx]*dat1.m_monitors_err[detidx][cntidx]
 					+ dat2.m_monitors_err[detidx][cntidx]*dat2.m_monitors_err[detidx][cntidx]);
+		}
+	}
+
+	return datret;
+}
+
+
+/**
+ * merge data sets
+ */
+Data Data::merge(const Data& dat1, const Data& dat2)
+{
+	// check if x axes and dimensions are equal
+	constexpr const t_real_dat eps = 0.01;
+
+	Data datret = dat1;
+
+
+	// find index in datret, where the x values match with dat2
+	auto get_col_idx = [&datret, &dat2](std::size_t idx2) -> std::optional<std::size_t>
+	{
+		std::optional<std::size_t> idx;
+
+		for(std::size_t x1=0; x1<datret.GetNumAxes(); ++x1)
+		{
+			const std::string& name_x1 = datret.GetAxisName(x1);
+
+			// find matching axis in dat2
+			auto iter2 = std::find(dat2.m_x_names.begin(), dat2.m_x_names.end(), name_x1);
+			if(iter2 == dat2.m_x_names.end())
+				return std::nullopt;
+
+			std::size_t x2 = iter2 - dat2.m_x_names.begin();
+
+			t_real_dat xval2 = dat2.GetAxis(x2)[idx2];
+			const auto& xvals1 = datret.GetAxis(x1);
+
+			if(idx)
+			{
+				// already found the x index
+				if(!tl2::equals<t_real_dat>(xvals1[*idx], xval2, eps))
+					return std::nullopt;
+			}
+			else
+			{
+				// find the position on the datret axis, which has the same value as the given one on dat2
+				auto iter = std::find_if(xvals1.begin(), xvals1.end(),
+					[xval2](t_real_dat xval1) -> bool
+				{
+					return tl2::equals<t_real_dat>(xval1, xval2, eps);
+				});
+
+				if(iter == xvals1.end())
+					return std::nullopt;
+
+				idx = iter - xvals1.begin();
+			}
+		}
+
+		return idx;
+	};
+
+
+	// iterate columns of the scan
+	for(std::size_t cntidx2=0; cntidx2<dat2.GetNumCounts(); ++cntidx2)
+	{
+		// find index in datret, where the x values are the same
+		std::optional<std::size_t> cntidx = get_col_idx(cntidx2);
+
+		if(cntidx)
+		{
+			// if the same point exists in dat1, merge them
+
+			// merge detectors
+			for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+			{
+				auto& det = datret.m_counts[detidx];
+				auto& cnt = det[*cntidx];
+
+				cnt += dat2.m_counts[detidx][cntidx2];
+				datret.m_counts_err[detidx][*cntidx] =
+					std::sqrt(dat1.m_counts_err[detidx][*cntidx]*dat1.m_counts_err[detidx][*cntidx]
+						+ dat2.m_counts_err[detidx][cntidx2]*dat2.m_counts_err[detidx][cntidx2]);
+			}
+
+			// merge monitors
+			for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+			{
+				auto& det = datret.m_monitors[detidx];
+				auto& cnt = det[*cntidx];
+
+				cnt += dat2.m_monitors[detidx][cntidx2];
+				datret.m_monitors_err[detidx][*cntidx] =
+					std::sqrt(dat1.m_monitors_err[detidx][*cntidx]*dat1.m_monitors_err[detidx][*cntidx]
+						+ dat2.m_monitors_err[detidx][cntidx2]*dat2.m_monitors_err[detidx][cntidx2]);
+			}
+		}
+		else
+		{
+			// if the same point does not exist in datret, append it
+
+			// append x axes
+			for(std::size_t xidx=0; xidx<std::min(datret.m_x_names.size(), datret.m_x.size()); ++xidx)
+			{
+				// find matching axis
+				auto iter2 = std::find(dat2.m_x_names.begin(), dat2.m_x_names.end(), datret.m_x_names[xidx]);
+				if(iter2 == dat2.m_x_names.end())
+					continue;
+
+				// insert data
+				std::size_t xidx2 = iter2 - dat2.m_x_names.begin();
+				datret.m_x[xidx].push_back(dat2.m_x[xidx2][cntidx2]);
+			}
+
+			// append detectors
+			for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
+			{
+				datret.m_counts[detidx].push_back(dat2.m_counts[detidx][cntidx2]);
+				datret.m_counts_err[detidx].push_back(std::sqrt(dat2.m_counts[detidx][cntidx2]));
+			}
+
+			// append monitors
+			for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
+			{
+				datret.m_monitors[detidx].push_back(dat2.m_monitors[detidx][cntidx2]);
+				datret.m_monitors_err[detidx].push_back(std::sqrt(dat2.m_monitors[detidx][cntidx2]));
+			}
 		}
 	}
 
@@ -495,6 +622,20 @@ Dataset Dataset::add_pointwise(const Dataset& dat1, const Dataset& dat2)
 	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
 	{
 		Data dat = Data::add_pointwise(dat1.GetChannel(ch), dat2.GetChannel(ch));
+		dataset.AddChannel(std::move(dat));
+	}
+
+	return dataset;
+}
+
+
+Dataset Dataset::merge(const Dataset& dat1, const Dataset& dat2)
+{
+	Dataset dataset;
+
+	for(std::size_t ch=0; ch<std::min(dat1.GetNumChannels(), dat2.GetNumChannels()); ++ch)
+	{
+		Data dat = Data::merge(dat1.GetChannel(ch), dat2.GetChannel(ch));
 		dataset.AddChannel(std::move(dat));
 	}
 

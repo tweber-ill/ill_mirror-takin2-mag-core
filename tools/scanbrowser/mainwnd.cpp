@@ -30,8 +30,8 @@
 #include "funcs.h"
 #include "tlibs2/libs/file.h"
 #include "tlibs2/libs/algos.h"
-#include "tlibs2/libs/helper.h"
 #include "tlibs2/libs/str.h"
+#include "tlibs2/libs/qt/helper.h"
 
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>

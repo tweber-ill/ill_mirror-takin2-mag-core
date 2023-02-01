@@ -26,7 +26,7 @@
 #include <iostream>
 #include <QtWidgets/QApplication>
 
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 #include "mainwnd.h"
 
 
