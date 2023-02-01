@@ -289,29 +289,27 @@ Data Data::merge(const Data& dat1, const Data& dat2)
 
 		if(cntidx)
 		{
-			// if the same point exists in dat1, merge them
+			// if the same point exists in datret, merge them
 
 			// merge detectors
 			for(std::size_t detidx=0; detidx<datret.m_counts.size(); ++detidx)
 			{
-				auto& det = datret.m_counts[detidx];
-				auto& cnt = det[*cntidx];
-
+				auto& cnt = datret.m_counts[detidx][*cntidx];
 				cnt += dat2.m_counts[detidx][cntidx2];
+
 				datret.m_counts_err[detidx][*cntidx] =
-					std::sqrt(dat1.m_counts_err[detidx][*cntidx]*dat1.m_counts_err[detidx][*cntidx]
+					std::sqrt(datret.m_counts_err[detidx][*cntidx]*datret.m_counts_err[detidx][*cntidx]
 						+ dat2.m_counts_err[detidx][cntidx2]*dat2.m_counts_err[detidx][cntidx2]);
 			}
 
 			// merge monitors
 			for(std::size_t detidx=0; detidx<datret.m_monitors.size(); ++detidx)
 			{
-				auto& det = datret.m_monitors[detidx];
-				auto& cnt = det[*cntidx];
-
+				auto& cnt = datret.m_monitors[detidx][*cntidx];
 				cnt += dat2.m_monitors[detidx][cntidx2];
+
 				datret.m_monitors_err[detidx][*cntidx] =
-					std::sqrt(dat1.m_monitors_err[detidx][*cntidx]*dat1.m_monitors_err[detidx][*cntidx]
+					std::sqrt(datret.m_monitors_err[detidx][*cntidx]*datret.m_monitors_err[detidx][*cntidx]
 						+ dat2.m_monitors_err[detidx][cntidx2]*dat2.m_monitors_err[detidx][cntidx2]);
 			}
 		}

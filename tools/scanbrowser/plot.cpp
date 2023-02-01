@@ -23,6 +23,8 @@
  * ----------------------------------------------------------------------------
  */
 
+#include "tlibs2/libs/algos.h"
+
 #include "plot.h"
 
 #include <QtWidgets/QGridLayout>
@@ -34,8 +36,8 @@ using t_real = t_real_dat;
 
 
 Plotter::Plotter(QWidget *parent, QSettings* pSettings)
-	: QWidget(parent), m_pSettings(pSettings), 
-	m_pPlotter{std::make_shared<QCustomPlot>(this)}, 
+	: QWidget(parent), m_pSettings(pSettings),
+	m_pPlotter{std::make_shared<QCustomPlot>(this)},
 	m_pPlotContextMenu{new QMenu(m_pPlotter.get())}
 
 {
@@ -180,8 +182,25 @@ void Plotter::Plot(const Dataset &dataset)
 		std::copy(datx.begin(), datx.end(), std::back_inserter(_datx));
 		std::copy(daty.begin(), daty.end(), std::back_inserter(_daty));
 		std::copy(datyerr.begin(), datyerr.end(), std::back_inserter(_datyerr));
-	
-		graph->setData(_datx, _daty);
+
+		// sort data by x axis
+		auto sort_data = [](QVector<t_real>& xvec, QVector<t_real>& yvec, QVector<t_real>& yerrvec)
+		{
+			std::vector<std::size_t> perm = tl2::get_perm(xvec.size(),
+				[&xvec, &yvec](std::size_t idx1, std::size_t idx2) -> bool
+				{
+					return xvec[idx1] < xvec[idx2];
+				});
+
+			xvec = tl2::reorder(xvec, perm);
+			yvec = tl2::reorder(yvec, perm);
+			yerrvec = tl2::reorder(yerrvec, perm);
+		};
+
+		sort_data(_datx, _daty, _datyerr);
+
+		// plot data
+		graph->setData(_datx, _daty, true);
 		graph_err->setData(_datyerr);
 
 
