@@ -792,8 +792,9 @@ bool Dataset::SaveGpl(const std::string& file) const
 	if(!ofstr)
 		return false;
 
-	std::size_t iPrec = 8;
-	ofstr.precision(iPrec);
+	std::size_t prec = 8;
+	t_real prec_scale = 1.75;
+	ofstr.precision(prec);
 
 
 	// colors
@@ -835,29 +836,35 @@ bool Dataset::SaveGpl(const std::string& file) const
 		// iterate all x axis names
 		ofstr << "# ";
 		for(std::size_t iX = 0; iX < Nx; ++iX)
-			ofstr << std::setw(iX==0 ? iPrec*1.5 - 2 : iPrec*1.5) << std::left << dat.GetAxisName(iX) << " ";
+			ofstr << std::setw(iX==0 ? prec*prec_scale - 2 : prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
 
 		// iterate all counter names
 		for(std::size_t iC = 0; iC < Nc; ++iC)
-			ofstr << std::setw(iPrec*1.5) << std::left << "counter " << " "
-				<< std::setw(iPrec*1.5) << std::left << "error" << " ";
+			ofstr << std::setw(prec*prec_scale) << std::left << "counter " << " "
+				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
 
 		// iterate all monitors names
 		for(std::size_t iM = 0; iM < Nm; ++iM)
-			ofstr << std::setw(iPrec*1.5) << std::left << "monitor " << " "
-				<< std::setw(iPrec*1.5) << std::left << "error" << " ";
+			ofstr << std::setw(prec*prec_scale) << std::left << "monitor " << " "
+				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
 
 		ofstr << "\n";
 
+		// find x sorting
+		std::vector<std::size_t> rows_sorted = tl2::get_perm(rows,
+			[&dat](std::size_t idx1, std::size_t idx2) -> bool
+			{
+				return dat.GetAxis(0)[idx1] < dat.GetAxis(0)[idx2];
+			});
 
 		// iterate data rows
-		for(std::size_t iRow = 0; iRow < rows; ++iRow)
+		for(std::size_t row_idx : rows_sorted)
 		{
 			// iterate all x axes
 			for(std::size_t iX = 0; iX < Nx; ++iX)
 			{
 				const auto& vec = dat.GetAxis(iX);
-				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " ";
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " ";
 			}
 
 
@@ -867,8 +874,8 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetCounter(iC);
 				const auto& vecErr = dat.GetCounterErrors(iC);
 
-				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " "
-					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow] << " ";
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx] << " ";
 			}
 
 
@@ -878,8 +885,8 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetMonitor(iM);
 				const auto& vecErr = dat.GetMonitorErrors(iM);
 
-				ofstr << std::setw(iPrec*1.5) << std::left << vec[iRow] << " "
-					<< std::setw(iPrec*1.5) << std::left << vecErr[iRow];
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx];
 			}
 
 
@@ -907,6 +914,126 @@ bool Dataset::SaveGpl(const std::string& file) const
 			<< " ps 1 lw 1.5 lc rgb " << cols[ch % iNumCols]
 			<< " title \"Channel " << (ch+1) << "\""
 			<< (ch == N-1 ? "\n" : ", \\\n");
+	}
+
+	return true;
+}
+
+
+/**
+ * export to data file
+ */
+bool Dataset::Save(const std::string& file) const
+{
+	std::ofstream ofstr(file);
+	if(!ofstr)
+		return false;
+
+	std::size_t prec = 8;
+	t_real prec_scale = 1.75;
+	ofstr.precision(prec);
+
+	// write a header stub
+	ofstr << "#\n";
+	ofstr << "# sample_a = 0\n";
+	ofstr << "# sample_b = 0\n";
+	ofstr << "# sample_c = 0\n";
+	ofstr << "# sample_alpha = 90\n";
+	ofstr << "# sample_beta = 90\n";
+	ofstr << "# sample_gamma = 90\n";
+	ofstr << "# orient1_x = 1\n";
+	ofstr << "# orient1_y = 0\n";
+	ofstr << "# orient1_z = 0\n";
+	ofstr << "# orient2_x = 0\n";
+	ofstr << "# orient2_y = 1\n";
+	ofstr << "# orient2_z = 0\n";
+	ofstr << "# mono_d = 0\n";
+	ofstr << "# ana_d = 0\n";
+	ofstr << "# sense_m = 1\n";
+	ofstr << "# sense_s = -1\n";
+	ofstr << "# sense_a = 1\n";
+	ofstr << "# k_fix = 1.4\n";
+	ofstr << "# is_ki_fixed = 0\n";
+	ofstr << "# col_h = 0\n";
+	ofstr << "# col_k = 0\n";
+	ofstr << "# col_l = 0\n";
+	ofstr << "# col_E = 1\n";
+	ofstr << "# cols_scanned = 1\n";
+	ofstr << "# col_ctr = 2\n";
+	ofstr << "# col_ctr_err = 3\n";
+	ofstr << "# col_mon = 4\n";
+	ofstr << "# col_mon_err = 5\n";
+	ofstr << "#\n";
+
+	std::size_t N = GetNumChannels();
+	for(std::size_t ch=0; ch<N; ++ch)
+	{
+		const Data& dat = GetChannel(ch);
+		const std::size_t Nx = dat.GetNumAxes();
+		const std::size_t Nc = dat.GetNumCounters();
+		const std::size_t Nm = dat.GetNumMonitors();
+
+		// channel empty ?
+		if(Nx == 0) continue;
+
+		// has to be the same for all columns
+		std::size_t rows = dat.GetCounter(0).size();
+
+		// iterate all x axis names
+		ofstr << "# ";
+		for(std::size_t iX = 0; iX < Nx; ++iX)
+			ofstr << std::setw(iX==0 ? prec*prec_scale - 2 : prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
+
+		// iterate all counter names
+		for(std::size_t iC = 0; iC < Nc; ++iC)
+			ofstr << std::setw(prec*prec_scale) << std::left << "counter " << " "
+				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+
+		// iterate all monitors names
+		for(std::size_t iM = 0; iM < Nm; ++iM)
+			ofstr << std::setw(prec*prec_scale) << std::left << "monitor " << " "
+				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+		ofstr << "\n";
+
+		// find x sorting
+		std::vector<std::size_t> rows_sorted = tl2::get_perm(rows,
+			[&dat](std::size_t idx1, std::size_t idx2) -> bool
+			{
+				return dat.GetAxis(0)[idx1] < dat.GetAxis(0)[idx2];
+			});
+
+		// iterate data rows
+		for(std::size_t row_idx : rows_sorted)
+		{
+			// iterate all x axes
+			for(std::size_t iX = 0; iX < Nx; ++iX)
+			{
+				const auto& vec = dat.GetAxis(iX);
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " ";
+			}
+
+			// iterate all counters
+			for(std::size_t iC = 0; iC < Nc; ++iC)
+			{
+				const auto& vec = dat.GetCounter(iC);
+				const auto& vecErr = dat.GetCounterErrors(iC);
+
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx] << " ";
+			}
+
+			// iterate all monitors
+			for(std::size_t iM = 0; iM < Nm; ++iM)
+			{
+				const auto& vec = dat.GetMonitor(iM);
+				const auto& vecErr = dat.GetMonitorErrors(iM);
+
+				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx];
+			}
+
+			ofstr << "\n";
+		}
 	}
 
 	return true;

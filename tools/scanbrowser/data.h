@@ -163,8 +163,9 @@ public:
 	Dataset norm(std::size_t mon = 0) const;
 	void clear();
 
-	// export to gnuplot
+	// export to gnuplot or data file
 	bool SaveGpl(const std::string& file) const;
+	bool Save(const std::string& file) const;
 
 
 	// binary operators

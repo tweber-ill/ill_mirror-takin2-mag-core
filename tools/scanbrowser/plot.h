@@ -62,6 +62,7 @@ public:
 
 	void SavePDF();
 	void SaveGpl();
+	void SaveDat();
 };
 
 

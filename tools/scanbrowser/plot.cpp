@@ -50,6 +50,8 @@ Plotter::Plotter(QWidget *parent, QSettings* pSettings)
 	m_pPlotContextMenu->setTitle("Plot");
 	m_pPlotContextMenu->addAction("Export to Gnuplot...", this, &Plotter::SaveGpl);
 	m_pPlotContextMenu->addAction("Save as PDF...", this, &Plotter::SavePDF);
+	m_pPlotContextMenu->addSeparator();
+	m_pPlotContextMenu->addAction("Save Data...", this, &Plotter::SaveDat);
 
 	m_pPlotter->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(m_pPlotter.get(), &QCustomPlot::customContextMenuRequested, this, &Plotter::ShowPlotContextMenu);
@@ -81,9 +83,9 @@ void Plotter::SavePDF()
 {
 	QString dirLast = "";
 	if(m_pSettings)
-		m_pSettings->value("dir_pdf", "").toString();
+		dirLast = m_pSettings->value("dir_pdf", "").toString();
 
-	QString file = QFileDialog::getSaveFileName(this, "Save as PDF", dirLast, "PDF Files (*.pdf *.PDF)");
+	QString file = QFileDialog::getSaveFileName(this, "Save as PDF", dirLast, "PDF Files (*.pdf)");
 	if(file=="")
 		return;
 
@@ -99,15 +101,15 @@ void Plotter::SavePDF()
 
 
 /**
- * export plot to Gnuplot
+ * export plot to gnuplot
  */
 void Plotter::SaveGpl()
 {
 	QString dirLast = "";
 	if(m_pSettings)
-		m_pSettings->value("dir_gpl", "").toString();
+		dirLast = m_pSettings->value("dir_gpl", "").toString();
 
-	QString file = QFileDialog::getSaveFileName(this, "Export to Gnuplot", dirLast, "Gnuplot Files (*.gpl *.GPL)");
+	QString file = QFileDialog::getSaveFileName(this, "Export to Gnuplot", dirLast, "Gnuplot Files (*.gpl)");
 	if(file=="")
 		return;
 
@@ -119,6 +121,30 @@ void Plotter::SaveGpl()
 
 	if(m_pSettings)
 		m_pSettings->setValue("dir_gpl", QFileInfo(file).path());
+}
+
+
+/**
+ * export plot to data file
+ */
+void Plotter::SaveDat()
+{
+	QString dirLast = "";
+	if(m_pSettings)
+		dirLast = m_pSettings->value("dir_dat", "").toString();
+
+	QString file = QFileDialog::getSaveFileName(this, "Export data", dirLast, "Data Files (*.dat)");
+	if(file=="")
+		return;
+
+	if(!m_dataset.Save(file.toStdString()))
+	{
+		QMessageBox::critical(this, "Data Export", "Could not save data file.");
+		return;
+	}
+
+	if(m_pSettings)
+		m_pSettings->setValue("dir_dat", QFileInfo(file).path());
 }
 
 
@@ -187,7 +213,7 @@ void Plotter::Plot(const Dataset &dataset)
 		auto sort_data = [](QVector<t_real>& xvec, QVector<t_real>& yvec, QVector<t_real>& yerrvec)
 		{
 			std::vector<std::size_t> perm = tl2::get_perm(xvec.size(),
-				[&xvec, &yvec](std::size_t idx1, std::size_t idx2) -> bool
+				[&xvec](std::size_t idx1, std::size_t idx2) -> bool
 				{
 					return xvec[idx1] < xvec[idx2];
 				});
