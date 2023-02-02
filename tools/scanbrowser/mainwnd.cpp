@@ -27,11 +27,6 @@
 
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
-#include <QtWidgets/QDialog>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/replace.hpp>
-namespace algo = boost::algorithm;
 
 #include "mainwnd.h"
 #include "globals.h"
@@ -232,15 +227,7 @@ MainWnd::MainWnd(QSettings* pSettings)
 	connect(acSave, &QAction::triggered, this, static_cast<void(MainWnd::*)()>(&MainWnd::SaveFile));
 	connect(acSaveAs, &QAction::triggered, this, &MainWnd::SaveFileAs);
 	//connect(acPrefs, &QAction::triggered, this, ....);	TODO
-	connect(acAbout, &QAction::triggered, [dlgInfo]()
-	{
-		if(!dlgInfo)
-			return;
-
-		dlgInfo->show();
-		dlgInfo->raise();
-		dlgInfo->activateWindow();
-	});
+	connect(acAbout, &QAction::triggered, this, &MainWnd::ShowAbout);
 
 	connect(acAboutQt, &QAction::triggered, this, []() { qApp->aboutQt(); });
 	connect(acQuit, &QAction::triggered, this, &QMainWindow::close);
@@ -521,6 +508,18 @@ void MainWnd::SetCurrentFile(const QString &file)
 		this->setWindowTitle(title);
 	else
 		this->setWindowTitle(title + " -- " + m_curFile);
+}
+
+
+
+void MainWnd::ShowAbout()
+{
+	if(!m_pAbout)
+		m_pAbout = create_about_dialog(this);
+
+	m_pAbout->show();
+	m_pAbout->raise();
+	m_pAbout->activateWindow();
 }
 
 

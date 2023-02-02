@@ -28,6 +28,7 @@
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QDialog>
 #include <QtWidgets/QMdiArea>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
@@ -37,6 +38,7 @@
 #include "workspace.h"
 #include "command.h"
 #include "plot.h"
+#include "about.h"
 
 #include <boost/dll/shared_library.hpp>
 #include <memory>
@@ -90,6 +92,7 @@ private:
 	QMenu *m_pmenuPluginTools = nullptr;
 	//QStatusBar *m_pStatus = new QStatusBar(this);
 	QMdiArea *m_pMDI = new QMdiArea(this);
+	QDialog *m_pAbout = nullptr;
 
 	FileBrowser *m_pBrowser = nullptr;
 	WorkSpace *m_pWS = nullptr;
@@ -111,6 +114,8 @@ protected:
 	void SetRecentFiles(const QStringList &files);
 	void AddRecentFile(const QString &file);
 	void RebuildRecentFiles();
+
+	void ShowAbout();
 
 	void LoadPlugins();
 	void UnloadPlugins();

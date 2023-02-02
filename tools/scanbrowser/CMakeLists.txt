@@ -105,6 +105,7 @@ add_executable(takin_scanbrowser
 	workspace.cpp workspace.h
 	data.cpp data.h plot.cpp plot.h
 	command.cpp command.h
+	about.cpp about.h
 	globals.cpp globals.h
 	hacks.cpp hacks.h
 
@@ -118,10 +119,11 @@ add_executable(takin_scanbrowser
 #	../../ext/qcp/qcustomplot.cpp ../../ext/qcp/qcustomplot.h
 )
 
-qt5_use_modules(takin_scanbrowser Core Gui Widgets OpenGL)
+#qt5_use_modules(takin_scanbrowser Core Gui Widgets)
 
 target_link_libraries(takin_scanbrowser
 	${Boost_LIBRARIES}
+	Qt5::Core Qt5::Gui Qt5::Widgets
 	${QCP_LIBRARIES}
 	${Minuit2_LIBRARIES} Threads::Threads #OpenMP::OpenMP_CXX
 	-ldl
