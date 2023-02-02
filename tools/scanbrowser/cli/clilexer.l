@@ -12,7 +12,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  * "misc" project
  * Copyright (C) 2017-2021  Tobias WEBER (privately developed).
@@ -71,7 +71,7 @@ real     {uinteger}(\.[0-9]*)?|\.[0-9]+
 
 {real}([eE]{integer})? {
 	//std::cerr << "matched: " << yytext << std::endl;
-	return yy::CliParser::make_TOK_REAL(str_to_real<t_real_cli>(yytext));
+	return yy::CliParser::make_TOK_REAL(str_to_real<t_real>(yytext));
 }
 
 ["'][^"'\n]*["'] {
@@ -86,7 +86,7 @@ real     {uinteger}(\.[0-9]*)?|\.[0-9]+
 
 . {
 	ctx.PrintError(std::string("Lexer error: Unknown token: \"") + yytext + std::string("\""));
-} 
+}
 
 
 %%

@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,12 +25,10 @@
 
 #include "data.h"
 #include "globals.h"
+
 #include "tlibs2/libs/instr.h"
 #include "tlibs2/libs/maths.h"
 #include "tlibs2/libs/algos.h"
-
-
-using t_real = t_real_dat;
 
 
 
@@ -163,8 +161,6 @@ std::tuple<bool, Dataset> Dataset::convert_instr_file(const char* pcFile)
 Data Data::add_pointwise(const Data& dat1, const Data& dat2)
 {
 	// check if x axes and dimensions are equal
-	constexpr const t_real_dat eps = 0.01;
-
 	bool compatible = true;
 	compatible = compatible && (dat1.m_x_names == dat2.m_x_names);
 	compatible = compatible && (dat1.m_x.size() == dat2.m_x.size());
@@ -172,7 +168,7 @@ Data Data::add_pointwise(const Data& dat1, const Data& dat2)
 	{
 		for(std::size_t i=0; i<dat2.m_x.size(); ++i)
 		{
-			if(!tl2::equals(dat1.m_x[i], dat2.m_x[i], eps))
+			if(!tl2::equals(dat1.m_x[i], dat2.m_x[i], g_eps_merge))
 			{
 				compatible = false;
 				break;
@@ -230,9 +226,6 @@ Data Data::add_pointwise(const Data& dat1, const Data& dat2)
  */
 Data Data::merge(const Data& dat1, const Data& dat2)
 {
-	// check if x axes and dimensions are equal
-	constexpr const t_real_dat eps = 0.01;
-
 	Data datret = dat1;
 
 
@@ -258,7 +251,7 @@ Data Data::merge(const Data& dat1, const Data& dat2)
 			if(idx)
 			{
 				// already found the x index
-				if(!tl2::equals<t_real_dat>(xvals1[*idx], xval2, eps))
+				if(!tl2::equals<t_real_dat>(xvals1[*idx], xval2, g_eps_merge))
 					return std::nullopt;
 			}
 			else
@@ -267,7 +260,7 @@ Data Data::merge(const Data& dat1, const Data& dat2)
 				auto iter = std::find_if(xvals1.begin(), xvals1.end(),
 					[xval2](t_real_dat xval1) -> bool
 				{
-					return tl2::equals<t_real_dat>(xval1, xval2, eps);
+					return tl2::equals<t_real_dat>(xval1, xval2, g_eps_merge);
 				});
 
 				if(iter == xvals1.end())
@@ -792,12 +785,11 @@ bool Dataset::SaveGpl(const std::string& file) const
 	if(!ofstr)
 		return false;
 
-	std::size_t prec = 8;
 	t_real prec_scale = 1.75;
-	ofstr.precision(prec);
+	ofstr.precision(g_prec);
 
 
-	// colors
+	// colours
 	ofstr << "col_0 = \"#ff0000\"\n";
 	ofstr << "col_1 = \"#0000ff\"\n";
 	ofstr << "col_2 = \"#009900\"\n";
@@ -836,17 +828,17 @@ bool Dataset::SaveGpl(const std::string& file) const
 		// iterate all x axis names
 		ofstr << "# ";
 		for(std::size_t iX = 0; iX < Nx; ++iX)
-			ofstr << std::setw(iX==0 ? prec*prec_scale - 2 : prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
+			ofstr << std::setw(iX==0 ? g_prec*prec_scale - 2 : g_prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
 
 		// iterate all counter names
 		for(std::size_t iC = 0; iC < Nc; ++iC)
-			ofstr << std::setw(prec*prec_scale) << std::left << "counter " << " "
-				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+			ofstr << std::setw(g_prec*prec_scale) << std::left << "counter " << " "
+				<< std::setw(g_prec*prec_scale) << std::left << "error" << " ";
 
 		// iterate all monitors names
 		for(std::size_t iM = 0; iM < Nm; ++iM)
-			ofstr << std::setw(prec*prec_scale) << std::left << "monitor " << " "
-				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+			ofstr << std::setw(g_prec*prec_scale) << std::left << "monitor " << " "
+				<< std::setw(g_prec*prec_scale) << std::left << "error" << " ";
 
 		ofstr << "\n";
 
@@ -864,7 +856,7 @@ bool Dataset::SaveGpl(const std::string& file) const
 			for(std::size_t iX = 0; iX < Nx; ++iX)
 			{
 				const auto& vec = dat.GetAxis(iX);
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " ";
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " ";
 			}
 
 
@@ -874,8 +866,8 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetCounter(iC);
 				const auto& vecErr = dat.GetCounterErrors(iC);
 
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
-					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx] << " ";
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(g_prec*prec_scale) << std::left << vecErr[row_idx] << " ";
 			}
 
 
@@ -885,8 +877,8 @@ bool Dataset::SaveGpl(const std::string& file) const
 				const auto& vec = dat.GetMonitor(iM);
 				const auto& vecErr = dat.GetMonitorErrors(iM);
 
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
-					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx];
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(g_prec*prec_scale) << std::left << vecErr[row_idx];
 			}
 
 
@@ -929,9 +921,8 @@ bool Dataset::Save(const std::string& file) const
 	if(!ofstr)
 		return false;
 
-	std::size_t prec = 8;
 	t_real prec_scale = 1.75;
-	ofstr.precision(prec);
+	ofstr.precision(g_prec);
 
 	// write a header stub
 	ofstr << "#\n";
@@ -982,17 +973,17 @@ bool Dataset::Save(const std::string& file) const
 		// iterate all x axis names
 		ofstr << "# ";
 		for(std::size_t iX = 0; iX < Nx; ++iX)
-			ofstr << std::setw(iX==0 ? prec*prec_scale - 2 : prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
+			ofstr << std::setw(iX==0 ? g_prec*prec_scale - 2 : g_prec*prec_scale) << std::left << dat.GetAxisName(iX) << " ";
 
 		// iterate all counter names
 		for(std::size_t iC = 0; iC < Nc; ++iC)
-			ofstr << std::setw(prec*prec_scale) << std::left << "counter " << " "
-				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+			ofstr << std::setw(g_prec*prec_scale) << std::left << "counter " << " "
+				<< std::setw(g_prec*prec_scale) << std::left << "error" << " ";
 
 		// iterate all monitors names
 		for(std::size_t iM = 0; iM < Nm; ++iM)
-			ofstr << std::setw(prec*prec_scale) << std::left << "monitor " << " "
-				<< std::setw(prec*prec_scale) << std::left << "error" << " ";
+			ofstr << std::setw(g_prec*prec_scale) << std::left << "monitor " << " "
+				<< std::setw(g_prec*prec_scale) << std::left << "error" << " ";
 		ofstr << "\n";
 
 		// find x sorting
@@ -1009,7 +1000,7 @@ bool Dataset::Save(const std::string& file) const
 			for(std::size_t iX = 0; iX < Nx; ++iX)
 			{
 				const auto& vec = dat.GetAxis(iX);
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " ";
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " ";
 			}
 
 			// iterate all counters
@@ -1018,8 +1009,8 @@ bool Dataset::Save(const std::string& file) const
 				const auto& vec = dat.GetCounter(iC);
 				const auto& vecErr = dat.GetCounterErrors(iC);
 
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
-					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx] << " ";
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(g_prec*prec_scale) << std::left << vecErr[row_idx] << " ";
 			}
 
 			// iterate all monitors
@@ -1028,8 +1019,8 @@ bool Dataset::Save(const std::string& file) const
 				const auto& vec = dat.GetMonitor(iM);
 				const auto& vecErr = dat.GetMonitorErrors(iM);
 
-				ofstr << std::setw(prec*prec_scale) << std::left << vec[row_idx] << " "
-					<< std::setw(prec*prec_scale) << std::left << vecErr[row_idx];
+				ofstr << std::setw(g_prec*prec_scale) << std::left << vec[row_idx] << " "
+					<< std::setw(g_prec*prec_scale) << std::left << vecErr[row_idx];
 			}
 
 			ofstr << "\n";

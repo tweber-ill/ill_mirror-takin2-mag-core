@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,13 +32,13 @@
 #include <string>
 #include <memory>
 
-#include "cliparser_types.h"
+//#include "cliparser_types.h"
 #include "cliparser.h"
 
 
 // real functions
-extern std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real_cli), std::string>> g_funcs_real_1arg;
-extern std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real_cli, t_real_cli), std::string>> g_funcs_real_2args;
+extern std::unordered_map<std::string, std::tuple<t_real(*)(t_real), std::string>> g_funcs_real_1arg;
+extern std::unordered_map<std::string, std::tuple<t_real(*)(t_real, t_real), std::string>> g_funcs_real_2args;
 
 // array functions
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(std::shared_ptr<SymbolList>), std::string>> g_funcs_arr_1arg;
@@ -51,7 +51,7 @@ extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(Cli
 extern std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)(CliParserContext&, const std::vector<std::shared_ptr<Symbol>>&), std::string>> g_funcs_gen_vararg;
 
 // constants
-extern std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real;
+extern std::unordered_map<std::string, std::tuple<t_real, std::string>> g_consts_real;
 
 
 

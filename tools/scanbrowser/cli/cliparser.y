@@ -12,7 +12,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  * "misc" project
  * Copyright (C) 2017-2021  Tobias WEBER (privately developed).
@@ -44,7 +44,7 @@
 
 
 // terminals
-%token<t_real_cli> TOK_REAL
+%token<t_real> TOK_REAL
 %token<std::string> TOK_STRING TOK_IDENT
 %token TOK_BRACKET_OPEN TOK_BRACKET_CLOSE
 %token TOK_SQBRACKET_OPEN TOK_SQBRACKET_CLOSE

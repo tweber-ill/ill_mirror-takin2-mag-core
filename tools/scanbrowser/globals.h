@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,16 +23,27 @@
  * ----------------------------------------------------------------------------
  */
 
-#ifndef __GLOBALS_H__
-#define __GLOBALS_H__
+#ifndef __SCANBROWSER_GLOBALS_H__
+#define __SCANBROWSER_GLOBALS_H__
 
+
+#include "types.h"
 #include "command.h"
 
-#define PROGRAM_VERSION "0.0.1"
+
+#define PROGRAM_VERSION "0.1"
+
 
 
 // the GUI's command line widget
 extern CommandLine *g_pCLI;
+
+// output precision
+extern std::size_t g_prec;
+
+// epsilon value for merging data columns
+extern t_real_dat g_eps_merge;
+
 
 
 /**

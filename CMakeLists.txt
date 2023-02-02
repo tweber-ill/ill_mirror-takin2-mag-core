@@ -47,6 +47,9 @@ add_subdirectory(tools/magdyn)
 # molecular dynamics tool
 add_subdirectory(tools/moldyn)
 
+# scan browser tool
+add_subdirectory(tools/scanbrowser)
+
 
 if(NOT ONLY_BUILD_FINISHED)
 	# setup tools
@@ -54,7 +57,4 @@ if(NOT ONLY_BUILD_FINISHED)
 
 	# magnetic structure factor browser
 	add_subdirectory(tools/magsgbrowser)
-
-	# new scan browser tool
-	add_subdirectory(tools/scanbrowser)
 endif()

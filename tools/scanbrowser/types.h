@@ -1,5 +1,5 @@
 /**
- * globals
+ * global types
  * @author Tobias Weber <tweber@ill.fr>
  * @date 19-Jun-2018
  * @license see 'LICENSE' file
@@ -23,10 +23,12 @@
  * ----------------------------------------------------------------------------
  */
 
-#include "globals.h"
+#ifndef __SCANBROWSER_TYPES_H__
+#define __SCANBROWSER_TYPES_H__
 
 
-CommandLine *g_pCLI = nullptr;
+using t_real_dat = double;
+using t_real = t_real_dat;
 
-std::size_t g_prec = 8;
-t_real_dat g_eps_merge = 0.01;
+
+#endif

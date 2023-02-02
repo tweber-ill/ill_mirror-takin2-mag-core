@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2021  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,9 +27,6 @@
 #include "../globals.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/fit.h"
-
-
-using t_real = t_real_cli;
 
 
 // ----------------------------------------------------------------------------
@@ -755,7 +752,7 @@ std::shared_ptr<Symbol> func_fit (CliParserContext & ctx, const std::vector<std:
 /**
  * map of real functions with one argument
  */
-std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real), std::string>> g_funcs_real_1arg =
+std::unordered_map<std::string, std::tuple<t_real(*)(t_real), std::string>> g_funcs_real_1arg =
 {
 	std::make_pair("sin", std::make_tuple(static_cast<t_real(*)(t_real)>(&std::sin), "")),
 	std::make_pair("cos", std::make_tuple(static_cast<t_real(*)(t_real)>(&std::cos), "")),
@@ -798,7 +795,7 @@ std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real), std::string>> 
 /**
  * map of real functions with two arguments
  */
-std::unordered_map<std::string, std::tuple<t_real_cli(*)(t_real, t_real), std::string>> g_funcs_real_2args =
+std::unordered_map<std::string, std::tuple<t_real(*)(t_real, t_real), std::string>> g_funcs_real_2args =
 {
 	std::make_pair("pow", std::make_tuple(static_cast<t_real(*)(t_real, t_real)>(&std::pow), "")),
 
@@ -887,7 +884,7 @@ std::unordered_map<std::string, std::tuple<std::shared_ptr<Symbol>(*)
 /**
  * map of real constants
  */
-std::unordered_map<std::string, std::tuple<t_real_cli, std::string>> g_consts_real
+std::unordered_map<std::string, std::tuple<t_real, std::string>> g_consts_real
 {
 	std::make_pair("pi", std::make_tuple(tl2::pi<t_real>, "pi")),
 };
