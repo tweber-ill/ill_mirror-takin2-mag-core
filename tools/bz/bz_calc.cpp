@@ -37,7 +37,12 @@
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/qt/helper.h"
-#include "pathslib/libs/voronoi.h"
+
+#if __has_include("pathslib/libs/voronoi.h")
+	#include "pathslib/libs/voronoi.h"
+#else
+	#include "voronoi.h"
+#endif
 
 using namespace tl2_ops;
 
