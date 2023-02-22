@@ -1521,12 +1521,27 @@ void MagDynDlg::CreateMenuBar()
 	// dispersion menu
 	m_menuDisp = new QMenu("Dispersion", m_menu);
 	m_plot_channels = new QAction("Plot Channels", m_menuDisp);
-	m_plot_channels->setToolTip("Plot individual channels.");
+	m_plot_channels->setToolTip("Plot individual polarisation channels.");
 	m_plot_channels->setCheckable(true);
 	m_plot_channels->setChecked(false);
 	auto acRescalePlot = new QAction("Rescale Axes", m_menuDisp);
 	auto acSaveFigure = new QAction("Save Figure...", m_menuDisp);
 	auto acSaveDisp = new QAction("Save Data...", m_menuDisp);
+
+	// channels sub-menu
+	m_menuChannels = new QMenu("Selected Channels", m_menuDisp);
+	m_plot_channel[0] = new QAction("Spin-Flip Channel 1", m_menuChannels);
+	m_plot_channel[1] = new QAction("Spin-Flip Channel 2", m_menuChannels);
+	m_plot_channel[2] = new QAction("Non-Spin-Flip Channel", m_menuChannels);
+	for(int i=0; i<3; ++i)
+	{
+		m_plot_channel[i]->setCheckable(true);
+		m_plot_channel[i]->setChecked(true);
+	}
+	m_menuChannels->addAction(m_plot_channel[0]);
+	m_menuChannels->addAction(m_plot_channel[1]);
+	m_menuChannels->addAction(m_plot_channel[2]);
+	m_menuChannels->setEnabled(m_plot_channels->isChecked());
 
 	// recent files menu
 	m_menuOpenRecent = new QMenu("Open Recent", menuFile);
@@ -1623,6 +1638,7 @@ void MagDynDlg::CreateMenuBar()
 	menuStruct->addAction(acStructView);
 
 	m_menuDisp->addAction(m_plot_channels);
+	m_menuDisp->addMenu(m_menuChannels);
 	m_menuDisp->addSeparator();
 	m_menuDisp->addAction(acRescalePlot);
 	m_menuDisp->addSeparator();
@@ -1698,10 +1714,19 @@ void MagDynDlg::CreateMenuBar()
 			this->CalcAll();
 	});
 
-	connect(m_plot_channels, &QAction::toggled, [this](bool)
+	connect(m_plot_channels, &QAction::toggled, [this](bool checked)
 	{
+		m_menuChannels->setEnabled(checked);
 		this->PlotDispersion();
 	});
+
+	for(int i=0; i<3; ++i)
+	{
+		connect(m_plot_channel[i], &QAction::toggled, [this](bool)
+		{
+			this->PlotDispersion();
+		});
+	}
 
 	connect(acCalc, &QAction::triggered, [this]()
 	{

@@ -103,6 +103,9 @@ void MagDynDlg::PlotDispersion()
 
 		for(int i=0; i<3; ++i)
 		{
+			if(!m_plot_channel[i]->isChecked())
+				continue;
+
 			GraphWithWeights *graph = new GraphWithWeights(m_plot->xAxis, m_plot->yAxis);
 			QPen pen = graph->pen();
 			pen.setColor(colChannel[i]);

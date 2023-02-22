@@ -167,6 +167,8 @@ protected:
 	QAction *m_ignore_annihilation{};
 	QAction *m_force_incommensurate{};
 	QAction *m_plot_channels{};
+	QMenu *m_menuChannels{};
+	QAction *m_plot_channel[3]{};
 
 	// recently opened files
 	tl2::RecentFiles m_recent{};
