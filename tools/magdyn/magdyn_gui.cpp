@@ -416,16 +416,16 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	for(int i=0; i<3; ++i)
 	{
 		m_ordering[i]->setDecimals(4);
-		m_ordering[i]->setMinimum(-1);
-		m_ordering[i]->setMaximum(+1);
+		m_ordering[i]->setMinimum(-9.9999);
+		m_ordering[i]->setMaximum(+9.9999);
 		m_ordering[i]->setSingleStep(0.01);
 		m_ordering[i]->setValue(0.);
 		m_ordering[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		m_normaxis[i]->setDecimals(4);
-		m_normaxis[i]->setMinimum(-1);
-		m_normaxis[i]->setMaximum(+1);
+		m_normaxis[i]->setMinimum(-9.9999);
+		m_normaxis[i]->setMaximum(+9.9999);
 		m_normaxis[i]->setSingleStep(0.01);
 		m_normaxis[i]->setValue(i==0 ? 1. : 0.);
 		m_normaxis[i]->setSizePolicy(QSizePolicy{
@@ -727,7 +727,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 	m_field_mag = new QDoubleSpinBox(m_samplepanel);
 	m_field_mag->setDecimals(3);
 	m_field_mag->setMinimum(0);
-	m_field_mag->setMaximum(+99);
+	m_field_mag->setMaximum(+99.999);
 	m_field_mag->setSingleStep(0.1);
 	m_field_mag->setValue(0.);
 	m_field_mag->setPrefix("|B| = ");
@@ -884,7 +884,7 @@ void MagDynDlg::CreateSampleEnvPanel()
 	m_temperature = new QDoubleSpinBox(m_samplepanel);
 	m_temperature->setDecimals(2);
 	m_temperature->setMinimum(0);
-	m_temperature->setMaximum(+999);
+	m_temperature->setMaximum(+999.99);
 	m_temperature->setSingleStep(0.1);
 	m_temperature->setValue(300.);
 	m_temperature->setPrefix("T = ");
@@ -895,16 +895,16 @@ void MagDynDlg::CreateSampleEnvPanel()
 	for(int i=0; i<3; ++i)
 	{
 		m_field_dir[i]->setDecimals(4);
-		m_field_dir[i]->setMinimum(-99);
-		m_field_dir[i]->setMaximum(+99);
+		m_field_dir[i]->setMinimum(-99.9999);
+		m_field_dir[i]->setMaximum(+99.9999);
 		m_field_dir[i]->setSingleStep(0.1);
 		m_field_dir[i]->setValue(i == 2 ? 1. : 0.);
 		m_field_dir[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
 
 		m_rot_axis[i]->setDecimals(4);
-		m_rot_axis[i]->setMinimum(-99);
-		m_rot_axis[i]->setMaximum(+99);
+		m_rot_axis[i]->setMinimum(-99.9999);
+		m_rot_axis[i]->setMaximum(+99.9999);
 		m_rot_axis[i]->setSingleStep(0.1);
 		m_rot_axis[i]->setValue(i == 2 ? 1. : 0.);
 		m_rot_axis[i]->setSizePolicy(QSizePolicy{
@@ -1080,7 +1080,7 @@ void MagDynDlg::CreateDispersionPanel()
 	// number of points in plot
 	m_num_points = new QSpinBox(m_disppanel);
 	m_num_points->setMinimum(1);
-	m_num_points->setMaximum(9999);
+	m_num_points->setMaximum(9999.9);
 	m_num_points->setValue(512);
 	m_num_points->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -1091,7 +1091,7 @@ void MagDynDlg::CreateDispersionPanel()
 		*comp = new QDoubleSpinBox(m_disppanel);
 		(*comp)->setDecimals(4);
 		(*comp)->setMinimum(0.);
-		(*comp)->setMaximum(+9999.);
+		(*comp)->setMaximum(+9999.9999);
 		(*comp)->setSingleStep(0.1);
 		(*comp)->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -1106,8 +1106,8 @@ void MagDynDlg::CreateDispersionPanel()
 	for(int i=0; i<3; ++i)
 	{
 		m_q_start[i]->setDecimals(4);
-		m_q_start[i]->setMinimum(-99);
-		m_q_start[i]->setMaximum(+99);
+		m_q_start[i]->setMinimum(-99.9999);
+		m_q_start[i]->setMaximum(+99.9999);
 		m_q_start[i]->setSingleStep(0.01);
 		m_q_start[i]->setValue(0.);
 		m_q_start[i]->setSuffix(" rlu");
@@ -1116,8 +1116,8 @@ void MagDynDlg::CreateDispersionPanel()
 		m_q_start[i]->setPrefix(hklPrefix[i]);
 
 		m_q_end[i]->setDecimals(4);
-		m_q_end[i]->setMinimum(-99);
-		m_q_end[i]->setMaximum(+99);
+		m_q_end[i]->setMinimum(-99.9999);
+		m_q_end[i]->setMaximum(+99.9999);
 		m_q_end[i]->setSingleStep(0.01);
 		m_q_end[i]->setValue(0.);
 		m_q_end[i]->setSuffix(" rlu");
@@ -1228,8 +1228,8 @@ void MagDynDlg::CreateHamiltonPanel()
 	for(int i=0; i<3; ++i)
 	{
 		m_q[i]->setDecimals(4);
-		m_q[i]->setMinimum(-99);
-		m_q[i]->setMaximum(+99);
+		m_q[i]->setMinimum(-99.9999);
+		m_q[i]->setMaximum(+99.9999);
 		m_q[i]->setSingleStep(0.01);
 		m_q[i]->setValue(0.);
 		m_q[i]->setSuffix(" rlu");
@@ -1285,7 +1285,7 @@ void MagDynDlg::CreateExportPanel()
 	{
 		m_exportNumPoints[i] = new QSpinBox(m_exportpanel);
 		m_exportNumPoints[i]->setMinimum(1);
-		m_exportNumPoints[i]->setMaximum(99999);
+		m_exportNumPoints[i]->setMaximum(99999.9);
 		m_exportNumPoints[i]->setValue(128);
 		m_exportNumPoints[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
@@ -1307,8 +1307,8 @@ void MagDynDlg::CreateExportPanel()
 	for(int i=0; i<3; ++i)
 	{
 		m_exportStartQ[i]->setDecimals(4);
-		m_exportStartQ[i]->setMinimum(-99);
-		m_exportStartQ[i]->setMaximum(+99);
+		m_exportStartQ[i]->setMinimum(-99.9999);
+		m_exportStartQ[i]->setMaximum(+99.9999);
 		m_exportStartQ[i]->setSingleStep(0.01);
 		m_exportStartQ[i]->setValue(-1.);
 		m_exportStartQ[i]->setSuffix(" rlu");
@@ -1317,8 +1317,8 @@ void MagDynDlg::CreateExportPanel()
 		m_exportStartQ[i]->setPrefix(hklPrefix[i]);
 
 		m_exportEndQ[i]->setDecimals(4);
-		m_exportEndQ[i]->setMinimum(-99);
-		m_exportEndQ[i]->setMaximum(+99);
+		m_exportEndQ[i]->setMinimum(-99.9999);
+		m_exportEndQ[i]->setMaximum(+99.9999);
 		m_exportEndQ[i]->setSingleStep(0.01);
 		m_exportEndQ[i]->setValue(1.);
 		m_exportEndQ[i]->setSuffix(" rlu");
@@ -1592,7 +1592,7 @@ void MagDynDlg::CreateMenuBar()
 	m_use_weights = new QAction("Use Spectral Weights", menuCalc);
 	m_use_weights->setToolTip("Enables calculation of the spin correlation function.");
 	m_use_weights->setCheckable(true);
-	m_use_weights->setChecked(false);
+	m_use_weights->setChecked(true);
 	m_use_projector = new QAction("Use Neutron Weights", menuCalc);
 	m_use_projector->setToolTip("Enables the neutron orthogonal projector.");
 	m_use_projector->setCheckable(true);
