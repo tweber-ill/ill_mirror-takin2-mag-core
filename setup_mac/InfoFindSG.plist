@@ -5,8 +5,8 @@
 	<key>CFBundleName</key>			<string>Takin</string>
 	<key>CFBundleDisplayName</key>		<string>Takin</string>
 	<key>CFBundleIdentifier</key>		<string>eu.ill.cs.takin.findsg</string>
-	<key>CFBundleVersion</key>		<string>2.5.0</string>
-	<key>CFBundleShortVersionString</key>	<string>2.5.0</string>
+	<key>CFBundleVersion</key>		<string>2.5.1</string>
+	<key>CFBundleShortVersionString</key>	<string>2.5.1</string>
 
 	<key>CFBundleSupportedPlatforms</key>	<array> <string>MacOSX</string> </array>
 	<key>LSMinimumSystemVersion</key>	<string>10.13</string>
