@@ -1,5 +1,5 @@
 /**
- * magnon dynamics
+ * magnetic dynamics
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -108,7 +108,7 @@ void MagDynDlg::SetCurrentFile(const QString& filename)
 {
 	m_recent.SetCurFile(filename);
 
-	QString title = "Magnon Dynamics";
+	QString title = "Magnetic Dynamics";
 	if(filename != "")
 		title += " - " + filename;
 	setWindowTitle(title);
@@ -122,7 +122,7 @@ void MagDynDlg::Load()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getOpenFileName(
-		this, "Load File", dirLast, "Magnon Dynamics Files (*.magdyn *.xml)");
+		this, "Load File", dirLast, "Magnetic Dynamics Files (*.magdyn *.xml)");
 	if(filename=="" || !QFile::exists(filename))
 		return;
 
@@ -163,7 +163,7 @@ bool MagDynDlg::Load(const QString& filename)
 		if(auto optInfo = node.get_optional<std::string>("magdyn.meta.info");
 			!optInfo || !(*optInfo==std::string{"magdyn_tool"}))
 		{
-			QMessageBox::critical(this, "Magnon Dynamics", "Unrecognised file format.");
+			QMessageBox::critical(this, "Magnetic Dynamics", "Unrecognised file format.");
 			return false;
 		}
 
@@ -330,7 +330,7 @@ bool MagDynDlg::Load(const QString& filename)
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		QMessageBox::critical(this, "Magnetic Dynamics", ex.what());
 		return false;
 	}
 
@@ -358,7 +358,7 @@ void MagDynDlg::SaveAs()
 {
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
-		this, "Save File", dirLast, "Magnon Dynamics Files (*.magdyn)");
+		this, "Save File", dirLast, "Magnetic Dynamics Files (*.magdyn)");
 	if(filename=="")
 		return;
 
@@ -467,7 +467,7 @@ bool MagDynDlg::Save(const QString& filename)
 		std::ofstream ofstr{filename.toStdString()};
 		if(!ofstr)
 		{
-			QMessageBox::critical(this, "Magnon Dynamics",
+			QMessageBox::critical(this, "Magnetic Dynamics",
 				"Cannot open file for writing.");
 			return false;
 		}
@@ -478,7 +478,7 @@ bool MagDynDlg::Save(const QString& filename)
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		QMessageBox::critical(this, "Magnetic Dynamics", ex.what());
 		return false;
 	}
 
@@ -600,7 +600,7 @@ bool MagDynDlg::ExportSQE(const QString& filename)
 
 	if(!file_opened)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", "File could not be opened.");
+		QMessageBox::critical(this, "Magnetic Dynamics", "File could not be opened.");
 		return false;
 	}
 

@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- calculations for structure plot
+ * magnetic dynamics -- calculations for structure plot
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file

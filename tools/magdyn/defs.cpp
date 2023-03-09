@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- definitions
+ * magnetic dynamics -- definitions
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2023
  * @license GPLv3, see 'LICENSE' file

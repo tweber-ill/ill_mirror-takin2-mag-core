@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- main dialog handler functions
+ * magnetic dynamics -- main dialog handler functions
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file

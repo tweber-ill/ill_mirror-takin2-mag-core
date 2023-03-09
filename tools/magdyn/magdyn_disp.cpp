@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- calculations for dispersion plot
+ * magnetic dynamics -- calculations for dispersion plot
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -388,7 +388,7 @@ void MagDynDlg::CalcDispersion()
 
 
 /**
- * calculate all magnon dynamics
+ * calculate all magnetic dynamics
  */
 void MagDynDlg::CalcAllDynamics()
 {

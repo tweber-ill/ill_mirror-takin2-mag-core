@@ -1,5 +1,5 @@
 /**
- * magnon dynamics -- calculations for sites and coupling terms
+ * magnetic dynamics -- calculations for sites and coupling terms
  * @author Tobias Weber <tweber@ill.fr>
  * @date Jan-2022
  * @license GPLv3, see 'LICENSE' file
@@ -165,7 +165,7 @@ void MagDynDlg::GenerateSitesFromSG()
 		auto sgidx = m_comboSG->itemData(m_comboSG->currentIndex()).toInt();
 		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
 		{
-			QMessageBox::critical(this, "Magnon Dynamics",
+			QMessageBox::critical(this, "Magnetic Dynamics",
 				"Invalid space group selected.");
 			return;
 		}
@@ -254,7 +254,7 @@ void MagDynDlg::GenerateSitesFromSG()
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		QMessageBox::critical(this, "Magnetic Dynamics", ex.what());
 	}
 }
 
@@ -279,7 +279,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 		auto sgidx = m_comboSG2->itemData(m_comboSG2->currentIndex()).toInt();
 		if(sgidx < 0 || std::size_t(sgidx) >= m_SGops.size())
 		{
-			QMessageBox::critical(this, "Magnon Dynamics",
+			QMessageBox::critical(this, "Magnetic Dynamics",
 				"Invalid space group selected.");
 			return;
 		}
@@ -420,7 +420,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 
 		if(!generatedcouplings.size())
 		{
-			QMessageBox::critical(this, "Magnon Dynamics", "No couplings could be generated.");
+			QMessageBox::critical(this, "Magnetic Dynamics", "No couplings could be generated.");
 			return;
 		}
 
@@ -436,7 +436,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	}
 	catch(const std::exception& ex)
 	{
-		QMessageBox::critical(this, "Magnon Dynamics", ex.what());
+		QMessageBox::critical(this, "Magnetic Dynamics", ex.what());
 	}
 }
 
