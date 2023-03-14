@@ -360,7 +360,8 @@ void MagDynDlg::StructPlotSync()
 		int _sc_y = int(std::round(sc_y));
 		int _sc_z = int(std::round(sc_z));
 
-		std::size_t hash = std::hash<int>{}(site.index);
+		std::size_t hash = 0;
+		boost::hash_combine(hash, std::hash<int>{}(site.index));
 		boost::hash_combine(hash, std::hash<int>{}(_sc_x));
 		boost::hash_combine(hash, std::hash<int>{}(_sc_y));
 		boost::hash_combine(hash, std::hash<int>{}(_sc_z));
