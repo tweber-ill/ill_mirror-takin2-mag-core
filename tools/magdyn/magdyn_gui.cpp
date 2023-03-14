@@ -1285,7 +1285,7 @@ void MagDynDlg::CreateExportPanel()
 	{
 		m_exportNumPoints[i] = new QSpinBox(m_exportpanel);
 		m_exportNumPoints[i]->setMinimum(1);
-		m_exportNumPoints[i]->setMaximum(99999.9);
+		m_exportNumPoints[i]->setMaximum(99999);
 		m_exportNumPoints[i]->setValue(128);
 		m_exportNumPoints[i]->setSizePolicy(QSizePolicy{
 			QSizePolicy::Expanding, QSizePolicy::Fixed});
