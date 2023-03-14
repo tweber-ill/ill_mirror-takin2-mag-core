@@ -1080,7 +1080,7 @@ void MagDynDlg::CreateDispersionPanel()
 	// number of points in plot
 	m_num_points = new QSpinBox(m_disppanel);
 	m_num_points->setMinimum(1);
-	m_num_points->setMaximum(9999.9);
+	m_num_points->setMaximum(9999);
 	m_num_points->setValue(512);
 	m_num_points->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Fixed});
