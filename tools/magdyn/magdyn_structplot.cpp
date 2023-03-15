@@ -135,9 +135,9 @@ void MagDynDlg::StructPlotPickerIntersection(
 	if(auto iter_atoms = m_structplot_atoms.find(objIdx);
 		iter_atoms != m_structplot_atoms.end())
 	{
-		m_structplot_cur_atom = iter_atoms->second->index;
+		m_structplot_cur_atom = iter_atoms->second.site->index;
 
-		const std::string& ident = iter_atoms->second->name;
+		const std::string& ident = iter_atoms->second.site->name;
 		m_structplot_status->setText(ident.c_str());
 
 		return;
@@ -147,9 +147,9 @@ void MagDynDlg::StructPlotPickerIntersection(
 	if(auto iter_terms = m_structplot_terms.find(objIdx);
 		iter_terms != m_structplot_terms.end())
 	{
-		m_structplot_cur_term = iter_terms->second->index;
+		m_structplot_cur_term = iter_terms->second.term->index;
 
-		const std::string& ident = iter_terms->second->name;
+		const std::string& ident = iter_terms->second.term->name;
 		m_structplot_status->setText(ident.c_str());
 
 		return;
@@ -409,8 +409,12 @@ void MagDynDlg::StructPlotSync()
 		std::size_t arrow = m_structplot->GetRenderer()->AddLinkedObject(
 			m_structplot_arrow, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
 
-		m_structplot_atoms.insert(std::make_pair(obj, &site));
-		m_structplot_atoms.insert(std::make_pair(arrow, &site));
+		{
+			AtomSiteInfo siteinfo;
+			siteinfo.site = &site;
+			m_structplot_atoms.emplace(std::make_pair(obj, siteinfo));
+			m_structplot_atoms.emplace(std::make_pair(arrow, std::move(siteinfo)));
+		}
 
 		t_vec_gl pos_vec = tl2::create<t_vec_gl>({
 			t_real_gl(site.pos[0]) + sc_x,
@@ -499,13 +503,36 @@ void MagDynDlg::StructPlotSync()
 		t_real_gl sc_y = t_real_gl(term.dist[1]);
 		t_real_gl sc_z = t_real_gl(term.dist[2]);
 
+		// get colour
 		t_real_gl rgb[3] {0., 0.75, 0.};
+		if(term_idx < std::size_t(m_termstab->rowCount()))
+		{
+			std::istringstream istrcolour(m_termstab->item(term_idx, COL_XCH_RGB)->text().toStdString());
+
+			// optional colour code prefix
+			if(istrcolour.peek() == '#')
+				istrcolour.get();
+
+			std::size_t colour = 0;
+			istrcolour >> std::hex >> colour;
+
+			rgb[0] = t_real((colour & 0xff0000) >> 16) / t_real(0xff);
+			rgb[1] = t_real((colour & 0x00ff00) >> 8) / t_real(0xff);
+			rgb[2] = t_real((colour & 0x0000ff) >> 0) / t_real(0xff);
+		}
+
 		t_real_gl scale = 1.;
 
 		std::size_t obj = m_structplot->GetRenderer()->AddLinkedObject(
 			m_structplot_cyl, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
 
-		m_structplot_terms.insert(std::make_pair(obj, &term));
+		{
+			ExchangeTermInfo terminfo;
+			terminfo.term = &term;
+			for(int i=0; i<3; ++i)
+				terminfo.colour[i] = rgb[i];
+			m_structplot_terms.emplace(std::make_pair(obj, std::move(terminfo)));
+		}
 
 		// connection from unit cell atom site...
 		const t_vec_gl pos1_vec = tl2::create<t_vec_gl>({
@@ -557,7 +584,13 @@ void MagDynDlg::StructPlotSync()
 			std::size_t objDmi = m_structplot->GetRenderer()->AddLinkedObject(
 				m_structplot_arrow, 0,0,0, rgb[0], rgb[1], rgb[2], 1);
 
-			m_structplot_terms.insert(std::make_pair(objDmi, &term));
+			{
+				ExchangeTermInfo terminfo;
+				terminfo.term = &term;
+				for(int i=0; i<3; ++i)
+					terminfo.colour[i] = rgb[i];
+				m_structplot_terms.emplace(std::make_pair(objDmi, std::move(terminfo)));
+			}
 
 			t_real_gl scale_dmi = 0.5;
 
@@ -573,7 +606,7 @@ void MagDynDlg::StructPlotSync()
 
 			//m_structplot->GetRenderer()->SetObjectLabel(objDmi, term.name);
 		}
-	}
+	} // terms
 
 	m_structplot->update();
 }

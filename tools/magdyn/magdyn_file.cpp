@@ -304,14 +304,31 @@ bool MagDynDlg::Load(const QString& filename)
 				site.spin_dir[0], site.spin_dir[1], site.spin_dir[2], S);
 		}
 
+		// get exchange terms entries for reading additional infos
+		auto terms = magdyn.get_child_optional("exchange_terms");
+
 		// exchange terms
 		for(const auto& term : m_dyn.GetExchangeTerms())
 		{
+			// default colour
+			std::string rgb = "#0x00bf00";
+
+			// get additional data from exchange term entry
+			if(terms && term.index < terms->size())
+			{
+				auto termiter = (*terms).begin();
+				std::advance(termiter, term.index);
+
+				// read colour
+				rgb = termiter->second.get<std::string>("colour", "#0x00bf00");
+			}
+
 			AddTermTabItem(-1,
 				term.name, term.atom1, term.atom2,
 				term.dist[0], term.dist[1], term.dist[2],
 				term.J,
-				term.dmi[0], term.dmi[1], term.dmi[2]);
+				term.dmi[0], term.dmi[1], term.dmi[2],
+				rgb);
 		}
 
 		// saved fields
@@ -458,6 +475,25 @@ bool MagDynDlg::Save(const QString& filename)
 			itemNode.put<t_real>("magnitude", Bmag ? Bmag->GetValue() : 0.);
 
 			magdyn.add_child("saved_fields.field", itemNode);
+		}
+
+		// get exchange terms entries for putting additional infos
+		if(auto terms = magdyn.get_child_optional("exchange_terms"); terms)
+		{
+			auto termiter = (*terms).begin();
+
+			for(std::size_t term_idx = 0; term_idx < std::size_t(m_termstab->rowCount()); ++term_idx)
+			{
+				// set additional data from exchange term entry
+				if(term_idx >= terms->size())
+					break;
+
+				// write colour
+				std::string rgb = m_termstab->item(term_idx, COL_XCH_RGB)->text().toStdString();
+				termiter->second.put<std::string>("colour", rgb);
+
+				std::advance(termiter, 1);
+			}
 		}
 
 		pt::ptree node;

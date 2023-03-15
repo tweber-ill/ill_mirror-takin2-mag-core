@@ -289,7 +289,8 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			t_size, t_size,                        // uc atom indices
 			t_real, t_real, t_real,                // supercell vector
 			std::string,                           // exchange term (not modified)
-			std::string, std::string, std::string  // dmi vector
+			std::string, std::string, std::string, // dmi vector
+			std::string                            // colour
 			>> generatedcouplings;
 
 		// avoids duplicate coupling terms
@@ -363,6 +364,7 @@ void MagDynDlg::GenerateCouplingsFromSG()
 			bool dmi_z_ok = parser.parse(
 				m_termstab->item(row, COL_XCH_DMI_Z)->text().toStdString());
 			t_real dmi_z = parser.eval().real();
+			std::string rgb = m_termstab->item(row, COL_XCH_RGB)->text().toStdString();
 
 			if(!dmi_x_ok || !dmi_y_ok || !dmi_z_ok)
 				std::cerr << "Could not parse DMI vector expression." << std::endl;
@@ -412,7 +414,8 @@ void MagDynDlg::GenerateCouplingsFromSG()
 				generatedcouplings.emplace_back(std::make_tuple(
 					ident + "_" + tl2::var_to_str(op_idx), newsite1_idx, newsite2_idx,
 					sc_dist[0], sc_dist[1], sc_dist[2], oldJ,
-					tl2::var_to_str(newdmi[0]), tl2::var_to_str(newdmi[1]), tl2::var_to_str(newdmi[2])));
+					tl2::var_to_str(newdmi[0]), tl2::var_to_str(newdmi[1]), tl2::var_to_str(newdmi[2]),
+					rgb));
 			}
 
 			remove_duplicate_terms();

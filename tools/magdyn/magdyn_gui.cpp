@@ -339,6 +339,8 @@ void MagDynDlg::CreateExchangeTermsPanel()
 		COL_XCH_DMI_Y, new QTableWidgetItem{"DMI y"});
 	m_termstab->setHorizontalHeaderItem(
 		COL_XCH_DMI_Z, new QTableWidgetItem{"DMI z"});
+	m_termstab->setHorizontalHeaderItem(
+		COL_XCH_RGB, new QTableWidgetItem{"Colour"});
 
 	m_termstab->setColumnWidth(COL_XCH_NAME, 90);
 	m_termstab->setColumnWidth(COL_XCH_ATOM1_IDX, 80);
@@ -350,6 +352,7 @@ void MagDynDlg::CreateExchangeTermsPanel()
 	m_termstab->setColumnWidth(COL_XCH_DMI_X, 80);
 	m_termstab->setColumnWidth(COL_XCH_DMI_Y, 80);
 	m_termstab->setColumnWidth(COL_XCH_DMI_Z, 80);
+	m_termstab->setColumnWidth(COL_XCH_RGB, 80);
 	m_termstab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 
