@@ -58,6 +58,7 @@
 #include <optional>
 
 #include "tlibs2/libs/magdyn.h"
+#include "tlibs2/libs/str.h"
 #include "tlibs2/libs/qt/numerictablewidgetitem.h"
 #include "tlibs2/libs/qt/recent.h"
 #include "tlibs2/libs/qt/glplot.h"
@@ -93,6 +94,7 @@ enum : int
 	COL_SITE_POS_X, COL_SITE_POS_Y, COL_SITE_POS_Z,
 	COL_SITE_SPIN_X, COL_SITE_SPIN_Y, COL_SITE_SPIN_Z,
 	COL_SITE_SPIN_MAG,
+	COL_SITE_RGB,
 
 	NUM_SITE_COLS
 };
@@ -156,6 +158,46 @@ struct ExchangeTermInfo
 	const t_magdyn::ExchangeTerm* term = nullptr;
 	t_real_gl colour[3]{0., 0.75, 0.};
 };
+
+
+/**
+ * get the rgb colour values from a string
+ */
+template<class t_val>
+bool get_colour(const std::string& _col, t_val *rgb)
+{
+	std::string col = tl2::trimmed(_col);
+
+	// use default colour
+	if(col == "" || col == "auto")
+		return false;
+
+	std::istringstream istrcolour(col);
+
+	// optional colour code prefix
+	if(istrcolour.peek() == '#')
+		istrcolour.get();
+
+	std::size_t colour = 0;
+	istrcolour >> std::hex >> colour;
+
+	if constexpr(std::is_floating_point_v<t_val>)
+	{
+		// get the colour values as floats in the range [0, 1]
+		rgb[0] = t_val((colour & 0xff0000) >> 16) / t_val(0xff);
+		rgb[1] = t_val((colour & 0x00ff00) >> 8) / t_val(0xff);
+		rgb[2] = t_val((colour & 0x0000ff) >> 0) / t_val(0xff);
+	}
+	else
+	{
+		// get the colour values as bytes in the range [0, 255]
+		rgb[0] = t_val((colour & 0xff0000) >> 16);
+		rgb[1] = t_val((colour & 0x00ff00) >> 8);
+		rgb[2] = t_val((colour & 0x0000ff) >> 0);
+	}
+
+	return true;
+}
 
 
 /**
@@ -310,7 +352,8 @@ protected:
 		const std::string& sx = "0",
 		const std::string& sy = "0",
 		const std::string& sz = "1",
-		t_real S = 1.);
+		t_real S = 1.,
+		const std::string& rgb = "auto");
 
 	void AddTermTabItem(int row = -1,
 		const std::string& name = "n/a",

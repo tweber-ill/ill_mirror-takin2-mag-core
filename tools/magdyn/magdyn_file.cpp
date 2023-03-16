@@ -293,15 +293,32 @@ bool MagDynDlg::Load(const QString& filename)
 			AddVariableTabItem(-1, var.name, var.value);
 		}
 
+		// get site entries for reading additional infos
+		auto sites = magdyn.get_child_optional("atom_sites");
+
 		// atom sites
 		for(const auto &site : m_dyn.GetAtomSites())
 		{
 			t_real S = site.spin_mag;
 
+			// default colour
+			std::string rgb = "auto";
+
+			// get additional data from exchange term entry
+			if(sites && site.index < sites->size())
+			{
+				auto siteiter = (*sites).begin();
+				std::advance(siteiter, site.index);
+
+				// read colour
+				rgb = siteiter->second.get<std::string>("colour", "auto");
+			}
+
 			AddSiteTabItem(-1,
 				site.name,
 				site.pos[0], site.pos[1], site.pos[2],
-				site.spin_dir[0], site.spin_dir[1], site.spin_dir[2], S);
+				site.spin_dir[0], site.spin_dir[1], site.spin_dir[2], S,
+				rgb);
 		}
 
 		// get exchange terms entries for reading additional infos
@@ -475,6 +492,25 @@ bool MagDynDlg::Save(const QString& filename)
 			itemNode.put<t_real>("magnitude", Bmag ? Bmag->GetValue() : 0.);
 
 			magdyn.add_child("saved_fields.field", itemNode);
+		}
+
+		// get site entries for putting additional infos
+		if(auto sites = magdyn.get_child_optional("atom_sites"); sites)
+		{
+			auto siteiter = (*sites).begin();
+
+			for(std::size_t site_idx = 0; site_idx < std::size_t(m_termstab->rowCount()); ++site_idx)
+			{
+				// set additional data from exchange term entry
+				if(site_idx >= sites->size())
+					break;
+
+				// write colour
+				std::string rgb = m_sitestab->item(site_idx, COL_SITE_RGB)->text().toStdString();
+				siteiter->second.put<std::string>("colour", rgb);
+
+				std::advance(siteiter, 1);
+			}
 		}
 
 		// get exchange terms entries for putting additional infos

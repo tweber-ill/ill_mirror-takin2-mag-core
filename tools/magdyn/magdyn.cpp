@@ -129,7 +129,8 @@ void MagDynDlg::AddSiteTabItem(int row,
 	const std::string& sx,
 	const std::string& sy,
 	const std::string& sz,
-	t_real S)
+	t_real S,
+	const std::string& rgb)
 {
 	bool bclone = false;
 	m_ignoreTableChanges = true;
@@ -181,6 +182,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 			new tl2::NumericTableWidgetItem<t_real>(sz));
 		m_sitestab->setItem(row, COL_SITE_SPIN_MAG,
 			new tl2::NumericTableWidgetItem<t_real>(S));
+		m_sitestab->setItem(row, COL_SITE_RGB, new QTableWidgetItem(rgb.c_str()));
 	}
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));

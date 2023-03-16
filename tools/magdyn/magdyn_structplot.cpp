@@ -383,6 +383,7 @@ void MagDynDlg::StructPlotSync()
 	// add an atom site to the plot
 	auto add_atom_site = [this, &atom_hashes, &get_atom_hash,
 		is_incommensurate, &ordering, &rotaxis](
+		std::size_t site_idx,
 		const t_magdyn::AtomSite& site,
 		const t_magdyn::AtomSiteCalc& site_calc,
 		const t_magdyn::ExternalField& field,
@@ -393,12 +394,23 @@ void MagDynDlg::StructPlotSync()
 		int _sc_y = int(std::round(sc_y));
 		int _sc_z = int(std::round(sc_z));
 
+		// default colour for unit cell atom
 		t_real_gl rgb[3] {0., 0., 1.};
-		if(_sc_x == 0 && _sc_y == 0 && _sc_z == 0)
+
+		// get user-defined colour
+		bool user_col = false;
+		if(site_idx < std::size_t(m_sitestab->rowCount()))
+			user_col = get_colour<t_real_gl>(m_sitestab->item(site_idx, COL_SITE_RGB)->text().toStdString(), rgb);
+
+		// no user-defined colour -> use default for super-cell atom
+		if(!user_col)
 		{
-			rgb[0] = t_real_gl(1.);
-			rgb[1] = t_real_gl(0.);
-			rgb[2] = t_real_gl(0.);
+			if(_sc_x == 0 && _sc_y == 0 && _sc_z == 0)
+			{
+				rgb[0] = t_real_gl(1.);
+				rgb[1] = t_real_gl(0.);
+				rgb[2] = t_real_gl(0.);
+			}
 		}
 
 		t_real_gl scale = 1.;
@@ -480,7 +492,7 @@ void MagDynDlg::StructPlotSync()
 	// iterate and add unit cell atom sites
 	for(std::size_t site_idx=0; site_idx<sites.size(); ++site_idx)
 	{
-		add_atom_site(sites[site_idx],
+		add_atom_site(site_idx, sites[site_idx],
 			sites_calc[site_idx],
 			field, 0, 0, 0);
 	}
@@ -506,20 +518,7 @@ void MagDynDlg::StructPlotSync()
 		// get colour
 		t_real_gl rgb[3] {0., 0.75, 0.};
 		if(term_idx < std::size_t(m_termstab->rowCount()))
-		{
-			std::istringstream istrcolour(m_termstab->item(term_idx, COL_XCH_RGB)->text().toStdString());
-
-			// optional colour code prefix
-			if(istrcolour.peek() == '#')
-				istrcolour.get();
-
-			std::size_t colour = 0;
-			istrcolour >> std::hex >> colour;
-
-			rgb[0] = t_real((colour & 0xff0000) >> 16) / t_real(0xff);
-			rgb[1] = t_real((colour & 0x00ff00) >> 8) / t_real(0xff);
-			rgb[2] = t_real((colour & 0x0000ff) >> 0) / t_real(0xff);
-		}
+			get_colour<t_real_gl>(m_termstab->item(term_idx, COL_XCH_RGB)->text().toStdString(), rgb);
 
 		t_real_gl scale = 1.;
 
@@ -550,7 +549,7 @@ void MagDynDlg::StructPlotSync()
 
 		// add the supercell site if it hasn't been inserted yet
 		if(atom_not_yet_seen(site2, sc_x, sc_y, sc_z))
-			add_atom_site(site2, site2_calc, field, sc_x, sc_y, sc_z);
+			add_atom_site(term.atom2, site2, site2_calc, field, sc_x, sc_y, sc_z);
 
 		t_vec_gl dir_vec = pos2_vec - pos1_vec;
 		t_real_gl dir_len = tl2::norm<t_vec_gl>(dir_vec);

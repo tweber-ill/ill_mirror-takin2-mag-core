@@ -127,6 +127,8 @@ void MagDynDlg::CreateSitesPanel()
 		new QTableWidgetItem{"Spin z"});
 	m_sitestab->setHorizontalHeaderItem(COL_SITE_SPIN_MAG,
 		new QTableWidgetItem{"Spin |S|"});
+	m_sitestab->setHorizontalHeaderItem(COL_SITE_RGB,
+		new QTableWidgetItem{"Colour"});
 
 	m_sitestab->setColumnWidth(COL_SITE_NAME, 90);
 	m_sitestab->setColumnWidth(COL_SITE_POS_X, 80);
@@ -136,6 +138,7 @@ void MagDynDlg::CreateSitesPanel()
 	m_sitestab->setColumnWidth(COL_SITE_SPIN_Y, 80);
 	m_sitestab->setColumnWidth(COL_SITE_SPIN_Z, 80);
 	m_sitestab->setColumnWidth(COL_SITE_SPIN_MAG, 80);
+	m_sitestab->setColumnWidth(COL_SITE_RGB, 80);
 	m_sitestab->setSizePolicy(QSizePolicy{
 		QSizePolicy::Expanding, QSizePolicy::Expanding});
 

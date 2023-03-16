@@ -175,7 +175,8 @@ void MagDynDlg::GenerateSitesFromSG()
 			std::string,
 			t_real, t_real, t_real,                // position
 			std::string, std::string, std::string, // spin direction
-			t_real                                 // spin magnitude
+			t_real,                                // spin magnitude
+			std::string                            // colour
 			>> generatedsites;
 
 		// avoids multiple occupation of the same site
@@ -229,6 +230,8 @@ void MagDynDlg::GenerateSitesFromSG()
 			auto newsitepos = tl2::apply_ops_hom<t_vec_real, t_mat_real, t_real>(
 				sitepos, ops, g_eps);
 
+			std::string rgb = m_sitestab->item(row, COL_SITE_RGB)->text().toStdString();
+
 			for(std::size_t newsite_idx=0; newsite_idx<newsitepos.size(); ++newsite_idx)
 			{
 				const auto& newsite = newsitepos[newsite_idx];
@@ -236,7 +239,7 @@ void MagDynDlg::GenerateSitesFromSG()
 				generatedsites.emplace_back(std::make_tuple(
 					ident + "_" + tl2::var_to_str(newsite_idx),
 					newsite[0], newsite[1], newsite[2],
-					sx, sy, sz, S));
+					sx, sy, sz, S, rgb));
 			}
 
 			remove_duplicate_sites();
