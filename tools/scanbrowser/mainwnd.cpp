@@ -691,7 +691,10 @@ void MainWnd::LoadPlugins()
 					auto& plugin = m_plugin_scr[pluginNr];
 
 					std::string interp = "python";
-					std::system((interp + std::string{" "} + plugin.filename).c_str());
+					if(int ret = std::system((interp + std::string{" "} + plugin.filename).c_str()); ret != 0)
+					{
+						print_err("Script plugin number ", pluginNr, " return with error ", ret, ".");
+					}
 				});
 
 

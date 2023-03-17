@@ -27,6 +27,7 @@
  */
 
 #include "magdyn.h"
+#include "helper.h"
 
 #include <unordered_set>
 #include <functional>
@@ -528,8 +529,6 @@ void MagDynDlg::StructPlotSync()
 		{
 			ExchangeTermInfo terminfo;
 			terminfo.term = &term;
-			for(int i=0; i<3; ++i)
-				terminfo.colour[i] = rgb[i];
 			m_structplot_terms.emplace(std::make_pair(obj, std::move(terminfo)));
 		}
 
@@ -586,8 +585,6 @@ void MagDynDlg::StructPlotSync()
 			{
 				ExchangeTermInfo terminfo;
 				terminfo.term = &term;
-				for(int i=0; i<3; ++i)
-					terminfo.colour[i] = rgb[i];
 				m_structplot_terms.emplace(std::make_pair(objDmi, std::move(terminfo)));
 			}
 
