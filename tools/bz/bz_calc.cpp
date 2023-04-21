@@ -48,6 +48,72 @@ using namespace tl2_ops;
 
 
 /**
+ * precalculates Q vectors for BZ cut calculation
+ */
+void BZDlg::SetDrawOrder(int order, bool recalc)
+{
+	//std::cout << "draw order: " << order << std::endl;
+
+	// already calculated?
+	if(order != m_drawOrder)
+	{
+		m_drawingPeaks.clear();
+		m_drawingPeaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
+
+		for(t_real h=-order; h<=order; ++h)
+		{
+			for(t_real k=-order; k<=order; ++k)
+			{
+				for(t_real l=-order; l<=order; ++l)
+				{
+					t_vec Q = tl2::create<t_vec>({ h, k, l });
+					m_drawingPeaks.emplace_back(std::move(Q));
+				}
+			}
+		}
+
+		m_drawOrder = order;
+	}
+
+	if(recalc)
+		CalcBZCut();
+}
+
+
+/**
+ * precalculates Q vectors for BZ calculation
+ */
+void BZDlg::SetCalcOrder(int order, bool recalc)
+{
+	//std::cout << "calc order: " << order << std::endl;
+
+	// already calculated?
+	if(order != m_calcOrder)
+	{
+		m_peaks.clear();
+		m_peaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
+
+		for(t_real h=-order; h<=order; ++h)
+		{
+			for(t_real k=-order; k<=order; ++k)
+			{
+				for(t_real l=-order; l<=order; ++l)
+				{
+					t_vec Q = tl2::create<t_vec>({ h, k, l });
+					m_peaks.emplace_back(std::move(Q));
+				}
+			}
+		}
+
+		m_calcOrder = order;
+	}
+
+	if(recalc)
+		CalcBZ();
+}
+
+
+/**
  * calculate crystal B matrix
  */
 void BZDlg::CalcB(bool full_recalc)
@@ -109,10 +175,9 @@ void BZDlg::CalcB(bool full_recalc)
  */
 void BZDlg::CalcBZ(bool full_recalc)
 {
-	if(m_ignoreCalc)
+	if(m_ignoreCalc || !m_peaks.size())
 		return;
 
-	const auto maxBZ = m_BZCalcOrder->value();
 	const auto ops_centr = GetSymOps(true);
 
 	std::ostringstream ostr;
@@ -125,28 +190,21 @@ void BZDlg::CalcBZ(bool full_recalc)
 #endif
 
 	std::vector<t_vec> Qs_invA;
-	Qs_invA.reserve((2*maxBZ+1)*(2*maxBZ+1)*(2*maxBZ+1));
+	Qs_invA.reserve((2*m_calcOrder+1)*(2*m_calcOrder+1)*(2*m_calcOrder+1));
 	std::size_t idx000 = 0;
-	for(t_real h=-maxBZ; h<=maxBZ; ++h)
+
+	for(const t_vec& Q : m_peaks)
 	{
-		for(t_real k=-maxBZ; k<=maxBZ; ++k)
-		{
-			for(t_real l=-maxBZ; l<=maxBZ; ++l)
-			{
-				t_vec Q = tl2::create<t_vec>({ h, k, l });
+		if(!is_reflection_allowed<t_mat, t_vec, t_real>(
+			Q, ops_centr, g_eps).first)
+			continue;
 
-				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
-					Q, ops_centr, g_eps).first)
-					continue;
+		if(tl2::equals_0(Q, g_eps))
+			idx000 = Qs_invA.size();
 
-				if(tl2::equals_0(Q, g_eps))
-					idx000 = Qs_invA.size();
-
-				t_vec Q_invA = m_crystB * Q;
-				//t_real Qabs_invA = tl2::norm(Q_invA);
-				Qs_invA.emplace_back(std::move(Q_invA));
-			}
-		}
+		t_vec Q_invA = m_crystB * Q;
+		//t_real Qabs_invA = tl2::norm(Q_invA);
+		Qs_invA.emplace_back(std::move(Q_invA));
 	}
 
 
@@ -234,7 +292,7 @@ void BZDlg::CalcBZ(bool full_recalc)
  */
 void BZDlg::CalcBZCut()
 {
-	if(m_ignoreCalc || !m_bz_polys.size())
+	if(m_ignoreCalc || !m_bz_polys.size() || !m_drawingPeaks.size())
 		return;
 
 	std::ostringstream ostr;
@@ -279,108 +337,103 @@ void BZDlg::CalcBZCut()
 	std::vector<std::tuple<t_vec, t_vec, std::array<t_real, 3>>>
 		cut_lines, cut_lines000;
 
-	const auto order = m_BZDrawOrder->value();
 	const auto ops = GetSymOps(true);
 
-	for(t_real h=-order; h<=order; ++h)
+	for(const t_vec& Q : m_drawingPeaks)
 	{
-		for(t_real k=-order; k<=order; ++k)
+		if(!is_reflection_allowed<t_mat, t_vec, t_real>(
+			Q, ops, g_eps).first)
+			continue;
+
+		// (000) peak?
+		bool is_000 = tl2::equals_0(Q, g_eps);
+		t_vec Q_invA = m_crystB * Q;
+
+		std::vector<t_vec> cut_verts;
+		std::optional<t_real> z_comp;
+
+		for(const auto& _bz_poly : m_bz_polys)
 		{
-			for(t_real l=-order; l<=order; ++l)
+			// centre bz around bragg peak
+			auto bz_poly = _bz_poly;
+			for(t_vec& vec : bz_poly)
+				vec += Q_invA;
+
+			auto vecs = tl2::intersect_plane_poly<t_vec>(
+				norm_invA, d_invA, bz_poly, g_eps);
+			vecs = tl2::remove_duplicates(vecs, g_eps);
+
+			// calculate the hull of the bz cut
+			if(calc_bzcut_hull)
 			{
-				t_vec Q = tl2::create<t_vec>({ h, k, l });
-
-				if(!is_reflection_allowed<t_mat, t_vec, t_real>(
-					Q, ops, g_eps).first)
-					continue;
-
-				// (000) peak?
-				bool is_000 = tl2::equals_0(Q, g_eps);
-				t_vec Q_invA = m_crystB * Q;
-
-				std::vector<t_vec> cut_verts;
-				std::optional<t_real> z_comp;
-
-				for(const auto& _bz_poly : m_bz_polys)
+				for(const t_vec& vec : vecs)
 				{
-					// centre bz around bragg peak
-					auto bz_poly = _bz_poly;
-					for(t_vec& vec : bz_poly)
-						vec += Q_invA;
+					t_vec vec_rot = m_cut_plane_inv * vec;
+					tl2::set_eps_0(vec_rot, g_eps);
 
-					auto vecs = tl2::intersect_plane_poly<t_vec>(
-						norm_invA, d_invA, bz_poly, g_eps);
-					vecs = tl2::remove_duplicates(vecs, g_eps);
+					cut_verts.emplace_back(
+						tl2::create<t_vec>({
+							vec_rot[0],
+							vec_rot[1] }));
 
-					// calculate the hull of the bz cut
-					if(calc_bzcut_hull)
-					{
-						for(const t_vec& vec : vecs)
-						{
-							t_vec vec_rot = m_cut_plane_inv * vec;
-							tl2::set_eps_0(vec_rot, g_eps);
-
-							cut_verts.emplace_back(
-								tl2::create<t_vec>({
-									vec_rot[0],
-									vec_rot[1] }));
-
-							// z component is the same for every vector
-							if(!z_comp)
-								z_comp = vec_rot[2];
-						}
-					}
-					// alternatively use the lines directly
-					else if(vecs.size() >= 2)
-					{
-						t_vec pt1 = m_cut_plane_inv * vecs[0];
-						t_vec pt2 = m_cut_plane_inv * vecs[1];
-						tl2::set_eps_0(pt1, g_eps);
-						tl2::set_eps_0(pt2, g_eps);
-
-						cut_lines.emplace_back(std::make_tuple(
-							pt1, pt2,
-							std::array<t_real,3>{h, k, l}));
-						if(is_000)
-							cut_lines000.emplace_back(std::make_tuple(
-								pt1, pt2,
-								std::array<t_real,3>{h, k, l}));
-					}
+					// z component is the same for every vector
+					if(!z_comp)
+						z_comp = vec_rot[2];
 				}
+			}
+			// alternatively use the lines directly
+			else if(vecs.size() >= 2)
+			{
+				t_vec pt1 = m_cut_plane_inv * vecs[0];
+				t_vec pt2 = m_cut_plane_inv * vecs[1];
+				tl2::set_eps_0(pt1, g_eps);
+				tl2::set_eps_0(pt2, g_eps);
 
-				// calculate the hull of the bz cut
-				if(calc_bzcut_hull)
+				cut_lines.emplace_back(std::make_tuple(
+					pt1, pt2,
+					std::array<t_real,3>{Q[0], Q[1], Q[2]}));
+				if(is_000)
 				{
-					cut_verts = tl2::remove_duplicates(cut_verts, g_eps);
-					if(cut_verts.size() < 3)
-						continue;
+					cut_lines000.emplace_back(std::make_tuple(
+						pt1, pt2,
+						std::array<t_real,3>{Q[0], Q[1], Q[2]}));
+				}
+			}
+		}
 
-					// calculate the faces of the BZ
-					auto [bz_verts, bz_triags, bz_neighbours] =
-						geo::calc_delaunay(2, cut_verts, true, false);
+		// calculate the hull of the bz cut
+		if(calc_bzcut_hull)
+		{
+			cut_verts = tl2::remove_duplicates(cut_verts, g_eps);
+			if(cut_verts.size() < 3)
+				continue;
 
-					for(std::size_t bz_idx=0; bz_idx<bz_verts.size(); ++bz_idx)
-					{
-						std::size_t bz_idx2 = (bz_idx+1) % bz_verts.size();
-						t_vec pt1 = tl2::create<t_vec>({
-							bz_verts[bz_idx][0],
-							bz_verts[bz_idx][1],
-							z_comp ? *z_comp : 0. });
-						t_vec pt2 = tl2::create<t_vec>({
-							bz_verts[bz_idx2][0],
-							bz_verts[bz_idx2][1],
-							z_comp ? *z_comp : 0. });
-						tl2::set_eps_0(pt1, g_eps);
-						tl2::set_eps_0(pt2, g_eps);
+			// calculate the faces of the BZ
+			auto [bz_verts, bz_triags, bz_neighbours] =
+				geo::calc_delaunay(2, cut_verts, true, false);
 
-						cut_lines.emplace_back(std::make_tuple(
-							pt1, pt2,
-							std::array<t_real,3>{h, k, l}));
-						if(is_000)
-							cut_lines000.emplace_back(std::make_tuple(
-								pt1, pt2,
-								std::array<t_real,3>{h, k, l}));
-					}
+			for(std::size_t bz_idx=0; bz_idx<bz_verts.size(); ++bz_idx)
+			{
+				std::size_t bz_idx2 = (bz_idx+1) % bz_verts.size();
+				t_vec pt1 = tl2::create<t_vec>({
+					bz_verts[bz_idx][0],
+					bz_verts[bz_idx][1],
+					z_comp ? *z_comp : 0. });
+				t_vec pt2 = tl2::create<t_vec>({
+					bz_verts[bz_idx2][0],
+					bz_verts[bz_idx2][1],
+					z_comp ? *z_comp : 0. });
+				tl2::set_eps_0(pt1, g_eps);
+				tl2::set_eps_0(pt2, g_eps);
+
+				cut_lines.emplace_back(std::make_tuple(
+					pt1, pt2,
+					std::array<t_real,3>{Q[0], Q[1], Q[2]}));
+				if(is_000)
+				{
+					cut_lines000.emplace_back(std::make_tuple(
+						pt1, pt2,
+						std::array<t_real,3>{Q[0], Q[1], Q[2]}));
 				}
 			}
 		}

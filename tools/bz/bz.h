@@ -150,6 +150,11 @@ protected:
 		return this->Load(filename);
 	};
 
+	int m_calcOrder{};                           // max. peak order
+	int m_drawOrder{};                           // max. peak order for BZ cuts
+	std::vector<t_vec> m_peaks{};                // peaks for BZ calculation
+	std::vector<t_vec> m_drawingPeaks{};         // peaks for BZ cut calculation
+
 	t_mat m_crystA = tl2::unit<t_mat>(3);        // crystal A matrix
 	t_mat m_crystB = tl2::unit<t_mat>(3);        // crystal B matrix
 	t_mat m_cut_plane = tl2::unit<t_mat>(3);     // cutting plane
@@ -194,6 +199,9 @@ protected:
 
 	bool Load(const QString& filename);
 	bool Save(const QString& filename);
+
+	void SetDrawOrder(int order, bool recalc = true);
+	void SetCalcOrder(int order, bool recalc = true);
 
 	// calculation functions
 	void CalcB(bool full_recalc = true);

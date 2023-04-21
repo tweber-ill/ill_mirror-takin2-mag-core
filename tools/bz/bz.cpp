@@ -269,15 +269,18 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_cutX->setValue(1);
 		m_cutNZ->setValue(1);
 
+		int draw_order = 4;
+		int calc_order = 4;
+
 		m_BZDrawOrder = new QSpinBox(bzpanel);
 		m_BZDrawOrder->setMinimum(0);
 		m_BZDrawOrder->setMaximum(99);
-		m_BZDrawOrder->setValue(4);
+		m_BZDrawOrder->setValue(draw_order);
 
 		m_BZCalcOrder = new QSpinBox(bzpanel);
 		m_BZCalcOrder->setMinimum(1);
 		m_BZCalcOrder->setMaximum(99);
-		m_BZCalcOrder->setValue(4);
+		m_BZCalcOrder->setValue(calc_order);
 
 		QPushButton *btnShowBZ = new QPushButton("3D View...", bzpanel);
 
@@ -306,13 +309,16 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		// signals
 		connect(m_BZDrawOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-			[this]() { this->CalcBZCut(); });
+			[this](int order) { this->SetDrawOrder(order); });
 		connect(m_bzview, &BZCutView::SignalMouseCoordinates,
 			this, &BZDlg::BZCutMouseMoved);
 		connect(m_BZCalcOrder,
 			static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-			[this]() { this->CalcBZ(); });
+			[this](int order) { this->SetCalcOrder(order); });
 		connect(btnShowBZ, &QPushButton::clicked, this, &BZDlg::ShowBZPlot);
+
+		SetCalcOrder(calc_order, false);
+		SetDrawOrder(draw_order, false);
 
 		m_tabs_out->addTab(bzpanel, "Brillouin Zone");
 	}
