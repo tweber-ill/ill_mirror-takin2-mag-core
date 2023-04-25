@@ -190,6 +190,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 	const std::vector<t_vec>& Qs_invA = bzcalc.GetPeaksInvA();
 	const std::vector<t_vec> voronoi = bzcalc.GetVertices();
 	m_bz_polys = bzcalc.GetTriangles();
+	const auto& triags = bzcalc.GetTrianglesIndices();
 	const std::vector<t_vec>& bz_all_triags = bzcalc.GetAllTriangles();
 
 	std::ostringstream ostr;
@@ -224,26 +225,18 @@ void BZDlg::CalcBZ(bool full_recalc)
 		ostr << "vertex " << idx << ": (" << voro << ")" << std::endl;
 	}
 
+	// add voronoi bisectors
 	ostr << "\n# Brillouin zone polygons" << std::endl;
-	for(std::size_t idx_triag=0; idx_triag<m_bz_polys.size(); ++idx_triag)
+	for(std::size_t idx_triag=0; idx_triag<triags.size(); ++idx_triag)
 	{
-		auto& triag = m_bz_polys[idx_triag];
+		const auto& triag = m_bz_polys[idx_triag];
+		const auto& triag_idx = triags[idx_triag];
 
 		ostr << "polygon " << idx_triag << ": " << std::endl;
 		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
 		{
-			t_vec& vert = triag[idx_vert];
-
-			// find index of vert among voronoi vertices
-			std::ptrdiff_t voroidx = -1;
-			if(auto voro_iter = std::find_if(voronoi.begin(), voronoi.end(),
-				[&vert](const t_vec& vec) -> bool
-				{
-					return tl2::equals<t_vec>(vec, vert, g_eps);
-				}); voro_iter != voronoi.end())
-			{
-				voroidx = voro_iter - voronoi.begin();
-			}
+			const t_vec& vert = triag[idx_vert];
+			std::size_t voroidx = triag_idx[idx_vert];
 
 			ostr << "\tvertex " << voroidx << ": (" << vert << ")" << std::endl;
 		}

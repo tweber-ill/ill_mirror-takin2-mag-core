@@ -1,5 +1,5 @@
 /**
- * brillouin zone calculation
+ * brillouin zone calculation library
  * @author Tobias Weber <tweber@ill.fr>
  * @date May-2022
  * @license GPLv3, see 'LICENSE' file
@@ -42,7 +42,6 @@
 #endif
 
 
-
 /**
  * brillouin zone calculation
  */
@@ -53,6 +52,25 @@ public:
 	BZCalc() = default;
 	~BZCalc() = default;
 
+
+	/**
+	 * clear old BZ results
+	 */
+	void ClearBZ()
+	{
+		m_vertices.clear();
+
+		m_triags.clear();
+		m_triags_idx.clear();
+
+		m_all_triags.clear();
+		m_all_triags_idx.clear();
+	}
+
+
+	// --------------------------------------------------------------------------------
+	// getter and setter
+	// --------------------------------------------------------------------------------
 	static std::size_t GetErrIdx() { return s_erridx; }
 
 	void SetEps(t_real eps) { m_eps = eps; }
@@ -65,9 +83,13 @@ public:
 	const std::vector<t_vec>& GetPeaksInvA() const { return m_peaks_invA; }
 
 	const std::vector<t_vec>& GetVertices() const { return m_vertices; }
+
 	const std::vector<std::vector<t_vec>>& GetTriangles() const { return m_triags; }
+	const std::vector<std::vector<std::size_t>>& GetTrianglesIndices() const { return m_triags_idx; }
+
 	const std::vector<t_vec>& GetAllTriangles() const { return m_all_triags; }
 	const std::vector<std::size_t>& GetAllTrianglesIndices() const { return m_all_triags_idx; }
+
 
 	std::size_t Get000Peak() const
 	{
@@ -99,20 +121,12 @@ public:
 			}
 		}
 	}
+	// --------------------------------------------------------------------------------
 
 
-	/**
-	 * clear old BZ results
-	 */
-	void ClearBZ()
-	{
-		m_vertices.clear();
-		m_triags.clear();
-		m_all_triags.clear();
-		m_all_triags_idx.clear();
-	}
-
-
+	// --------------------------------------------------------------------------------
+	// calculations
+	// --------------------------------------------------------------------------------
 	/**
 	 * calculate the nuclear bragg peaks in lab coordinates
 	 */
@@ -172,9 +186,14 @@ public:
 		std::tie(std::ignore, m_triags, std::ignore) =
 			geo::calc_delaunay(3, m_vertices, true, false);
 
-		// calculate all BZ polygons
-		for(auto& bz_triag : m_triags)
+		// calculate all BZ triangles
+		for(std::vector<t_vec>& bz_triag : m_triags)
 		{
+			if(bz_triag.size() == 0)
+				continue;
+			//assert(bz_triag.size() == 3);
+
+			std::vector<std::size_t> triagindices;
 			for(t_vec& vert : bz_triag)
 			{
 				tl2::set_eps_0(vert, m_eps);
@@ -190,11 +209,17 @@ public:
 					voroidx = voro_iter - m_vertices.begin();
 				}
 
+				std::size_t idx = (voroidx >= 0 ? voroidx : s_erridx);
+				triagindices.push_back(idx);
+
 				m_all_triags.push_back(vert);
-				m_all_triags_idx.push_back(voroidx >= 0 ? voroidx : s_erridx);
+				m_all_triags_idx.push_back(idx);
 			}  // vertices
+
+			m_triags_idx.emplace_back(std::move(triagindices));
 		}  // triangles
 	}
+	// --------------------------------------------------------------------------------
 
 
 private:
@@ -207,9 +232,12 @@ private:
 	std::optional<std::size_t> m_idx000{}; // index of the (000) peak
 
 	std::vector<t_vec> m_vertices{};            // voronoi vertices
+
 	std::vector<std::vector<t_vec>> m_triags{}; // bz triangles
-	std::vector<t_vec> m_all_triags {};         // all brillouin zone triangles
-	std::vector<std::size_t> m_all_triags_idx {};  // ... and the voronoi indices
+	std::vector<std::vector<std::size_t>> m_triags_idx{}; // ... and the version with voronoi vertex indices
+
+	std::vector<t_vec> m_all_triags {};            // all brillouin zone triangles
+	std::vector<std::size_t> m_all_triags_idx {};  // ... and the version with voronoi vertex indices
 
 	static const std::size_t s_erridx{0xffffffff}; // index for reporting errors
 };
