@@ -5,7 +5,7 @@
 #
 # ----------------------------------------------------------------------------
 # mag-core (part of the Takin software suite)
-# Copyright (C) 2018-2022  Tobias WEBER (Institut Laue-Langevin (ILL),
+# Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
 #                          Grenoble, France).
 #
 # This program is free software: you can redistribute it and/or modify
@@ -89,6 +89,7 @@ add_executable(takin_bz
 	globals.cpp globals.h
 	bz_formulas.cpp
 	plot_cut.cpp plot_cut.h
+	bzlib.h
 	../../tlibs2/libs/qt/recent.cpp ../../tlibs2/libs/qt/recent.h
 	../../tlibs2/libs/qt/gl.cpp ../../tlibs2/libs/qt/gl.h
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h)

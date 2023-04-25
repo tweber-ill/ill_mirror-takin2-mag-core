@@ -6,7 +6,7 @@
  *
  * ----------------------------------------------------------------------------
  * mag-core (part of the Takin software suite)
- * Copyright (C) 2018-2022  Tobias WEBER (Institut Laue-Langevin (ILL),
+ * Copyright (C) 2018-2023  Tobias WEBER (Institut Laue-Langevin (ILL),
  *                          Grenoble, France).
  * "misc" project
  * Copyright (C) 2017-2021  Tobias WEBER (privately developed).
@@ -26,23 +26,17 @@
  */
 
 #include "bz.h"
+#include "bzlib.h"
 
 #include <QtWidgets/QMessageBox>
 
 #include <iostream>
 #include <sstream>
 
-#include "../structfact/loadcif.h"
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
 #include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/qt/helper.h"
-
-#if __has_include("pathslib/libs/voronoi.h")
-	#include "pathslib/libs/voronoi.h"
-#else
-	#include "voronoi.h"
-#endif
 
 using namespace tl2_ops;
 
@@ -180,6 +174,24 @@ void BZDlg::CalcBZ(bool full_recalc)
 
 	const auto ops_centr = GetSymOps(true);
 
+	// set up bz calculator
+	BZCalc<t_mat, t_vec, t_real> bzcalc;
+	bzcalc.SetEps(g_eps);
+	bzcalc.SetSymOps(ops_centr, true);
+	bzcalc.SetCrystalB(m_crystB);
+	bzcalc.SetPeaks(m_peaks);
+	bzcalc.CalcPeaksInvA();
+
+	// calculate bz
+	bzcalc.CalcBZ();
+
+	// get results from bz calculator
+	std::size_t idx000 = bzcalc.Get000Peak();
+	const std::vector<t_vec>& Qs_invA = bzcalc.GetPeaksInvA();
+	const std::vector<t_vec> voronoi = bzcalc.GetVertices();
+	m_bz_polys = bzcalc.GetTriangles();
+	const std::vector<t_vec>& bz_all_triags = bzcalc.GetAllTriangles();
+
 	std::ostringstream ostr;
 	ostr.precision(g_prec);
 
@@ -189,42 +201,14 @@ void BZDlg::CalcBZ(bool full_recalc)
 		ostr << op << std::endl;
 #endif
 
-	std::vector<t_vec> Qs_invA;
-	Qs_invA.reserve((2*m_calcOrder+1)*(2*m_calcOrder+1)*(2*m_calcOrder+1));
-	std::size_t idx000 = 0;
-
-	for(const t_vec& Q : m_peaks)
-	{
-		if(!is_reflection_allowed<t_mat, t_vec, t_real>(
-			Q, ops_centr, g_eps).first)
-			continue;
-
-		if(tl2::equals_0(Q, g_eps))
-			idx000 = Qs_invA.size();
-
-		t_vec Q_invA = m_crystB * Q;
-		//t_real Qabs_invA = tl2::norm(Q_invA);
-		Qs_invA.emplace_back(std::move(Q_invA));
-	}
-
-
-	// calculate voronoi diagram
-	auto [voronoi, _triags, _neighbours] =
-		geo::calc_delaunay(3, Qs_invA, false, false, idx000);
-	voronoi = tl2::remove_duplicates(voronoi, g_eps);
-
 	ClearBZPlot();
-	m_bz_polys.clear();
 
 #ifdef DEBUG
 	std::ofstream ofstrSites("sites.dat");
 	std::cout << "cat sites.dat | qvoronoi s p Fv QV" << idx000 << std::endl;
 	ofstrSites << "3 " << Qs_invA.size() << std::endl;
 	for(const t_vec& Q : Qs_invA)
-	{
-		//PlotAddBraggPeak(Q);
 		ofstrSites << "(" << Q[0] << " " << Q[1] << " " << Q[2] << ")" << std::endl;
-	}
 #endif
 
 	// add gamma point
@@ -234,29 +218,21 @@ void BZDlg::CalcBZ(bool full_recalc)
 	ostr << "# Brillouin zone vertices" << std::endl;
 	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
 	{
-		t_vec& voro = voronoi[idx];
-		tl2::set_eps_0(voro, g_eps);
-
+		const t_vec& voro = voronoi[idx];
 		PlotAddVoronoiVertex(voro);
 
 		ostr << "vertex " << idx << ": (" << voro << ")" << std::endl;
 	}
 
-	// calculate the faces of the BZ
-	auto [bz_verts, bz_triags, bz_neighbours] =
-		geo::calc_delaunay(3, voronoi, true, false);
-
-	std::vector<t_vec> bz_all_triags;
 	ostr << "\n# Brillouin zone polygons" << std::endl;
-	for(std::size_t idx_triag=0; idx_triag<bz_triags.size(); ++idx_triag)
+	for(std::size_t idx_triag=0; idx_triag<m_bz_polys.size(); ++idx_triag)
 	{
-		auto& triag = bz_triags[idx_triag];
+		auto& triag = m_bz_polys[idx_triag];
 
 		ostr << "polygon " << idx_triag << ": " << std::endl;
 		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
 		{
 			t_vec& vert = triag[idx_vert];
-			set_eps_0(vert, g_eps);
 
 			// find index of vert among voronoi vertices
 			std::ptrdiff_t voroidx = -1;
@@ -269,13 +245,10 @@ void BZDlg::CalcBZ(bool full_recalc)
 				voroidx = voro_iter - voronoi.begin();
 			}
 
-			bz_all_triags.push_back(vert);
-			ostr << "\tvertex " << voroidx << ": ("
-				<< vert << ")" << std::endl;
+			ostr << "\tvertex " << voroidx << ": (" << vert << ")" << std::endl;
 		}
 	}
 
-	m_bz_polys = std::move(bz_triags);
 	PlotAddTriangles(bz_all_triags);
 
 	m_descrBZ = ostr.str();
