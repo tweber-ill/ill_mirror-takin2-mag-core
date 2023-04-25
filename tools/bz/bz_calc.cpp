@@ -55,16 +55,9 @@ void BZDlg::SetDrawOrder(int order, bool recalc)
 		m_drawingPeaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
 
 		for(t_real h=-order; h<=order; ++h)
-		{
 			for(t_real k=-order; k<=order; ++k)
-			{
 				for(t_real l=-order; l<=order; ++l)
-				{
-					t_vec Q = tl2::create<t_vec>({ h, k, l });
-					m_drawingPeaks.emplace_back(std::move(Q));
-				}
-			}
-		}
+					m_drawingPeaks.emplace_back(tl2::create<t_vec>({ h, k, l }));
 
 		m_drawOrder = order;
 	}
@@ -88,16 +81,9 @@ void BZDlg::SetCalcOrder(int order, bool recalc)
 		m_peaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
 
 		for(t_real h=-order; h<=order; ++h)
-		{
 			for(t_real k=-order; k<=order; ++k)
-			{
 				for(t_real l=-order; l<=order; ++l)
-				{
-					t_vec Q = tl2::create<t_vec>({ h, k, l });
-					m_peaks.emplace_back(std::move(Q));
-				}
-			}
-		}
+					m_peaks.emplace_back(tl2::create<t_vec>({ h, k, l }));
 
 		m_calcOrder = order;
 	}

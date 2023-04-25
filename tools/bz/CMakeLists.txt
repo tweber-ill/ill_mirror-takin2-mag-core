@@ -38,7 +38,7 @@ list(APPEND CMAKE_MODULE_PATH
 )
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
-option(BUILD_LIB "build as dynamic library" FALSE)
+option(USE_SCRIPTING "use scripting" FALSE)
 
 # system specific settings
 message("Building for ${CMAKE_SYSTEM_NAME} systems.")
@@ -106,3 +106,34 @@ target_link_libraries(takin_bz
 	${Qhull_LIBRARIES}
 	${QtLibraries}
 )
+
+
+if(USE_SCRIPTING)
+	find_package(Python3 COMPONENTS Interpreter Development)
+	find_package(SWIG COMPONENTS python)
+
+	if(SWIG_FOUND AND SWIG_python_FOUND)
+		message("Scripting using python version ${Python3_VERSION} enabled; packages: ${Python3_SITEARCH}.")
+
+		cmake_policy(SET CMP0078 NEW)
+		cmake_policy(SET CMP0086 NEW)
+
+		set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
+		include(${SWIG_USE_FILE})
+
+		set_source_files_properties(bzlib.i PROPERTIES CPLUSPLUS TRUE)
+		set_source_files_properties(bzlib.i PROPERTIES SWIG_FLAGS "-I ${PROJECT_SOURCE_DIR}")
+		set_source_files_properties(${PROJECT_BINARY_DIR}/CMakeFiles/bz_py.dir/bzlibPYTHON_wrap.cxx
+			PROPERTIES SKIP_AUTOMOC TRUE SKIP_AUTOUIC TRUE)
+
+		swig_add_library(bz_py LANGUAGE python SOURCES bzlib.i)
+
+		target_link_libraries(bz_py
+			Python3::Python
+			${Boost_LIBRARIES}
+			${Qhull_LIBRARIES}
+		)
+	endif()
+else()
+	message("Scripting disabled.")
+endif()

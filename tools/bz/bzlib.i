@@ -35,7 +35,12 @@
 
 
 %include "std_vector.i"
-%include "bzlib.h"
 
 %template(VecD) std::vector<double>;
+%template(VecUI) std::vector<unsigned int>;
+//%template(Vectvec) std::vector<t_vecD>;
+
+
+%include "bzlib.h"
+
 %template(BZCalcD) BZCalc<t_matD, t_vecD, double>;

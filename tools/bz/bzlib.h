@@ -46,6 +46,7 @@
  * brillouin zone calculation
  */
 template<class t_mat, class t_vec, class t_real = typename t_vec::value_type>
+//requires tl2::is_mat<t_mat> && tl2::is_vec<t_vec>
 class BZCalc
 {
 public:
@@ -91,6 +92,9 @@ public:
 	const std::vector<std::size_t>& GetAllTrianglesIndices() const { return m_all_triags_idx; }
 
 
+	/**
+	 * get the index of the (000) bragg peak
+	 */
 	std::size_t Get000Peak() const
 	{
 		if(m_idx000)
@@ -99,6 +103,9 @@ public:
 	}
 
 
+	/**
+	 * set up a list of symmetry operations (given by the space group)
+	 */
 	void SetSymOps(const std::vector<t_mat>& ops, bool are_centring = false)
 	{
 		if(are_centring)
@@ -147,6 +154,32 @@ public:
 
 			m_peaks_invA.emplace_back(m_crystB * Q);
 		}
+	}
+
+
+	/**
+	 * create nuclear bragg peaks up to the given order
+	 */
+	void CalcPeaks(std::size_t order, bool cleate_invA = false)
+	{
+		m_peaks.clear();
+		m_peaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
+
+		for(std::size_t h=-order; h<=order; ++h)
+		{
+			for(std::size_t k=-order; k<=order; ++k)
+			{
+				for(std::size_t l=-order; l<=order; ++l)
+				{
+					m_peaks.emplace_back(
+						tl2::create<t_vec>(
+							{ t_real(h), t_real(k), t_real(l) }));
+				}
+			}
+		}
+
+		if(cleate_invA)
+			CalcPeaksInvA();
 	}
 
 
