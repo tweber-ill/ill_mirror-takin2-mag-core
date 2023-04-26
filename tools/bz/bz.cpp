@@ -426,6 +426,23 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
+	{	// brillouin zone calculation results panel (json)
+		auto resultspanel = new QWidget(this);
+		auto grid = new QGridLayout(resultspanel);
+		grid->setSpacing(4);
+		grid->setContentsMargins(4,4,4,4);
+
+		m_bzresultsJSON = new QPlainTextEdit(resultspanel);
+		m_bzresultsJSON->setReadOnly(true);
+		m_bzresultsJSON->setFont(
+			QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+		grid->addWidget(m_bzresultsJSON, 0,0, 1,4);
+
+		m_tabs_out->addTab(resultspanel, "Results (JSON)");
+	}
+
+
 	// status bar
 	m_status = new QLabel(this);
 	m_status->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
@@ -705,4 +722,7 @@ void BZDlg::UpdateBZDescription()
 	// brillouin zone description
 	std::string descr = m_descrBZ + "\n" + m_descrBZCut;
 	m_bzresults->setPlainText(descr.c_str());
+
+	// brillouin zone json description
+	m_bzresultsJSON->setPlainText(m_descrBZJSON.c_str());
 }

@@ -110,12 +110,12 @@ public:
 	{
 		if(are_centring)
 		{
-			// symops are already centring, add all
+			// symops are already purely centring, add all
 			m_symops = ops;
 		}
 		else
 		{
-			// add only centring ops
+			// only add centring ops
 			m_symops.clear();
 			m_symops.reserve(ops.size());
 
@@ -255,8 +255,109 @@ public:
 	// --------------------------------------------------------------------------------
 
 
+	// --------------------------------------------------------------------------------
+	// output
+	// --------------------------------------------------------------------------------
+	/**
+	 * print a description of the bz
+	 */
+	std::string Print(int prec = 6) const
+	{
+		std::ostringstream ostr;
+		ostr.precision(prec);
+
+#ifdef DEBUG
+		ostr << "# centring symmetry operations\n";
+		for(const t_mat& op : m_symops)
+			ostr << op << "\n";
+#endif
+
+		// voronoi vertices forming the vertices of the bz
+		const std::vector<t_vec>& voronoiverts = GetVertices();
+		ostr << "# Brillouin zone vertices\n";
+		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
+		{
+			const t_vec& voro = voronoiverts[idx];
+			ostr << "vertex " << idx << ": (" << voro << ")\n";
+		}
+
+		// voronoi bisectors
+		const auto& bz_polys = GetTriangles();
+		const auto& bz_polys_idx = GetTrianglesIndices();
+
+		ostr << "\n# Brillouin zone polygons\n";
+		for(std::size_t idx_triag=0; idx_triag<bz_polys.size(); ++idx_triag)
+		{
+			const auto& triag = bz_polys[idx_triag];
+			const auto& triag_idx = bz_polys_idx[idx_triag];
+
+			ostr << "polygon " << idx_triag << ": \n";
+			for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
+			{
+				const t_vec& vert = triag[idx_vert];
+				std::size_t voroidx = triag_idx[idx_vert];
+
+				ostr << "\tvertex " << voroidx << ": (" << vert << ")\n";
+			}
+		}
+
+		return ostr.str();
+	}
+
+
+	/**
+	 * export a description of the bz in json format
+	 */
+	std::string PrintJSON(int prec = 6) const
+	{
+		std::ostringstream ostr;
+		ostr.precision(prec);
+
+		ostr << "{\n";
+
+		// voronoi vertices forming the vertices of the bz
+		const std::vector<t_vec>& voronoiverts = GetVertices();
+		ostr << "\"vertices\" : [\n";
+		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
+		{
+			const t_vec& voro = voronoiverts[idx];
+			ostr << "\t[ " << voro[0] << ", " << voro[1] << ", " << voro[2] << " ]";
+			if(idx < voronoiverts.size() - 1)
+				ostr << ",";
+			ostr << "\n";
+		}
+		ostr << "],\n\n";
+
+		// voronoi bisectors
+		const auto& bz_polys_idx = GetTrianglesIndices();
+		ostr << "\"polygons\" : [\n";
+		for(std::size_t idx_triag=0; idx_triag<bz_polys_idx.size(); ++idx_triag)
+		{
+			const auto& triag_idx = bz_polys_idx[idx_triag];
+
+			ostr << "\t[ ";
+			for(std::size_t idx_vert=0; idx_vert<triag_idx.size(); ++idx_vert)
+			{
+				ostr << triag_idx[idx_vert];
+				if(idx_vert < triag_idx.size() - 1)
+					ostr << ", ";
+			}
+			ostr << " ]";
+			if(idx_triag < bz_polys_idx.size() - 1)
+				ostr << ",";
+			ostr << "\n";
+		}
+		ostr << "]\n";
+
+		ostr << "}\n";
+		return ostr.str();
+	}
+	// --------------------------------------------------------------------------------
+
+
 private:
 	t_real m_eps{ 1e-6 };                  // calculation epsilon
+
 	t_mat m_crystB{tl2::unit<t_mat>(3)};   // crystal B matrix
 
 	std::vector<t_mat> m_symops{ };        // space group centring symmetry operations

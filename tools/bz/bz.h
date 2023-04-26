@@ -135,7 +135,9 @@ protected:
 
 	// results panel
 	QPlainTextEdit *m_bzresults = nullptr;
-	std::string m_descrBZ, m_descrBZCut;         // text description of the results
+	QPlainTextEdit *m_bzresultsJSON = nullptr;
+	std::string m_descrBZ, m_descrBZCut{};       // text description of the results
+	std::string m_descrBZJSON{};                 // json description of the results
 
 	// menu
 	QAction *m_acCutHull = nullptr;
@@ -161,8 +163,8 @@ protected:
 	t_mat m_cut_plane_inv = tl2::unit<t_mat>(3); // and its inverse
 	t_real m_cut_norm_scale = 1.;                // convert 1/A to rlu lengths along the normal
 
-	std::vector<std::vector<t_mat>> m_sg_ops;    // symops per space group
-	std::vector<std::vector<t_vec>> m_bz_polys;  // polygons of the 3d bz
+	std::vector<std::vector<t_mat>> m_sg_ops{};  // symops per space group
+	std::vector<std::vector<t_vec>> m_bz_polys{};// polygons of the 3d bz
 
 	t_real m_min_x = 1., m_max_x = -1.;          // plot ranges for curves
 	t_real m_min_y = 1., m_max_y = -1.;          // plot ranges for curves
@@ -248,7 +250,7 @@ private:
 	bool m_ignoreCalc = 0;                       // ignore bz calculation
 
 	long m_curPickedObj = -1;                    // current 3d bz object
-	std::vector<std::size_t> m_plotObjs;         // 3d bz plot objects
+	std::vector<std::size_t> m_plotObjs{};       // 3d bz plot objects
 };
 
 

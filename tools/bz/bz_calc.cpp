@@ -171,66 +171,28 @@ void BZDlg::CalcBZ(bool full_recalc)
 	// calculate bz
 	bzcalc.CalcBZ();
 
-	// get results from bz calculator
-	std::size_t idx000 = bzcalc.Get000Peak();
-	const std::vector<t_vec>& Qs_invA = bzcalc.GetPeaksInvA();
-	const std::vector<t_vec> voronoi = bzcalc.GetVertices();
-	m_bz_polys = bzcalc.GetTriangles();
-	const auto& triags = bzcalc.GetTrianglesIndices();
-	const std::vector<t_vec>& bz_all_triags = bzcalc.GetAllTriangles();
-
-	std::ostringstream ostr;
-	ostr.precision(g_prec);
-
-#ifdef DEBUG
-	ostr << "# centring symmetry operations" << std::endl;
-	for(const t_mat& op : ops_centr)
-		ostr << op << std::endl;
-#endif
-
+	// clear old plot
 	ClearBZPlot();
 
-#ifdef DEBUG
-	std::ofstream ofstrSites("sites.dat");
-	std::cout << "cat sites.dat | qvoronoi s p Fv QV" << idx000 << std::endl;
-	ofstrSites << "3 " << Qs_invA.size() << std::endl;
-	for(const t_vec& Q : Qs_invA)
-		ofstrSites << "(" << Q[0] << " " << Q[1] << " " << Q[2] << ")" << std::endl;
-#endif
+	// set bz triangles
+	m_bz_polys = bzcalc.GetTriangles();
 
 	// add gamma point
-	PlotAddBraggPeak(Qs_invA[idx000]);
+	std::size_t idx000 = bzcalc.Get000Peak();
+	const std::vector<t_vec>& Qs_invA = bzcalc.GetPeaksInvA();
+	if(idx000 < Qs_invA.size())
+		PlotAddBraggPeak(Qs_invA[idx000]);
 
 	// add voronoi vertices forming the vertices of the BZ
-	ostr << "# Brillouin zone vertices" << std::endl;
-	for(std::size_t idx=0; idx<voronoi.size(); ++idx)
-	{
-		const t_vec& voro = voronoi[idx];
+	for(const t_vec& voro : bzcalc.GetVertices())
 		PlotAddVoronoiVertex(voro);
 
-		ostr << "vertex " << idx << ": (" << voro << ")" << std::endl;
-	}
-
 	// add voronoi bisectors
-	ostr << "\n# Brillouin zone polygons" << std::endl;
-	for(std::size_t idx_triag=0; idx_triag<triags.size(); ++idx_triag)
-	{
-		const auto& triag = m_bz_polys[idx_triag];
-		const auto& triag_idx = triags[idx_triag];
+	PlotAddTriangles(bzcalc.GetAllTriangles());
 
-		ostr << "polygon " << idx_triag << ": " << std::endl;
-		for(std::size_t idx_vert=0; idx_vert<triag.size(); ++idx_vert)
-		{
-			const t_vec& vert = triag[idx_vert];
-			std::size_t voroidx = triag_idx[idx_vert];
-
-			ostr << "\tvertex " << voroidx << ": (" << vert << ")" << std::endl;
-		}
-	}
-
-	PlotAddTriangles(bz_all_triags);
-
-	m_descrBZ = ostr.str();
+	// set bz description string
+	m_descrBZ = bzcalc.Print(g_prec);
+	m_descrBZJSON = bzcalc.PrintJSON(g_prec);
 
 	if(full_recalc)
 		CalcBZCut();
@@ -241,6 +203,7 @@ void BZDlg::CalcBZ(bool full_recalc)
 
 /**
  * calculate brillouin zone cut
+ * TODO: move calculation into bzlib.h
  */
 void BZDlg::CalcBZCut()
 {
