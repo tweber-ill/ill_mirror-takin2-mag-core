@@ -108,8 +108,6 @@ get_cif_atoms(gemmi::cif::Block& block)
 			const t_real y = tl2::stoval<t_real>(tabAtoms[row][2]);
 			const t_real z = tl2::stoval<t_real>(tabAtoms[row][3]);
 
-			//std::cout << name << ": " << x << " " << y << " " << z << std::endl;
-
 			atomnames.emplace_back(std::move(name));
 			atoms.emplace_back(t_vec{{x, y, z}});
 		}
@@ -172,38 +170,49 @@ std::vector<t_mat> get_cif_ops(gemmi::cif::Block& block)
 
 
 /**
+ * get space group symmetry operations by space group name
+ */
+template<class t_mat, class t_real = typename t_mat::value_type>
+std::vector<t_mat> get_sg_ops(const std::string& sgname)
+{
+	auto sg = gemmi::find_spacegroup_by_name(sgname);
+	if(!sg)
+		return std::vector<t_mat>{};
+
+	std::vector<t_mat> ops;
+	auto symops = sg->operations().all_ops_sorted();
+	for(const auto &op : symops)
+	{
+		auto M = op.float_seitz();
+
+		t_mat mat = tl2::create<t_mat>({
+			std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
+			std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
+			std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
+			std::get<0>(std::get<3>(M)), std::get<1>(std::get<3>(M)), std::get<2>(std::get<3>(M)), std::get<3>(std::get<3>(M)) });
+
+		ops.emplace_back(std::move(mat));
+	}
+
+	return ops;
+}
+
+
+/**
  * gets the symmetry operations from the CIF's space group
  * (use tl2::equals_all to check if space group operations are the same)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
 {
-	std::vector<t_mat> ops;
+	auto val = block.find_values("_symmetry_space_group_name_H-M");
+	if(!val.length())
+		return std::vector<t_mat>{};
 
-	if(auto val = block.find_values("_symmetry_space_group_name_H-M"); val.length())
-	{
-		std::string sgname = boost::trim_copy(val[0]);
-		remove_quotes(sgname);
+	std::string sgname = boost::trim_copy(val[0]);
+	remove_quotes(sgname);
 
-		if(auto sg = gemmi::find_spacegroup_by_name(sgname))
-		{
-			auto symops = sg->operations().all_ops_sorted();
-			for(const auto &op : symops)
-			{
-				auto M = op.float_seitz();
-
-				t_mat mat = tl2::create<t_mat>({
-					std::get<0>(std::get<0>(M)), std::get<1>(std::get<0>(M)), std::get<2>(std::get<0>(M)), std::get<3>(std::get<0>(M)),
-					std::get<0>(std::get<1>(M)), std::get<1>(std::get<1>(M)), std::get<2>(std::get<1>(M)), std::get<3>(std::get<1>(M)),
-					std::get<0>(std::get<2>(M)), std::get<1>(std::get<2>(M)), std::get<2>(std::get<2>(M)), std::get<3>(std::get<2>(M)),
-					std::get<0>(std::get<3>(M)), std::get<1>(std::get<3>(M)), std::get<2>(std::get<3>(M)), std::get<3>(std::get<3>(M)) });
-
-				ops.emplace_back(std::move(mat));
-			}
-		}
-	}
-
-	return ops;
+	return get_sg_ops<t_mat, t_real>(sgname);
 }
 
 
@@ -212,12 +221,12 @@ std::vector<t_mat> get_cif_sg_ops(gemmi::cif::Block& block)
  */
 template<class t_vec, class t_mat, class t_real = typename t_vec::value_type>
 std::tuple<
-	std::string /* errors and warnings */,
-	std::vector<t_vec> /* basic atom positions */,
-	std::vector<std::vector<t_vec>> /* all generated atoms */,
-	std::vector<std::string> /* atom names */,
-	Lattice<t_real> /* lattice */ ,
-	std::vector<t_mat> /* ops */ >
+	std::string,                      // errors and warnings
+	std::vector<t_vec>,               // basic atom positions
+	std::vector<std::vector<t_vec>>,  // all generated atoms
+	std::vector<std::string>,         // atom names
+	Lattice<t_real>,                  // lattice
+	std::vector<t_mat>>               // symops
 load_cif(const std::string& filename, t_real eps=1e-6)
 {
 	auto ifstr = std::ifstream(filename);
@@ -287,9 +296,9 @@ load_cif(const std::string& filename, t_real eps=1e-6)
  */
 template<class t_mat, class t_real = typename t_mat::value_type>
 std::vector<std::tuple<
-	int,			// sg number
-	std::string, 		// description
-	std::vector<t_mat>	// symops
+	int,                // sg number
+	std::string,        // description
+	std::vector<t_mat>  // symops
 	>>
 get_sgs(bool bAddNr=true, bool bAddHall=true)
 {
@@ -333,9 +342,9 @@ get_sgs(bool bAddNr=true, bool bAddHall=true)
  */
 template<class t_vec, class t_mat, class t_real = typename t_mat::value_type>
 std::vector<std::tuple<
-	int,			// sg number
-	std::string, 		// description
-	std::vector<t_mat>	// symops
+	int,                // sg number
+	std::string,        // description
+	std::vector<t_mat>  // symops
 	>>
 find_matching_sgs(
 	const std::vector<t_vec>& posInit, const std::vector<t_vec>& _posFinal,
@@ -359,12 +368,8 @@ find_matching_sgs(
 			generatedpos.insert(generatedpos.end(), newpos.begin(), newpos.end());
 		}
 
-		//for(const auto& thepos : generatedpos)
-		//	std::cout << thepos << std::endl;
-
 		// filter multiple occupancies in generatedpos
 		generatedpos = tl2::remove_duplicates<t_vec>(generatedpos, eps);
-
 
 		// no match
 		if(!tl2::equals_all<t_vec>(generatedpos, posFinal, eps, 3))
@@ -402,14 +407,17 @@ requires tl2::is_mat<t_mat> && tl2::is_vec<t_vec>
 		t_mat rot = tl2::submat<t_mat>(mat, 0,0, 3,3); // rotation part of the symop
 		rot = tl2::trans(rot);                         // recip -> transpose
 
-		if(tl2::equals<t_vec>(Q, rot*Q, eps))          // does Q transform into itself
-		{
-			t_vec trans = tl2::create<t_vec>({ mat(0,3), mat(1,3), mat(2,3) });
+		// does Q not transform into itself?
+		if(!tl2::equals<t_vec>(Q, rot*Q, eps))
+			continue;
 
-			// does Q translate to multiples of the lattice vector?
-			if(!tl2::is_integer<t_real>(tl2::inner<t_vec>(trans, Q), eps))
-				return std::make_pair(false, opidx);
-		}
+		t_vec trans = tl2::create<t_vec>({ mat(0,3), mat(1,3), mat(2,3) });
+
+		// does Q translate to multiples of the lattice vector?
+		if(tl2::is_integer<t_real>(tl2::inner<t_vec>(trans, Q), eps))
+			continue;
+
+		return std::make_pair(false, opidx);
 	}
 
 	return std::make_pair(true, symops.size());

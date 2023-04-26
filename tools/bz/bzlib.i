@@ -35,6 +35,7 @@
 
 
 %include "std_vector.i"
+%include "std_string.i"
 
 %template(VecD) std::vector<double>;
 %template(VecUI) std::vector<unsigned int>;

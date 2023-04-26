@@ -77,6 +77,20 @@ public:
 	void SetEps(t_real eps) { m_eps = eps; }
 	void SetCrystalB(const t_mat& B) { m_crystB = B; }
 
+	/**
+	 * sets up a crystal lattice and angles
+	 */
+	void SetCrystal(t_real a, t_real b, t_real c,
+		t_real alpha = 90., t_real beta = 90., t_real gamma = 90.)
+	{
+		t_mat crystB = tl2::B_matrix<t_mat>(a, b, c,
+			alpha/180.*tl2::pi<t_real>,
+			beta/180.*tl2::pi<t_real>,
+			gamma/180.*tl2::pi<t_real>);
+
+		SetCrystalB(crystB);
+	}
+
 	void SetPeaks(const std::vector<t_vec>& peaks) { m_peaks = peaks; }
 	const std::vector<t_vec>& GetPeaks() const { return m_peaks; }
 
@@ -105,8 +119,9 @@ public:
 
 	/**
 	 * set up a list of symmetry operations (given by the space group)
+	 * @returns number of actually set symops
 	 */
-	void SetSymOps(const std::vector<t_mat>& ops, bool are_centring = false)
+	std::size_t SetSymOps(const std::vector<t_mat>& ops, bool are_centring = false)
 	{
 		if(are_centring)
 		{
@@ -127,6 +142,15 @@ public:
 				m_symops.push_back(op);
 			}
 		}
+
+		return m_symops.size();
+	}
+
+
+	std::size_t SetSymOpsFromSpaceGroup(const std::string& sgname)
+	{
+		std::vector<t_mat> ops = get_sg_ops<t_mat, t_real>(sgname);
+		return SetSymOps(ops, false);
 	}
 	// --------------------------------------------------------------------------------
 
@@ -136,8 +160,9 @@ public:
 	// --------------------------------------------------------------------------------
 	/**
 	 * calculate the nuclear bragg peaks in lab coordinates
+	 * @returns number of created peaks
 	 */
-	void CalcPeaksInvA()
+	std::size_t CalcPeaksInvA()
 	{
 		// calculate the peaks in lab coordinates
 		m_peaks_invA.clear();
@@ -154,22 +179,25 @@ public:
 
 			m_peaks_invA.emplace_back(m_crystB * Q);
 		}
+
+		return m_peaks_invA.size();
 	}
 
 
 	/**
 	 * create nuclear bragg peaks up to the given order
+	 * @returns number of created peaks
 	 */
-	void CalcPeaks(std::size_t order, bool cleate_invA = false)
+	std::size_t CalcPeaks(int order, bool cleate_invA = false)
 	{
 		m_peaks.clear();
 		m_peaks.reserve((2*order+1)*(2*order+1)*(2*order+1));
 
-		for(std::size_t h=-order; h<=order; ++h)
+		for(int h=-order; h<=order; ++h)
 		{
-			for(std::size_t k=-order; k<=order; ++k)
+			for(int k=-order; k<=order; ++k)
 			{
-				for(std::size_t l=-order; l<=order; ++l)
+				for(int l=-order; l<=order; ++l)
 				{
 					m_peaks.emplace_back(
 						tl2::create<t_vec>(
@@ -180,6 +208,8 @@ public:
 
 		if(cleate_invA)
 			CalcPeaksInvA();
+
+		return m_peaks.size();
 	}
 
 
@@ -201,7 +231,7 @@ public:
 	/**
 	 * calculate the brillouin zone
 	 */
-	void CalcBZ()
+	bool CalcBZ()
 	{
 		ClearBZ();
 
@@ -212,12 +242,17 @@ public:
 		std::tie(m_vertices, std::ignore, std::ignore) =
 			geo::calc_delaunay(3, m_peaks_invA, false, false, m_idx000);
 		m_vertices = tl2::remove_duplicates(m_vertices, m_eps);
+		if(!m_vertices.size())
+			return false;
+
 		for(t_vec& vertex : m_vertices)
 			tl2::set_eps_0(vertex, m_eps);
 
 		// calculate the faces of the BZ
 		std::tie(std::ignore, m_triags, std::ignore) =
 			geo::calc_delaunay(3, m_vertices, true, false);
+		if(!m_triags.size())
+			return false;
 
 		// calculate all BZ triangles
 		for(std::vector<t_vec>& bz_triag : m_triags)
@@ -251,6 +286,8 @@ public:
 
 			m_triags_idx.emplace_back(std::move(triagindices));
 		}  // triangles
+
+		return true;
 	}
 	// --------------------------------------------------------------------------------
 
