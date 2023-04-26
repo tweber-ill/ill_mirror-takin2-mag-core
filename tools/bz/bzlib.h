@@ -69,6 +69,25 @@ public:
 	}
 
 
+	/**
+	 * clear old symops
+	 */
+	void ClearSymOps()
+	{
+		m_symops.clear();
+	}
+
+
+	/**
+	 * clear old peaks
+	 */
+	void ClearPeaks()
+	{
+		m_peaks.clear();
+		m_peaks_invA.clear();
+	}
+
+
 	// --------------------------------------------------------------------------------
 	// getter and setter
 	// --------------------------------------------------------------------------------
@@ -114,6 +133,24 @@ public:
 		if(m_idx000)
 			return *m_idx000;
 		return s_erridx;
+	}
+
+
+	void AddSymOp(
+		t_real r00, t_real r01, t_real r02,
+		t_real r10, t_real r11, t_real r12,
+		t_real r20, t_real r21, t_real r22,
+		t_real t0, t_real t1, t_real t2)
+	{
+		t_mat symop = tl2::unit<t_mat>(4);
+		// rotation
+		symop(0, 0) = r00; symop(0, 1) = r01; symop(0, 2) = r02;
+		symop(1, 0) = r10; symop(1, 1) = r11; symop(1, 2) = r12;
+		symop(2, 0) = r20; symop(2, 1) = r21; symop(2, 2) = r22;
+		// translation
+		symop(0, 3) = t0;  symop(1, 3) = t1;  symop(2, 3) = t2;
+
+		m_symops.emplace_back(std::move(symop));
 	}
 
 

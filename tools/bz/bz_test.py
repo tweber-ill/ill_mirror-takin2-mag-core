@@ -32,5 +32,5 @@ else:
 
 if calc_ok:
 	print("\nJSON Output:")
-	json = bz.PrintJSON()
+	json = bz.PrintJSON(6)
 	print(json)
