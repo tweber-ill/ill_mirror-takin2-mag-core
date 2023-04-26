@@ -50,7 +50,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	add_compile_options(-mmacosx-version-min=10.15)
 endif()
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 add_compile_options(${Boost_CXX_FLAGS})
 
 find_package(Qhull)

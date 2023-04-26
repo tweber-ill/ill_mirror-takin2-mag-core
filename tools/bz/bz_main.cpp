@@ -32,13 +32,28 @@
 
 #include <iostream>
 
+#include <boost/program_options.hpp>
+namespace args = boost::program_options;
+
 #include "tlibs2/libs/qt/helper.h"
 
 
-int main(int argc, char** argv)
+/**
+ * starts the cli program
+ */
+static int cli_main(const std::string& cfg_file, const std::string& results_file)
+{
+	// TODO
+	return 0;
+}
+
+
+/**
+ * starts the gui program
+ */
+static int gui_main(int argc, char** argv)
 {
 	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
-	tl2::set_locales();
 
 	// application
 	QApplication::addLibraryPath(QString(".") + QDir::separator() + "qtplugins");
@@ -49,4 +64,48 @@ int main(int argc, char** argv)
 	dlg->show();
 
 	return app->exec();
+}
+
+
+/**
+ * starts the cli or the gui program
+ */
+int main(int argc, char** argv)
+{
+	tl2::set_locales();
+
+	bool show_help = false;
+	bool use_cli = false;
+	std::string cfg_file, results_file;
+
+	args::options_description arg_descr("Takin/BZ arguments");
+	arg_descr.add_options()	
+		("help,h", args::bool_switch(&show_help), "show help")
+		("cli,c", args::bool_switch(&use_cli), "use command-line interface")
+		("input,i", args::value(&cfg_file), "input configuration file")
+		("output,o", args::value(&results_file), "output results file");
+
+	args::positional_options_description posarg_descr;
+	posarg_descr.add("input", 1);
+
+	auto argparser = args::command_line_parser{argc, argv};
+	argparser.options(arg_descr);
+	argparser.positional(posarg_descr);
+	argparser.allow_unregistered();
+	auto parsedArgs = argparser.run();
+
+	args::variables_map mapArgs;
+	args::store(parsedArgs, mapArgs);
+	args::notify(mapArgs);
+
+	if(show_help)
+	{
+		std::cout << arg_descr << std::endl;
+		return 0;
+	}
+
+	// either start the cli or the gui program
+	if(use_cli)
+		return cli_main(cfg_file, results_file);
+	return gui_main(argc, argv);
 }
