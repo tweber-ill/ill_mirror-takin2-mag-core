@@ -26,8 +26,25 @@
  */
 
 #include "globals.h"
+#include <cmath>
 
 
 t_real g_eps = 1e-6;
 int g_prec = 6;
 int g_prec_gui = 4;
+
+
+/**
+ * sets new epsilon and precision values
+ */
+void set_eps(t_real eps, int prec)
+{
+	// determine precision from epsilon
+	if(prec < 0)
+		prec = int(-std::log10(eps));
+
+	g_eps = eps;
+	g_prec = prec;
+
+	//std::cout << "eps = " << g_eps << ", prec = " << g_prec << std::endl;
+}

@@ -53,4 +53,7 @@ extern int g_prec;
 extern int g_prec_gui;
 
 
+extern void set_eps(t_real eps, int prec = -1);
+
+
 #endif

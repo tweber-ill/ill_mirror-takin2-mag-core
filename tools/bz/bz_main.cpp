@@ -123,6 +123,7 @@ int main(int argc, char** argv)
 	bool show_help = false;
 	bool use_cli = false;
 	bool use_stdin = false;
+	t_real eps = -1.;
 	std::string cfg_file, results_file;
 
 	args::options_description arg_descr("Takin/BZ arguments");
@@ -130,6 +131,7 @@ int main(int argc, char** argv)
 		("help,h", args::bool_switch(&show_help), "show help")
 		("cli,c", args::bool_switch(&use_cli), "use command-line interface")
 		("stdin,s", args::bool_switch(&use_stdin), "load configuration file from standard input")
+		("eps,e", args::value(&eps), "set epsilon value")
 		("input,i", args::value(&cfg_file), "input configuration file")
 		("output,o", args::value(&results_file), "output results file");
 
@@ -151,6 +153,9 @@ int main(int argc, char** argv)
 		std::cout << arg_descr << std::endl;
 		return 0;
 	}
+
+	if(eps >= 0.)
+		set_eps(eps);
 
 	// either start the cli or the gui program
 	if(use_cli)
