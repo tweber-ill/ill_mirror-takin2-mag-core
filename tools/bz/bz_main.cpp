@@ -26,16 +26,16 @@
  */
 
 #include "bz.h"
+#include "tlibs2/libs/qt/helper.h"
 
 #include <QtCore/QDir>
 #include <QtWidgets/QApplication>
 
 #include <iostream>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 namespace args = boost::program_options;
-
-#include "tlibs2/libs/qt/helper.h"
 
 
 /**
@@ -43,7 +43,7 @@ namespace args = boost::program_options;
  */
 static int cli_main(const std::string& cfg_file, const std::string& results_file)
 {
-	// TODO
+
 	return 0;
 }
 
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 	std::string cfg_file, results_file;
 
 	args::options_description arg_descr("Takin/BZ arguments");
-	arg_descr.add_options()	
+	arg_descr.add_options()
 		("help,h", args::bool_switch(&show_help), "show help")
 		("cli,c", args::bool_switch(&use_cli), "use command-line interface")
 		("input,i", args::value(&cfg_file), "input configuration file")

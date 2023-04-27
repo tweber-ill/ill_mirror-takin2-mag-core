@@ -146,7 +146,7 @@ bool BZDlg::Load(const QString& filename)
 			for(const auto &symop : *symops)
 			{
 				auto optOp = symop.second.get<std::string>(
-					"op", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+					"", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
 
 				AddSymOpTabItem(-1, StrToOp(optOp));
 			}
@@ -157,8 +157,9 @@ bool BZDlg::Load(const QString& filename)
 		{
 			for(const auto &formula : *formulas)
 			{
-				std::string expr = formula.second.get<std::string>("expr", "");
-				AddFormulaTabItem(-1, expr);
+				auto expr = formula.second.get_optional<std::string>("");
+				if(expr && *expr != "")
+					AddFormulaTabItem(-1, *expr);
 			}
 		}
 	}
@@ -211,6 +212,7 @@ bool BZDlg::Save(const QString& filename)
 	node.put<int>("bz.sg_idx", m_comboSG->currentIndex());
 
 	// symop list
+	pt::ptree symops;
 	for(int row=0; row<m_symops->rowCount(); ++row)
 	{
 		std::string opstr = m_symops->item(row, COL_OP)->text().toStdString();
@@ -218,10 +220,12 @@ bool BZDlg::Save(const QString& filename)
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("op", opstr);
-		node.add_child("bz.symops.symop", itemNode);
+		symops.insert(symops.end(), itemNode.begin(), itemNode.end());
 	}
+	node.add_child("bz.symops", symops);
 
 	// formula list
+	pt::ptree formulas;
 	for(int row=0; row<m_formulas->rowCount(); ++row)
 	{
 		std::string opstr = m_formulas->item(row, COL_FORMULA)->text().toStdString();
@@ -229,8 +233,9 @@ bool BZDlg::Save(const QString& filename)
 
 		pt::ptree itemNode;
 		itemNode.put<std::string>("expr", opstr);
-		node.add_child("bz.formulas.formula", itemNode);
+		formulas.insert(formulas.end(), itemNode.begin(), itemNode.end());
 	}
+	node.add_child("bz.formulas", formulas);
 
 	std::ofstream ofstr{filename.toStdString()};
 	if(!ofstr)
