@@ -74,7 +74,14 @@ std::string BZDlg::OpToStr(const t_mat& op)
  */
 t_mat BZDlg::StrToOp(const std::string& str)
 {
-	return str_to_symop(str);
+	t_mat op = tl2::unit<t_mat>(4);
+
+	std::istringstream istr(str);
+	for(std::size_t row=0; row<op.size1(); ++row)
+		for(std::size_t col=0; col<op.size2(); ++col)
+			istr >> op(row, col);
+
+	return op;
 }
 
 

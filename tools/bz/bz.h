@@ -81,7 +81,7 @@ enum : int
 /**
  * bz configuration for file loading
  */
-struct BZCfg
+struct BZConfig
 {
 	boost::optional<t_real> xtal_a, xtal_b, xtal_c;
 	boost::optional<t_real> xtal_alpha, xtal_beta, xtal_gamma;
@@ -97,14 +97,6 @@ struct BZCfg
 	std::vector<t_mat> symops;
 	std::vector<std::string> formulas;
 };
-
-
-// converts a string to a symop
-extern t_mat str_to_symop(const std::string& str);
-
-//loads a configuration xml file
-extern BZCfg load_bz_cfg(const std::string& filename, bool use_stdin = false);
-
 
 
 class BZDlg : public QDialog
@@ -272,6 +264,9 @@ protected:
 public:
 	bool Load(const QString& filename, bool use_stdin = false);
 	bool Save(const QString& filename);
+
+	//loads a configuration xml file
+	static BZConfig LoadBZConfig(const std::string& filename, bool use_stdin = false);
 
 
 private:

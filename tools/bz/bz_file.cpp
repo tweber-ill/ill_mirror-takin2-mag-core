@@ -49,6 +49,80 @@ namespace algo = boost::algorithm;
 using namespace tl2_ops;
 
 
+/**
+ * loads a configuration xml file
+ */
+BZConfig BZDlg::LoadBZConfig(const std::string& filename, bool use_stdin)
+{
+	std::ifstream ifstr;
+	std::istream *istr = use_stdin ? &std::cin : &ifstr;
+
+	if(!use_stdin)
+	{
+		ifstr.open(filename);
+		if(!ifstr)
+			throw std::runtime_error("Cannot open file \"" + filename + "\".");
+	}
+
+	pt::ptree node;
+	pt::read_xml(*istr, node);
+
+	// check signature
+	if(auto opt = node.get_optional<std::string>("bz.meta.info");
+		!opt || *opt!=std::string{"bz_tool"})
+	{
+		throw std::runtime_error("Unrecognised file format.");
+	}
+
+
+	// load configuration settings
+	BZConfig cfg;
+	cfg.xtal_a = node.get_optional<t_real>("bz.xtal.a");
+	cfg.xtal_b = node.get_optional<t_real>("bz.xtal.b");
+	cfg.xtal_c = node.get_optional<t_real>("bz.xtal.c");
+	cfg.xtal_alpha = node.get_optional<t_real>("bz.xtal.alpha");
+	cfg.xtal_beta = node.get_optional<t_real>("bz.xtal.beta");
+	cfg.xtal_gamma = node.get_optional<t_real>("bz.xtal.gamma");
+	cfg.order = node.get_optional<int>("bz.order");
+	cfg.cut_order = node.get_optional<int>("bz.cut.order");
+	cfg.cut_x = node.get_optional<t_real>("bz.cut.x");
+	cfg.cut_y = node.get_optional<t_real>("bz.cut.y");
+	cfg.cut_z = node.get_optional<t_real>("bz.cut.z");
+	cfg.cut_nx = node.get_optional<t_real>("bz.cut.nx");
+	cfg.cut_ny = node.get_optional<t_real>("bz.cut.ny");
+	cfg.cut_nz = node.get_optional<t_real>("bz.cut.nz");
+	cfg.cut_d = node.get_optional<t_real>("bz.cut.d");
+	cfg.sg_idx = node.get_optional<int>("bz.sg_idx");
+
+
+	// symops
+	if(auto symops = node.get_child_optional("bz.symops"); symops)
+	{
+		for(const auto &symop : *symops)
+		{
+			std::string op = symop.second.get<std::string>(
+				"", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+
+			cfg.symops.emplace_back(StrToOp(op));
+		}
+	}
+
+	// formulas
+	if(auto formulas = node.get_child_optional("bz.formulas"); formulas)
+	{
+		for(const auto &formula : *formulas)
+		{
+			auto expr = formula.second.get_optional<std::string>("");
+			if(expr && *expr != "")
+				cfg.formulas.push_back(*expr);
+		}
+	}
+
+
+	return cfg;
+}
+
+
 void BZDlg::NewFile()
 {
 	m_ignoreCalc = 1;
@@ -81,103 +155,13 @@ void BZDlg::NewFile()
 }
 
 
-/**
- * converts a string to a symop
- */
-t_mat str_to_symop(const std::string& str)
-{
-	t_mat op = tl2::unit<t_mat>(4);
-
-	std::istringstream istr(str);
-	for(std::size_t row=0; row<op.size1(); ++row)
-		for(std::size_t col=0; col<op.size2(); ++col)
-			istr >> op(row, col);
-
-	return op;
-}
-
-
-/**
- * loads a configuration xml file
- */
-BZCfg load_bz_cfg(const std::string& filename, bool use_stdin)
-{
-	std::ifstream ifstr;
-	std::istream *istr = use_stdin ? &std::cin : &ifstr;
-
-	if(!use_stdin)
-	{
-		ifstr.open(filename);
-		if(!ifstr)
-			throw std::runtime_error("Cannot open file \"" + filename + "\".");
-	}
-
-	pt::ptree node;
-	pt::read_xml(*istr, node);
-
-	// check signature
-	if(auto opt = node.get_optional<std::string>("bz.meta.info");
-		!opt || *opt!=std::string{"bz_tool"})
-	{
-		throw std::runtime_error("Unrecognised file format.");
-	}
-
-
-	// load configuration settings
-	BZCfg cfg;
-	cfg.xtal_a = node.get_optional<t_real>("bz.xtal.a");
-	cfg.xtal_b = node.get_optional<t_real>("bz.xtal.b");
-	cfg.xtal_c = node.get_optional<t_real>("bz.xtal.c");
-	cfg.xtal_alpha = node.get_optional<t_real>("bz.xtal.alpha");
-	cfg.xtal_beta = node.get_optional<t_real>("bz.xtal.beta");
-	cfg.xtal_gamma = node.get_optional<t_real>("bz.xtal.gamma");
-	cfg.order = node.get_optional<int>("bz.order");
-	cfg.cut_order = node.get_optional<int>("bz.cut.order");
-	cfg.cut_x = node.get_optional<t_real>("bz.cut.x");
-	cfg.cut_y = node.get_optional<t_real>("bz.cut.y");
-	cfg.cut_z = node.get_optional<t_real>("bz.cut.z");
-	cfg.cut_nx = node.get_optional<t_real>("bz.cut.nx");
-	cfg.cut_ny = node.get_optional<t_real>("bz.cut.ny");
-	cfg.cut_nz = node.get_optional<t_real>("bz.cut.nz");
-	cfg.cut_d = node.get_optional<t_real>("bz.cut.d");
-	cfg.sg_idx = node.get_optional<int>("bz.sg_idx");
-
-
-	// symops
-	if(auto symops = node.get_child_optional("bz.symops"); symops)
-	{
-		for(const auto &symop : *symops)
-		{
-			std::string op = symop.second.get<std::string>(
-				"", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
-
-			cfg.symops.emplace_back(str_to_symop(op));
-		}
-	}
-
-	// formulas
-	if(auto formulas = node.get_child_optional("bz.formulas"); formulas)
-	{
-		for(const auto &formula : *formulas)
-		{
-			auto expr = formula.second.get_optional<std::string>("");
-			if(expr && *expr != "")
-				cfg.formulas.push_back(*expr);
-		}
-	}
-
-
-	return cfg;
-}
-
-
 bool BZDlg::Load(const QString& filename, bool use_stdin)
 {
 	m_ignoreCalc = 1;
 
 	try
 	{
-		BZCfg cfg = load_bz_cfg(filename.toStdString(), use_stdin);
+		BZConfig cfg = LoadBZConfig(filename.toStdString(), use_stdin);
 
 		// clear old items
 		DelSymOpTabItem(-1);

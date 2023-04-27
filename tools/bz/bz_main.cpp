@@ -46,7 +46,7 @@ static int cli_main(const std::string& cfg_file, const std::string& results_file
 {
 	try
 	{
-		BZCfg cfg = load_bz_cfg(cfg_file, use_stdin);
+		BZConfig cfg = BZDlg::LoadBZConfig(cfg_file, use_stdin);
 
 		BZCalc<t_mat, t_vec, t_real> bzcalc;
 		bzcalc.SetEps(g_eps);
