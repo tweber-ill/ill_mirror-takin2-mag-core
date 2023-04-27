@@ -26,6 +26,7 @@
  */
 
 #include "bz.h"
+#include "bzlib.h"
 #include "tlibs2/libs/qt/helper.h"
 
 #include <QtCore/QDir>
@@ -43,15 +44,56 @@ namespace args = boost::program_options;
  */
 static int cli_main(const std::string& cfg_file, const std::string& results_file)
 {
+	try
+	{
+		BZCfg cfg = load_bz_cfg(cfg_file);
 
-	return 0;
+		BZCalc<t_mat, t_vec, t_real> bzcalc;
+		bzcalc.SetEps(g_eps);
+		bzcalc.SetSymOps(cfg.symops, false);
+		if(cfg.xtal_a && cfg.xtal_b && cfg.xtal_c &&
+			cfg.xtal_alpha && cfg.xtal_beta && cfg.xtal_gamma)
+		{
+			bzcalc.SetCrystal(*cfg.xtal_a, *cfg.xtal_b, *cfg.xtal_c,
+				*cfg.xtal_alpha, *cfg.xtal_beta, *cfg.xtal_gamma);
+		}
+		bzcalc.CalcPeaks(cfg.order ? *cfg.order : 5, true);
+
+		if(!bzcalc.CalcBZ())
+		{
+			std::cerr << "Error calculating brillouin zone." << std::endl;
+			return -1;
+		}
+
+		// get calculated bz
+		std::string results = bzcalc.PrintJSON(g_prec);
+
+		if(results_file == "")
+		{
+			// output results to console
+			std::cout << results << std::endl;
+		}
+		else
+		{
+			// output results to file
+			std::ofstream ofstrResults{results_file};
+			ofstrResults << results << std::endl;
+		}
+
+		return 0;
+	}
+	catch(const std::exception& ex)
+	{
+		std::cerr << "Error: " << ex.what() << std::endl;
+		return -1;
+	}
 }
 
 
 /**
  * starts the gui program
  */
-static int gui_main(int argc, char** argv)
+static int gui_main(int argc, char** argv, const std::string& cfg_file)
 {
 	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 
@@ -62,6 +104,10 @@ static int gui_main(int argc, char** argv)
 	// main window
 	auto dlg = std::make_unique<BZDlg>(nullptr);
 	dlg->show();
+
+	// if a configuration file is given, load it
+	if(cfg_file != "")
+		dlg->Load(cfg_file.c_str());
 
 	return app->exec();
 }
@@ -107,5 +153,5 @@ int main(int argc, char** argv)
 	// either start the cli or the gui program
 	if(use_cli)
 		return cli_main(cfg_file, results_file);
-	return gui_main(argc, argv);
+	return gui_main(argc, argv, cfg_file);
 }

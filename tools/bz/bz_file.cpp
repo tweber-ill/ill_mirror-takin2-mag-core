@@ -81,87 +81,142 @@ void BZDlg::NewFile()
 }
 
 
+/**
+ * converts a string to a symop
+ */
+t_mat str_to_symop(const std::string& str)
+{
+	t_mat op = tl2::unit<t_mat>(4);
+
+	std::istringstream istr(str);
+	for(std::size_t row=0; row<op.size1(); ++row)
+		for(std::size_t col=0; col<op.size2(); ++col)
+			istr >> op(row, col);
+
+	return op;
+}
+
+
+/**
+ * loads a configuration xml file
+ */
+BZCfg load_bz_cfg(const std::string& filename)
+{
+	std::ifstream ifstr{filename};
+	if(!ifstr)
+		throw std::runtime_error("Cannot open file \"" + filename + "\".");
+
+	pt::ptree node;
+	pt::read_xml(ifstr, node);
+
+	// check signature
+	if(auto opt = node.get_optional<std::string>("bz.meta.info");
+		!opt || *opt!=std::string{"bz_tool"})
+	{
+		throw std::runtime_error("Unrecognised file format.");
+	}
+
+
+	// load configuration settings
+	BZCfg cfg;
+	cfg.xtal_a = node.get_optional<t_real>("bz.xtal.a");
+	cfg.xtal_b = node.get_optional<t_real>("bz.xtal.b");
+	cfg.xtal_c = node.get_optional<t_real>("bz.xtal.c");
+	cfg.xtal_alpha = node.get_optional<t_real>("bz.xtal.alpha");
+	cfg.xtal_beta = node.get_optional<t_real>("bz.xtal.beta");
+	cfg.xtal_gamma = node.get_optional<t_real>("bz.xtal.gamma");
+	cfg.order = node.get_optional<int>("bz.order");
+	cfg.cut_order = node.get_optional<int>("bz.cut.order");
+	cfg.cut_x = node.get_optional<t_real>("bz.cut.x");
+	cfg.cut_y = node.get_optional<t_real>("bz.cut.y");
+	cfg.cut_z = node.get_optional<t_real>("bz.cut.z");
+	cfg.cut_nx = node.get_optional<t_real>("bz.cut.nx");
+	cfg.cut_ny = node.get_optional<t_real>("bz.cut.ny");
+	cfg.cut_nz = node.get_optional<t_real>("bz.cut.nz");
+	cfg.cut_d = node.get_optional<t_real>("bz.cut.d");
+	cfg.sg_idx = node.get_optional<int>("bz.sg_idx");
+
+
+	// symops
+	if(auto symops = node.get_child_optional("bz.symops"); symops)
+	{
+		for(const auto &symop : *symops)
+		{
+			std::string op = symop.second.get<std::string>(
+				"", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
+
+			cfg.symops.emplace_back(str_to_symop(op));
+		}
+	}
+
+	// formulas
+	if(auto formulas = node.get_child_optional("bz.formulas"); formulas)
+	{
+		for(const auto &formula : *formulas)
+		{
+			auto expr = formula.second.get_optional<std::string>("");
+			if(expr && *expr != "")
+				cfg.formulas.push_back(*expr);
+		}
+	}
+
+
+	return cfg;
+}
+
+
 bool BZDlg::Load(const QString& filename)
 {
 	m_ignoreCalc = 1;
 
 	try
 	{
-		pt::ptree node;
-
-		std::ifstream ifstr{filename.toStdString()};
-		pt::read_xml(ifstr, node);
-
-		// check signature
-		if(auto opt = node.get_optional<std::string>("bz.meta.info");
-			!opt || *opt!=std::string{"bz_tool"})
-		{
-			QMessageBox::critical(this, "Brillouin Zones",
-				"Unrecognised file format.");
-			m_ignoreCalc = 0;
-			return false;
-		}
-
+		BZCfg cfg = load_bz_cfg(filename.toStdString());
 
 		// clear old items
 		DelSymOpTabItem(-1);
 
-		if(auto opt = node.get_optional<t_real>("bz.xtal.a"); opt)
-			m_editA->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.xtal.b"); opt)
-			m_editB->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.xtal.c"); opt)
-			m_editC->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.xtal.alpha"); opt)
-			m_editAlpha->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.xtal.beta"); opt)
-			m_editBeta->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.xtal.gamma"); opt)
-			m_editGamma->setValue(*opt);
-		if(auto opt = node.get_optional<int>("bz.order"); opt)
-			m_BZCalcOrder->setValue(*opt);
-		if(auto opt = node.get_optional<int>("bz.cut.order"); opt)
-			m_BZDrawOrder->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.x"); opt)
-			m_cutX->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.y"); opt)
-			m_cutY->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.z"); opt)
-			m_cutZ->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.nx"); opt)
-			m_cutNX->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.ny"); opt)
-			m_cutNY->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.nz"); opt)
-			m_cutNZ->setValue(*opt);
-		if(auto opt = node.get_optional<t_real>("bz.cut.d"); opt)
-			m_cutD->setValue(*opt);
-		if(auto opt = node.get_optional<int>("bz.sg_idx"); opt)
-			m_comboSG->setCurrentIndex(*opt);
-
+		// settings
+		if(cfg.xtal_a)
+			m_editA->setValue(*cfg.xtal_a);
+		if(cfg.xtal_b)
+			m_editB->setValue(*cfg.xtal_b);
+		if(cfg.xtal_c)
+			m_editC->setValue(*cfg.xtal_c);
+		if(cfg.xtal_alpha)
+			m_editAlpha->setValue(*cfg.xtal_alpha);
+		if(cfg.xtal_beta)
+			m_editBeta->setValue(*cfg.xtal_beta);
+		if(cfg.xtal_gamma)
+			m_editGamma->setValue(*cfg.xtal_gamma);
+		if(cfg.order)
+			m_BZCalcOrder->setValue(*cfg.order);
+		if(cfg.cut_order)
+			m_BZDrawOrder->setValue(*cfg.cut_order);
+		if(cfg.cut_x)
+			m_cutX->setValue(*cfg.cut_x);
+		if(cfg.cut_y)
+			m_cutY->setValue(*cfg.cut_y);
+		if(cfg.cut_z)
+			m_cutZ->setValue(*cfg.cut_z);
+		if(cfg.cut_nx)
+			m_cutNX->setValue(*cfg.cut_nx);
+		if(cfg.cut_ny)
+			m_cutNY->setValue(*cfg.cut_ny);
+		if(cfg.cut_nz)
+			m_cutNZ->setValue(*cfg.cut_nz);
+		if(cfg.cut_d)
+			m_cutD->setValue(*cfg.cut_d);
+		if(cfg.sg_idx)
+			m_comboSG->setCurrentIndex(*cfg.sg_idx);
 
 		// symops
-		if(auto symops = node.get_child_optional("bz.symops"); symops)
-		{
-			for(const auto &symop : *symops)
-			{
-				auto optOp = symop.second.get<std::string>(
-					"", "1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1");
-
-				AddSymOpTabItem(-1, StrToOp(optOp));
-			}
-		}
+		for(const t_mat& symop : cfg.symops)
+			AddSymOpTabItem(-1, symop);
 
 		// formulas
-		if(auto formulas = node.get_child_optional("bz.formulas"); formulas)
-		{
-			for(const auto &formula : *formulas)
-			{
-				auto expr = formula.second.get_optional<std::string>("");
-				if(expr && *expr != "")
-					AddFormulaTabItem(-1, *expr);
-			}
-		}
+		for(const std::string& formula : cfg.formulas)
+			AddFormulaTabItem(-1, formula);
 	}
 	catch(const std::exception& ex)
 	{

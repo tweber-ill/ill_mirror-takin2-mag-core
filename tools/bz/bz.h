@@ -45,6 +45,7 @@
 
 #include <vector>
 #include <sstream>
+#include <boost/optional.hpp>
 
 #include "globals.h"
 #include "plot_cut.h"
@@ -75,6 +76,35 @@ enum : int
 
 	NUM_FORMULAS_COLS
 };
+
+
+/**
+ * bz configuration for file loading
+ */
+struct BZCfg
+{
+	boost::optional<t_real> xtal_a, xtal_b, xtal_c;
+	boost::optional<t_real> xtal_alpha, xtal_beta, xtal_gamma;
+
+	boost::optional<int> order, cut_order;
+
+	boost::optional<t_real> cut_x, cut_y, cut_z;
+	boost::optional<t_real> cut_nx, cut_ny, cut_nz;
+	boost::optional<t_real> cut_d;
+
+	boost::optional<int> sg_idx;
+
+	std::vector<t_mat> symops;
+	std::vector<std::string> formulas;
+};
+
+
+// converts a string to a symop
+extern t_mat str_to_symop(const std::string& str);
+
+//loads a configuration xml file
+extern BZCfg load_bz_cfg(const std::string& filename);
+
 
 
 class BZDlg : public QDialog
@@ -199,9 +229,6 @@ protected:
 	void GetSymOpsFromSG();
 	void SaveCutSVG();
 
-	bool Load(const QString& filename);
-	bool Save(const QString& filename);
-
 	void SetDrawOrder(int order, bool recalc = true);
 	void SetCalcOrder(int order, bool recalc = true);
 
@@ -240,6 +267,11 @@ protected:
 	static t_mat StrToOp(const std::string& str);
 
 	static std::string GetOpProperties(const t_mat& op);
+
+
+public:
+	bool Load(const QString& filename);
+	bool Save(const QString& filename);
 
 
 private:
