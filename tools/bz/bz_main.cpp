@@ -42,11 +42,11 @@ namespace args = boost::program_options;
 /**
  * starts the cli program
  */
-static int cli_main(const std::string& cfg_file, const std::string& results_file)
+static int cli_main(const std::string& cfg_file, const std::string& results_file, bool use_stdin)
 {
 	try
 	{
-		BZCfg cfg = load_bz_cfg(cfg_file);
+		BZCfg cfg = load_bz_cfg(cfg_file, use_stdin);
 
 		BZCalc<t_mat, t_vec, t_real> bzcalc;
 		bzcalc.SetEps(g_eps);
@@ -93,7 +93,7 @@ static int cli_main(const std::string& cfg_file, const std::string& results_file
 /**
  * starts the gui program
  */
-static int gui_main(int argc, char** argv, const std::string& cfg_file)
+static int gui_main(int argc, char** argv, const std::string& cfg_file, bool use_stdin)
 {
 	tl2::set_gl_format(1, _GL_MAJ_VER, _GL_MIN_VER, 8);
 
@@ -106,8 +106,8 @@ static int gui_main(int argc, char** argv, const std::string& cfg_file)
 	dlg->show();
 
 	// if a configuration file is given, load it
-	if(cfg_file != "")
-		dlg->Load(cfg_file.c_str());
+	if(cfg_file != "" || use_stdin)
+		dlg->Load(cfg_file.c_str(), use_stdin);
 
 	return app->exec();
 }
@@ -122,12 +122,14 @@ int main(int argc, char** argv)
 
 	bool show_help = false;
 	bool use_cli = false;
+	bool use_stdin = false;
 	std::string cfg_file, results_file;
 
 	args::options_description arg_descr("Takin/BZ arguments");
 	arg_descr.add_options()
 		("help,h", args::bool_switch(&show_help), "show help")
 		("cli,c", args::bool_switch(&use_cli), "use command-line interface")
+		("stdin,s", args::bool_switch(&use_stdin), "load configuration file from standard input")
 		("input,i", args::value(&cfg_file), "input configuration file")
 		("output,o", args::value(&results_file), "output results file");
 
@@ -152,6 +154,6 @@ int main(int argc, char** argv)
 
 	// either start the cli or the gui program
 	if(use_cli)
-		return cli_main(cfg_file, results_file);
-	return gui_main(argc, argv, cfg_file);
+		return cli_main(cfg_file, results_file, use_stdin);
+	return gui_main(argc, argv, cfg_file, use_stdin);
 }

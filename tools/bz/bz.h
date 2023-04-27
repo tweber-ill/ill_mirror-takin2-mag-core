@@ -103,7 +103,7 @@ struct BZCfg
 extern t_mat str_to_symop(const std::string& str);
 
 //loads a configuration xml file
-extern BZCfg load_bz_cfg(const std::string& filename);
+extern BZCfg load_bz_cfg(const std::string& filename, bool use_stdin = false);
 
 
 
@@ -270,7 +270,7 @@ protected:
 
 
 public:
-	bool Load(const QString& filename);
+	bool Load(const QString& filename, bool use_stdin = false);
 	bool Save(const QString& filename);
 
 

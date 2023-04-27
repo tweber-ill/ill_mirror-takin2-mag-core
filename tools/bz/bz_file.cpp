@@ -100,14 +100,20 @@ t_mat str_to_symop(const std::string& str)
 /**
  * loads a configuration xml file
  */
-BZCfg load_bz_cfg(const std::string& filename)
+BZCfg load_bz_cfg(const std::string& filename, bool use_stdin)
 {
-	std::ifstream ifstr{filename};
-	if(!ifstr)
-		throw std::runtime_error("Cannot open file \"" + filename + "\".");
+	std::ifstream ifstr;
+	std::istream *istr = use_stdin ? &std::cin : &ifstr;
+
+	if(!use_stdin)
+	{
+		ifstr.open(filename);
+		if(!ifstr)
+			throw std::runtime_error("Cannot open file \"" + filename + "\".");
+	}
 
 	pt::ptree node;
-	pt::read_xml(ifstr, node);
+	pt::read_xml(*istr, node);
 
 	// check signature
 	if(auto opt = node.get_optional<std::string>("bz.meta.info");
@@ -165,13 +171,13 @@ BZCfg load_bz_cfg(const std::string& filename)
 }
 
 
-bool BZDlg::Load(const QString& filename)
+bool BZDlg::Load(const QString& filename, bool use_stdin)
 {
 	m_ignoreCalc = 1;
 
 	try
 	{
-		BZCfg cfg = load_bz_cfg(filename.toStdString());
+		BZCfg cfg = load_bz_cfg(filename.toStdString(), use_stdin);
 
 		// clear old items
 		DelSymOpTabItem(-1);
