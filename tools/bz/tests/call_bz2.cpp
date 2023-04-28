@@ -25,33 +25,65 @@
  * ----------------------------------------------------------------------------
  */
 
-// g++ -std=c++20 -o call_bz call_bz.cpp -lboost_iostreams
+// g++ -std=c++20 -o call_bz2 call_bz2.cpp
 
 #include <iostream>
-#include <cstdio>
+#include <fstream>
 
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-namespace ios = boost::iostreams;
+#include <boost/process.hpp>
+namespace proc = boost::process;
+
+
+static std::string read_file(const std::string& file)
+{
+	std::ifstream ifstr(file);
+	if(!ifstr)
+		return "";
+
+	std::string result, line;
+	while(std::getline(ifstr, line))
+		result += line + '\n';
+
+	return result;
+}
 
 
 int main(int, char**)
 {
-	// runs takin using boost.iostreams, see: https://www.boost.org/doc/libs/1_82_0/libs/iostreams/doc/index.html
-	// create stream buffer
-	ios::stream_buffer buf(
-		ios::file_descriptor_source(
-			::fileno(::popen("../build/takin_bz -c -i ../build/0.xml", "r")),
-		ios::close_handle));
+	try
+	{
+		std::string binary = "../build/takin_bz";
 
-	// create input stream using the stream buffer
-	std::istream istr(&buf);
+		// runs takin using boost.process, see: https://www.boost.org/doc/libs/1_82_0/doc/html/boost_process/tutorial.html
+		proc::opstream istr;
+		proc::ipstream ostr, errstr;
+		proc::child ch(binary + " -c -s", proc::std_in<istr, proc::std_out>ostr, proc::std_err>errstr);
+		if(!ch.valid())
+		{
+			std::cerr << "Invalid process handle." << std::endl;
+			return -1;
+		}
 
-	// read results from standard input
-	std::string result, line;
-	while(std::getline(istr, line))
-		result += line + '\n';
+		ch.detach();
 
-	std::cout << result << std::endl;
+		// write input file to process' standard input
+		istr << read_file("../build/0.xml") << std::endl;
+		istr.pipe().close();
+
+		ch.wait();
+
+		// read results from process' standard output
+		std::string result, line;
+		while(std::getline(ostr, line))
+			result += line + '\n';
+
+		std::cout << "Result:\n" << result << std::endl;
+	}
+	catch(const std::exception& ex)
+	{
+		std::cerr << ex.what() << std::endl;
+		return -1;
+	}
+
 	return 0;
 }
