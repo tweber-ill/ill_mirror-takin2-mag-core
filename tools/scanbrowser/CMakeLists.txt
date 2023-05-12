@@ -22,8 +22,8 @@
 # ----------------------------------------------------------------------------
 #
 
-project(scanbrowser)
 cmake_minimum_required(VERSION 3.0)
+project(scanbrowser)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/../../../tlibs2/cmake")
 

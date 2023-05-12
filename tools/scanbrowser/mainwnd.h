@@ -109,6 +109,8 @@ private:
 protected:
 	virtual void showEvent(QShowEvent *pEvt) override;
 	virtual void closeEvent(QCloseEvent *pEvt) override;
+	virtual void dragEnterEvent(QDragEnterEvent *evt) override;
+	virtual void dropEvent(QDropEvent *evt) override;
 
 	void SetCurrentFile(const QString &file);
 	void SetRecentFiles(const QStringList &files);

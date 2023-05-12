@@ -198,8 +198,12 @@ protected:
 	void Add3DItem(int row=-1);
 	void Sync3DItem(int row=-1);
 
+	bool Load(const QString& filename);
 	void Load();
+
+	bool Save(const QString& filename);
 	void Save();
+
 	void ImportCIF();
 	void GenerateFromSG();
 
@@ -215,6 +219,8 @@ protected:
 	void SetGLInfos();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+	virtual void dragEnterEvent(QDragEnterEvent *evt) override;
+	virtual void dropEvent(QDropEvent *evt) override;
 
 
 private:

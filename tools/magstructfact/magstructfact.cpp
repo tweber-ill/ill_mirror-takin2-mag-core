@@ -28,6 +28,7 @@
 
 #include "magstructfact.h"
 
+#include <QtCore/QMimeData>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QTabWidget>
@@ -517,8 +518,8 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 			m_editBeta->setText("90");
 			m_editGamma->setText("90");
 		});
-		connect(acLoad, &QAction::triggered, this, &MagStructFactDlg::Load);
-		connect(acSave, &QAction::triggered, this, &MagStructFactDlg::Save);
+		connect(acLoad, &QAction::triggered, this, static_cast<void(MagStructFactDlg::*)()>(&MagStructFactDlg::Load));
+		connect(acSave, &QAction::triggered, this, static_cast<void(MagStructFactDlg::*)()>(&MagStructFactDlg::Save));
 		connect(acImportCIF, &QAction::triggered, this, &MagStructFactDlg::ImportCIF);
 		connect(acExit, &QAction::triggered, this, &QDialog::close);
 
@@ -661,9 +662,40 @@ MagStructFactDlg::MagStructFactDlg(QWidget* pParent) : QDialog{pParent},
 		resize(600, 500);
 
 
+	setAcceptDrops(true);
 	m_ignoreChanges = 0;
 }
 
+
+/**
+ * a file is being dragged over the window
+ */
+void MagStructFactDlg::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if(evt)
+		evt->accept();
+}
+
+
+/**
+ * a file is being dropped onto the window
+ */
+void MagStructFactDlg::dropEvent(QDropEvent *evt)
+{
+	const QMimeData *mime = evt->mimeData();
+	if(!mime)
+		return;
+
+	for(const QUrl& url : mime->urls())
+	{
+		if(!url.isLocalFile())
+			continue;
+
+		Load(url.toLocalFile());
+		evt->accept();
+		break;
+	}
+}
 
 
 void MagStructFactDlg::closeEvent(QCloseEvent *evt)

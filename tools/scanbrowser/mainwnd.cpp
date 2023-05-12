@@ -25,6 +25,7 @@
 
 #define MAX_RECENT_FILES 16
 
+#include <QtCore/QMimeData>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
 
@@ -274,12 +275,46 @@ MainWnd::MainWnd(QSettings* pSettings)
 	for(const auto &pair : g_consts_real) lstFuncs.push_back(((pair.first + "###" + std::get<1>(pair.second) + " [constant]").c_str()));
 	m_pCLI->GetWidget()->SetCompleterItems(lstFuncs);
 	// ------------------------------------------------------------------------
+
+
+	setAcceptDrops(true);
 }
 
 
 MainWnd::~MainWnd()
 {
 	UnloadPlugins();
+}
+
+
+/**
+ * a file is being dragged over the window
+ */
+void MainWnd::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if(evt)
+		evt->accept();
+}
+
+
+/**
+ * a file is being dropped onto the window
+ */
+void MainWnd::dropEvent(QDropEvent *evt)
+{
+	const QMimeData *mime = evt->mimeData();
+	if(!mime)
+		return;
+
+	for(const QUrl& url : mime->urls())
+	{
+		if(!url.isLocalFile())
+			continue;
+
+		OpenFile(url.toLocalFile());
+		evt->accept();
+		break;
+	}
 }
 
 
@@ -484,7 +519,10 @@ void MainWnd::RebuildRecentFiles()
 		QString filename = *iter;
 		auto *acFile = new QAction(QIcon::fromTheme("document"), filename, m_pMenu);
 
-		connect(acFile, &QAction::triggered, [this, filename]() { this->OpenFile(filename); });
+		connect(acFile, &QAction::triggered, [this, filename]()
+		{
+			this->OpenFile(filename);
+		});
 		m_menuOpenRecent->addAction(acFile);
 
 		if(++num_recent_files >= MAX_RECENT_FILES)

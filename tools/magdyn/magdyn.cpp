@@ -28,6 +28,7 @@
 
 #include "magdyn.h"
 
+#include <QtCore/QMimeData>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
 
@@ -92,6 +93,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 			m_split_inout->restoreState(m_sett->value("splitter").toByteArray());
 	}
 
+	setAcceptDrops(true);
 	m_ignoreTableChanges = false;
 }
 
@@ -640,6 +642,37 @@ void MagDynDlg::closeEvent(QCloseEvent *)
 
 	if(m_structplot_dlg)
 		m_sett->setValue("geo_struct_view", m_structplot_dlg->saveGeometry());
+}
+
+
+/**
+ * a file is being dragged over the window
+ */
+void MagDynDlg::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if(evt)
+		evt->accept();
+}
+
+
+/**
+ * a file is being dropped onto the window
+ */
+void MagDynDlg::dropEvent(QDropEvent *evt)
+{
+	const QMimeData *mime = evt->mimeData();
+	if(!mime)
+		return;
+
+	for(const QUrl& url : mime->urls())
+	{
+		if(!url.isLocalFile())
+			continue;
+
+		Load(url.toLocalFile());
+		evt->accept();
+		break;
+	}
 }
 
 

@@ -27,6 +27,7 @@
 
 #include "bz.h"
 
+#include <QtCore/QMimeData>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHeaderView>
@@ -695,9 +696,42 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 	}
 
 
+	setAcceptDrops(true);
+
 	m_symOpIgnoreChanges = 0;
 	m_formulaIgnoreChanges = 0;
 }
+
+
+/**
+ * a file is being dragged over the window
+ */
+void BZDlg::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if(evt) evt->accept();
+}
+
+
+/**
+ * a file is being dropped onto the window
+ */
+void BZDlg::dropEvent(QDropEvent *evt)
+{
+	const QMimeData *mime = evt->mimeData();
+	if(!mime)
+		return;
+
+	for(const QUrl& url : mime->urls())
+	{
+		if(!url.isLocalFile())
+			continue;
+
+		Load(url.toLocalFile());
+		evt->accept();
+		break;
+	}
+}
+
 
 
 void BZDlg::closeEvent(QCloseEvent *)

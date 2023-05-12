@@ -253,6 +253,8 @@ protected:
 	void AfterGLInitialisation();
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+	virtual void dragEnterEvent(QDragEnterEvent *evt) override;
+	virtual void dropEvent(QDropEvent *evt) override;
 
 	// conversion functions
 	static std::string OpToStr(const t_mat& rot);

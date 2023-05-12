@@ -36,6 +36,7 @@
 #include <random>
 #include <cstdlib>
 
+#include <boost/scope_exit.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
@@ -55,17 +56,26 @@ std::vector<std::string> StructFactDlg::g_default_colours
 
 void StructFactDlg::Load()
 {
-	m_ignoreCalc = 1;
+	QString dirLast = m_sett->value("dir", "").toString();
+	QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "XML Files (*.xml *.XML)");
+	if(filename=="" || !QFile::exists(filename))
+		return;
+
+	if(Load(filename))
+		m_sett->setValue("dir", QFileInfo(filename).path());
+
+}
+
+bool StructFactDlg::Load(const QString& filename)
+{
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
 
 	try
 	{
-		QString dirLast = m_sett->value("dir", "").toString();
-		QString filename = QFileDialog::getOpenFileName(this, "Load File", dirLast, "XML Files (*.xml *.XML)");
-		if(filename=="" || !QFile::exists(filename))
-			return;
-		m_sett->setValue("dir", QFileInfo(filename).path());
-
-
 		pt::ptree node;
 
 		std::ifstream ifstr{filename.toStdString()};
@@ -75,7 +85,7 @@ void StructFactDlg::Load()
 		if(auto opt = node.get_optional<std::string>("sfact.meta.info"); !opt || *opt!=std::string{"sfact_tool"})
 		{
 			QMessageBox::critical(this, "Structure Factors", "Unrecognised file format.");
-			return;
+			return false;
 		}
 
 
@@ -149,12 +159,13 @@ void StructFactDlg::Load()
 	catch(const std::exception& ex)
 	{
 		QMessageBox::critical(this, "Structure Factors", ex.what());
+		return false;
 	}
 
 
-	m_ignoreCalc = 0;
 	CalcB(false);
 	Calc();
+	return true;
 }
 
 
@@ -164,9 +175,14 @@ void StructFactDlg::Save()
 	QString filename = QFileDialog::getSaveFileName(this, "Save File", dirLast, "XML Files (*.xml *.XML)");
 	if(filename=="")
 		return;
-	m_sett->setValue("dir", QFileInfo(filename).path());
+
+	if(Save(filename))
+		m_sett->setValue("dir", QFileInfo(filename).path());
+}
 
 
+bool StructFactDlg::Save(const QString& filename)
+{
 	pt::ptree node;
 
 	// meta infos
@@ -227,10 +243,13 @@ void StructFactDlg::Save()
 	if(!ofstr)
 	{
 		QMessageBox::critical(this, "Structure Factors", "Cannot open file for writing.");
-		return;
+		return false;
 	}
+
 	ofstr.precision(g_prec);
 	pt::write_xml(ofstr, node, pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
+
+	return true;
 }
 
 
@@ -239,7 +258,11 @@ void StructFactDlg::Save()
  */
 void StructFactDlg::ImportTAZ()
 {
-	m_ignoreCalc = 1;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
 
 	try
 	{
@@ -323,7 +346,6 @@ void StructFactDlg::ImportTAZ()
 		QMessageBox::critical(this, "Structure Factors", ex.what());
 	}
 
-	m_ignoreCalc = 0;
 	GenerateFromSG();
 	CalcB(false);
 	Calc();
@@ -389,7 +411,11 @@ void StructFactDlg::ExportTAZ()
  */
 void StructFactDlg::ImportCIF()
 {
-	m_ignoreCalc = 1;
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->m_ignoreCalc = false;
+	} BOOST_SCOPE_EXIT_END
+	m_ignoreCalc = true;
 
 	try
 	{
@@ -463,7 +489,6 @@ void StructFactDlg::ImportCIF()
 	}
 
 
-	m_ignoreCalc = 0;
 	CalcB(false);
 	Calc();
 }

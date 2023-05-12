@@ -373,6 +373,8 @@ protected:
 
 	virtual void mousePressEvent(QMouseEvent *evt) override;
 	virtual void closeEvent(QCloseEvent *evt) override;
+	virtual void dragEnterEvent(QDragEnterEvent *evt) override;
+	virtual void dropEvent(QDropEvent *evt) override;
 
 	// table importer
 	void ShowTableImporter();

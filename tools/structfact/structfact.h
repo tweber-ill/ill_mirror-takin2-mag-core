@@ -148,8 +148,12 @@ protected:
 	void TableItemChanged(QTableWidgetItem *item);
 	void ShowTableContextMenu(const QPoint& pt);
 
+	bool Load(const QString& filename);
 	void Load();
+
+	bool Save(const QString& filename);
 	void Save();
+
 	void ImportCIF();
 	void ImportTAZ();
 	void ExportTAZ();
@@ -182,6 +186,8 @@ protected:
 
 
 	virtual void closeEvent(QCloseEvent *evt) override;
+	virtual void dragEnterEvent(QDragEnterEvent *evt) override;
+	virtual void dropEvent(QDropEvent *evt) override;
 
 
 private:
