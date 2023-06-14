@@ -50,6 +50,7 @@
 
 #include <set>
 #include <optional>
+#include <cstdio>
 
 #include <boost/math/quaternion.hpp>
 
@@ -157,9 +158,9 @@ calc_delaunay(int dim, const std::vector<t_vec>& verts,
 	using t_real_qhull = coordT;
 
 	const t_real eps = 1e-5;
-	std::vector<t_vec> voronoi;			// voronoi vertices
-	std::vector<std::vector<t_vec>> triags;		// delaunay triangles
-	std::vector<std::set<std::size_t>> neighbours;	// neighbour triangle indices
+	std::vector<t_vec> voronoi;                     // voronoi vertices
+	std::vector<std::vector<t_vec>> triags;         // delaunay triangles
+	std::vector<std::set<std::size_t>> neighbours;  // neighbour triangle indices
 
 	try
 	{
@@ -177,8 +178,17 @@ calc_delaunay(int dim, const std::vector<t_vec>& verts,
 		if(triangulate)
 			options << " QJ";
 
-		qh::Qhull qh{"triag", dim, int(_verts.size()/dim),
-			_verts.data(), options.str().c_str() };
+		qh::Qhull qh{};
+		// workaround because qhull seems to call the qh_fprintf function
+		// in libqhull_r instead of the correct one in libqhullcpp
+		std::FILE *ferr = /*stderr*/ std::fopen("/dev/null", "w");
+		qh.qh()->ferr = ferr;
+		qh.setOutputStream(nullptr);
+		qh.setErrorStream(nullptr);
+		qh.setFactorEpsilon(eps);
+		qh.runQhull("triag", dim, int(_verts.size()/dim),
+			_verts.data(), options.str().c_str());
+		std::fclose(ferr);
 		if(qh.hasQhullMessage())
 			std::cout << qh.qhullMessage() << std::endl;
 
