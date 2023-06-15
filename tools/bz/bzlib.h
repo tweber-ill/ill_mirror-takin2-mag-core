@@ -66,6 +66,10 @@ public:
 
 		m_all_triags.clear();
 		m_all_triags_idx.clear();
+
+		m_face_polygons.clear();
+		m_face_norms.clear();
+		m_face_dists.clear();
 	}
 
 
@@ -120,6 +124,10 @@ public:
 
 	const std::vector<std::vector<t_vec>>& GetTriangles() const { return m_triags; }
 	const std::vector<std::vector<std::size_t>>& GetTrianglesIndices() const { return m_triags_idx; }
+
+	const std::vector<std::vector<std::size_t>>& GetFacesIndices() const { return m_face_polygons; }
+	const std::vector<t_vec>& GetFaceNormals() const { return m_face_norms; }
+	const std::vector<t_real>& GetFaceDistances() const { return m_face_dists; }
 
 	const std::vector<t_vec>& GetAllTriangles() const { return m_all_triags; }
 	const std::vector<std::size_t>& GetAllTrianglesIndices() const { return m_all_triags_idx; }
@@ -287,16 +295,57 @@ public:
 
 		// calculate the faces of the BZ
 		std::tie(std::ignore, m_triags, std::ignore) =
-			geo::calc_delaunay(3, m_vertices, true, false);
+			geo::calc_delaunay(3, m_vertices, true, true);
 		if(!m_triags.size())
 			return false;
 
 		// calculate all BZ triangles
-		for(std::vector<t_vec>& bz_triag : m_triags)
+		for(std::size_t triag_idx = 0; triag_idx < m_triags.size(); ++triag_idx)
 		{
-			if(bz_triag.size() == 0)
+			std::vector<t_vec>& bz_triag = m_triags[triag_idx];
+			if(bz_triag.size() < 3)
 				continue;
-			//assert(bz_triag.size() == 3);
+
+			// calculate face plane
+			t_vec norm = tl2::cross<t_vec>({ bz_triag[1]-bz_triag[0], bz_triag[2]-bz_triag[0] });
+			norm /= tl2::norm<t_vec>(norm);
+
+			t_real dist = tl2::inner<t_vec>(bz_triag[0], norm);
+			if(dist < 0.)
+			{
+				norm = -norm;
+				dist = -dist;
+
+				std::reverse(bz_triag.begin(), bz_triag.end());
+			}
+
+			// find out if we've already got this face
+			bool face_found = false;
+			std::size_t face_idx = 0;
+			for(face_idx=0; face_idx<m_face_polygons.size(); ++face_idx)
+			{
+				if(tl2::equals<t_vec>(m_face_norms[face_idx], norm, m_eps) && tl2::equals<t_real>(m_face_dists[face_idx], dist, m_eps))
+				{
+					face_found = true;
+					break;
+				}
+			}
+
+			// add the triangle to the face
+			if(face_found)
+			{
+				m_face_polygons[face_idx].push_back(triag_idx);
+			}
+			else
+			{
+				m_face_polygons.emplace_back(std::vector<std::size_t>({triag_idx}));
+
+				tl2::set_eps_0(norm, m_eps);
+				tl2::set_eps_0(dist, m_eps);
+
+				m_face_norms.emplace_back(std::move(norm));
+				m_face_dists.push_back(dist);
+			}
 
 			std::vector<std::size_t> triagindices;
 			for(t_vec& vert : bz_triag)
@@ -421,6 +470,43 @@ public:
 				ostr << ",";
 			ostr << "\n";
 		}
+		ostr << "],\n\n";
+
+		// faces
+		const auto& bz_faces_idx = GetFacesIndices();
+		ostr << "\"faces\" : [\n";
+		for(std::size_t idx_triag=0; idx_triag<bz_faces_idx.size(); ++idx_triag)
+		{
+			const auto& triag_idx = bz_faces_idx[idx_triag];
+
+			ostr << "\t[ ";
+			for(std::size_t idx_vert=0; idx_vert<triag_idx.size(); ++idx_vert)
+			{
+				ostr << triag_idx[idx_vert];
+				if(idx_vert < triag_idx.size() - 1)
+					ostr << ", ";
+			}
+			ostr << " ]";
+			if(idx_triag < bz_faces_idx.size() - 1)
+				ostr << ",";
+			ostr << "\n";
+		}
+		ostr << "],\n\n";
+
+		// face planes
+		const std::vector<t_vec>& norms = GetFaceNormals();
+		const std::vector<t_real>& dists = GetFaceDistances();
+		ostr << "\"face_planes\" : [\n";
+		for(std::size_t idx=0; idx<norms.size(); ++idx)
+		{
+			const t_vec& norm = norms[idx];
+			t_real dist = dists[idx];
+
+			ostr << "\t[ " << norm[0] << ", " << norm[1] << ", " << norm[2] << ", " << dist << " ]";
+			if(idx < norms.size() - 1)
+				ostr << ",";
+			ostr << "\n";
+		}
 		ostr << "]\n";
 
 		ostr << "}\n";
@@ -446,6 +532,10 @@ private:
 
 	std::vector<t_vec> m_all_triags {};            // all brillouin zone triangles
 	std::vector<std::size_t> m_all_triags_idx {};  // ... and the version with voronoi vertex indices
+
+	std::vector<std::vector<std::size_t>> m_face_polygons{};
+	std::vector<t_vec> m_face_norms{};
+	std::vector<t_real> m_face_dists{};
 
 	static const std::size_t s_erridx{0xffffffff}; // index for reporting errors
 };
