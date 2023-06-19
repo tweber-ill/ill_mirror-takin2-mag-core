@@ -295,7 +295,7 @@ public:
 
 		// calculate the faces of the BZ
 		std::tie(std::ignore, m_triags, std::ignore) =
-			geo::calc_delaunay(3, m_vertices, true, true);
+			geo::calc_delaunay(3, m_vertices, true, false);
 		if(!m_triags.size())
 			return false;
 
@@ -308,7 +308,9 @@ public:
 
 			// calculate face plane
 			t_vec norm = tl2::cross<t_vec>({ bz_triag[1]-bz_triag[0], bz_triag[2]-bz_triag[0] });
-			norm /= tl2::norm<t_vec>(norm);
+			t_real norm_len = tl2::norm<t_vec>(norm);
+			if(!tl2::equals_0<t_real>(norm_len, m_eps))
+				norm /= tl2::norm<t_vec>(norm);
 
 			t_real dist = tl2::inner<t_vec>(bz_triag[0], norm);
 			if(dist < 0.)
