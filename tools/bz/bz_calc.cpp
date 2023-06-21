@@ -404,7 +404,7 @@ void BZDlg::CalcBZCut()
 
 
 	// get description of bz cut
-	ostr << "# Brillouin zone cut" << std::endl;
+	ostr << "# Brillouin zone cut (Å⁻¹)" << std::endl;
 	for(std::size_t i=0; i<cut_lines000.size(); ++i)
 	{
 		const auto& line = cut_lines000[i];

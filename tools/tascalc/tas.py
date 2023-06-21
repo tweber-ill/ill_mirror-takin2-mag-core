@@ -641,6 +641,7 @@ class TasGUI:
 		# crystal tab
 		xtalpanel = qtw.QWidget()
 		xtallayout = qtw.QGridLayout(xtalpanel)
+		xtallayout.setSpacing(6)
 
 		self.editA = qtw.QLineEdit(xtalpanel)
 		self.editB = qtw.QLineEdit(xtalpanel)
@@ -719,6 +720,7 @@ class TasGUI:
 		# tas tab
 		taspanel = qtw.QWidget()
 		taslayout = qtw.QGridLayout(taspanel)
+		taslayout.setSpacing(6)
 
 		self.editA1 = qtw.QLineEdit(taspanel)
 		self.editA2 = qtw.QLineEdit(taspanel)
@@ -727,6 +729,7 @@ class TasGUI:
 		self.editA5 = qtw.QLineEdit(taspanel)
 		self.editA6 = qtw.QLineEdit(taspanel)
 
+		self.comboA3 = qtw.QComboBox(taspanel)
 		self.checkA4Sense = qtw.QCheckBox(taspanel)
 
 		self.editDm = qtw.QLineEdit(taspanel)
@@ -777,7 +780,14 @@ class TasGUI:
 		self.editKf.setText("%.6g" % sett.value("qtas/kf", 2.662, type=float))
 
 
-		self.checkA4Sense.setText("a4 sense is counter-clockwise")
+		self.comboA3.addItems(["Takin", "NOMAD", "SICS", "NICOS"])
+		self.a3_offsets = [np.pi/2., np.pi, 0., 0.]
+		self.comboA3.setCurrentIndex(sett.value("qtas/a3_conv", 1, type=int))
+
+		self.comboA3.currentIndexChanged.connect(self.comboA3ConvChanged)
+
+
+		self.checkA4Sense.setText("counter-clockwise")
 		self.checkA4Sense.setChecked(sett.value("qtas/a4_sense", 1, type=bool))
 		self.checkA4Sense.stateChanged.connect(self.QChanged)
 
@@ -808,16 +818,20 @@ class TasGUI:
 		taslayout.addWidget(self.editA6, 9,2, 1,1)
 
 		taslayout.addWidget(separatorTas2, 10,0, 1,3)
-		taslayout.addWidget(qtw.QLabel("Sense:", taspanel), 11,0, 1,1)
-		taslayout.addWidget(self.checkA4Sense, 11,1, 1,2)
 
-		taslayout.addWidget(separatorTas3, 12,0, 1,3)
-		taslayout.addWidget(qtw.QLabel(u"Mono., Ana. d (\u212b):", taspanel), 13,0, 1,1)
-		taslayout.addWidget(self.editDm, 13,1, 1,1)
-		taslayout.addWidget(self.editDa, 13,2, 1,1)
+		taslayout.addWidget(qtw.QLabel("a3 Convention:", taspanel), 11,0, 1,1)
+		taslayout.addWidget(self.comboA3, 11,1, 1,1)
 
-		taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 14,0, 1,3)
-		taslayout.addWidget(self.tasstatus, 15,0, 1,3)
+		taslayout.addWidget(qtw.QLabel("a4 Sense:", taspanel), 12,0, 1,1)
+		taslayout.addWidget(self.checkA4Sense, 12,1, 1,2)
+
+		taslayout.addWidget(separatorTas3, 13,0, 1,3)
+		taslayout.addWidget(qtw.QLabel(u"Mono., Ana. d (\u212b):", taspanel), 14,0, 1,1)
+		taslayout.addWidget(self.editDm, 14,1, 1,1)
+		taslayout.addWidget(self.editDa, 14,2, 1,1)
+
+		taslayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 15,0, 1,3)
+		taslayout.addWidget(self.tasstatus, 16,0, 1,3)
 
 		tabs.addTab(taspanel, "TAS")
 		# -----------------------------------------------------------------------------
@@ -827,6 +841,7 @@ class TasGUI:
 		# angular distance tab
 		anglespanel = qtw.QWidget()
 		angleslayout = qtw.QGridLayout(anglespanel)
+		angleslayout.setSpacing(6)
 
 		self.editdA1 = qtw.QLineEdit(anglespanel)
 		self.editdA2 = qtw.QLineEdit(anglespanel)
@@ -971,18 +986,10 @@ class TasGUI:
 		# info/settings tab
 		infopanel = qtw.QWidget()
 		infolayout = qtw.QGridLayout(infopanel)
-
-		self.comboA3 = qtw.QComboBox(infopanel)
-		self.comboA3.addItems(["Takin", "NOMAD", "SICS", "NICOS"])
-		self.a3_offsets = [np.pi/2., np.pi, 0., 0.]
-		self.comboA3.setCurrentIndex(sett.value("qtas/a3_conv", 1, type=int))
-
-		self.comboA3.currentIndexChanged.connect(self.comboA3ConvChanged)
-
+		infolayout.setSpacing(6)
 
 		separatorInfo = qtw.QFrame(infopanel)
 		separatorInfo.setFrameStyle(qtw.QFrame.HLine)
-
 
 		infolayout.addWidget(qtw.QLabel("TAS Calculator.", infopanel), 0,0, 1,2)
 		infolayout.addWidget(qtw.QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel), 1,0, 1,2)
@@ -994,8 +1001,6 @@ class TasGUI:
 		infolayout.addWidget(qtw.QLabel("Numpy Version: " + np.__version__ + ".", infopanel), 5,0, 1,2)
 		infolayout.addWidget(qtw.QLabel("Qt Version: " + qtc.QT_VERSION_STR + ".", infopanel), 6,0, 1,2)
 		infolayout.addItem(qtw.QSpacerItem(16,16, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding), 7,0, 1,2)
-		infolayout.addWidget(qtw.QLabel("A3 Convention:", infopanel), 8,0, 1,1)
-		infolayout.addWidget(self.comboA3, 8,1, 1,1)
 
 		tabs.addTab(infopanel, "Infos")
 		# -----------------------------------------------------------------------------
@@ -1006,6 +1011,7 @@ class TasGUI:
 		dlg = qtw.QDialog()
 		dlg.setWindowTitle("TAS Calculator")
 		mainlayout = qtw.QGridLayout(dlg)
+		mainlayout.setSpacing(8)
 		mainlayout.addWidget(tabs)
 
 		if sett.contains("qtas/geo"):

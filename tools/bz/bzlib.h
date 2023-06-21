@@ -399,7 +399,7 @@ public:
 
 		// voronoi vertices forming the vertices of the bz
 		const std::vector<t_vec>& voronoiverts = GetVertices();
-		ostr << "# Brillouin zone vertices\n";
+		ostr << "# Brillouin zone vertices (Å⁻¹)\n";
 		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
 		{
 			const t_vec& voro = voronoiverts[idx];
@@ -410,7 +410,7 @@ public:
 		const auto& bz_polys = GetTriangles();
 		const auto& bz_polys_idx = GetTrianglesIndices();
 
-		ostr << "\n# Brillouin zone polygons\n";
+		ostr << "\n# Brillouin zone polygons (Å⁻¹)\n";
 		for(std::size_t idx_triag=0; idx_triag<bz_polys.size(); ++idx_triag)
 		{
 			const auto& triag = bz_polys[idx_triag];

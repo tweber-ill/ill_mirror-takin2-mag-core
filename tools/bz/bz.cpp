@@ -192,7 +192,7 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		sep2->setFrameStyle(QFrame::HLine);
 		tabGrid->addWidget(sep2, ++y,0, 1,4);
 
-		tabGrid->addWidget(new QLabel("Lattice (A):"), ++y,0,1,1);
+		tabGrid->addWidget(new QLabel("Lattice (Å):"), ++y,0,1,1);
 		tabGrid->addWidget(m_editA, y,1,1,1);
 		tabGrid->addWidget(m_editB, y,2,1,1);
 		tabGrid->addWidget(m_editC, y,3,1,1);
@@ -277,25 +277,27 @@ BZDlg::BZDlg(QWidget* pParent) : QDialog{pParent},
 		m_BZDrawOrder->setMinimum(0);
 		m_BZDrawOrder->setMaximum(99);
 		m_BZDrawOrder->setValue(draw_order);
+		m_BZDrawOrder->setToolTip("The maximum order of Brillouin zones to draw.");
 
 		m_BZCalcOrder = new QSpinBox(bzpanel);
 		m_BZCalcOrder->setMinimum(1);
 		m_BZCalcOrder->setMaximum(99);
 		m_BZCalcOrder->setValue(calc_order);
+		m_BZCalcOrder->setToolTip("The order of Bragg peaks used to calculate the Brillouin zone.");
 
 		QPushButton *btnShowBZ = new QPushButton("3D View...", bzpanel);
 
 		// cuts
 		grid->addWidget(m_bzview, 0,0, 1,4);
-		grid->addWidget(new QLabel("In-Plane Vector [rlu]:"), 1,0, 1,1);
+		grid->addWidget(new QLabel("In-Plane Vector (rlu):"), 1,0, 1,1);
 		grid->addWidget(m_cutX, 1,1, 1,1);
 		grid->addWidget(m_cutY, 1,2, 1,1);
 		grid->addWidget(m_cutZ, 1,3, 1,1);
-		grid->addWidget(new QLabel("Plane Normal [rlu]:"), 2,0, 1,1);
+		grid->addWidget(new QLabel("Plane Normal (rlu):"), 2,0, 1,1);
 		grid->addWidget(m_cutNX, 2,1, 1,1);
 		grid->addWidget(m_cutNY, 2,2, 1,1);
 		grid->addWidget(m_cutNZ, 2,3, 1,1);
-		grid->addWidget(new QLabel("Plane Offset [rlu]:"), 3,0, 1,1);
+		grid->addWidget(new QLabel("Plane Offset (rlu):"), 3,0, 1,1);
 		grid->addWidget(m_cutD, 3,1, 1,1);
 		grid->addWidget(new QLabel("Draw Order:"), 3,2,1,1);
 		grid->addWidget(m_BZDrawOrder, 3,3, 1,1);
