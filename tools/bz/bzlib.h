@@ -414,6 +414,8 @@ public:
 		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
 		{
 			t_vec voro = BorthoT * voronoiverts[idx];
+			tl2::set_eps_0(voro, m_eps);
+
 			ostr << "vertex " << idx << ": (" << voro << ")\n";
 		}
 
@@ -469,6 +471,8 @@ public:
 		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
 		{
 			t_vec voro = BorthoT * voronoiverts[idx];
+			tl2::set_eps_0(voro, m_eps);
+
 			ostr << "\t[ " << voro[0] << ", " << voro[1] << ", " << voro[2] << " ]";
 			if(idx < voronoiverts.size() - 1)
 				ostr << ",";
