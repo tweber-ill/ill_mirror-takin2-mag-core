@@ -98,7 +98,13 @@ public:
 	static std::size_t GetErrIdx() { return s_erridx; }
 
 	void SetEps(t_real eps) { m_eps = eps; }
-	void SetCrystalB(const t_mat& B) { m_crystB = B; }
+
+
+	void SetCrystalB(const t_mat& B)
+	{
+		m_crystB = B;
+		m_crystB_ortho = orthonorm_sys<t_mat, t_vec>(m_crystB);
+	}
 
 	/**
 	 * sets up a crystal lattice and angles
@@ -131,6 +137,8 @@ public:
 
 	const std::vector<t_vec>& GetAllTriangles() const { return m_all_triags; }
 	const std::vector<std::size_t>& GetAllTrianglesIndices() const { return m_all_triags_idx; }
+
+	const t_mat& GetCrystalB(bool ortho = false) const { return ortho ? m_crystB_ortho : m_crystB; }
 
 
 	/**
@@ -388,6 +396,8 @@ public:
 	 */
 	std::string Print(int prec = 6) const
 	{
+		t_mat BorthoT = tl2::trans(GetCrystalB(true));
+
 		std::ostringstream ostr;
 		ostr.precision(prec);
 
@@ -398,12 +408,20 @@ public:
 #endif
 
 		// voronoi vertices forming the vertices of the bz
+		// (rotated by orthonormal part of B^(-1))
 		const std::vector<t_vec>& voronoiverts = GetVertices();
-		ostr << "# Brillouin zone vertices (Å⁻¹)\n";
+		ostr << "# Brillouin zone vertices (Å⁻¹, B⁻¹-rotated)\n";
+		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
+		{
+			t_vec voro = BorthoT * voronoiverts[idx];
+			ostr << "vertex " << idx << ": (" << voro << ")\n";
+		}
+
+		ostr << "\n# Brillouin zone vertices (Å⁻¹, raw)\n";
 		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
 		{
 			const t_vec& voro = voronoiverts[idx];
-			ostr << "vertex " << idx << ": (" << voro << ")\n";
+			ostr << "raw vertex " << idx << ": (" << voro << ")\n";
 		}
 
 		// voronoi bisectors
@@ -435,14 +453,31 @@ public:
 	 */
 	std::string PrintJSON(int prec = 6) const
 	{
+		const t_mat& B = GetCrystalB(false);
+		const t_mat& Bortho = GetCrystalB(true);
+		t_mat BorthoT = tl2::trans(Bortho);
+
 		std::ostringstream ostr;
 		ostr.precision(prec);
 
 		ostr << "{\n";
 
 		// voronoi vertices forming the vertices of the bz
+		// (rotated by orthonormal part of B^(-1))
 		const std::vector<t_vec>& voronoiverts = GetVertices();
 		ostr << "\"vertices\" : [\n";
+		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
+		{
+			t_vec voro = BorthoT * voronoiverts[idx];
+			ostr << "\t[ " << voro[0] << ", " << voro[1] << ", " << voro[2] << " ]";
+			if(idx < voronoiverts.size() - 1)
+				ostr << ",";
+			ostr << "\n";
+		}
+		ostr << "],\n\n";
+
+		// raw voronoi vertices
+		ostr << "\"vertices_nonrot\" : [\n";
 		for(std::size_t idx=0; idx<voronoiverts.size(); ++idx)
 		{
 			const t_vec& voro = voronoiverts[idx];
@@ -509,6 +544,38 @@ public:
 				ostr << ",";
 			ostr << "\n";
 		}
+		ostr << "],\n\n";
+
+		// crystal B matrix
+		ostr << "\"crystal_B\" : [ ";
+		for(std::size_t i=0; i<B.size1(); ++i)
+		{
+			for(std::size_t j=0; j<B.size2(); ++j)
+			{
+				t_real elem = B(i, j);
+				tl2::set_eps_0(elem, m_eps);
+				ostr << elem;
+				if(i < B.size1() - 1 || j < B.size2() - 1)
+					ostr << ",";
+				ostr << " ";
+			}
+		}
+		ostr << "],\n\n";
+
+		// orthonormal (rotation) part of crystal B matrix
+		ostr << "\"crystal_B_ortho\" : [ ";
+		for(std::size_t i=0; i<Bortho.size1(); ++i)
+		{
+			for(std::size_t j=0; j<Bortho.size2(); ++j)
+			{
+				t_real elem = Bortho(i, j);
+				tl2::set_eps_0(elem, m_eps);
+				ostr << elem;
+				if(i < Bortho.size1() - 1 || j < Bortho.size2() - 1)
+					ostr << ",";
+				ostr << " ";
+			}
+		}
 		ostr << "]\n";
 
 		ostr << "}\n";
@@ -520,7 +587,8 @@ public:
 private:
 	t_real m_eps{ 1e-6 };                  // calculation epsilon
 
-	t_mat m_crystB{tl2::unit<t_mat>(3)};   // crystal B matrix
+	t_mat m_crystB{tl2::unit<t_mat>(3)};        // crystal B matrix
+	t_mat m_crystB_ortho{tl2::unit<t_mat>(3)};  // orthonormal part of crystal B matrix
 
 	std::vector<t_mat> m_symops{ };        // space group centring symmetry operations
 	std::vector<t_vec> m_peaks{ };         // nuclear bragg peaks
