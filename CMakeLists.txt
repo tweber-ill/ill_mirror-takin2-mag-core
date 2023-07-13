@@ -22,8 +22,8 @@
 # ----------------------------------------------------------------------------
 #
 
-project(magtools)
 cmake_minimum_required(VERSION 3.0)
+project(magtools)
 
 option(ONLY_BUILD_FINISHED "only build finished tools" TRUE)
 
