@@ -359,6 +359,7 @@ protected:
 	void GenerateSitesFromSG();
 	void GenerateCouplingsFromSG();
 
+	std::optional<t_size> GetTermAtomIndex(int row, int num) const;
 	void SyncSitesAndTerms();
 
 	void CalcAll();

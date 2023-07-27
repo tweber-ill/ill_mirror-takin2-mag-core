@@ -123,7 +123,7 @@ void MagDynDlg::Load()
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getOpenFileName(
 		this, "Load File", dirLast, "Magnetic Dynamics Files (*.magdyn *.xml)");
-	if(filename=="" || !QFile::exists(filename))
+	if(filename == "" || !QFile::exists(filename))
 		return;
 
 	Clear();
@@ -393,7 +393,7 @@ void MagDynDlg::SaveAs()
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
 		this, "Save File", dirLast, "Magnetic Dynamics Files (*.magdyn)");
-	if(filename=="")
+	if(filename == "")
 		return;
 
 	if(Save(filename))
@@ -569,7 +569,7 @@ void MagDynDlg::SavePlotFigure()
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
 		this, "Save Figure", dirLast, "PDF Files (*.pdf)");
-	if(filename=="")
+	if(filename == "")
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
 
@@ -585,7 +585,7 @@ void MagDynDlg::SaveDispersion()
 	QString dirLast = m_sett->value("dir", "").toString();
 	QString filename = QFileDialog::getSaveFileName(
 		this, "Save Data", dirLast, "Data Files (*.dat)");
-	if(filename=="")
+	if(filename == "")
 		return;
 	m_sett->setValue("dir", QFileInfo(filename).path());
 

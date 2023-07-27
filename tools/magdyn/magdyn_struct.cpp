@@ -345,11 +345,6 @@ void MagDynDlg::GenerateCouplingsFromSG()
 		{
 			std::string ident = m_termstab->item(row, COL_XCH_NAME)->text().toStdString();
 
-			t_size atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
-				m_termstab->item(row, COL_XCH_ATOM1_IDX))->GetValue();
-			t_size atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
-				m_termstab->item(row, COL_XCH_ATOM2_IDX))->GetValue();
-
 			t_real sc_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 				m_termstab->item(row, COL_XCH_DIST_X))->GetValue();
 			t_real sc_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
@@ -374,15 +369,25 @@ void MagDynDlg::GenerateCouplingsFromSG()
 
 			std::string oldJ = m_termstab->item(row, COL_XCH_INTERACTION)->text().toStdString();
 
-			// atom positions in unit cell
-			if(atom_1_idx >= allsites.size() || atom_2_idx >= allsites.size())
+			auto atom_1_idx = GetTermAtomIndex(row, 0);
+			auto atom_2_idx = GetTermAtomIndex(row, 1);
+
+			if(!atom_1_idx || !atom_2_idx)
 			{
-				std::cerr << "Atom indices for  term " << row << " (\""
+				std::cerr << "Atom indices for term " << row << " (\""
+					<< ident << "\") are invalid, skipping." << std::endl;
+				continue;
+			}
+
+			// atom positions in unit cell
+			if(*atom_1_idx >= allsites.size() || *atom_2_idx >= allsites.size())
+			{
+				std::cerr << "Atom indices for term " << row << " (\""
 					<< ident << "\") are out of bounds, skipping." << std::endl;
 				continue;
 			}
-			const t_vec_real& site1 = allsites[atom_1_idx];
-			t_vec_real site2 = allsites[atom_2_idx];
+			const t_vec_real& site1 = allsites[*atom_1_idx];
+			t_vec_real site2 = allsites[*atom_2_idx];
 
 			// position in super cell
 			site2 += tl2::create<t_vec_real>({ sc_x, sc_y, sc_z, 0. });
@@ -444,6 +449,50 @@ void MagDynDlg::GenerateCouplingsFromSG()
 	{
 		QMessageBox::critical(this, "Magnetic Dynamics", ex.what());
 	}
+}
+
+
+
+std::optional<t_size> MagDynDlg::GetTermAtomIndex(int row, int num) const
+{
+	int col = num==0 ? COL_XCH_ATOM1_IDX : COL_XCH_ATOM2_IDX;
+
+	auto *atom_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
+		m_termstab->item(row, col));
+
+	std::optional<t_size> idx = std::nullopt;
+
+	// try to find the atom with the given name
+	std::string atomName = atom_idx->text().toStdString();
+	if(const t_magdyn::AtomSite *site = m_dyn.FindAtomSite(atomName); site)
+	{
+		//std::cout << site->name<< " -> " << site->index << std::endl;
+		idx = site->index;
+	}
+
+	// otherwise try to use the given index
+	bool valid = true;
+	if(!idx)
+	{
+		idx = atom_idx->GetValue(&valid);
+		if(!valid)
+			idx = std::nullopt;
+	}
+
+	// out-of-bounds check for atom index
+	if(!idx || *idx >= m_dyn.GetAtomSites().size() || !valid)
+	{
+		// set background red
+		atom_idx->setBackground(QBrush(QColor(0xff, 0x00, 0x00)));
+	}
+	else
+	{
+		// restore background
+		QBrush brush = m_termstab->item(row, COL_XCH_NAME)->background();
+		atom_idx->setBackground(brush);
+	}
+
+	return idx;
 }
 
 
@@ -585,16 +634,11 @@ void MagDynDlg::SyncSitesAndTerms()
 	}
 
 	m_dyn.CalcAtomSites();
-	const auto& sites = m_dyn.GetAtomSites();
 
 	// get exchange terms
 	for(int row=0; row<m_termstab->rowCount(); ++row)
 	{
 		auto *name = m_termstab->item(row, COL_XCH_NAME);
-		auto *atom_1_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
-			m_termstab->item(row, COL_XCH_ATOM1_IDX));
-		auto *atom_2_idx = static_cast<tl2::NumericTableWidgetItem<t_size>*>(
-			m_termstab->item(row, COL_XCH_ATOM2_IDX));
 		auto *dist_x = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DIST_X));
 		auto *dist_y = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
@@ -610,6 +654,9 @@ void MagDynDlg::SyncSitesAndTerms()
 		auto *dmi_z = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
 			m_termstab->item(row, COL_XCH_DMI_Z));
 
+		auto atom_1_idx = GetTermAtomIndex(row, 0);
+		auto atom_2_idx = GetTermAtomIndex(row, 1);
+
 		if(!name || !atom_1_idx || !atom_2_idx ||
 			!dist_x || !dist_y || !dist_z ||
 			!interaction || !dmi_x || !dmi_y || !dmi_z)
@@ -621,8 +668,8 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		t_magdyn::ExchangeTerm term;
 		term.name = name->text().toStdString();
-		term.atom1 = atom_1_idx->GetValue();
-		term.atom2 = atom_2_idx->GetValue();
+		term.atom1 = *atom_1_idx;
+		term.atom2 = *atom_2_idx;
 		term.dist = tl2::create<t_vec_real>(
 		{
 			dist_x->GetValue(),
@@ -632,30 +679,6 @@ void MagDynDlg::SyncSitesAndTerms()
 
 		//term.J = interaction->GetValue();
 		term.J = interaction->text().toStdString();
-
-		// atom 1 index out of bounds?
-		if(term.atom1 >= sites.size())
-		{
-			atom_1_idx->setBackground(QBrush(QColor(0xff, 0x00, 0x00)));
-			continue;
-		}
-		else
-		{
-			QBrush brush = name->background();
-			atom_1_idx->setBackground(brush);
-		}
-
-		// atom 2 index out of bounds?
-		if(term.atom2 >= sites.size())
-		{
-			atom_2_idx->setBackground(QBrush(QColor(0xff, 0x00, 0x00)));
-			continue;
-		}
-		else
-		{
-			QBrush brush = name->background();
-			atom_2_idx->setBackground(brush);
-		}
 
 		if(use_dmi)
 		{
