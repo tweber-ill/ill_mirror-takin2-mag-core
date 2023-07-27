@@ -462,12 +462,12 @@ std::optional<t_size> MagDynDlg::GetTermAtomIndex(int row, int num) const
 
 	std::optional<t_size> idx = std::nullopt;
 
-	// try to find the atom with the given name
+	// try to find the atom with the given name (if it's unique)
 	std::string atomName = atom_idx->text().toStdString();
-	if(const t_magdyn::AtomSite *site = m_dyn.FindAtomSite(atomName); site)
+	if(auto sites = m_dyn.FindAtomSites(atomName); sites.size() == 1)
 	{
-		//std::cout << site->name<< " -> " << site->index << std::endl;
-		idx = site->index;
+		//std::cout << sites[0]->name<< " -> " << sites[0]->index << std::endl;
+		idx = sites[0]->index;
 	}
 
 	// otherwise try to use the given index
