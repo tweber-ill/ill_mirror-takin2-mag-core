@@ -42,6 +42,7 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QTextEdit>
+#include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -213,6 +214,7 @@ protected:
 	QWidget *m_termspanel{};
 	QWidget *m_samplepanel{};
 	QWidget *m_varspanel{};
+	QWidget *m_notespanel{};
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
 	QWidget *m_exportpanel{};
@@ -255,6 +257,9 @@ protected:
 	// temperature
 	QDoubleSpinBox *m_temperature{};
 
+	// notes
+	QPlainTextEdit *m_notes{};
+
 	// export
 	QDoubleSpinBox *m_exportStartQ[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_exportEndQ[3]{nullptr, nullptr, nullptr};
@@ -289,6 +294,7 @@ protected:
 	void CreateExchangeTermsPanel();
 	void CreateVariablesPanel();
 	void CreateSampleEnvPanel();
+	void CreateNotesPanel();
 	void CreateDispersionPanel();
 	void CreateHamiltonPanel();
 	void CreateExportPanel();

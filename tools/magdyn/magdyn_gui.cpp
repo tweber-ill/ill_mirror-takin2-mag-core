@@ -1060,6 +1060,29 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 
 
+void MagDynDlg::CreateNotesPanel()
+{
+	m_notespanel = new QWidget(this);
+
+	// notes/comments
+	m_notes = new QPlainTextEdit(m_notespanel);
+	m_notes->setReadOnly(false);
+	m_notes->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+	auto grid = new QGridLayout(m_notespanel);
+	grid->setSpacing(4);
+	grid->setContentsMargins(6, 6, 6, 6);
+
+	int y = 0;
+	grid->addWidget(new QLabel(QString("Comments / Notes:"), m_hamiltonianpanel), y++, 0, 1, 1);
+	grid->addWidget(m_notes, y++, 0, 1, 1);
+
+	m_tabs_in->addTab(m_notespanel, "Notes");
+}
+
+
+
 void MagDynDlg::CreateDispersionPanel()
 {
 	const char* hklPrefix[] = { "h = ", "k = ","l = ", };

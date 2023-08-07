@@ -71,6 +71,7 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 	CreateExchangeTermsPanel();
 	CreateVariablesPanel();
 	CreateSampleEnvPanel();
+	CreateNotesPanel();
 	CreateDispersionPanel();
 	CreateHamiltonPanel();
 	CreateExportPanel();
