@@ -58,8 +58,11 @@ namespace pt = boost::property_tree;
 // for debugging: write individual data chunks in hdf5 file
 //#define WRITE_HDF5_CHUNKS
 
-
+// precision
 extern int g_prec;
+
+// prefix to base64-encoded strings
+static const std::string g_b64_prefix = "__base64__";
 
 
 void MagDynDlg::Clear()
@@ -172,8 +175,15 @@ bool MagDynDlg::Load(const QString& filename)
 		// read in comment
 		if(auto optNotes = node.get_optional<std::string>("magdyn.meta.notes"))
 		{
-			m_notes->setPlainText(QByteArray::fromBase64(optNotes->data(),
-				QByteArray::Base64Encoding | QByteArray::AbortOnBase64DecodingErrors));
+			if(optNotes->starts_with(g_b64_prefix))
+			{
+				m_notes->setPlainText(QByteArray::fromBase64(optNotes->substr(g_b64_prefix.length()).data(),
+					QByteArray::Base64Encoding | QByteArray::AbortOnBase64DecodingErrors));
+			}
+			else
+			{
+				m_notes->setPlainText(optNotes->data());
+			}
 		}
 
 		const auto &magdyn = node.get_child("magdyn");
@@ -437,7 +447,7 @@ bool MagDynDlg::Save(const QString& filename)
 		magdyn.put<std::string>("meta.doi_tlibs", "https://doi.org/10.5281/zenodo.5717779");
 
 		// save user comment as utf8 to avoid collisions with possible xml tags
-		magdyn.put<std::string>("meta.notes", m_notes->toPlainText().toUtf8().toBase64(
+		magdyn.put<std::string>("meta.notes", g_b64_prefix + m_notes->toPlainText().toUtf8().toBase64(
 			QByteArray::Base64Encoding).constData());
 
 		// settings
