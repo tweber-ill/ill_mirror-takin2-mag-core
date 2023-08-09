@@ -67,16 +67,21 @@ MagDynDlg::MagDynDlg(QWidget* pParent) : QDialog{pParent},
 
 	// create gui
 	CreateMainWindow();
+	CreateInfoDlg();
+	CreateMenuBar();
+
+	// create input panels
 	CreateSitesPanel();
 	CreateExchangeTermsPanel();
 	CreateVariablesPanel();
 	CreateSampleEnvPanel();
 	CreateNotesPanel();
+
+	// create output panels
 	CreateDispersionPanel();
 	CreateHamiltonPanel();
+	CreateCoordinatesPanel();
 	CreateExportPanel();
-	CreateInfoDlg();
-	CreateMenuBar();
 
 	// restore settings
 	if(m_sett)
@@ -190,7 +195,7 @@ void MagDynDlg::AddSiteTabItem(int row,
 
 	m_sitestab->scrollToItem(m_sitestab->item(row, 0));
 	m_sitestab->setCurrentCell(row, 0);
-	m_sitestab->setSortingEnabled(/*sorting*/ true);
+	m_sitestab->setSortingEnabled(true);
 
 	UpdateVerticalHeader(m_sitestab);
 }
@@ -266,7 +271,7 @@ void MagDynDlg::AddTermTabItem(int row,
 
 	m_termstab->scrollToItem(m_termstab->item(row, 0));
 	m_termstab->setCurrentCell(row, 0);
-	m_termstab->setSortingEnabled(/*sorting*/ true);
+	m_termstab->setSortingEnabled(true);
 
 	UpdateVerticalHeader(m_termstab);
 }
@@ -322,7 +327,7 @@ void MagDynDlg::AddVariableTabItem(int row,
 
 	m_varstab->scrollToItem(m_varstab->item(row, 0));
 	m_varstab->setCurrentCell(row, 0);
-	m_varstab->setSortingEnabled(/*sorting*/ true);
+	m_varstab->setSortingEnabled(true);
 
 	UpdateVerticalHeader(m_varstab);
 }
@@ -374,9 +379,65 @@ void MagDynDlg::AddFieldTabItem(int row,
 
 	m_fieldstab->scrollToItem(m_fieldstab->item(row, 0));
 	m_fieldstab->setCurrentCell(row, 0);
-	m_fieldstab->setSortingEnabled(/*sorting*/ true);
+	m_fieldstab->setSortingEnabled(true);
 
 	UpdateVerticalHeader(m_fieldstab);
+}
+
+
+/**
+ * add a coordinate path
+ */
+void MagDynDlg::AddCoordinateTabItem(int row,
+	t_real hi, t_real ki, t_real li,
+	t_real hf, t_real kf, t_real lf)
+{
+	bool bclone = 0;
+
+	if(row == -1)	// append to end of table
+		row = m_coordinatestab->rowCount();
+	else if(row == -2 && m_coordinates_cursor_row >= 0)	// use row from member variable
+		row = m_coordinates_cursor_row;
+	else if(row == -3 && m_coordinates_cursor_row >= 0)	// use row from member variable +1
+		row = m_coordinates_cursor_row + 1;
+	else if(row == -4 && m_coordinates_cursor_row >= 0)	// use row from member variable +1
+	{
+		row = m_coordinates_cursor_row + 1;
+		bclone = 1;
+	}
+
+	m_coordinatestab->setSortingEnabled(false);
+	m_coordinatestab->insertRow(row);
+
+	if(bclone)
+	{
+		for(int thecol=0; thecol<NUM_COORD_COLS; ++thecol)
+		{
+			m_coordinatestab->setItem(row, thecol,
+				m_coordinatestab->item(m_coordinates_cursor_row, thecol)->clone());
+		}
+	}
+	else
+	{
+		m_coordinatestab->setItem(row, COL_COORD_HI,
+			new tl2::NumericTableWidgetItem<t_real>(hi));
+		m_coordinatestab->setItem(row, COL_COORD_KI,
+			new tl2::NumericTableWidgetItem<t_real>(ki));
+		m_coordinatestab->setItem(row, COL_COORD_LI,
+			new tl2::NumericTableWidgetItem<t_real>(li));
+		m_coordinatestab->setItem(row, COL_COORD_HF,
+			new tl2::NumericTableWidgetItem<t_real>(hf));
+		m_coordinatestab->setItem(row, COL_COORD_KF,
+			new tl2::NumericTableWidgetItem<t_real>(kf));
+		m_coordinatestab->setItem(row, COL_COORD_LF,
+			new tl2::NumericTableWidgetItem<t_real>(lf));
+	}
+
+	m_coordinatestab->scrollToItem(m_coordinatestab->item(row, 0));
+	m_coordinatestab->setCurrentCell(row, 0);
+	m_coordinatestab->setSortingEnabled(true);
+
+	UpdateVerticalHeader(m_coordinatestab);
 }
 
 
@@ -386,7 +447,7 @@ void MagDynDlg::AddFieldTabItem(int row,
 void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 {
 	bool needs_recalc = true;
-	if(pTab == m_fieldstab)
+	if(pTab == m_fieldstab || pTab == m_coordinatestab)
 		needs_recalc = false;
 
 	if(needs_recalc)
@@ -429,7 +490,7 @@ void MagDynDlg::DelTabItem(QTableWidget *pTab, int begin, int end)
 void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 {
 	bool needs_recalc = true;
-	if(pTab == m_fieldstab)
+	if(pTab == m_fieldstab || pTab == m_coordinatestab)
 		needs_recalc = false;
 
 	if(needs_recalc)
@@ -478,7 +539,7 @@ void MagDynDlg::MoveTabItemUp(QTableWidget *pTab)
 void MagDynDlg::MoveTabItemDown(QTableWidget *pTab)
 {
 	bool needs_recalc = true;
-	if(pTab == m_fieldstab)
+	if(pTab == m_fieldstab || pTab == m_coordinatestab)
 		needs_recalc = false;
 
 	if(needs_recalc)

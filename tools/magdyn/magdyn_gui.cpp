@@ -42,6 +42,7 @@ namespace algo = boost::algorithm;
 #include "../structfact/loadcif.h"
 
 
+
 void MagDynDlg::CreateMainWindow()
 {
 	SetCurrentFile("");
@@ -95,6 +96,9 @@ void MagDynDlg::CreateMainWindow()
 
 
 
+/**
+ * allows the user to specify magnetic sites
+ */
 void MagDynDlg::CreateSitesPanel()
 {
 	m_sitespanel = new QWidget(this);
@@ -305,6 +309,9 @@ void MagDynDlg::CreateSitesPanel()
 
 
 
+/**
+ * allows the user to specify magnetic couplings between sites
+ */
 void MagDynDlg::CreateExchangeTermsPanel()
 {
 	m_termspanel = new QWidget(this);
@@ -586,6 +593,9 @@ void MagDynDlg::CreateExchangeTermsPanel()
 
 
 
+/**
+ * lets the user define variables to be used for the J and DMI parameters
+ */
 void MagDynDlg::CreateVariablesPanel()
 {
 	m_varspanel = new QWidget(this);
@@ -725,6 +735,9 @@ void MagDynDlg::CreateVariablesPanel()
 
 
 
+/**
+ * input for sample environment parameters (field, temperature)
+ */
 void MagDynDlg::CreateSampleEnvPanel()
 {
 	m_samplepanel = new QWidget(this);
@@ -1060,6 +1073,9 @@ void MagDynDlg::CreateSampleEnvPanel()
 
 
 
+/**
+ * allows to add comments to the file
+ */
 void MagDynDlg::CreateNotesPanel()
 {
 	m_notespanel = new QWidget(this);
@@ -1083,6 +1099,9 @@ void MagDynDlg::CreateNotesPanel()
 
 
 
+/**
+ * plots the dispersion relation for a given Q path
+ */
 void MagDynDlg::CreateDispersionPanel()
 {
 	const char* hklPrefix[] = { "h = ", "k = ","l = ", };
@@ -1236,6 +1255,9 @@ void MagDynDlg::CreateDispersionPanel()
 
 
 
+/**
+ * shows the hamilton operator for a given Q position
+ */
 void MagDynDlg::CreateHamiltonPanel()
 {
 	const char* hklPrefix[] = { "h = ", "k = ","l = ", };
@@ -1296,6 +1318,186 @@ void MagDynDlg::CreateHamiltonPanel()
 
 
 
+/**
+ * panel for saved favourite Q positions and paths
+ */
+void MagDynDlg::CreateCoordinatesPanel()
+{
+	m_coordinatespanel = new QWidget(this);
+
+	// table with saved fields
+	m_coordinatestab = new QTableWidget(m_coordinatespanel);
+	m_coordinatestab->setShowGrid(true);
+	m_coordinatestab->setSortingEnabled(true);
+	m_coordinatestab->setMouseTracking(true);
+	m_coordinatestab->setSelectionBehavior(QTableWidget::SelectRows);
+	m_coordinatestab->setSelectionMode(QTableWidget::ContiguousSelection);
+	m_coordinatestab->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	m_coordinatestab->verticalHeader()->setDefaultSectionSize(fontMetrics().lineSpacing() + 4);
+	m_coordinatestab->verticalHeader()->setVisible(true);
+
+	m_coordinatestab->setColumnCount(NUM_COORD_COLS);
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_HI,
+		new QTableWidgetItem{"h_i"});
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_KI,
+		new QTableWidgetItem{"k_i"});
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_LI,
+		new QTableWidgetItem{"l_i"});
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_HF,
+		new QTableWidgetItem{"h_f"});
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_KF,
+		new QTableWidgetItem{"k_f"});
+	m_coordinatestab->setHorizontalHeaderItem(COL_COORD_LF,
+		new QTableWidgetItem{"l_f"});
+
+	m_coordinatestab->setColumnWidth(COL_COORD_HI, 90);
+	m_coordinatestab->setColumnWidth(COL_COORD_KI, 90);
+	m_coordinatestab->setColumnWidth(COL_COORD_LI, 90);
+	m_coordinatestab->setColumnWidth(COL_COORD_HF, 90);
+	m_coordinatestab->setColumnWidth(COL_COORD_KF, 90);
+	m_coordinatestab->setColumnWidth(COL_COORD_LF, 90);
+	m_coordinatestab->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Expanding});
+
+	QPushButton *btnAddCoord = new QPushButton(
+		QIcon::fromTheme("list-add"),
+		"Add", m_coordinatespanel);
+	QPushButton *btnDelCoord = new QPushButton(
+		QIcon::fromTheme("list-remove"),
+		"Delete", m_coordinatespanel);
+	QPushButton *btnCoordUp = new QPushButton(
+		QIcon::fromTheme("go-up"),
+		"Up", m_coordinatespanel);
+	QPushButton *btnCoordDown = new QPushButton(
+		QIcon::fromTheme("go-down"),
+		"Down", m_coordinatespanel);
+
+	btnAddCoord->setToolTip("Add a Q coordinate.");
+	btnDelCoord->setToolTip("Delete selected Q coordinate.");
+	btnCoordUp->setToolTip("Move selected coordinate(s) up.");
+	btnCoordDown->setToolTip("Move selected coordinate(s) down.");
+
+	QPushButton *btnSetDispersion = new QPushButton("To Dispersion", m_coordinatespanel);
+	btnSetDispersion->setToolTip("Calculate the dispersion relation for the currently selected Q path.");
+	QPushButton *btnSetHamilton = new QPushButton("To Hamiltonian", m_coordinatespanel);
+	btnSetHamilton->setToolTip("Calculate the Hamiltonian for the currently selected initial Q coordinate.");
+
+	btnAddCoord->setFocusPolicy(Qt::StrongFocus);
+	btnDelCoord->setFocusPolicy(Qt::StrongFocus);
+	btnCoordUp->setFocusPolicy(Qt::StrongFocus);
+	btnCoordDown->setFocusPolicy(Qt::StrongFocus);
+
+	btnAddCoord->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Fixed});
+	btnDelCoord->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Fixed});
+	btnCoordUp->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Fixed});
+	btnCoordDown->setSizePolicy(QSizePolicy{
+		QSizePolicy::Expanding, QSizePolicy::Fixed});
+
+
+	// table CustomContextMenu
+	QMenu *menuTableContext = new QMenu(m_coordinatestab);
+	menuTableContext->addAction(
+		QIcon::fromTheme("list-add"),
+		"Add Coordinate Before", this,
+		[this]() { this->AddCoordinateTabItem(-2); });
+	menuTableContext->addAction(
+		QIcon::fromTheme("list-add"),
+		"Add Coordinate After", this,
+		[this]() { this->AddCoordinateTabItem(-3); });
+	menuTableContext->addAction(
+		QIcon::fromTheme("edit-copy"),
+		"Clone Coordinate", this,
+		[this]() { this->AddCoordinateTabItem(-4); });
+	menuTableContext->addAction(
+		QIcon::fromTheme("list-remove"),
+		"Delete Coordinate", this,
+		[this]() { this->DelTabItem(m_coordinatestab); });
+	menuTableContext->addSeparator();
+	menuTableContext->addAction(
+		QIcon::fromTheme("go-home"),
+		"Calculate Dispersion", this,
+		[this]() { this->SetCurrentCoordinate(0); });
+	menuTableContext->addAction(
+		QIcon::fromTheme("go-home"),
+		"Calculate Hamiltonian From Initial Q", this,
+		[this]() { this->SetCurrentCoordinate(1); });
+	menuTableContext->addAction(
+		QIcon::fromTheme("go-home"),
+		"Calculate Hamiltonian From Final Q", this,
+		[this]() { this->SetCurrentCoordinate(2); });
+
+
+	// table CustomContextMenu in case nothing is selected
+	QMenu *menuTableContextNoItem = new QMenu(m_coordinatestab);
+	menuTableContextNoItem->addAction(
+		QIcon::fromTheme("list-add"),
+		"Add Coordinate", this,
+		[this]() { this->AddCoordinateTabItem(-1, -1.,0.,0., 1.,0.,0.); });
+	menuTableContextNoItem->addAction(
+		QIcon::fromTheme("list-remove"),
+		"Delete Coordinate", this,
+		[this]() { this->DelTabItem(m_coordinatestab); });
+
+
+	auto grid = new QGridLayout(m_coordinatespanel);
+	grid->setSpacing(4);
+	grid->setContentsMargins(6, 6, 6, 6);
+
+	int y = 0;
+	grid->addWidget(new QLabel(QString("Saved Q Coordinates / Paths:"),
+		m_coordinatespanel), y++,0,1,4);
+	grid->addWidget(m_coordinatestab, y,0,1,4);
+	grid->addWidget(btnAddCoord, ++y,0,1,1);
+	grid->addWidget(btnDelCoord, y,1,1,1);
+	grid->addWidget(btnCoordUp, y,2,1,1);
+	grid->addWidget(btnCoordDown, y++,3,1,1);
+	grid->addWidget(btnSetDispersion, y,2,1,1);
+	grid->addWidget(btnSetHamilton, y++,3,1,1);
+
+
+	// signals
+	connect(btnAddCoord, &QAbstractButton::clicked,
+		[this]() { this->AddCoordinateTabItem(-1, -1.,0.,0., 1.,0.,0.); });
+	connect(btnDelCoord, &QAbstractButton::clicked,
+		[this]() { this->DelTabItem(m_coordinatestab); });
+	connect(btnCoordUp, &QAbstractButton::clicked,
+		[this]() { this->MoveTabItemUp(m_coordinatestab); });
+	connect(btnCoordDown, &QAbstractButton::clicked,
+		[this]() { this->MoveTabItemDown(m_coordinatestab); });
+
+	connect(btnSetDispersion, &QAbstractButton::clicked,
+		[this]() { this->SetCurrentCoordinate(0); });
+	connect(btnSetHamilton, &QAbstractButton::clicked,
+		[this]() { this->SetCurrentCoordinate(1); });
+
+	connect(m_coordinatestab, &QTableWidget::itemSelectionChanged, [this]()
+	{
+		QList<QTableWidgetItem*> selected = m_coordinatestab->selectedItems();
+		if(selected.size())
+		{
+			const QTableWidgetItem* item = *selected.begin();
+			m_coordinates_cursor_row = item->row();
+		}
+	});
+	connect(m_coordinatestab, &QTableWidget::customContextMenuRequested,
+		[this, menuTableContext, menuTableContextNoItem](const QPoint& pt)
+	{
+		this->ShowTableContextMenu(
+			m_coordinatestab, menuTableContext, menuTableContextNoItem, pt);
+	});
+
+	m_tabs_out->addTab(m_coordinatespanel, "Coordinates");
+}
+
+
+
+/**
+ * exports data to different file types
+ */
 void MagDynDlg::CreateExportPanel()
 {
 	const char* hklPrefix[] = { "h = ", "k = ","l = ", };
@@ -1419,6 +1621,9 @@ void MagDynDlg::CreateExportPanel()
 
 
 
+/**
+ * about dialog
+ */
 void MagDynDlg::CreateInfoDlg()
 {
 	auto infopanel = new QWidget(this);
@@ -1443,7 +1648,7 @@ void MagDynDlg::CreateInfoDlg()
 	auto labelAuthor = new QLabel("Written by Tobias Weber <tweber@ill.fr>.", infopanel);
 	labelAuthor->setAlignment(Qt::AlignHCenter);
 
-	auto labelDate = new QLabel("January 2022.", infopanel);
+	auto labelDate = new QLabel("2022 - 2023.", infopanel);
 	labelDate->setAlignment(Qt::AlignHCenter);
 
 	auto labelPaper = new QLabel(
@@ -1529,6 +1734,9 @@ void MagDynDlg::CreateInfoDlg()
 
 
 
+/**
+ * main menu
+ */
 void MagDynDlg::CreateMenuBar()
 {
 	m_menu = new QMenuBar(this);

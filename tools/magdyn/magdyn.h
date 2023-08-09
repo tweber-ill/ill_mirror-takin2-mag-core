@@ -129,7 +129,7 @@ enum : int
 
 
 /**
- * columns of table with saved fields
+ * columns of the table with saved fields
  */
 enum : int
 {
@@ -137,6 +137,18 @@ enum : int
 	COL_FIELD_MAG,
 
 	NUM_FIELD_COLS
+};
+
+
+/**
+ * columns of the table with saved Q coordinates
+ */
+enum : int
+{
+	COL_COORD_HI = 0, COL_COORD_KI, COL_COORD_LI,
+	COL_COORD_HF, COL_COORD_KF, COL_COORD_LF,
+
+	NUM_COORD_COLS
 };
 
 
@@ -217,6 +229,7 @@ protected:
 	QWidget *m_notespanel{};
 	QWidget *m_disppanel{};
 	QWidget *m_hamiltonianpanel{};
+	QWidget *m_coordinatespanel{};
 	QWidget *m_exportpanel{};
 
 	// sites
@@ -260,6 +273,9 @@ protected:
 	// notes
 	QPlainTextEdit *m_notes{};
 
+	// coordinates
+	QTableWidget *m_coordinatestab{};
+
 	// export
 	QDoubleSpinBox *m_exportStartQ[3]{nullptr, nullptr, nullptr};
 	QDoubleSpinBox *m_exportEndQ[3]{nullptr, nullptr, nullptr};
@@ -290,16 +306,21 @@ protected:
 protected:
 	// set up gui
 	void CreateMainWindow();
+	void CreateInfoDlg();
+	void CreateMenuBar();
+
+	// set up input panels
 	void CreateSitesPanel();
 	void CreateExchangeTermsPanel();
 	void CreateVariablesPanel();
 	void CreateSampleEnvPanel();
 	void CreateNotesPanel();
+
+	// set up output panels
 	void CreateDispersionPanel();
 	void CreateHamiltonPanel();
 	void CreateExportPanel();
-	void CreateInfoDlg();
-	void CreateMenuBar();
+	void CreateCoordinatesPanel();
 
 	// general table operations
 	void MoveTabItemUp(QTableWidget *pTab);
@@ -332,11 +353,16 @@ protected:
 		const std::string& name = "var",
 		const t_cplx& var = t_cplx{0, 0});
 
+	void AddCoordinateTabItem(int row = -1,
+		t_real hi = 0., t_real ki = 0., t_real li = 1.,
+		t_real hf = 0., t_real kf = 0., t_real lf = 1.);
+
 	void AddFieldTabItem(int row = -1,
 		t_real Bh = 0., t_real Bk = 0., t_real Bl = 1.,
 		t_real Bmag = 1.);
 
 	void SetCurrentField();
+	void SetCurrentCoordinate(int which = 0);
 
 	void DelTabItem(QTableWidget *pTab, int begin=-2, int end=-2);
 	void UpdateVerticalHeader(QTableWidget *pTab);
@@ -413,6 +439,7 @@ private:
 	int m_terms_cursor_row = -1;
 	int m_variables_cursor_row = -1;
 	int m_fields_cursor_row = -1;
+	int m_coordinates_cursor_row = -1;
 
 	bool m_ignoreTableChanges = true;
 	bool m_ignoreCalc = false;

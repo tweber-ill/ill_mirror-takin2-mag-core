@@ -640,6 +640,92 @@ void MagDynDlg::CalcHamiltonian()
 
 
 /**
+ * set the current coordinate path as the current one
+ */
+void MagDynDlg::SetCurrentCoordinate(int which)
+{
+	if(m_coordinates_cursor_row < 0 || m_coordinates_cursor_row >= m_coordinatestab->rowCount())
+		return;
+
+	const auto* hi = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_HI));
+	const auto* ki = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_KI));
+	const auto* li = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_LI));
+	const auto* hf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_HF));
+	const auto* kf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_KF));
+	const auto* lf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+		m_coordinatestab->item(m_coordinates_cursor_row, COL_COORD_LF));
+
+	// set dispersion start and end coordinates
+	if(which == 0)
+	{
+		if(!hi || !ki || !li || !hf || !kf || !lf)
+			return;
+
+		m_ignoreCalc = true;
+
+		BOOST_SCOPE_EXIT(this_)
+		{
+			this_->m_ignoreCalc = false;
+			if(this_->m_autocalc->isChecked())
+				this_->CalcDispersion();
+		} BOOST_SCOPE_EXIT_END
+
+		m_q_start[0]->setValue(hi->GetValue());
+		m_q_start[1]->setValue(ki->GetValue());
+		m_q_start[2]->setValue(li->GetValue());
+		m_q_end[0]->setValue(hf->GetValue());
+		m_q_end[1]->setValue(kf->GetValue());
+		m_q_end[2]->setValue(lf->GetValue());
+	}
+
+	// send initial Q coordinates to hamiltonian calculation
+	else if(which == 1)
+	{
+		if(!hi || !ki || !li)
+			return;
+
+		m_ignoreCalc = true;
+
+		BOOST_SCOPE_EXIT(this_)
+		{
+			this_->m_ignoreCalc = false;
+			if(this_->m_autocalc->isChecked())
+				this_->CalcHamiltonian();
+		} BOOST_SCOPE_EXIT_END
+
+		m_q[0]->setValue(hi->GetValue());
+		m_q[1]->setValue(ki->GetValue());
+		m_q[2]->setValue(li->GetValue());
+	}
+
+	// send final Q coordinates to hamiltonian calculation
+	else if(which == 2)
+	{
+		if(!hf || !kf || !lf)
+			return;
+
+		m_ignoreCalc = true;
+
+		BOOST_SCOPE_EXIT(this_)
+		{
+			this_->m_ignoreCalc = false;
+			if(this_->m_autocalc->isChecked())
+				this_->CalcHamiltonian();
+		} BOOST_SCOPE_EXIT_END
+
+		m_q[0]->setValue(hf->GetValue());
+		m_q[1]->setValue(kf->GetValue());
+		m_q[2]->setValue(lf->GetValue());
+	}
+}
+
+
+/**
  * mouse move event of the plot
  */
 void MagDynDlg::PlotMouseMove(QMouseEvent* evt)

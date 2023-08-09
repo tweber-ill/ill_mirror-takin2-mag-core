@@ -80,6 +80,7 @@ void MagDynDlg::Clear()
 	DelTabItem(m_termstab, -1);
 	DelTabItem(m_varstab, -1);
 	DelTabItem(m_fieldstab, -1);
+	DelTabItem(m_coordinatestab, -1);
 
 	ClearDispersion(true);
 	m_hamiltonian->clear();
@@ -305,6 +306,7 @@ bool MagDynDlg::Load(const QString& filename)
 		DelTabItem(m_termstab, -1);
 		DelTabItem(m_varstab, -1);
 		DelTabItem(m_fieldstab, -1);
+		DelTabItem(m_coordinatestab, -1);
 
 		// variables
 		for(const auto& var : m_dyn.GetVariables())
@@ -378,6 +380,22 @@ bool MagDynDlg::Load(const QString& filename)
 				t_real Bmag = var.second.get<t_real>("magnitude", 0.);
 
 				AddFieldTabItem(-1, Bh, Bk, Bl, Bmag);
+			}
+		}
+
+		// saved coordinates
+		if(auto vars = magdyn.get_child_optional("saved_coordinates"); vars)
+		{
+			for(const auto &var : *vars)
+			{
+				t_real hi = var.second.get<t_real>("h_i", 0.);
+				t_real ki = var.second.get<t_real>("k_i", 0.);
+				t_real li = var.second.get<t_real>("l_i", 0.);
+				t_real hf = var.second.get<t_real>("h_f", 0.);
+				t_real kf = var.second.get<t_real>("k_f", 0.);
+				t_real lf = var.second.get<t_real>("l_f", 0.);
+
+				AddCoordinateTabItem(-1, hi, ki, li, hf, kf, lf);
 			}
 		}
 	}
@@ -550,6 +568,34 @@ bool MagDynDlg::Save(const QString& filename)
 				std::advance(termiter, 1);
 			}
 		}
+
+		// saved coordinates
+		for(int coord_row = 0; coord_row < m_coordinatestab->rowCount(); ++coord_row)
+		{
+			const auto* hi = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_HI));
+			const auto* ki = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_KI));
+			const auto* li = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_LI));
+			const auto* hf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_HF));
+			const auto* kf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_KF));
+			const auto* lf = static_cast<tl2::NumericTableWidgetItem<t_real>*>(
+				m_coordinatestab->item(coord_row, COL_COORD_LF));
+
+			boost::property_tree::ptree itemNode;
+			itemNode.put<t_real>("h_i", hi ? hi->GetValue() : 0.);
+			itemNode.put<t_real>("k_i", ki ? ki->GetValue() : 0.);
+			itemNode.put<t_real>("l_i", li ? li->GetValue() : 0.);
+			itemNode.put<t_real>("h_f", hf ? hf->GetValue() : 0.);
+			itemNode.put<t_real>("k_f", kf ? kf->GetValue() : 0.);
+			itemNode.put<t_real>("l_f", lf ? lf->GetValue() : 0.);
+
+			magdyn.add_child("saved_coordinates.coordinate", itemNode);
+		}
+
 
 		pt::ptree node;
 		node.put_child("magdyn", magdyn);
