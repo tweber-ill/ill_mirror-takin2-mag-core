@@ -35,19 +35,21 @@ INSTALL_DIR=~/.wine/drive_c/takin2tools
 # binaries
 mkdir -vp ${INSTALL_DIR}
 
-cp -v tools/bz/build/takin_bz.exe			${INSTALL_DIR}/
-cp -v tools/magdyn/build/takin_magdyn.exe		${INSTALL_DIR}/
-cp -v tools/moldyn/build/takin_moldyn.exe		${INSTALL_DIR}/
-cp -v tools/pol/build/takin_pol.exe			${INSTALL_DIR}/
-cp -v tools/structfact/build/takin_structfact.exe	${INSTALL_DIR}/
-cp -v tools/magstructfact/build/takin_magstructfact.exe	${INSTALL_DIR}/
-cp -v tools/cif2xml/build/*.exe				${INSTALL_DIR}/
+cp -v build/tools/bz/takin_bz.exe			${INSTALL_DIR}/
+cp -v build/tools/magdyn/takin_magdyn.exe		${INSTALL_DIR}/
+cp -v build/tools/moldyn/takin_moldyn.exe		${INSTALL_DIR}/
+cp -v build/tools/pol/takin_pol.exe			${INSTALL_DIR}/
+cp -v build/tools/structfact/takin_structfact.exe	${INSTALL_DIR}/
+cp -v build/tools/magstructfact/takin_magstructfact.exe	${INSTALL_DIR}/
+cp -v build/tools/cif2xml/*.exe				${INSTALL_DIR}/
 
 
 
 # libraries
 MINGW_LIBS="Qt5Core.dll Qt5Gui.dll Qt5Widgets.dll Qt5Svg.dll \
+	liblapack.dll liblapacke.dll libblas.dll \
 	libstdc++-6.dll libglib-2.0-0.dll libgcc_s_seh-1.dll libwinpthread-1.dll \
+	libgfortran-5.dll libquadmath-0.dll \
 	libboost_program_options-mt-x64.dll libqhull_r.dll \
 	libintl-8.dll iconv.dll libpcre2-16-0.dll libpcre2-8-0.dll libpcre-1.dll \
 	zlib1.dll libbz2-1.dll libpng16-16.dll \

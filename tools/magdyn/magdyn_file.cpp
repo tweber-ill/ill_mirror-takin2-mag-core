@@ -26,6 +26,15 @@
  * ----------------------------------------------------------------------------
  */
 
+// these need to be included before all other things on mingw
+#include <boost/scope_exit.hpp>
+#include <boost/asio.hpp>
+namespace asio = boost::asio;
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+namespace pt = boost::property_tree;
+
 #include "magdyn.h"
 
 #include <QtCore/QString>
@@ -39,14 +48,6 @@
 #include <vector>
 #include <deque>
 #include <cstdlib>
-
-#include <boost/scope_exit.hpp>
-#include <boost/asio.hpp>
-namespace asio = boost::asio;
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-namespace pt = boost::property_tree;
 
 #include "tlibs2/libs/log.h"
 

@@ -111,6 +111,7 @@ include_directories(
 	SYSTEM "${Boost_INCLUDE_DIRS}" "${Boost_INCLUDE_DIRS}/.." "../.."
 	"ext" "ext/gemmi/include" "ext/gemmi/third_party"
 	"../../ext/gemmi/include" "../../ext/gemmi/third_party"
+	"../../ext/qcp"
 )
 
 
@@ -127,7 +128,7 @@ add_executable(takin_magdyn
 	../../tlibs2/libs/qt/glplot.cpp ../../tlibs2/libs/qt/glplot.h
 	../../tlibs2/libs/qt/recent.cpp ../../tlibs2/libs/qt/recent.h
 
-#	../../../paths/externals/qcustomplot/qcustomplot.cpp
+#	../../ext/qcp/qcustomplot.cpp
 )
 
 
@@ -145,4 +146,5 @@ target_link_libraries(takin_magdyn
 	${Boost_LIBRARIES}
 	${Lapacke_LIBRARIES}
 	${HDF5_CXX_LIBRARIES}
+#	ws2_32  # for mingw
 )

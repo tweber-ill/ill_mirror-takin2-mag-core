@@ -26,6 +26,11 @@
  * ----------------------------------------------------------------------------
  */
 
+// these need to be included before all other things on mingw
+#include <boost/scope_exit.hpp>
+#include <boost/asio.hpp>
+namespace asio = boost::asio;
+
 #include "magdyn.h"
 
 #include <QtWidgets/QApplication>
@@ -34,10 +39,6 @@
 #include <thread>
 #include <future>
 #include <mutex>
-
-#include <boost/scope_exit.hpp>
-#include <boost/asio.hpp>
-namespace asio = boost::asio;
 
 #include "tlibs2/libs/phys.h"
 #include "tlibs2/libs/algos.h"
