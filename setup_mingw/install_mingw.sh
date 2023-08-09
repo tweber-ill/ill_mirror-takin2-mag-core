@@ -46,7 +46,7 @@ cp -v build/tools/cif2xml/*.exe				${INSTALL_DIR}/
 
 
 # libraries
-MINGW_LIBS="Qt5Core.dll Qt5Gui.dll Qt5Widgets.dll Qt5Svg.dll \
+MINGW_LIBS="Qt5Core.dll Qt5Gui.dll Qt5Widgets.dll Qt5Svg.dll Qt5PrintSupport.dll \
 	liblapack.dll liblapacke.dll libblas.dll \
 	libstdc++-6.dll libglib-2.0-0.dll libgcc_s_seh-1.dll libwinpthread-1.dll \
 	libgfortran-5.dll libquadmath-0.dll \
